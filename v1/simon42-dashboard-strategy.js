@@ -45,6 +45,20 @@ class Simon42DashboardStrategy {
             state.attributes?.entity_category !== 'config' &&
             state.attributes?.entity_category !== 'diagnostic'
         );
+    
+    // 1. Finde das State-Objekt des ersten passenden Sensors
+    const someSensorState = Object.values(hass.states)
+    .find(state => 
+        state.entity_id.startsWith('sensor.') &&
+        !excludeLabels.includes(state.entity_id) &&
+        state.attributes?.entity_category !== 'config' &&
+        state.attributes?.entity_category !== 'diagnostic' &&
+        state.state !== 'unavailable' // 👈 Wählt nur verfügbare Sensoren aus
+    );
+
+    // 2. Extrahiere die Entitäts-ID in eine Variable zur direkten Nutzung
+    //    (Verwendet Optional Chaining (?.) und einen Fallback)
+    const someSensorId = someSensorState?.entity_id || 'sensor.none_found';
 
     // Zähle offene Rollos/Covers
     const coversOpen = Object.values(hass.states)
@@ -66,7 +80,8 @@ class Simon42DashboardStrategy {
         if (state.attributes?.entity_category === 'diagnostic') return false;
         
         // Locks (entriegelt)
-        if (state.entity_id.startsWith('lock.') && state.state === 'unlocked') return true;
+        if (state.entity_id.startsWith('lock.') 
+            && state.state === 'unlocked') return true;
         
         // Covers mit device_class door, garage, gate (offen)
         if (state.entity_id.startsWith('cover.')) {
@@ -83,12 +98,24 @@ class Simon42DashboardStrategy {
         return false;
       });
 
-    // Zähle kritische Batterien (unter 20%)
-    const batteriesCritical = Object.values(hass.states)
-      .filter(state => {
-        if (excludeLabels.includes(state.entity_id)) return false;
-        if (!state.entity_id.includes('battery')) return false;
+    // Zähle kritische Batterien (unter 20%) - KORRIGIERTE VERSION
+    // Verwendet die gleiche Logik wie simon42-view-batteries.js
+    const batteriesCritical = Object.keys(hass.states)
+      .filter(entityId => !excludeLabels.includes(entityId))
+      .filter(entityId => {
+        const state = hass.states[entityId];
+        if (!state) return false;
+        
+        // Prüfe ob es eine Batterie-Entität ist (wie in der Batterien-View)
+        if (entityId.includes('battery')) return true;
+        if (state.attributes?.device_class === 'battery') return true;
+        
+        return false;
+      })
+      .filter(entityId => {
+        const state = hass.states[entityId];
         const value = parseFloat(state.state);
+        // Nur numerische Werte unter 20%
         return !isNaN(value) && value < 20;
       });
 
@@ -130,7 +157,7 @@ class Simon42DashboardStrategy {
                 type: "tile",
                 icon: "mdi:lamps",
                 name: lightsOn.length > 0 ? `${lightsOn.length} ${lightsOn.length === 1 ? 'Licht an' : 'Lichter an'}` : 'Alle Lichter aus',
-                entity: lightsOn.length > 0 ? lightsOn[0].entity_id : "sensor.update",
+                entity: lightsOn.length > 0 ? lightsOn[0].entity_id : someSensorId,
                 color: lightsOn.length > 0 ? 'orange' : 'grey',
                 hide_state: true,
                 vertical: true,
@@ -147,7 +174,7 @@ class Simon42DashboardStrategy {
                 type: "tile",
                 icon: "mdi:blinds-horizontal",
                 name: coversOpen.length > 0 ? `${coversOpen.length} ${coversOpen.length === 1 ? 'Rollo offen' : 'Rollos offen'}` : 'Alle Rollos geschlossen',
-                entity: coversOpen.length > 0 ? coversOpen[0].entity_id : "sensor.update",
+                entity: coversOpen.length > 0 ? coversOpen[0].entity_id : someSensorId,
                 color: coversOpen.length > 0 ? 'purple' : 'grey',
                 hide_state: true,
                 vertical: true,
@@ -164,7 +191,7 @@ class Simon42DashboardStrategy {
                 type: "tile",
                 icon: "mdi:security",
                 name: securityUnsafe.length > 0 ? `${securityUnsafe.length} unsicher` : 'Alles gesichert',
-                entity: securityUnsafe.length > 0 ? securityUnsafe[0].entity_id : "sensor.update",
+                entity: securityUnsafe.length > 0 ? securityUnsafe[0].entity_id : someSensorId,
                 color: securityUnsafe.length > 0 ? 'yellow' : 'grey',
                 hide_state: true,
                 vertical: true,
@@ -176,12 +203,12 @@ class Simon42DashboardStrategy {
                   navigation_path: "security",
                 }
               },
-              // Batterie Summary
+              // Batterie Summary - KORRIGIERT
              {
                 type: "tile",
                 icon: batteriesCritical.length > 0 ? "mdi:battery-alert" : 'mdi:battery-charging',
                 name: batteriesCritical.length > 0 ? `${batteriesCritical.length} ${batteriesCritical.length === 1 ? 'Batterie kritisch' : 'Batterien kritisch'}` : 'Alle Batterien OK',
-                entity: batteriesCritical.length > 0 ? batteriesCritical[0].entity_id : "sensor.update",
+                entity: batteriesCritical.length > 0 ? batteriesCritical[0] : someSensorId,
                 color: batteriesCritical.length > 0 ? 'red' : 'green',
                 hide_state: true,
                 vertical: true,
