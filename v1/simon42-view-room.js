@@ -112,8 +112,17 @@ class Simon42ViewRoomStrategy {
 
     for (const entity of entities) {
       // Prüfe ob Entität zum Raum gehört
-      const belongsToArea = entity.area_id === area.area_id || 
-                           (entity.device_id && areaDevices.has(entity.device_id));
+      // Fall 1: Entität hat direkte Area-Zuweisung -> nur diese zählt
+      // Fall 2: Entität hat keine Area-Zuweisung -> verwende Area vom Gerät
+      let belongsToArea = false;
+      
+      if (entity.area_id) {
+        // Entität hat explizite Area-Zuweisung
+        belongsToArea = entity.area_id === area.area_id;
+      } else if (entity.device_id && areaDevices.has(entity.device_id)) {
+        // Entität hat keine Area-Zuweisung, aber Gerät ist im Raum
+        belongsToArea = true;
+      }
       
       if (!belongsToArea) continue;
       
@@ -471,6 +480,7 @@ class Simon42ViewRoomStrategy {
             entity: entity,
             name: stripAreaName(entity),
             vertical: false,
+            features: [{ type: "media-player-playback" }],
             features_position: "inline",
             state_content: ["media_title", "media_artist"]
           }))
