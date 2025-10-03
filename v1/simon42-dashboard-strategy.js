@@ -57,33 +57,33 @@ class Simon42DashboardStrategy {
             state.attributes?.entity_category !== 'diagnostic'
         );
     
-    // 1. Finde das State-Objekt des ersten passenden Sensors
+    // Finde das State-Objekt des ersten passenden Sensors
     const someSensorState = Object.values(hass.states)
-    .find(state => 
-        state.entity_id.startsWith('sensor.') &&
-        !excludeLabels.includes(state.entity_id) &&
-        state.attributes?.entity_category !== 'config' &&
-        state.attributes?.entity_category !== 'diagnostic' &&
-        state.state !== 'unavailable'
-    );
+      .find(state => 
+          state.entity_id.startsWith('sensor.') &&
+          !excludeLabels.includes(state.entity_id) &&
+          state.attributes?.entity_category !== 'config' &&
+          state.attributes?.entity_category !== 'diagnostic' &&
+          state.state !== 'unavailable'
+      );
 
-    // 2. Extrahiere die Entitäts-ID in eine Variable zur direkten Nutzung
-    const someSensorId = someSensorState?.entity_id || 'sensor.none_found';
+    const someSensorId = someSensorState ? someSensorState.entity_id : (someLight ? someLight.entity_id : 'sun.sun');
 
-    // Zähle offene Rollos/Covers
+    // Zähle offene Covers
     const coversOpen = Object.values(hass.states)
       .filter(state => state.entity_id.startsWith('cover.'))
       .filter(state => !excludeLabels.includes(state.entity_id))
       .filter(state => state.attributes?.entity_category !== 'config')
       .filter(state => state.attributes?.entity_category !== 'diagnostic')
-      .filter(state => state.state === 'open' || state.state === 'opening');
+      .filter(state => ['open', 'opening'].includes(state.state));
 
-    // Sicherheitsrelevante Entitäten (ungesichert/offen)
-    const securityUnsafe = Object.values(hass.states)
-      .filter(state => !excludeLabels.includes(state.entity_id))
-      .filter(state => state.attributes?.entity_category !== 'config')
-      .filter(state => state.attributes?.entity_category !== 'diagnostic')
-      .filter(state => {
+    // Zähle unsichere Security-Entitäten
+    const securityUnsafe = Object.keys(hass.states)
+      .filter(entityId => !excludeLabels.includes(entityId))
+      .filter(entityId => {
+        const state = hass.states[entityId];
+        if (!state) return false;
+        
         // Locks (unlocked)
         if (state.entity_id.startsWith('lock.') && state.state === 'unlocked') return true;
         
@@ -121,6 +121,20 @@ class Simon42DashboardStrategy {
         return !isNaN(value) && value < 20;
       });
 
+    // Suche dynamisch nach einer Weather-Entität (ohne no_dboard Label und ohne entity_category)
+    const weatherEntity = Object.keys(hass.states).find(entityId => {
+      if (!entityId.startsWith('weather.')) return false;
+      if (excludeLabels.includes(entityId)) return false;
+      
+      const state = hass.states[entityId];
+      if (!state) return false;
+      
+      // Nur Entitäten ohne entity_category (also keine config/diagnostic Entitäten)
+      if (state.attributes?.entity_category) return false;
+      
+      return true;
+    });
+
     // Erstelle Badges für Personen
     const personBadges = [];
     persons.forEach(person => {
@@ -142,7 +156,6 @@ class Simon42DashboardStrategy {
       });
       
       // Badge wenn Person nicht zuhause ist (oranges Icon)
-      // Nutzt die gleiche Person-Entity, zeigt aber anderen State
       personBadges.push({
         type: "entity",
         show_name: true,
@@ -235,11 +248,11 @@ class Simon42DashboardStrategy {
                 }
               },
               // Security Summary
-             {
+              {
                 type: "tile",
                 icon: "mdi:security",
                 name: securityUnsafe.length > 0 ? `${securityUnsafe.length} unsicher` : 'Alles gesichert',
-                entity: securityUnsafe.length > 0 ? securityUnsafe[0].entity_id : someSensorId,
+                entity: securityUnsafe.length > 0 ? securityUnsafe[0] : someSensorId,
                 color: securityUnsafe.length > 0 ? 'yellow' : 'grey',
                 hide_state: true,
                 vertical: true,
@@ -252,7 +265,7 @@ class Simon42DashboardStrategy {
                 }
               },
               // Batterie Summary
-             {
+              {
                 type: "tile",
                 icon: batteriesCritical.length > 0 ? "mdi:battery-alert" : 'mdi:battery-charging',
                 name: batteriesCritical.length > 0 ? `${batteriesCritical.length} ${batteriesCritical.length === 1 ? 'Batterie kritisch' : 'Batterien kritisch'}` : 'Alle Batterien OK',
@@ -292,10 +305,25 @@ class Simon42DashboardStrategy {
               }))
             ]
           },
-          // Energie-Dashboard Section
+          // Wetter & Energie-Dashboard Section
           {
             type: "grid",
             cards: [
+              // Füge Weather Forecast hinzu, wenn eine Weather-Entität gefunden wurde
+              ...(weatherEntity ? [
+                {
+                  type: "heading",
+                  heading: "Wetter",
+                  heading_style: "title",
+                  icon: "mdi:weather-partly-cloudy"
+                },
+                {
+                  type: "weather-forecast",
+                  entity: weatherEntity,
+                  forecast_type: "daily"
+                }
+              ] : []),
+              // Energie-Dashboard
               {
                 type: "heading",
                 heading: "Energie",
