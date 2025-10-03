@@ -115,7 +115,10 @@ class Simon42DashboardStrategy {
               {
                 type: "clock",
                 clock_size: "small",
-                show_seconds: false
+                show_seconds: false,
+                grid_options: {
+                  columns: "full",
+                }
               },
               // Zusammenfassungen
               {
