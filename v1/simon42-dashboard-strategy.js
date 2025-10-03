@@ -21,8 +21,16 @@ class Simon42DashboardStrategy {
       .filter(state => !excludeLabels.includes(state.entity_id))
       .filter(state => state.attributes?.entity_category !== 'config')
       .filter(state => state.attributes?.entity_category !== 'diagnostic')
-      .filter(state => state.state === 'on')
-      .length;
+      .filter(state => state.state === 'on');
+
+    // Dummy-Entität für Tile-Card
+    const someLight = Object.values(hass.states)
+        .find(state => 
+            state.entity_id.startsWith('light.') &&
+            !excludeLabels.includes(state.entity_id) &&
+            state.attributes?.entity_category !== 'config' &&
+            state.attributes?.entity_category !== 'diagnostic'
+        );
 
     // Zähle offene Rollos/Covers
     const coversOpen = Object.values(hass.states)
@@ -34,8 +42,7 @@ class Simon42DashboardStrategy {
         const deviceClass = state.attributes?.device_class;
         return ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'].includes(deviceClass) || !deviceClass;
       })
-      .filter(state => state.state === 'open')
-      .length;
+      .filter(state => state.state === 'open');
 
     // Zähle unsichere Elemente
     const securityUnsafe = Object.values(hass.states)
@@ -60,8 +67,7 @@ class Simon42DashboardStrategy {
         }
         
         return false;
-      })
-      .length;
+      });
 
     // Zähle kritische Batterien (unter 20%)
     const batteriesCritical = Object.values(hass.states)
@@ -70,8 +76,7 @@ class Simon42DashboardStrategy {
         if (!state.entity_id.includes('battery')) return false;
         const value = parseFloat(state.state);
         return !isNaN(value) && value < 20;
-      })
-      .length;
+      });
 
     // Erstelle Views
     const views = [
@@ -81,7 +86,7 @@ class Simon42DashboardStrategy {
         path: "home",
         icon: "mdi:home",
         type: "sections",
-        max_columns: 1,
+        max_columns: 3,
         sections: [
           // Übersichts-Abschnitt
           {
@@ -105,50 +110,70 @@ class Simon42DashboardStrategy {
               },
               // Lichter Summary
               {
-                type: "button",
+                type: "tile",
                 icon: "mdi:lamps",
-                name: lightsOn > 0 ? `${lightsOn} ${lightsOn === 1 ? 'Licht an' : 'Lichter an'}` : 'Alle Lichter aus',
-                show_name: true,
-                show_icon: true,
+                name: lightsOn.length > 0 ? `${lightsOn.length} ${lightsOn.length === 1 ? 'Licht an' : 'Lichter an'}` : 'Alle Lichter aus',
+                entity: lightsOn.length > 0 ? lightsOn[0].entity_id : "sensor.update",
+                color: lightsOn.length > 0 ? 'orange' : 'grey',
+                hide_state: true,
+                vertical: true,
+                icon_tap_action: {
+                  action: "none",
+                },
                 tap_action: {
                   action: "navigate",
-                  navigation_path: "lights"
+                  navigation_path: "lights",
                 }
               },
               // Covers Summary
               {
-                type: "button",
+                type: "tile",
                 icon: "mdi:blinds-horizontal",
-                name: coversOpen > 0 ? `${coversOpen} ${coversOpen === 1 ? 'Rollo offen' : 'Rollos offen'}` : 'Alle Rollos geschlossen',
-                show_name: true,
-                show_icon: true,
+                name: coversOpen.length > 0 ? `${coversOpen.length} ${coversOpen.length === 1 ? 'Rollo offen' : 'Rollos offen'}` : 'Alle Rollos geschlossen',
+                entity: coversOpen.length > 0 ? coversOpen[0].entity_id : "sensor.update",
+                color: securityUnsafe.length > 0 ? 'purple' : 'grey',
+                hide_state: true,
+                vertical: true,
+                icon_tap_action: {
+                  action: "none",
+                },
                 tap_action: {
                   action: "navigate",
-                  navigation_path: "covers"
+                  navigation_path: "covers",
                 }
               },
               // Security Summary
-              {
-                type: "button",
+             {
+                type: "tile",
                 icon: "mdi:security",
-                name: securityUnsafe > 0 ? `${securityUnsafe} unsicher` : 'Alles gesichert',
-                show_name: true,
-                show_icon: true,
+                name: securityUnsafe.length > 0 ? `${securityUnsafe.length} unsicher` : 'Alles gesichert',
+                entity: securityUnsafe.length > 0 ? securityUnsafe[0].entity_id : "sensor.update",
+                color: securityUnsafe.length > 0 ? 'yellow' : 'grey',
+                hide_state: true,
+                vertical: true,
+                icon_tap_action: {
+                  action: "none",
+                },
                 tap_action: {
                   action: "navigate",
-                  navigation_path: "security"
+                  navigation_path: "security",
                 }
               },
               // Batterie Summary
-              {
-                type: "button",
-                icon: "mdi:battery-alert",
-                name: batteriesCritical > 0 ? `${batteriesCritical} ${batteriesCritical === 1 ? 'Batterie kritisch' : 'Batterien kritisch'}` : 'Alle Batterien OK',
-                show_name: true,
-                show_icon: true,
+             {
+                type: "tile",
+                icon: batteriesCritical.length > 0 ? "mdi:battery-alert" : 'mdi:battery-charging',
+                name: batteriesCritical.length > 0 ? `${batteriesCritical.length} ${batteriesCritical.length === 1 ? 'Batterie kritisch' : 'Batterien kritisch'}` : 'Alle Batterien OK',
+                entity: batteriesCritical.length > 0 ? batteriesCritical[0].entity_id : "sensor.update",
+                color: batteriesCritical.length > 0 ? 'red' : 'green',
+                hide_state: true,
+                vertical: true,
+                icon_tap_action: {
+                  action: "none",
+                },
                 tap_action: {
                   action: "navigate",
-                  navigation_path: "batteries"
+                  navigation_path: "batteries",
                 }
               }
             ]
