@@ -217,7 +217,7 @@ Bei Fragen oder Problemen:
 
 ## 📄 Lizenz
 
-Dieses Projekt steht unter der MIT-Lizenz und kann frei verwendet und angepasst werden.
+Dieses Projekt steht unter der Attribution-NonCommercial-ShareAlike 4.0 International und kann privat frei verwendet werden. Für anpassungen & verbesserungen gerne einfach Requests auf GitHub erstellen 🎉
 
 ---
 
