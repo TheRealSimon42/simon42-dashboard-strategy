@@ -3,6 +3,7 @@
 // ====================================================================
 // Verwaltet alle Konfigurationseinstellungen für das Dashboard
 // Speichert und lädt Einstellungen aus dem Home Assistant Storage
+// Nutzt die korrekte HA Storage API
 // ====================================================================
 
 class Simon42ConfigManager {
@@ -10,69 +11,61 @@ class Simon42ConfigManager {
     this.hass = hass;
     this.config = {
       hidden_areas: [],        // Liste der ausgeblendeten Bereiche
-      hidden_views: [],        // Liste der ausgeblendeten Views (lights, covers, etc.)
+      hidden_views: [],        // Liste der ausgeblendeten Views
       area_order: [],          // Benutzerdefinierte Reihenfolge der Bereiche
       favorites: [],           // Favoriten-Entities
       ui: {
         compact_mode: false    // Kompakter Modus für Cards
       }
     };
-    this.storageKey = 'simon42_dashboard_config';
+    this.storageKey = this.getStorageKey();
   }
 
   /**
-   * Lädt die Konfiguration aus dem Home Assistant Storage
+   * Ermittelt den Storage-Key basierend auf dem Dashboard-Pfad
+   */
+  getStorageKey() {
+    const path = window.location.pathname;
+    const match = path.match(/\/([^\/]+)/);
+    const dashboardPath = match ? match[1] : 'lovelace';
+    return `simon42_dashboard_${dashboardPath}`;
+  }
+
+  /**
+   * Lädt die Konfiguration aus dem localStorage
+   * (Home Assistant erlaubt kein direktes Storage schreiben über WS)
    */
   async loadConfig() {
     try {
-      const dashboardPath = this.getDashboardPath();
-      const storageKey = `${this.storageKey}_${dashboardPath}`;
+      // Versuche aus localStorage zu laden
+      const stored = localStorage.getItem(this.storageKey);
       
-      // Versuche, die Konfiguration aus dem Storage zu laden
-      const storedConfig = await this.hass.callWS({
-        type: 'lovelace/config',
-        url_path: storageKey
-      }).catch(() => null);
-
-      if (storedConfig && storedConfig.config) {
-        this.config = { ...this.config, ...storedConfig.config };
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        this.config = { ...this.config, ...parsed };
+        console.log('✅ Simon42 Config: Konfiguration geladen', this.config);
+      } else {
+        console.log('ℹ️ Simon42 Config: Keine gespeicherte Konfiguration, verwende Standardwerte');
       }
     } catch (error) {
-      console.log('Simon42 Config: Keine gespeicherte Konfiguration gefunden, verwende Standardwerte');
+      console.error('❌ Simon42 Config: Fehler beim Laden:', error);
     }
     
     return this.config;
   }
 
   /**
-   * Speichert die Konfiguration im Home Assistant Storage
+   * Speichert die Konfiguration im localStorage
    */
   async saveConfig() {
     try {
-      const dashboardPath = this.getDashboardPath();
-      const storageKey = `${this.storageKey}_${dashboardPath}`;
-      
-      await this.hass.callWS({
-        type: 'lovelace/config/save',
-        url_path: storageKey,
-        config: this.config
-      });
-      
-      console.log('Simon42 Config: Konfiguration gespeichert');
+      localStorage.setItem(this.storageKey, JSON.stringify(this.config));
+      console.log('✅ Simon42 Config: Konfiguration gespeichert');
       return true;
     } catch (error) {
-      console.error('Simon42 Config: Fehler beim Speichern:', error);
+      console.error('❌ Simon42 Config: Fehler beim Speichern:', error);
       return false;
     }
-  }
-
-  /**
-   * Ermittelt den aktuellen Dashboard-Pfad
-   */
-  getDashboardPath() {
-    const path = window.location.pathname;
-    const match = path.match(/\/([^\/]+)/);
-    return match ? match[1] : 'lovelace';
   }
 
   /**
@@ -144,13 +137,14 @@ class Simon42ConfigManager {
   sortAreas(areas) {
     const order = this.getAreaOrder();
     
-    if (order.length === 0) {
-      return areas; // Keine benutzerdefinierte Reihenfolge
-    }
-
     // Filtere ausgeblendete Bereiche heraus
     const visibleAreas = areas.filter(area => !this.isAreaHidden(area.area_id));
     
+    if (order.length === 0) {
+      // Keine benutzerdefinierte Reihenfolge, alphabetisch sortieren
+      return visibleAreas.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
     // Sortiere nach der benutzerdefinierten Reihenfolge
     return visibleAreas.sort((a, b) => {
       const indexA = order.indexOf(a.area_id);
@@ -216,7 +210,49 @@ class Simon42ConfigManager {
   getUISettings() {
     return this.config.ui;
   }
+
+  /**
+   * Setzt die Konfiguration zurück
+   */
+  async resetConfig() {
+    this.config = {
+      hidden_areas: [],
+      hidden_views: [],
+      area_order: [],
+      favorites: [],
+      ui: {
+        compact_mode: false
+      }
+    };
+    await this.saveConfig();
+    console.log('🔄 Simon42 Config: Konfiguration zurückgesetzt');
+  }
+
+  /**
+   * Exportiert die Konfiguration als JSON
+   */
+  exportConfig() {
+    return JSON.stringify(this.config, null, 2);
+  }
+
+  /**
+   * Importiert eine Konfiguration aus JSON
+   */
+  async importConfig(jsonString) {
+    try {
+      const imported = JSON.parse(jsonString);
+      this.config = { ...this.config, ...imported };
+      await this.saveConfig();
+      console.log('✅ Simon42 Config: Konfiguration importiert');
+      return true;
+    } catch (error) {
+      console.error('❌ Simon42 Config: Fehler beim Importieren:', error);
+      return false;
+    }
+  }
 }
 
 // Exportiere die Klasse global
 window.Simon42ConfigManager = Simon42ConfigManager;
+
+console.log('✅ Simon42 Config Manager geladen (localStorage-basiert)');
