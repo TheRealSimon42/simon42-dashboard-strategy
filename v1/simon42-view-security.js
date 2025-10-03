@@ -81,6 +81,7 @@ class Simon42ViewSecurityStrategy {
         lockCards.push(...locksOpen.map(entity => ({
           type: "tile",
           entity: entity,
+          features_position: "inline",
           state_content: "last_changed"
         })));
       }
@@ -94,6 +95,7 @@ class Simon42ViewSecurityStrategy {
         lockCards.push(...locksClosed.map(entity => ({
           type: "tile",
           entity: entity,
+          features_position: "inline",
           state_content: "last_changed"
         })));
       }
@@ -137,6 +139,7 @@ class Simon42ViewSecurityStrategy {
           type: "tile",
           entity: entity,
           features: [{ type: "cover-open-close" }],
+          features_position: "inline",
           state_content: "last_changed"
         })));
       }
@@ -151,6 +154,7 @@ class Simon42ViewSecurityStrategy {
           type: "tile",
           entity: entity,
           features: [{ type: "cover-open-close" }],
+          features_position: "inline",
           state_content: "last_changed"
         })));
       }
@@ -194,6 +198,7 @@ class Simon42ViewSecurityStrategy {
           type: "tile",
           entity: entity,
           features: [{ type: "cover-open-close" }],
+          features_position: "inline",
           state_content: "last_changed"
         })));
       }
@@ -208,6 +213,7 @@ class Simon42ViewSecurityStrategy {
           type: "tile",
           entity: entity,
           features: [{ type: "cover-open-close" }],
+          features_position: "inline",
           state_content: "last_changed"
         })));
       }

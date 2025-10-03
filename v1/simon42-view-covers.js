@@ -65,6 +65,7 @@ class Simon42ViewCoversStrategy {
             entity: entity,
             features: [{ type: "cover-open-close" }],
             vertical: false,
+            features_position: "inline",
             state_content: ["current_position", "last_changed"]
           }))
         ]
@@ -102,6 +103,7 @@ class Simon42ViewCoversStrategy {
             entity: entity,
             features: [{ type: "cover-open-close" }],
             vertical: false,
+            features_position: "inline",
             state_content: ["current_position", "last_changed"]
           }))
         ]

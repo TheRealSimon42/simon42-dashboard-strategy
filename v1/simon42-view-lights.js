@@ -60,6 +60,7 @@ class Simon42ViewLightsStrategy {
             entity: entity,
             features: [{ type: "light-brightness" }],
             vertical: false,
+            features_position: "inline",
             state_content: "last_changed"
           }))
         ]
@@ -97,6 +98,7 @@ class Simon42ViewLightsStrategy {
             entity: entity,
             features: [{ type: "light-brightness" }],
             vertical: false,
+            features_position: "inline",
             state_content: "last_changed"
           }))
         ]

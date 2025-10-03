@@ -10,10 +10,24 @@ class Simon42DashboardStrategy {
       hass.callWS({ type: "config/entity_registry/list" }),
     ]);
 
-    // Labels für Filterung
+    // Labels für Filterung von Entitäten
     const excludeLabels = entities
       .filter(e => e.labels?.includes("no_dboard"))
       .map(e => e.entity_id);
+
+    // Finde Areale, die das Label "no_dboard" haben
+    const excludedAreaIds = new Set();
+    
+    // Prüfe jedes Areal auf das Label
+    for (const area of areas) {
+      // Prüfe ob das Areal Labels hat
+      if (area.labels && Array.isArray(area.labels) && area.labels.includes("no_dboard")) {
+        excludedAreaIds.add(area.area_id);
+      }
+    }
+    
+    // Filtere die Areale für die Anzeige
+    const visibleAreas = areas.filter(area => !excludedAreaIds.has(area.area_id));
 
     // Zähle eingeschaltete Lichter
     const lightsOn = Object.values(hass.states)
@@ -131,7 +145,7 @@ class Simon42DashboardStrategy {
                 icon: "mdi:blinds-horizontal",
                 name: coversOpen.length > 0 ? `${coversOpen.length} ${coversOpen.length === 1 ? 'Rollo offen' : 'Rollos offen'}` : 'Alle Rollos geschlossen',
                 entity: coversOpen.length > 0 ? coversOpen[0].entity_id : "sensor.update",
-                color: securityUnsafe.length > 0 ? 'purple' : 'grey',
+                color: coversOpen.length > 0 ? 'purple' : 'grey',
                 hide_state: true,
                 vertical: true,
                 icon_tap_action: {
@@ -178,7 +192,7 @@ class Simon42DashboardStrategy {
               }
             ]
           },
-          // Bereiche/Räume Section
+          // Bereiche/Räume Section (nur sichtbare Areale)
           {
             type: "grid",
             cards: [
@@ -187,7 +201,7 @@ class Simon42DashboardStrategy {
                 heading_style: "title",
                 heading: "Bereiche"
               },
-              ...areas.map((area) => ({
+              ...visibleAreas.map((area) => ({
                 type: "area",
                 area: area.area_id,
                 display_type: "compact",
@@ -245,12 +259,12 @@ class Simon42DashboardStrategy {
       }
     ];
 
-    // Füge für jeden Bereich eine View hinzu
-    areas.forEach(area => {
+    // Füge für jeden SICHTBAREN Bereich eine View hinzu
+    visibleAreas.forEach(area => {
       views.push({
         title: area.name,
         path: area.area_id,
-        icon: "mdi:floor-plan",
+        icon: area.icon || "mdi:floor-plan", // Verwende Area-Icon falls vorhanden
         strategy: {
           type: "custom:simon42-view-room",
           area,
