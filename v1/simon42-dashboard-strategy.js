@@ -29,6 +29,17 @@ class Simon42DashboardStrategy {
     // Filtere die Areale für die Anzeige
     const visibleAreas = areas.filter(area => !excludedAreaIds.has(area.area_id));
 
+    // Finde alle Personen (ohne no_dboard Label)
+    const persons = Object.values(hass.states)
+      .filter(state => state.entity_id.startsWith('person.'))
+      .filter(state => !excludeLabels.includes(state.entity_id))
+      .map(state => ({
+        entity_id: state.entity_id,
+        name: state.attributes?.friendly_name || state.entity_id.split('.')[1],
+        state: state.state,
+        isHome: state.state === 'home'
+      }));
+
     // Zähle eingeschaltete Lichter
     const lightsOn = Object.values(hass.states)
       .filter(state => state.entity_id.startsWith('light.'))
@@ -53,11 +64,10 @@ class Simon42DashboardStrategy {
         !excludeLabels.includes(state.entity_id) &&
         state.attributes?.entity_category !== 'config' &&
         state.attributes?.entity_category !== 'diagnostic' &&
-        state.state !== 'unavailable' // 👈 Wählt nur verfügbare Sensoren aus
+        state.state !== 'unavailable'
     );
 
     // 2. Extrahiere die Entitäts-ID in eine Variable zur direkten Nutzung
-    //    (Verwendet Optional Chaining (?.) und einen Fallback)
     const someSensorId = someSensorState?.entity_id || 'sensor.none_found';
 
     // Zähle offene Rollos/Covers
@@ -66,22 +76,16 @@ class Simon42DashboardStrategy {
       .filter(state => !excludeLabels.includes(state.entity_id))
       .filter(state => state.attributes?.entity_category !== 'config')
       .filter(state => state.attributes?.entity_category !== 'diagnostic')
-      .filter(state => {
-        const deviceClass = state.attributes?.device_class;
-        return ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'].includes(deviceClass) || !deviceClass;
-      })
-      .filter(state => state.state === 'open');
+      .filter(state => state.state === 'open' || state.state === 'opening');
 
-    // Zähle unsichere Elemente
+    // Sicherheitsrelevante Entitäten (ungesichert/offen)
     const securityUnsafe = Object.values(hass.states)
+      .filter(state => !excludeLabels.includes(state.entity_id))
+      .filter(state => state.attributes?.entity_category !== 'config')
+      .filter(state => state.attributes?.entity_category !== 'diagnostic')
       .filter(state => {
-        if (excludeLabels.includes(state.entity_id)) return false;
-        if (state.attributes?.entity_category === 'config') return false;
-        if (state.attributes?.entity_category === 'diagnostic') return false;
-        
-        // Locks (entriegelt)
-        if (state.entity_id.startsWith('lock.') 
-            && state.state === 'unlocked') return true;
+        // Locks (unlocked)
+        if (state.entity_id.startsWith('lock.') && state.state === 'unlocked') return true;
         
         // Covers mit device_class door, garage, gate (offen)
         if (state.entity_id.startsWith('cover.')) {
@@ -98,15 +102,14 @@ class Simon42DashboardStrategy {
         return false;
       });
 
-    // Zähle kritische Batterien (unter 20%) - KORRIGIERTE VERSION
-    // Verwendet die gleiche Logik wie simon42-view-batteries.js
+    // Zähle kritische Batterien (unter 20%)
     const batteriesCritical = Object.keys(hass.states)
       .filter(entityId => !excludeLabels.includes(entityId))
       .filter(entityId => {
         const state = hass.states[entityId];
         if (!state) return false;
         
-        // Prüfe ob es eine Batterie-Entität ist (wie in der Batterien-View)
+        // Prüfe ob es eine Batterie-Entität ist
         if (entityId.includes('battery')) return true;
         if (state.attributes?.device_class === 'battery') return true;
         
@@ -115,9 +118,48 @@ class Simon42DashboardStrategy {
       .filter(entityId => {
         const state = hass.states[entityId];
         const value = parseFloat(state.state);
-        // Nur numerische Werte unter 20%
         return !isNaN(value) && value < 20;
       });
+
+    // Erstelle Badges für Personen
+    const personBadges = [];
+    persons.forEach(person => {
+      // Badge wenn Person zuhause ist (grünes Icon)
+      personBadges.push({
+        type: "entity",
+        show_name: true,
+        show_state: true,
+        show_icon: true,
+        entity: person.entity_id,
+        name: person.name.split(' ')[0], // Nur Vorname
+        visibility: [
+          {
+            condition: "state",
+            entity: person.entity_id,
+            state: "home"
+          }
+        ]
+      });
+      
+      // Badge wenn Person nicht zuhause ist (oranges Icon)
+      // Nutzt die gleiche Person-Entity, zeigt aber anderen State
+      personBadges.push({
+        type: "entity",
+        show_name: true,
+        show_state: true,
+        show_icon: true,
+        entity: person.entity_id,
+        name: person.name.split(' ')[0], // Nur Vorname
+        color: "accent",
+        visibility: [
+          {
+            condition: "state",
+            entity: person.entity_id,
+            state_not: "home"
+          }
+        ]
+      });
+    });
 
     // Erstelle Views
     const views = [
@@ -128,6 +170,12 @@ class Simon42DashboardStrategy {
         icon: "mdi:home",
         type: "sections",
         max_columns: 3,
+        badges: personBadges.length > 0 ? personBadges : undefined,
+        header: personBadges.length > 0 ? {
+          layout: "center",
+          badges_position: "bottom",
+          badges_wrap: "wrap"
+        } : undefined,
         sections: [
           // Übersichts-Abschnitt
           {
@@ -203,7 +251,7 @@ class Simon42DashboardStrategy {
                   navigation_path: "security",
                 }
               },
-              // Batterie Summary - KORRIGIERT
+              // Batterie Summary
              {
                 type: "tile",
                 icon: batteriesCritical.length > 0 ? "mdi:battery-alert" : 'mdi:battery-charging',
@@ -243,7 +291,23 @@ class Simon42DashboardStrategy {
                 vertical: false
               }))
             ]
-          }
+          },
+          // Energie-Dashboard Section
+          {
+            type: "grid",
+            cards: [
+              {
+                type: "heading",
+                heading: "Energie",
+                heading_style: "title",
+                icon: "mdi:lightning-bolt"
+              },
+              {
+                type: "energy-distribution",
+                link_dashboard: true
+              }
+            ]
+          },
         ]
       },
       // View für Lichter
@@ -294,7 +358,7 @@ class Simon42DashboardStrategy {
       views.push({
         title: area.name,
         path: area.area_id,
-        icon: area.icon || "mdi:floor-plan", // Verwende Area-Icon falls vorhanden
+        icon: area.icon || "mdi:floor-plan",
         strategy: {
           type: "custom:simon42-view-room",
           area,
