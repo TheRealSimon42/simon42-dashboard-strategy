@@ -60,4 +60,5 @@ console.log('   • Persistente Speicherung');
 console.log('');
 console.log('🎬 Dashboard mit dieser Strategy in der YAML-Konfiguration verwenden:');
 console.log('   strategy:');
-console.log('     type: custom
+console.log('     type: custom:simon42-dashboard');
+console.log('   views: []');
