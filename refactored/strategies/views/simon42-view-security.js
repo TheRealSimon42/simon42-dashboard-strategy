@@ -1,270 +1,174 @@
 // ====================================================================
-// VIEW STRATEGY - SECURITY (Schlösser + Türen/Garagen + Fenster)
+// VIEW STRATEGY - SICHERHEIT (Refactored mit Helpers)
 // ====================================================================
+
+import { EntityHelper } from '../../helpers/simon42-entity-helper.js';
+import { StateCalculator } from '../../helpers/simon42-state-calculator.js';
+import { CardGenerator } from '../../helpers/simon42-card-generator.js';
+
 class Simon42ViewSecurityStrategy {
   static async generate(config, hass) {
     const { entities } = config;
     
-    const excludeLabels = entities
-      .filter(e => e.labels?.includes("no_dboard"))
-      .map(e => e.entity_id);
-
-    // Gruppiere nach Typ
-    const locks = [];
-    const doors = []; // Cover mit door/gate device_class
-    const garages = []; // Cover mit garage device_class
-    const windows = []; // Binary Sensors mit door/window device_class
-
-    entities
-      .filter(e => !excludeLabels.includes(e.entity_id))
-      .filter(e => hass.states[e.entity_id] !== undefined)
-      .forEach(entity => {
-        const entityId = entity.entity_id;
-        const state = hass.states[entityId];
-        if (!state) return;
-        
-        // Locks
-        if (entityId.startsWith('lock.')) {
-          locks.push(entityId);
-          return;
-        }
-        
-        // Covers nach device_class
-        if (entityId.startsWith('cover.')) {
-          const deviceClass = state.attributes?.device_class;
-          if (deviceClass === 'garage') {
-            garages.push(entityId);
-          } else if (['door', 'gate'].includes(deviceClass)) {
-            doors.push(entityId);
-          }
-          return;
-        }
-        
-        // Binary Sensors (Fenster/Türen)
-        if (entityId.startsWith('binary_sensor.')) {
-          const deviceClass = state.attributes?.device_class;
-          if (['door', 'window', 'garage_door', 'opening'].includes(deviceClass)) {
-            windows.push(entityId);
-          }
-        }
-      });
-
-    const sections = [];
-
-    // Schlösser Section
-    if (locks.length > 0) {
-      const locksOpen = locks.filter(e => hass.states[e]?.state === 'unlocked');
-      const locksClosed = locks.filter(e => hass.states[e]?.state === 'locked');
-      
-      const lockCards = [];
-      
-      if (locksOpen.length > 0) {
-        lockCards.push({
-          type: "heading",
-          heading: "🔓 Entriegelt",
-          heading_style: "subtitle",
-          badges: [
-            {
-              type: "entity",
-              entity: locksOpen[0],
-              show_name: false,
-              show_state: false,
-              tap_action: {
-                action: "perform-action",
-                perform_action: "lock.lock",
-                target: { entity_id: locksOpen }
-              },
-              icon: "mdi:lock"
-            }
-          ]
-        });
-        lockCards.push(...locksOpen.map(entity => ({
-          type: "tile",
-          entity: entity,
-          state_content: "last_changed"
-        })));
+    // ====== 1. FILTERUNG ======
+    const excludeList = EntityHelper.getEntitiesWithLabel(entities, 'no_dboard');
+    
+    // ====== 2. SECURITY ENTITIES ======
+    const securityUnsafe = StateCalculator.getUnsecureEntities(hass.states, excludeList);
+    
+    // Alle Security-relevanten Entitäten
+    const securityDomains = ['binary_sensor', 'lock', 'alarm_control_panel'];
+    const securityDeviceClasses = ['door', 'window', 'motion', 'smoke', 'gas', 'safety', 'opening'];
+    
+    const allSecurityEntities = [];
+    
+    // Binary Sensors mit Security Device Classes
+    const binarySensors = EntityHelper.getEntitiesByDeviceClass(
+      hass.states,
+      'binary_sensor',
+      securityDeviceClasses,
+      excludeList
+    );
+    allSecurityEntities.push(...binarySensors);
+    
+    // Locks
+    const locks = EntityHelper.getEntitiesByDomain(hass.states, 'lock', excludeList);
+    allSecurityEntities.push(...locks);
+    
+    // Alarm Control Panels
+    const alarms = EntityHelper.getEntitiesByDomain(hass.states, 'alarm_control_panel', excludeList);
+    allSecurityEntities.push(...alarms);
+    
+    // ====== 3. GRUPPIERUNG ======
+    const unsafe = [];
+    const safe = [];
+    
+    allSecurityEntities.forEach(state => {
+      if (securityUnsafe.includes(state.entity_id)) {
+        unsafe.push(state);
+      } else {
+        safe.push(state);
       }
-      
-      if (locksClosed.length > 0) {
-        lockCards.push({
-          type: "heading",
-          heading: "🔒 Verriegelt",
-          heading_style: "subtitle"
-        });
-        lockCards.push(...locksClosed.map(entity => ({
-          type: "tile",
-          entity: entity,
-          state_content: "last_changed"
-        })));
-      }
-      
-      if (lockCards.length > 0) {
-        sections.push({
-          type: "grid",
-          cards: lockCards
-        });
-      }
-    }
-
-    // Türen/Tore Section
-    if (doors.length > 0) {
-      const doorsOpen = doors.filter(e => hass.states[e]?.state === 'open');
-      const doorsClosed = doors.filter(e => hass.states[e]?.state === 'closed');
-      
-      const doorCards = [];
-      
-      if (doorsOpen.length > 0) {
-        doorCards.push({
-          type: "heading",
-          heading: "🚪 Türen & Tore - Offen",
-          heading_style: "subtitle",
-          badges: [
-            {
-              type: "entity",
-              entity: doorsOpen[0],
-              show_name: false,
-              show_state: false,
-              tap_action: {
-                action: "perform-action",
-                perform_action: "cover.close_cover",
-                target: { entity_id: doorsOpen }
-              },
-              icon: "mdi:arrow-down"
-            }
-          ]
-        });
-        doorCards.push(...doorsOpen.map(entity => ({
-          type: "tile",
-          entity: entity,
-          features: [{ type: "cover-open-close" }],
-          state_content: "last_changed"
-        })));
-      }
-      
-      if (doorsClosed.length > 0) {
-        doorCards.push({
-          type: "heading",
-          heading: "🚪 Türen & Tore - Geschlossen",
-          heading_style: "subtitle"
-        });
-        doorCards.push(...doorsClosed.map(entity => ({
-          type: "tile",
-          entity: entity,
-          features: [{ type: "cover-open-close" }],
-          state_content: "last_changed"
-        })));
-      }
-      
-      if (doorCards.length > 0) {
-        sections.push({
-          type: "grid",
-          cards: doorCards
-        });
-      }
-    }
-
-    // Garagen Section
-    if (garages.length > 0) {
-      const garagesOpen = garages.filter(e => hass.states[e]?.state === 'open');
-      const garagesClosed = garages.filter(e => hass.states[e]?.state === 'closed');
-      
-      const garageCards = [];
-      
-      if (garagesOpen.length > 0) {
-        garageCards.push({
-          type: "heading",
-          heading: "🏠 Garagen - Offen",
-          heading_style: "subtitle",
-          badges: [
-            {
-              type: "entity",
-              entity: garagesOpen[0],
-              show_name: false,
-              show_state: false,
-              tap_action: {
-                action: "perform-action",
-                perform_action: "cover.close_cover",
-                target: { entity_id: garagesOpen }
-              },
-              icon: "mdi:arrow-down"
-            }
-          ]
-        });
-        garageCards.push(...garagesOpen.map(entity => ({
-          type: "tile",
-          entity: entity,
-          features: [{ type: "cover-open-close" }],
-          state_content: "last_changed"
-        })));
-      }
-      
-      if (garagesClosed.length > 0) {
-        garageCards.push({
-          type: "heading",
-          heading: "🏠 Garagen - Geschlossen",
-          heading_style: "subtitle"
-        });
-        garageCards.push(...garagesClosed.map(entity => ({
-          type: "tile",
-          entity: entity,
-          features: [{ type: "cover-open-close" }],
-          state_content: "last_changed"
-        })));
-      }
-      
-      if (garageCards.length > 0) {
-        sections.push({
-          type: "grid",
-          cards: garageCards
-        });
-      }
-    }
-
-    // Fenster & Sensoren Section
-    if (windows.length > 0) {
-      const windowsOpen = windows.filter(e => hass.states[e]?.state === 'on');
-      const windowsClosed = windows.filter(e => hass.states[e]?.state === 'off');
-      
-      const windowCards = [];
-      
-      if (windowsOpen.length > 0) {
-        windowCards.push({
-          type: "heading",
-          heading: "🪟 Fenster & Öffnungen - Offen",
-          heading_style: "subtitle"
-        });
-        windowCards.push(...windowsOpen.map(entity => ({
-          type: "tile",
-          entity: entity,
-          state_content: "last_changed"
-        })));
-      }
-      
-      if (windowsClosed.length > 0) {
-        windowCards.push({
-          type: "heading",
-          heading: "🪟 Fenster & Öffnungen - Geschlossen",
-          heading_style: "subtitle"
-        });
-        windowCards.push(...windowsClosed.map(entity => ({
-          type: "tile",
-          entity: entity,
-          state_content: "last_changed"
-        })));
-      }
-      
-      if (windowCards.length > 0) {
-        sections.push({
-          type: "grid",
-          cards: windowCards
-        });
-      }
-    }
-
-    return {
-      type: "sections",
-      sections: sections
+    });
+    
+    // Nach Device Class gruppieren
+    const byType = {
+      doors: [],
+      windows: [],
+      motion: [],
+      smoke: [],
+      locks: [],
+      alarms: [],
+      other: []
     };
+    
+    allSecurityEntities.forEach(state => {
+      const deviceClass = state.attributes?.device_class;
+      const domain = state.entity_id.split('.')[0];
+      
+      if (domain === 'lock') {
+        byType.locks.push(state);
+      } else if (domain === 'alarm_control_panel') {
+        byType.alarms.push(state);
+      } else if (deviceClass === 'door' || deviceClass === 'opening') {
+        byType.doors.push(state);
+      } else if (deviceClass === 'window') {
+        byType.windows.push(state);
+      } else if (deviceClass === 'motion') {
+        byType.motion.push(state);
+      } else if (deviceClass === 'smoke' || deviceClass === 'gas' || deviceClass === 'safety') {
+        byType.smoke.push(state);
+      } else {
+        byType.other.push(state);
+      }
+    });
+    
+    // ====== 4. CARDS GENERIEREN ======
+    const cards = [];
+    
+    // Status-Übersicht
+    cards.push({
+      type: "grid",
+      cards: [
+        CardGenerator.createHeadingCard(
+          unsafe.length > 0 
+            ? `⚠️ ${unsafe.length} ${unsafe.length === 1 ? 'Problem' : 'Probleme'} gefunden`
+            : "✅ Alles sicher",
+          {
+            heading_style: "title",
+            icon: unsafe.length > 0 ? "mdi:shield-alert" : "mdi:shield-check"
+          }
+        )
+      ]
+    });
+    
+    // Unsichere Entitäten
+    if (unsafe.length > 0) {
+      cards.push({
+        type: "grid",
+        cards: [
+          CardGenerator.createHeadingCard("🚨 Benötigt Aufmerksamkeit", {
+            heading_style: "subtitle"
+          }),
+          ...unsafe.map(state => {
+            const domain = state.entity_id.split('.')[0];
+            return CardGenerator.createTileCard({
+              entity: state.entity_id,
+              color: 'red',
+              vertical: false,
+              state_content: domain === 'lock' ? 'state' : 'last_changed'
+            });
+          })
+        ]
+      });
+    }
+    
+    // Gruppiert nach Typ
+    const typeConfig = {
+      doors: { title: "Türen", icon: "mdi:door-closed" },
+      windows: { title: "Fenster", icon: "mdi:window-closed" },
+      locks: { title: "Schlösser", icon: "mdi:lock" },
+      alarms: { title: "Alarmanlagen", icon: "mdi:shield-home" },
+      motion: { title: "Bewegungsmelder", icon: "mdi:motion-sensor" },
+      smoke: { title: "Rauch & Gas", icon: "mdi:smoke-detector" },
+      other: { title: "Sonstiges", icon: "mdi:security" }
+    };
+    
+    Object.entries(byType).forEach(([type, entities]) => {
+      if (entities.length > 0) {
+        const config = typeConfig[type];
+        cards.push({
+          type: "grid",
+          cards: [
+            CardGenerator.createHeadingCard(config.title, {
+              heading_style: "subtitle",
+              icon: config.icon
+            }),
+            ...entities.map(state => {
+              const domain = state.entity_id.split('.')[0];
+              const isUnsafe = securityUnsafe.includes(state.entity_id);
+              
+              return CardGenerator.createTileCard({
+                entity: state.entity_id,
+                color: isUnsafe ? 'red' : 'green',
+                vertical: false,
+                state_content: domain === 'lock' ? 'state' : 'last_changed'
+              });
+            })
+          ]
+        });
+      }
+    });
+    
+    // Fallback wenn keine Security-Entitäten
+    if (allSecurityEntities.length === 0) {
+      cards.push({
+        type: "markdown",
+        content: "## 🔒 Keine Sicherheits-Entitäten gefunden\n\nEs wurden keine Türen, Fenster, Schlösser oder Alarmanlagen gefunden."
+      });
+    }
+    
+    return { cards };
   }
 }
 

@@ -1,285 +1,292 @@
 // ====================================================================
-// VIEW STRATEGY - RAUM (generiert Raum-Details)
+// VIEW STRATEGY - RAUM (Refactored mit Helpers)
 // ====================================================================
+
+import { EntityHelper } from '../../helpers/simon42-entity-helper.js';
+import { CardGenerator } from '../../helpers/simon42-card-generator.js';
+
 class Simon42ViewRoomStrategy {
   static async generate(config, hass) {
     const { area, devices, entities } = config;
     
-    // Finde alle Geräte im Raum
-    const areaDevices = new Set();
-    for (const device of devices) {
-      if (device.area_id === area.area_id) {
-        areaDevices.add(device.id);
-      }
-    }
-
-    // Helper-Funktion zum Sortieren nach last_changed
-    const sortByLastChanged = (a, b) => {
-      const stateA = hass.states[a];
-      const stateB = hass.states[b];
-      if (!stateA || !stateB) return 0;
-      const dateA = new Date(stateA.last_changed);
-      const dateB = new Date(stateB.last_changed);
-      return dateB - dateA; // Neueste zuerst
-    };
-
-    // Finde alle Entitäten im Raum und gruppiere nach Domain
-    const roomEntities = {
-      lights: [],
-      covers: [],
-      covers_curtain: [],
+    // ====== 1. FILTERUNG ======
+    const excludeList = EntityHelper.getEntitiesWithLabel(entities, 'no_dboard');
+    const showDboardLabels = EntityHelper.getEntitiesWithLabel(entities, 'show_dboard');
+    
+    // ====== 2. ENTITIES FÜR DIESEN RAUM ======
+    const roomDevices = devices
+      .filter(d => d.area_id === area.area_id)
+      .map(d => d.id);
+    
+    const roomEntities = entities
+      .filter(e => roomDevices.includes(e.device_id))
+      .filter(e => !excludeList.includes(e.entity_id))
+      .filter(e => hass.states[e.entity_id] !== undefined);
+    
+    // ====== 3. GRUPPIERUNG NACH DOMAIN ======
+    const grouped = {
       scenes: [],
+      lights: [],
+      covers_shutter: [],
+      covers_curtain: [],
       climate: [],
       media_player: [],
       vacuum: [],
       fan: [],
-      switches: []
+      switches: [],
+      sensors: []
     };
-
-    // Labels für Filterung
-    const excludeLabels = entities
-      .filter(e => e.labels?.includes("no_dboard"))
-      .map(e => e.entity_id);
     
-    const showDboardLabels = entities
-      .filter(e => e.labels?.includes("show_dboard"))
-      .map(e => e.entity_id);
-
-    for (const entity of entities) {
-      // Prüfe ob Entität zum Raum gehört
-      const belongsToArea = entity.area_id === area.area_id || 
-                           (entity.device_id && areaDevices.has(entity.device_id));
-      
-      if (!belongsToArea) continue;
-      
-      // Exkludiere no_dboard Entitäten
-      if (excludeLabels.includes(entity.entity_id)) continue;
-
-      // Prüfe ob Entität in hass.states existiert
-      if (!hass.states[entity.entity_id]) continue;
-
+    roomEntities.forEach(entity => {
       const domain = entity.entity_id.split('.')[0];
+      const state = hass.states[entity.entity_id];
       
       switch(domain) {
+        case 'scene':
+          grouped.scenes.push(entity.entity_id);
+          break;
         case 'light':
-          roomEntities.lights.push(entity.entity_id);
+          grouped.lights.push(entity.entity_id);
           break;
         case 'cover':
-          const state = hass.states[entity.entity_id];
           if (state?.attributes?.device_class === 'shutter') {
-            roomEntities.covers.push(entity.entity_id);
+            grouped.covers_shutter.push(entity.entity_id);
           } else if (state?.attributes?.device_class === 'curtain') {
-            roomEntities.covers_curtain.push(entity.entity_id);
+            grouped.covers_curtain.push(entity.entity_id);
           }
           break;
-        case 'scene':
-          roomEntities.scenes.push(entity.entity_id);
-          break;
         case 'climate':
-          roomEntities.climate.push(entity.entity_id);
+          grouped.climate.push(entity.entity_id);
           break;
         case 'media_player':
-          roomEntities.media_player.push(entity.entity_id);
+          grouped.media_player.push(entity.entity_id);
           break;
         case 'vacuum':
-          roomEntities.vacuum.push(entity.entity_id);
+          grouped.vacuum.push(entity.entity_id);
           break;
         case 'fan':
-          roomEntities.fan.push(entity.entity_id);
+          grouped.fan.push(entity.entity_id);
           break;
         case 'switch':
           // Nur Switches mit show_dboard Label
           if (showDboardLabels.includes(entity.entity_id)) {
-            roomEntities.switches.push(entity.entity_id);
+            grouped.switches.push(entity.entity_id);
+          }
+          break;
+        case 'sensor':
+        case 'binary_sensor':
+          // Sensoren die nützlich sind (nicht diagnostic/config)
+          if (!EntityHelper.isConfigOrDiagnostic(state)) {
+            grouped.sensors.push(entity.entity_id);
           }
           break;
       }
-    }
-
-    // Sortiere alle Entitäten nach last_changed
-    Object.keys(roomEntities).forEach(key => {
-      roomEntities[key].sort(sortByLastChanged);
     });
-
-    const sections = [];
-
-    // Lampen Sektion
-    if (roomEntities.lights.length > 0) {
-      sections.push({
+    
+    // Sortiere alle Gruppen nach last_changed
+    Object.keys(grouped).forEach(key => {
+      grouped[key].sort((a, b) => {
+        const stateA = hass.states[a];
+        const stateB = hass.states[b];
+        const timeA = new Date(stateA?.last_changed || 0);
+        const timeB = new Date(stateB?.last_changed || 0);
+        return timeB - timeA; // Neueste zuerst
+      });
+    });
+    
+    // ====== 4. CARDS GENERIEREN ======
+    const cards = [];
+    
+    // Szenen (wenn vorhanden)
+    if (grouped.scenes.length > 0) {
+      cards.push({
         type: "grid",
         cards: [
-          {
-            type: "heading",
-            heading: "Lampen",
+          CardGenerator.createHeadingCard("Szenen", {
+            heading_style: "title",
+            icon: "mdi:palette-outline"
+          }),
+          ...grouped.scenes.map(entityId => 
+            CardGenerator.createSceneCard(entityId)
+          )
+        ]
+      });
+    }
+    
+    // Lichter (wenn vorhanden)
+    if (grouped.lights.length > 0) {
+      cards.push({
+        type: "grid",
+        cards: [
+          CardGenerator.createHeadingCard("Lampen", {
             heading_style: "title",
             icon: "mdi:lamps-outline"
-          },
-          ...roomEntities.lights.map(entity => ({
-            type: "tile",
-            entity: entity,
-            features: [{ type: "light-brightness" }],
-            features_position: "inline",
-            vertical: false,
-            state_content: "last_changed"
-          }))
+          }),
+          ...grouped.lights.map(entityId => 
+            CardGenerator.createLightCard(entityId, {
+              vertical: false,
+              state_content: "last_changed"
+            })
+          )
         ]
       });
     }
-
-    // Rollos Sektion (Shutters)
-    if (roomEntities.covers.length > 0) {
-      sections.push({
+    
+    // Rollos/Shutters (wenn vorhanden)
+    if (grouped.covers_shutter.length > 0) {
+      cards.push({
         type: "grid",
         cards: [
-          {
-            type: "heading",
-            heading: "Rollos",
+          CardGenerator.createHeadingCard("Rollos", {
             heading_style: "title",
             icon: "mdi:window-shutter"
-          },
-          ...roomEntities.covers.map(entity => ({
-            type: "tile",
-            entity: entity,
-            features: [{ type: "cover-position" }],
-            features_position: "inline",
-            vertical: false
-          }))
+          }),
+          ...grouped.covers_shutter.map(entityId => 
+            CardGenerator.createCoverCard(entityId, {
+              vertical: false
+            })
+          )
         ]
       });
     }
-
-    // Vorhänge Sektion (Curtains)
-    if (roomEntities.covers_curtain.length > 0) {
-      sections.push({
+    
+    // Vorhänge/Curtains (wenn vorhanden)
+    if (grouped.covers_curtain.length > 0) {
+      cards.push({
         type: "grid",
         cards: [
-          {
-            type: "heading",
-            heading: "Vorhänge",
+          CardGenerator.createHeadingCard("Vorhänge", {
             heading_style: "title",
             icon: "mdi:curtains"
-          },
-          ...roomEntities.covers_curtain.map(entity => ({
-            type: "tile",
-            entity: entity,
-            features: [{ type: "cover-position" }],
-            features_position: "inline",
-            vertical: false
-          }))
+          }),
+          ...grouped.covers_curtain.map(entityId => 
+            CardGenerator.createCoverCard(entityId, {
+              vertical: false
+            })
+          )
         ]
       });
     }
-
-    // Szenen Sektion
-    if (roomEntities.scenes.length > 0) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: "Szenen",
-            heading_style: "title",
-            icon: "mdi:projector-screen-variant"
-          },
-          ...roomEntities.scenes.map(entity => ({
-            type: "tile",
-            entity: entity,
-            vertical: false
-          }))
-        ]
-      });
-    }
-
-    // Sonstiges Sektion (Climate, Media Player, Vacuum, Fan, Switches)
-    const miscCards = [];
     
-    // Climate mit Temperature Control
-    roomEntities.climate.forEach(entity => {
-      miscCards.push({
-        type: "tile",
-        entity: entity,
-        features: [{ type: "climate-hvac-modes" }, { type: "target-temperature" }],
-        features_position: "inline",
-        vertical: false,
-        state_content: "last_changed"
-      });
-    });
-
-    // Media Player mit Volume
-    roomEntities.media_player.forEach(entity => {
-      miscCards.push({
-        type: "tile",
-        entity: entity,
-        features: [{ type: "media-player-playback" }],
-        features_position: "inline",
-        vertical: false,
-        state_content: "last_changed"
-      });
-    });
-
-    // Vacuum mit Commands
-    roomEntities.vacuum.forEach(entity => {
-      miscCards.push({
-        type: "tile",
-        entity: entity,
-        features: [{ type: "vacuum-commands" }],
-        features_position: "inline",
-        vertical: false,
-        state_content: "last_changed"
-      });
-    });
-
-    // Fan mit Speed Control
-    roomEntities.fan.forEach(entity => {
-      miscCards.push({
-        type: "tile",
-        entity: entity,
-        features: [{ type: "fan-speed" }],
-        features_position: "inline",
-        vertical: false,
-        state_content: "last_changed"
-      });
-    });
-
-    // Switches
-    roomEntities.switches.forEach(entity => {
-      miscCards.push({
-        type: "tile",
-        entity: entity,
-        vertical: false,
-        state_content: "last_changed"
-      });
-    });
-
-    // Sortiere miscCards nach last_changed
-    miscCards.sort((a, b) => {
-      const stateA = hass.states[a.entity];
-      const stateB = hass.states[b.entity];
-      if (!stateA || !stateB) return 0;
-      const dateA = new Date(stateA.last_changed);
-      const dateB = new Date(stateB.last_changed);
-      return dateB - dateA;
-    });
-
-    if (miscCards.length > 0) {
-      sections.push({
+    // Klima (wenn vorhanden)
+    if (grouped.climate.length > 0) {
+      cards.push({
         type: "grid",
         cards: [
-          {
-            type: "heading",
-            heading: "Sonstiges",
+          CardGenerator.createHeadingCard("Klima", {
             heading_style: "title",
-            icon: "mdi:dots-horizontal"
-          },
-          ...miscCards
+            icon: "mdi:thermostat"
+          }),
+          ...grouped.climate.map(entityId => 
+            CardGenerator.createClimateCard(entityId, {
+              vertical: false
+            })
+          )
         ]
       });
     }
-
-    return {
-      type: "sections",
-      sections: sections
-    };
+    
+    // Media Player (wenn vorhanden)
+    if (grouped.media_player.length > 0) {
+      cards.push({
+        type: "grid",
+        cards: [
+          CardGenerator.createHeadingCard("Medien", {
+            heading_style: "title",
+            icon: "mdi:speaker"
+          }),
+          ...grouped.media_player.map(entityId => 
+            CardGenerator.createMediaPlayerCard(entityId, {
+              vertical: false
+            })
+          )
+        ]
+      });
+    }
+    
+    // Staubsauger (wenn vorhanden)
+    if (grouped.vacuum.length > 0) {
+      cards.push({
+        type: "grid",
+        cards: [
+          CardGenerator.createHeadingCard("Staubsauger", {
+            heading_style: "title",
+            icon: "mdi:robot-vacuum"
+          }),
+          ...grouped.vacuum.map(entityId => 
+            CardGenerator.createTileCard({
+              entity: entityId,
+              vertical: false,
+              features: [{ type: "vacuum-commands" }]
+            })
+          )
+        ]
+      });
+    }
+    
+    // Ventilatoren (wenn vorhanden)
+    if (grouped.fan.length > 0) {
+      cards.push({
+        type: "grid",
+        cards: [
+          CardGenerator.createHeadingCard("Ventilatoren", {
+            heading_style: "title",
+            icon: "mdi:fan"
+          }),
+          ...grouped.fan.map(entityId => 
+            CardGenerator.createTileCard({
+              entity: entityId,
+              vertical: false
+            })
+          )
+        ]
+      });
+    }
+    
+    // Schalter (wenn vorhanden)
+    if (grouped.switches.length > 0) {
+      cards.push({
+        type: "grid",
+        cards: [
+          CardGenerator.createHeadingCard("Schalter", {
+            heading_style: "title",
+            icon: "mdi:toggle-switch"
+          }),
+          ...grouped.switches.map(entityId => 
+            CardGenerator.createTileCard({
+              entity: entityId,
+              vertical: false
+            })
+          )
+        ]
+      });
+    }
+    
+    // Sensoren (wenn vorhanden)
+    if (grouped.sensors.length > 0) {
+      cards.push({
+        type: "grid",
+        cards: [
+          CardGenerator.createHeadingCard("Sensoren", {
+            heading_style: "title",
+            icon: "mdi:eye"
+          }),
+          ...grouped.sensors.map(entityId => 
+            CardGenerator.createSensorCard(entityId, hass)
+          )
+        ]
+      });
+    }
+    
+    // Fallback wenn Raum leer ist
+    if (cards.length === 0) {
+      cards.push({
+        type: "markdown",
+        content: `## 🏠 ${area.name}\n\nKeine Geräte in diesem Raum gefunden.`
+      });
+    }
+    
+    return { cards };
   }
 }
 
