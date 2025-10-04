@@ -5,10 +5,10 @@
 // Version: 2.0.0
 // ====================================================================
 
-import { WebSocketHelper } from './helpers/WebSocketHelper.js';
-import { EntityHelper } from './helpers/EntityHelper.js';
-import { StateCalculator } from './helpers/StateCalculator.js';
-import { CardGenerator } from './helpers/CardGenerator.js';
+import { WebSocketHelper } from '../helpers/simon42-websocket-helper.js';
+import { EntityHelper } from '../helpers/simon42-entity-helper.js';
+import { StateCalculator } from '../helpers/simon42-state-calculator.js';
+import { CardGenerator } from '../helpers/simon42-card-generator.js';
 
 class Simon42DashboardStrategy {
   static async generate(config, hass) {
