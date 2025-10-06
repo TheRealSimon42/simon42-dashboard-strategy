@@ -15,19 +15,8 @@ class Simon42DashboardStrategy {
       .filter(e => e.labels?.includes("no_dboard"))
       .map(e => e.entity_id);
 
-    // Finde Areale, die das Label "no_dboard" haben
-    const excludedAreaIds = new Set();
-    
-    // Prüfe jedes Areal auf das Label
-    for (const area of areas) {
-      // Prüfe ob das Areal Labels hat
-      if (area.labels && Array.isArray(area.labels) && area.labels.includes("no_dboard")) {
-        excludedAreaIds.add(area.area_id);
-      }
-    }
-    
-    // Filtere die Areale für die Anzeige
-    const visibleAreas = areas.filter(area => !excludedAreaIds.has(area.area_id));
+    // Filtere und sortiere Areale basierend auf Config
+    const visibleAreas = getVisibleAreas(areas, config.areas_display);
 
     // Finde alle Personen (ohne no_dboard Label)
     const persons = Object.values(hass.states)
@@ -173,6 +162,9 @@ class Simon42DashboardStrategy {
         ]
       });
     });
+
+    // Prüfe ob Energie-Dashboard angezeigt werden soll (Standard: true)
+    const showEnergy = config.show_energy !== false;
 
     // Erstelle Views
     const views = [
@@ -323,17 +315,19 @@ class Simon42DashboardStrategy {
                   forecast_type: "daily"
                 }
               ] : []),
-              // Energie-Dashboard
-              {
-                type: "heading",
-                heading: "Energie",
-                heading_style: "title",
-                icon: "mdi:lightning-bolt"
-              },
-              {
-                type: "energy-distribution",
-                link_dashboard: true
-              }
+              // Energie-Dashboard (nur wenn aktiviert)
+              ...(showEnergy ? [
+                {
+                  type: "heading",
+                  heading: "Energie",
+                  heading_style: "title",
+                  icon: "mdi:lightning-bolt"
+                },
+                {
+                  type: "energy-distribution",
+                  link_dashboard: true
+                }
+              ] : [])
             ]
           },
         ]
@@ -401,7 +395,49 @@ class Simon42DashboardStrategy {
       views
     };
   }
+
+  // Füge die Methode hinzu, um den Config-Editor zu laden
+  static async getConfigElement() {
+    // Der Editor sollte schon geladen sein, da er im Loader ist
+    // Warte kurz, falls er noch lädt
+    await import('/local/simon42-dashboard-strategy-editor.js');
+    await customElements.whenDefined('simon42-dashboard-strategy-editor');
+    return document.createElement('simon42-dashboard-strategy-editor');
+  }
 }
 
-// Registriere Custom Element
+// Helper-Funktion für Areale-Filterung und Sortierung
+function getVisibleAreas(areas, displayConfig) {
+  const hiddenAreas = displayConfig?.hidden || [];
+  const orderConfig = displayConfig?.order || [];
+  
+  // Filtere versteckte Areale
+  let visibleAreas = areas.filter(area => !hiddenAreas.includes(area.area_id));
+  
+  // Sortiere nach Konfiguration
+  if (orderConfig.length > 0) {
+    visibleAreas.sort((a, b) => {
+      const indexA = orderConfig.indexOf(a.area_id);
+      const indexB = orderConfig.indexOf(b.area_id);
+      
+      // Wenn beide in der Order-Liste sind
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
+      // Wenn nur A in der Order-Liste ist
+      if (indexA !== -1) return -1;
+      // Wenn nur B in der Order-Liste ist
+      if (indexB !== -1) return 1;
+      // Wenn beide nicht in der Order-Liste sind, alphabetisch sortieren
+      return a.name.localeCompare(b.name);
+    });
+  } else {
+    // Standard alphabetische Sortierung
+    visibleAreas.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  
+  return visibleAreas;
+}
+
+// Registriere Custom Element mit dem korrekten Namen
 customElements.define("ll-strategy-simon42-dashboard", Simon42DashboardStrategy);

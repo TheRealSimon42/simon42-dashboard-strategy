@@ -17,7 +17,7 @@
 //   type: custom:simon42-dashboard
 // ====================================================================
 
-// Lade alle Module
+// Lade alle Module (Editor wird on-demand geladen)
 import './simon42-dashboard-strategy.js';
 import './simon42-view-room.js';
 import './simon42-view-lights.js';
