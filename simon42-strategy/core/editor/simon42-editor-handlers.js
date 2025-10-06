@@ -12,6 +12,15 @@ export function attachEnergyCheckboxListener(element, callback) {
   }
 }
 
+export function attachSubviewsCheckboxListener(element, callback) {
+  const subviewsCheckbox = element.querySelector('#show-subviews');
+  if (subviewsCheckbox) {
+    subviewsCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachAreaCheckboxListeners(element, callback) {
   const areaCheckboxes = element.querySelectorAll('.area-checkbox');
   areaCheckboxes.forEach(checkbox => {

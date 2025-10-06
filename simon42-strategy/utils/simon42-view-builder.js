@@ -25,12 +25,13 @@ export function createOverviewView(sections, personBadges) {
 /**
  * Erstellt die Utility-Views (Lichter, Covers, Security, Batterien)
  */
-export function createUtilityViews(entities) {
+export function createUtilityViews(entities, showSubviews = false) {
   return [
     {
       title: "Lichter",
       path: "lights",
       icon: "mdi:lamps",
+      subview: !showSubviews,
       strategy: {
         type: "custom:simon42-view-lights",
         entities
@@ -40,6 +41,7 @@ export function createUtilityViews(entities) {
       title: "Rollos & Vorhänge",
       path: "covers",
       icon: "mdi:blinds-horizontal",
+      subview: !showSubviews,
       strategy: {
         type: "custom:simon42-view-covers",
         entities,
@@ -50,6 +52,7 @@ export function createUtilityViews(entities) {
       title: "Sicherheit",
       path: "security",
       icon: "mdi:security",
+      subview: !showSubviews,
       strategy: {
         type: "custom:simon42-view-security",
         entities
@@ -59,6 +62,7 @@ export function createUtilityViews(entities) {
       title: "Batterien",
       path: "batteries",
       icon: "mdi:battery-alert",
+      subview: !showSubviews,
       strategy: {
         type: "custom:simon42-view-batteries",
         entities
@@ -70,11 +74,12 @@ export function createUtilityViews(entities) {
 /**
  * Erstellt Views für jeden sichtbaren Bereich
  */
-export function createAreaViews(visibleAreas, devices, entities) {
+export function createAreaViews(visibleAreas, devices, entities, showSubviews = false) {
   return visibleAreas.map(area => ({
     title: area.name,
     path: area.area_id,
     icon: area.icon || "mdi:floor-plan",
+    subview: !showSubviews,
     strategy: {
       type: "custom:simon42-view-room",
       area,

@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -18,6 +18,21 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy 
         </div>
         <div class="description">
           Zeigt die Energie-Verteilungskarte in der Übersicht an, wenn Energiedaten verfügbar sind.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Ansichten</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-subviews" 
+            ${showSubviews ? 'checked' : ''}
+          />
+          <label for="show-subviews">Unteransichten anzeigen</label>
+        </div>
+        <div class="description">
+          Zeigt die Unteransichten (Lichter, Rollos, Sicherheit, Batterien, Räume) in der oberen Navigation an.
         </div>
       </div>
 

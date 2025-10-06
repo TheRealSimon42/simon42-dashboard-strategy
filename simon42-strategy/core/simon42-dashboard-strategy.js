@@ -55,6 +55,9 @@ class Simon42DashboardStrategy {
     // Prüfe ob Energie-Dashboard angezeigt werden soll (Standard: true)
     const showEnergy = config.show_energy !== false;
 
+    // Prüfe ob Unteransichten angezeigt werden sollen (Standard: false)
+    const showSubviews = config.show_subviews === true;
+
     // Erstelle Sections für den Haupt-View
     const overviewSections = [
       createOverviewSection({
@@ -71,8 +74,8 @@ class Simon42DashboardStrategy {
     // Erstelle alle Views
     const views = [
       createOverviewView(overviewSections, personBadges),
-      ...createUtilityViews(entities),
-      ...createAreaViews(visibleAreas, devices, entities)
+      ...createUtilityViews(entities, showSubviews),
+      ...createAreaViews(visibleAreas, devices, entities, showSubviews)
     ];
 
     return {
