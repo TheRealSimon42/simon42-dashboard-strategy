@@ -6,7 +6,7 @@
  * Erstellt die Übersichts-Section mit Zusammenfassungen
  */
 export function createOverviewSection(data) {
-  const { lightsOn, coversOpen, securityUnsafe, batteriesCritical, someSensorId, showSearchCard } = data;
+  const { someSensorId, showSearchCard, config } = data;
   
   const cards = [
     {
@@ -35,81 +35,58 @@ export function createOverviewSection(data) {
     });
   }
 
+  // Prüfe ob summaries_columns konfiguriert ist (Standard: 2)
+  const summariesColumns = config.summaries_columns || 2;
+
   // Füge Zusammenfassungen hinzu
-  cards.push(
+  cards.push({
+    type: "heading",
+    heading: "Zusammenfassungen"
+  });
+
+  // Erstelle die Summary-Cards
+  const summaryCards = [
     {
-      type: "heading",
-      heading: "Zusammenfassungen"
+      type: "custom:simon42-summary-card",
+      summary_type: "lights",
+      areas_options: config.areas_options || {}
     },
-    // Lichter Summary
     {
-      type: "tile",
-      icon: "mdi:lamps",
-      name: lightsOn.length > 0 ? `${lightsOn.length} ${lightsOn.length === 1 ? 'Licht an' : 'Lichter an'}` : 'Alle Lichter aus',
-      entity: lightsOn.length > 0 ? lightsOn[0].entity_id : someSensorId,
-      color: lightsOn.length > 0 ? 'orange' : 'grey',
-      hide_state: true,
-      vertical: true,
-      icon_tap_action: {
-        action: "none",
-      },
-      tap_action: {
-        action: "navigate",
-        navigation_path: "lights",
-      }
+      type: "custom:simon42-summary-card",
+      summary_type: "covers",
+      areas_options: config.areas_options || {}
     },
-    // Covers Summary
     {
-      type: "tile",
-      icon: "mdi:blinds-horizontal",
-      name: coversOpen.length > 0 ? `${coversOpen.length} ${coversOpen.length === 1 ? 'Rollo offen' : 'Rollos offen'}` : 'Alle Rollos geschlossen',
-      entity: coversOpen.length > 0 ? coversOpen[0].entity_id : someSensorId,
-      color: coversOpen.length > 0 ? 'purple' : 'grey',
-      hide_state: true,
-      vertical: true,
-      icon_tap_action: {
-        action: "none",
-      },
-      tap_action: {
-        action: "navigate",
-        navigation_path: "covers",
-      }
+      type: "custom:simon42-summary-card",
+      summary_type: "security",
+      areas_options: config.areas_options || {}
     },
-    // Security Summary
     {
-      type: "tile",
-      icon: "mdi:security",
-      name: securityUnsafe.length > 0 ? `${securityUnsafe.length} unsicher` : 'Alles gesichert',
-      entity: securityUnsafe.length > 0 ? securityUnsafe[0] : someSensorId,
-      color: securityUnsafe.length > 0 ? 'yellow' : 'grey',
-      hide_state: true,
-      vertical: true,
-      icon_tap_action: {
-        action: "none",
-      },
-      tap_action: {
-        action: "navigate",
-        navigation_path: "security",
-      }
-    },
-    // Batterie Summary
-    {
-      type: "tile",
-      icon: batteriesCritical.length > 0 ? "mdi:battery-alert" : 'mdi:battery-charging',
-      name: batteriesCritical.length > 0 ? `${batteriesCritical.length} ${batteriesCritical.length === 1 ? 'Batterie kritisch' : 'Batterien kritisch'}` : 'Alle Batterien OK',
-      entity: batteriesCritical.length > 0 ? batteriesCritical[0] : someSensorId,
-      color: batteriesCritical.length > 0 ? 'red' : 'green',
-      hide_state: true,
-      vertical: true,
-      icon_tap_action: {
-        action: "none",
-      },
-      tap_action: {
-        action: "navigate",
-        navigation_path: "batteries",
-      }
+      type: "custom:simon42-summary-card",
+      summary_type: "batteries",
+      areas_options: config.areas_options || {}
     }
-  );
+  ];
+
+  // Wenn 4 Spalten gewünscht: Wrappen in horizontal-stack
+  if (summariesColumns === 4) {
+    cards.push({
+      type: "horizontal-stack",
+      cards: summaryCards
+    });
+  } else {
+    // Bei 2 Spalten: Zwei horizontal-stacks mit je 2 Cards
+    cards.push(
+      {
+        type: "horizontal-stack",
+        cards: [summaryCards[0], summaryCards[1]]
+      },
+      {
+        type: "horizontal-stack",
+        cards: [summaryCards[2], summaryCards[3]]
+      }
+    );
+  }
 
   return {
     type: "grid",

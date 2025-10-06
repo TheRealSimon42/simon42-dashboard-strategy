@@ -26,14 +26,16 @@ export function getEditorStyles() {
       margin-bottom: 8px;
     }
     
-    .form-row input[type="checkbox"] {
+    .form-row input[type="checkbox"],
+    .form-row input[type="radio"] {
       margin-right: 8px;
       width: 18px;
       height: 18px;
       cursor: pointer;
     }
     
-    .form-row input[type="checkbox"]:disabled {
+    .form-row input[type="checkbox"]:disabled,
+    .form-row input[type="radio"]:disabled {
       cursor: not-allowed;
       opacity: 0.5;
     }

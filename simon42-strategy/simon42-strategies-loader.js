@@ -24,6 +24,9 @@ import './utils/simon42-badge-builder.js';
 import './utils/simon42-section-builder.js';
 import './utils/simon42-view-builder.js';
 
+// Lade Custom Cards
+import './cards/simon42-summary-card.js';
+
 // Lade Core-Module
 import './core/simon42-dashboard-strategy.js';
 

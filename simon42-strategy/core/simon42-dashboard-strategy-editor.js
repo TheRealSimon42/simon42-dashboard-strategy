@@ -61,6 +61,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showEnergy = this._config.show_energy !== false;
     const showSearchCard = this._config.show_search_card === true;
     const showSubviews = this._config.show_subviews === true;
+    const summariesColumns = this._config.summaries_columns || 2;
     const hasSearchCardDeps = this._checkSearchCardDependencies();
     
     const allAreas = Object.values(this._hass.areas).sort((a, b) => 
@@ -79,7 +80,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showEnergy, 
         showSubviews, 
         showSearchCard,
-        hasSearchCardDeps
+        hasSearchCardDeps,
+        summariesColumns
       })}
     `;
 
@@ -87,6 +89,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
+    this._attachSummariesColumnsListener();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
     // Sortiere die Area-Items nach displayOrder
@@ -108,6 +111,46 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Restore expanded state
     this._restoreExpandedState();
+  }
+
+  _attachSummariesColumnsListener() {
+    const radio2 = this.querySelector('#summaries-2-columns');
+    const radio4 = this.querySelector('#summaries-4-columns');
+    
+    if (radio2) {
+      radio2.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          this._summariesColumnsChanged(2);
+        }
+      });
+    }
+    
+    if (radio4) {
+      radio4.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          this._summariesColumnsChanged(4);
+        }
+      });
+    }
+  }
+
+  _summariesColumnsChanged(columns) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      summaries_columns: columns
+    };
+
+    // Wenn der Standardwert (2) gesetzt ist, entfernen wir die Property
+    if (columns === 2) {
+      delete newConfig.summaries_columns;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
   }
 
   _restoreExpandedState() {

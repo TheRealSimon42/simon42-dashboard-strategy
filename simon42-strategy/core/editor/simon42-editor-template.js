@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -38,6 +38,33 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${hasSearchCardDeps 
             ? 'Zeigt die custom:search-card direkt unter der Uhr in der Übersicht an.' 
             : '⚠️ Benötigt <strong>custom:search-card</strong> und <strong>card-tools</strong>. Bitte installieren Sie beide Komponenten, um diese Funktion zu nutzen.'}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Zusammenfassungen Layout</div>
+        <div class="form-row">
+          <input 
+            type="radio" 
+            id="summaries-2-columns" 
+            name="summaries-columns"
+            value="2"
+            ${summariesColumns === 2 ? 'checked' : ''}
+          />
+          <label for="summaries-2-columns">2 Spalten (2x2 Grid)</label>
+        </div>
+        <div class="form-row">
+          <input 
+            type="radio" 
+            id="summaries-4-columns" 
+            name="summaries-columns"
+            value="4"
+            ${summariesColumns === 4 ? 'checked' : ''}
+          />
+          <label for="summaries-4-columns">4 Spalten (1x4 Reihe)</label>
+        </div>
+        <div class="description">
+          Wähle aus, wie die Zusammenfassungskarten (Lichter, Rollos, Sicherheit, Batterien) angezeigt werden sollen.
         </div>
       </div>
 

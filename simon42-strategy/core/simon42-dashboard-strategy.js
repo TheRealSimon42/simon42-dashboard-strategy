@@ -62,6 +62,7 @@ class Simon42DashboardStrategy {
     const showSubviews = config.show_subviews === true;
 
     // Erstelle Sections für den Haupt-View
+    // WICHTIG: Übergebe die komplette config an createOverviewSection
     const overviewSections = [
       createOverviewSection({
         lightsOn,
@@ -69,7 +70,8 @@ class Simon42DashboardStrategy {
         securityUnsafe,
         batteriesCritical,
         someSensorId,
-        showSearchCard
+        showSearchCard,
+        config // Übergebe config für die Summary Cards
       }),
       createAreasSection(visibleAreas),
       createWeatherEnergySection(weatherEntity, showEnergy)
