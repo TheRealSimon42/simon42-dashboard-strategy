@@ -19,6 +19,10 @@
 
 // Lade Helper-Funktionen zuerst
 import './utils/simon42-helpers.js';
+import './utils/simon42-data-collectors.js';
+import './utils/simon42-badge-builder.js';
+import './utils/simon42-section-builder.js';
+import './utils/simon42-view-builder.js';
 
 // Lade Core-Module
 import './core/simon42-dashboard-strategy.js';
