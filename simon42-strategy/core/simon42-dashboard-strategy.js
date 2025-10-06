@@ -40,14 +40,14 @@ class Simon42DashboardStrategy {
     // Filtere und sortiere Areale basierend auf Config
     const visibleAreas = getVisibleAreas(areas, config.areas_display);
 
-    // Sammle alle benötigten Daten
-    const persons = collectPersons(hass, excludeLabels);
-    const lightsOn = collectLights(hass, excludeLabels);
-    const coversOpen = collectCovers(hass, excludeLabels);
-    const securityUnsafe = collectSecurityUnsafe(hass, excludeLabels);
-    const batteriesCritical = collectBatteriesCritical(hass, excludeLabels);
-    const weatherEntity = findWeatherEntity(hass, excludeLabels);
-    const someSensorId = findDummySensor(hass, excludeLabels);
+    // Sammle alle benötigten Daten (übergebe config für areas_options Filterung)
+    const persons = collectPersons(hass, excludeLabels, config);
+    const lightsOn = collectLights(hass, excludeLabels, config);
+    const coversOpen = collectCovers(hass, excludeLabels, config);
+    const securityUnsafe = collectSecurityUnsafe(hass, excludeLabels, config);
+    const batteriesCritical = collectBatteriesCritical(hass, excludeLabels, config);
+    const weatherEntity = findWeatherEntity(hass, excludeLabels, config);
+    const someSensorId = findDummySensor(hass, excludeLabels, config);
 
     // Erstelle Person-Badges
     const personBadges = createPersonBadges(persons);
@@ -75,10 +75,10 @@ class Simon42DashboardStrategy {
       createWeatherEnergySection(weatherEntity, showEnergy)
     ];
 
-    // Erstelle alle Views mit areas_options
+    // Erstelle alle Views mit areas_options und config
     const views = [
       createOverviewView(overviewSections, personBadges),
-      ...createUtilityViews(entities, showSubviews),
+      ...createUtilityViews(entities, showSubviews, config),
       ...createAreaViews(visibleAreas, devices, entities, showSubviews, config.areas_options || {})
     ];
 
@@ -92,7 +92,7 @@ class Simon42DashboardStrategy {
   static async getConfigElement() {
     // Der Editor sollte schon geladen sein, da er im Loader ist
     // Warte kurz, falls er noch lädt
-    await import('/local/simon42-strategy/core/simon42-dashboard-strategy-editor.js');
+    await import('./simon42-dashboard-strategy-editor.js');
     await customElements.whenDefined('simon42-dashboard-strategy-editor');
     return document.createElement('simon42-dashboard-strategy-editor');
   }

@@ -3,12 +3,40 @@
 // ====================================================================
 
 /**
+ * Erstellt eine Liste aller versteckten Entity-IDs aus areas_options
+ */
+function getHiddenEntitiesFromConfig(config) {
+  const hiddenEntities = new Set();
+  
+  if (!config.areas_options) {
+    return hiddenEntities;
+  }
+  
+  // Durchlaufe alle Bereiche
+  for (const areaOptions of Object.values(config.areas_options)) {
+    if (!areaOptions.groups_options) continue;
+    
+    // Durchlaufe alle Gruppen im Bereich
+    for (const groupOptions of Object.values(areaOptions.groups_options)) {
+      if (groupOptions.hidden && Array.isArray(groupOptions.hidden)) {
+        groupOptions.hidden.forEach(entityId => hiddenEntities.add(entityId));
+      }
+    }
+  }
+  
+  return hiddenEntities;
+}
+
+/**
  * Sammelt alle Personen-Entitäten
  */
-export function collectPersons(hass, excludeLabels) {
+export function collectPersons(hass, excludeLabels, config = {}) {
+  const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
+  
   return Object.values(hass.states)
     .filter(state => state.entity_id.startsWith('person.'))
     .filter(state => !excludeLabels.includes(state.entity_id))
+    .filter(state => !hiddenFromConfig.has(state.entity_id))
     .map(state => ({
       entity_id: state.entity_id,
       name: state.attributes?.friendly_name || state.entity_id.split('.')[1],
@@ -20,10 +48,13 @@ export function collectPersons(hass, excludeLabels) {
 /**
  * Zählt eingeschaltete Lichter
  */
-export function collectLights(hass, excludeLabels) {
+export function collectLights(hass, excludeLabels, config = {}) {
+  const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
+  
   return Object.values(hass.states)
     .filter(state => state.entity_id.startsWith('light.'))
     .filter(state => !excludeLabels.includes(state.entity_id))
+    .filter(state => !hiddenFromConfig.has(state.entity_id))
     .filter(state => state.attributes?.entity_category !== 'config')
     .filter(state => state.attributes?.entity_category !== 'diagnostic')
     .filter(state => state.state === 'on');
@@ -32,10 +63,13 @@ export function collectLights(hass, excludeLabels) {
 /**
  * Zählt offene Covers
  */
-export function collectCovers(hass, excludeLabels) {
+export function collectCovers(hass, excludeLabels, config = {}) {
+  const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
+  
   return Object.values(hass.states)
     .filter(state => state.entity_id.startsWith('cover.'))
     .filter(state => !excludeLabels.includes(state.entity_id))
+    .filter(state => !hiddenFromConfig.has(state.entity_id))
     .filter(state => state.attributes?.entity_category !== 'config')
     .filter(state => state.attributes?.entity_category !== 'diagnostic')
     .filter(state => ['open', 'opening'].includes(state.state));
@@ -44,9 +78,12 @@ export function collectCovers(hass, excludeLabels) {
 /**
  * Zählt unsichere Security-Entitäten
  */
-export function collectSecurityUnsafe(hass, excludeLabels) {
+export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
+  const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
+  
   return Object.keys(hass.states)
     .filter(entityId => !excludeLabels.includes(entityId))
+    .filter(entityId => !hiddenFromConfig.has(entityId))
     .filter(entityId => {
       const state = hass.states[entityId];
       if (!state) return false;
@@ -73,9 +110,12 @@ export function collectSecurityUnsafe(hass, excludeLabels) {
 /**
  * Zählt kritische Batterien (unter 20%)
  */
-export function collectBatteriesCritical(hass, excludeLabels) {
+export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
+  const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
+  
   return Object.keys(hass.states)
     .filter(entityId => !excludeLabels.includes(entityId))
+    .filter(entityId => !hiddenFromConfig.has(entityId))
     .filter(entityId => {
       const state = hass.states[entityId];
       if (!state) return false;
@@ -96,10 +136,13 @@ export function collectBatteriesCritical(hass, excludeLabels) {
 /**
  * Findet eine Weather-Entität
  */
-export function findWeatherEntity(hass, excludeLabels) {
+export function findWeatherEntity(hass, excludeLabels, config = {}) {
+  const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
+  
   return Object.keys(hass.states).find(entityId => {
     if (!entityId.startsWith('weather.')) return false;
     if (excludeLabels.includes(entityId)) return false;
+    if (hiddenFromConfig.has(entityId)) return false;
     
     const state = hass.states[entityId];
     if (!state) return false;
@@ -114,11 +157,14 @@ export function findWeatherEntity(hass, excludeLabels) {
 /**
  * Findet eine Dummy-Sensor-Entität für Tile-Cards
  */
-export function findDummySensor(hass, excludeLabels) {
+export function findDummySensor(hass, excludeLabels, config = {}) {
+  const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
+  
   const someLight = Object.values(hass.states)
     .find(state => 
       state.entity_id.startsWith('light.') &&
       !excludeLabels.includes(state.entity_id) &&
+      !hiddenFromConfig.has(state.entity_id) &&
       state.attributes?.entity_category !== 'config' &&
       state.attributes?.entity_category !== 'diagnostic'
     );
@@ -127,6 +173,7 @@ export function findDummySensor(hass, excludeLabels) {
     .find(state => 
       state.entity_id.startsWith('sensor.') &&
       !excludeLabels.includes(state.entity_id) &&
+      !hiddenFromConfig.has(state.entity_id) &&
       state.attributes?.entity_category !== 'config' &&
       state.attributes?.entity_category !== 'diagnostic' &&
       state.state !== 'unavailable'

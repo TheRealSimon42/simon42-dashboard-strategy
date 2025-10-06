@@ -8,10 +8,21 @@ class Simon42ViewLightsStrategy {
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
+    
+    // Hole hidden entities aus areas_options (wenn config übergeben wurde)
+    const hiddenFromConfig = new Set();
+    if (config.config?.areas_options) {
+      for (const areaOptions of Object.values(config.config.areas_options)) {
+        if (areaOptions.groups_options?.lights?.hidden) {
+          areaOptions.groups_options.lights.hidden.forEach(id => hiddenFromConfig.add(id));
+        }
+      }
+    }
 
     const lightEntities = entities
       .filter(e => e.entity_id.startsWith('light.'))
       .filter(e => !excludeLabels.includes(e.entity_id))
+      .filter(e => !hiddenFromConfig.has(e.entity_id))
       .filter(e => hass.states[e.entity_id] !== undefined)
       .map(e => e.entity_id);
 

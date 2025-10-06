@@ -8,10 +8,27 @@ class Simon42ViewBatteriesStrategy {
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
+    
+    // Hole hidden entities aus areas_options (wenn config übergeben wurde)
+    // Batterien könnten in verschiedenen Gruppen sein, daher alle durchsuchen
+    const hiddenFromConfig = new Set();
+    if (config.config?.areas_options) {
+      for (const areaOptions of Object.values(config.config.areas_options)) {
+        if (areaOptions.groups_options) {
+          // Durchsuche alle Gruppen nach versteckten Entities
+          for (const groupOptions of Object.values(areaOptions.groups_options)) {
+            if (groupOptions.hidden) {
+              groupOptions.hidden.forEach(id => hiddenFromConfig.add(id));
+            }
+          }
+        }
+      }
+    }
 
     // Finde alle Batterie-Entitäten
     const batteryEntities = Object.keys(hass.states)
       .filter(entityId => !excludeLabels.includes(entityId))
+      .filter(entityId => !hiddenFromConfig.has(entityId))
       .filter(entityId => {
         const state = hass.states[entityId];
         if (!state) return false;

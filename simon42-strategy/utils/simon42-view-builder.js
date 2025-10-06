@@ -25,7 +25,7 @@ export function createOverviewView(sections, personBadges) {
 /**
  * Erstellt die Utility-Views (Lichter, Covers, Security, Batterien)
  */
-export function createUtilityViews(entities, showSubviews = false) {
+export function createUtilityViews(entities, showSubviews = false, config = {}) {
   return [
     {
       title: "Lichter",
@@ -34,7 +34,8 @@ export function createUtilityViews(entities, showSubviews = false) {
       subview: !showSubviews,
       strategy: {
         type: "custom:simon42-view-lights",
-        entities
+        entities,
+        config // Übergebe config für areas_options Filterung
       }
     },
     {
@@ -45,7 +46,8 @@ export function createUtilityViews(entities, showSubviews = false) {
       strategy: {
         type: "custom:simon42-view-covers",
         entities,
-        device_classes: ["awning", "blind", "curtain", "shade", "shutter", "window"]
+        device_classes: ["awning", "blind", "curtain", "shade", "shutter", "window"],
+        config // Übergebe config für areas_options Filterung
       }
     },
     {
@@ -55,7 +57,8 @@ export function createUtilityViews(entities, showSubviews = false) {
       subview: !showSubviews,
       strategy: {
         type: "custom:simon42-view-security",
-        entities
+        entities,
+        config // Übergebe config für areas_options Filterung
       }
     },
     {
@@ -65,7 +68,8 @@ export function createUtilityViews(entities, showSubviews = false) {
       subview: !showSubviews,
       strategy: {
         type: "custom:simon42-view-batteries",
-        entities
+        entities,
+        config // Übergebe config für areas_options Filterung
       }
     }
   ];

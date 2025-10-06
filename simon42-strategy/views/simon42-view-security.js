@@ -8,6 +8,20 @@ class Simon42ViewSecurityStrategy {
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
+    
+    // Hole hidden entities aus areas_options (wenn config übergeben wurde)
+    const hiddenFromConfig = new Set();
+    if (config.config?.areas_options) {
+      for (const areaOptions of Object.values(config.config.areas_options)) {
+        // Alle relevanten Gruppen durchsuchen
+        const relevantGroups = ['covers', 'covers_curtain', 'switches'];
+        relevantGroups.forEach(group => {
+          if (areaOptions.groups_options?.[group]?.hidden) {
+            areaOptions.groups_options[group].hidden.forEach(id => hiddenFromConfig.add(id));
+          }
+        });
+      }
+    }
 
     // Gruppiere nach Typ
     const locks = [];
@@ -17,6 +31,7 @@ class Simon42ViewSecurityStrategy {
 
     entities
       .filter(e => !excludeLabels.includes(e.entity_id))
+      .filter(e => !hiddenFromConfig.has(e.entity_id))
       .filter(e => hass.states[e.entity_id] !== undefined)
       .forEach(entity => {
         const entityId = entity.entity_id;
