@@ -1,6 +1,6 @@
-# SIMON42 Dashboard Strategy
+# simon42 Dashboard Strategy
 
-Eine modulare Dashboard-Strategy für Home Assistant, die automatisch Views basierend auf Bereichen, Entitäten und deren Zuständen generiert.
+Eine modulare Dashboard-Strategy für Home Assistant, die automatisch Views basierend auf Bereichen, Entitäten und deren Zuständen generiert. Wächst mit dem User mit & ist sowohl für anfänger als auch fortgeschrittene interessant
 
 ## 🏗️ Architektur-Übersicht
 
