@@ -55,6 +55,9 @@ class Simon42DashboardStrategy {
     // Prüfe ob Energie-Dashboard angezeigt werden soll (Standard: true)
     const showEnergy = config.show_energy !== false;
 
+    // Prüfe ob Such-Karte angezeigt werden soll (Standard: false)
+    const showSearchCard = config.show_search_card === true;
+
     // Prüfe ob Unteransichten angezeigt werden sollen (Standard: false)
     const showSubviews = config.show_subviews === true;
 
@@ -65,7 +68,8 @@ class Simon42DashboardStrategy {
         coversOpen,
         securityUnsafe,
         batteriesCritical,
-        someSensorId
+        someSensorId,
+        showSearchCard
       }),
       createAreasSection(visibleAreas),
       createWeatherEnergySection(weatherEntity, showEnergy)

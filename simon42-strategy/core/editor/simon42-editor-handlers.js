@@ -14,6 +14,15 @@ export function attachEnergyCheckboxListener(element, callback) {
   }
 }
 
+export function attachSearchCardCheckboxListener(element, callback) {
+  const searchCardCheckbox = element.querySelector('#show-search-card');
+  if (searchCardCheckbox) {
+    searchCardCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachSubviewsCheckboxListener(element, callback) {
   const subviewsCheckbox = element.querySelector('#show-subviews');
   if (subviewsCheckbox) {

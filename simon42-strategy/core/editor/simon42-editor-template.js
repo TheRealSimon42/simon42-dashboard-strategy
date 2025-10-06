@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -18,6 +18,26 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           Zeigt die Energie-Verteilungskarte in der Übersicht an, wenn Energiedaten verfügbar sind.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Such-Karte</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-search-card" 
+            ${showSearchCard ? 'checked' : ''}
+            ${!hasSearchCardDeps ? 'disabled' : ''}
+          />
+          <label for="show-search-card" ${!hasSearchCardDeps ? 'class="disabled-label"' : ''}>
+            Such-Karte in Übersicht anzeigen
+          </label>
+        </div>
+        <div class="description">
+          ${hasSearchCardDeps 
+            ? 'Zeigt die custom:search-card direkt unter der Uhr in der Übersicht an.' 
+            : '⚠️ Benötigt <strong>custom:search-card</strong> und <strong>card-tools</strong>. Bitte installieren Sie beide Komponenten, um diese Funktion zu nutzen.'}
         </div>
       </div>
 

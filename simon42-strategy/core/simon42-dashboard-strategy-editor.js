@@ -5,6 +5,7 @@ import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
 import { 
   attachEnergyCheckboxListener,
+  attachSearchCardCheckboxListener,
   attachSubviewsCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
@@ -37,13 +38,31 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     }
   }
 
+  _checkSearchCardDependencies() {
+    // Prüfe ob custom:search-card und card-tools verfügbar sind
+    const hasSearchCard = customElements.get('search-card') !== undefined;
+    const hasCardTools = window.customCards && window.customCards.some(card => 
+      card.type === 'custom:search-card'
+    );
+    
+    // Alternative Prüfung: Versuche zu erkennen ob die Komponenten geladen wurden
+    const searchCardExists = hasSearchCard || document.querySelector('search-card') !== null;
+    const cardToolsExists = typeof window.customCards !== 'undefined' || typeof window.cardTools !== 'undefined';
+    
+    // Beide müssen verfügbar sein
+    return searchCardExists && cardToolsExists;
+  }
+
   _render() {
     if (!this._hass || !this._config) {
       return;
     }
 
     const showEnergy = this._config.show_energy !== false;
+    const showSearchCard = this._config.show_search_card === true;
     const showSubviews = this._config.show_subviews === true;
+    const hasSearchCardDeps = this._checkSearchCardDependencies();
+    
     const allAreas = Object.values(this._hass.areas).sort((a, b) => 
       a.name.localeCompare(b.name)
     );
@@ -53,11 +72,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Setze HTML-Inhalt mit Styles und Template
     this.innerHTML = `
       <style>${getEditorStyles()}</style>
-      ${renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews })}
+      ${renderEditorHTML({ 
+        allAreas, 
+        hiddenAreas, 
+        areaOrder, 
+        showEnergy, 
+        showSubviews, 
+        showSearchCard,
+        hasSearchCardDeps
+      })}
     `;
 
     // Binde Event-Listener
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
+    attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
@@ -139,6 +167,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
     if (showEnergy === true) {
       delete newConfig.show_energy;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showSearchCardChanged(showSearchCard) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_search_card: showSearchCard
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (showSearchCard === false) {
+      delete newConfig.show_search_card;
     }
 
     this._config = newConfig;

@@ -33,9 +33,19 @@ export function getEditorStyles() {
       cursor: pointer;
     }
     
+    .form-row input[type="checkbox"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    
     .form-row label {
       cursor: pointer;
       user-select: none;
+    }
+    
+    .form-row label.disabled-label {
+      cursor: not-allowed;
+      opacity: 0.5;
     }
     
     .description {
@@ -44,6 +54,11 @@ export function getEditorStyles() {
       margin-top: 4px;
       margin-left: 26px;
       margin-bottom: 16px;
+    }
+    
+    .description strong {
+      font-weight: 600;
+      color: var(--primary-text-color);
     }
     
     .area-list {
