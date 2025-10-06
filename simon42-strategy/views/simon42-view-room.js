@@ -7,6 +7,9 @@ class Simon42ViewRoomStrategy {
   static async generate(config, hass) {
     const { area, devices, entities } = config;
     
+    // Hole groups_options aus der Dashboard-Config (falls vorhanden)
+    const groupsOptions = config.groups_options || {};
+    
     // Finde alle Geräte im Raum
     const areaDevices = new Set();
     for (const device of devices) {
@@ -162,6 +165,43 @@ class Simon42ViewRoomStrategy {
       }
     }
 
+    // === WENDE GROUPS_OPTIONS AN ===
+    // Filtere versteckte Entities aus groups_options
+    const applyGroupFilter = (groupKey) => {
+      const groupOptions = groupsOptions[groupKey];
+      if (!groupOptions) return roomEntities[groupKey];
+      
+      let filtered = roomEntities[groupKey];
+      
+      // Filtere versteckte Entities
+      if (groupOptions.hidden && groupOptions.hidden.length > 0) {
+        filtered = filtered.filter(e => !groupOptions.hidden.includes(e));
+      }
+      
+      // Sortiere nach order (falls vorhanden)
+      if (groupOptions.order && groupOptions.order.length > 0) {
+        const orderMap = new Map(groupOptions.order.map((id, index) => [id, index]));
+        filtered.sort((a, b) => {
+          const indexA = orderMap.has(a) ? orderMap.get(a) : 9999;
+          const indexB = orderMap.has(b) ? orderMap.get(b) : 9999;
+          return indexA - indexB;
+        });
+      }
+      
+      return filtered;
+    };
+
+    // Wende Filter auf alle Gruppen an
+    roomEntities.lights = applyGroupFilter('lights');
+    roomEntities.covers = applyGroupFilter('covers');
+    roomEntities.covers_curtain = applyGroupFilter('covers_curtain');
+    roomEntities.scenes = applyGroupFilter('scenes');
+    roomEntities.climate = applyGroupFilter('climate');
+    roomEntities.media_player = applyGroupFilter('media_player');
+    roomEntities.vacuum = applyGroupFilter('vacuum');
+    roomEntities.fan = applyGroupFilter('fan');
+    roomEntities.switches = applyGroupFilter('switches');
+
     // === BADGES ERSTELLEN ===
     const badges = [];
 
@@ -304,8 +344,10 @@ class Simon42ViewRoomStrategy {
     // === HAUPTINHALT - SECTIONS ===
     const sections = [];
 
-    // Sortiere Lights nach last_changed
-    roomEntities.lights.sort((a, b) => sortByLastChanged(a, b, hass));
+    // Sortiere Lights nach last_changed (nur wenn keine custom order vorhanden)
+    if (!groupsOptions.lights?.order) {
+      roomEntities.lights.sort((a, b) => sortByLastChanged(a, b, hass));
+    }
 
     // Licht-Section
     if (roomEntities.lights.length > 0) {

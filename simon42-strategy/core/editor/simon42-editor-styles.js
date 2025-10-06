@@ -53,12 +53,8 @@ export function getEditorStyles() {
     }
     
     .area-item {
-      display: flex;
-      align-items: center;
-      padding: 12px;
       border-bottom: 1px solid var(--divider-color);
       background: var(--card-background-color);
-      cursor: move;
     }
     
     .area-item:last-child {
@@ -73,10 +69,27 @@ export function getEditorStyles() {
       border-top: 2px solid var(--primary-color);
     }
     
+    .area-header {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+    }
+    
     .drag-handle {
       margin-right: 12px;
       color: var(--secondary-text-color);
-      cursor: move;
+      cursor: grab;
+      user-select: none;
+      padding: 4px;
+    }
+    
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    
+    .area-item.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
     }
     
     .area-checkbox {
@@ -89,7 +102,142 @@ export function getEditorStyles() {
     
     .area-icon {
       margin-left: 8px;
+      margin-right: 12px;
       color: var(--secondary-text-color);
+    }
+    
+    .expand-button {
+      background: none;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+      color: var(--secondary-text-color);
+      transition: transform 0.2s;
+    }
+    
+    .expand-button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    .expand-button.expanded .expand-icon {
+      transform: rotate(90deg);
+    }
+    
+    .expand-icon {
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+    
+    .area-content {
+      padding: 0 12px 12px 48px;
+      background: var(--secondary-background-color);
+    }
+    
+    .loading-placeholder {
+      padding: 12px;
+      text-align: center;
+      color: var(--secondary-text-color);
+      font-style: italic;
+    }
+    
+    .entity-groups {
+      padding-top: 8px;
+    }
+    
+    .entity-group {
+      margin-bottom: 8px;
+      border: 1px solid var(--divider-color);
+      border-radius: 4px;
+      background: var(--card-background-color);
+    }
+    
+    .entity-group-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .entity-group-header:hover {
+      background: var(--secondary-background-color);
+    }
+    
+    .group-checkbox {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    
+    .group-checkbox[data-indeterminate="true"] {
+      opacity: 0.6;
+    }
+    
+    .entity-group-header ha-icon {
+      margin-right: 8px;
+      --mdc-icon-size: 18px;
+      color: var(--secondary-text-color);
+    }
+    
+    .group-name {
+      flex: 1;
+      font-weight: 500;
+    }
+    
+    .entity-count {
+      color: var(--secondary-text-color);
+      font-size: 12px;
+      margin-right: 8px;
+    }
+    
+    .expand-button-small {
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      color: var(--secondary-text-color);
+    }
+    
+    .expand-button-small.expanded .expand-icon-small {
+      transform: rotate(90deg);
+    }
+    
+    .expand-icon-small {
+      display: inline-block;
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+    
+    .entity-list {
+      padding: 8px 12px 8px 36px;
+      border-top: 1px solid var(--divider-color);
+    }
+    
+    .entity-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 0;
+    }
+    
+    .entity-checkbox {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    
+    .entity-name {
+      flex: 1;
+      font-size: 14px;
+    }
+    
+    .entity-id {
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      font-family: monospace;
+      margin-left: 8px;
     }
     
     .empty-state {

@@ -74,17 +74,22 @@ export function createUtilityViews(entities, showSubviews = false) {
 /**
  * Erstellt Views für jeden sichtbaren Bereich
  */
-export function createAreaViews(visibleAreas, devices, entities, showSubviews = false) {
-  return visibleAreas.map(area => ({
-    title: area.name,
-    path: area.area_id,
-    icon: area.icon || "mdi:floor-plan",
-    subview: !showSubviews,
-    strategy: {
-      type: "custom:simon42-view-room",
-      area,
-      devices,
-      entities
-    }
-  }));
+export function createAreaViews(visibleAreas, devices, entities, showSubviews = false, areasOptions = {}) {
+  return visibleAreas.map(area => {
+    const areaOptions = areasOptions[area.area_id] || {};
+    
+    return {
+      title: area.name,
+      path: area.area_id,
+      icon: area.icon || "mdi:floor-plan",
+      subview: !showSubviews,
+      strategy: {
+        type: "custom:simon42-view-room",
+        area,
+        devices,
+        entities,
+        groups_options: areaOptions.groups_options || {}
+      }
+    };
+  });
 }

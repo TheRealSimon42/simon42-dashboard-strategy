@@ -71,11 +71,11 @@ class Simon42DashboardStrategy {
       createWeatherEnergySection(weatherEntity, showEnergy)
     ];
 
-    // Erstelle alle Views
+    // Erstelle alle Views mit areas_options
     const views = [
       createOverviewView(overviewSections, personBadges),
       ...createUtilityViews(entities, showSubviews),
-      ...createAreaViews(visibleAreas, devices, entities, showSubviews)
+      ...createAreaViews(visibleAreas, devices, entities, showSubviews, config.areas_options || {})
     ];
 
     return {
