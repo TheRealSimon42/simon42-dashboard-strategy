@@ -351,8 +351,11 @@ lovelace:
 
 ## 🤝 Beitragen
 
-Contributions sind willkommen! Bitte erstelle einen Issue oder Pull Request auf GitHub.
+!!!Maintainers Wanted!!!
+
+Contributions sind willkommen! Bitte erstelle einen Issue oder Pull Request (den du vorher bitte auf Herz & Nieren getestet hast 🫶) auf GitHub.
+
 
 ## 📄 Lizenz
 
-MIT License - siehe LICENSE Datei für Details
+Attribution-NonCommercial-ShareAlike 4.0 International - siehe LICENSE Datei für Details
