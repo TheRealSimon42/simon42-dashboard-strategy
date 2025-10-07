@@ -7,6 +7,7 @@ import {
   attachEnergyCheckboxListener,
   attachSearchCardCheckboxListener,
   attachSubviewsCheckboxListener,
+  attachGroupByFloorsCheckboxListener, // NEU
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
   attachExpandButtonListeners,
@@ -61,6 +62,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showEnergy = this._config.show_energy !== false;
     const showSearchCard = this._config.show_search_card === true;
     const showSubviews = this._config.show_subviews === true;
+    const groupByFloors = this._config.group_by_floors === true; // NEU
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
@@ -81,6 +83,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Alle Entitäten für Favoriten-Select
     const allEntities = this._getAllEntitiesForSelect();
     
+    // FEHLENDE VARIABLEN - HIER WAR DAS PROBLEM
     const allAreas = Object.values(this._hass.areas).sort((a, b) => 
       a.name.localeCompare(b.name)
     );
@@ -102,21 +105,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         alarmEntity,
         alarmEntities,
         favoriteEntities,
-        allEntities  // NEU
+        allEntities,
+        groupByFloors // NEU
       })}
     `;
 
-  // Binde Event-Listener
-  attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
-  attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
-  attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
-  this._attachSummariesColumnsListener();
-  this._attachAlarmEntityListener();
-  this._attachFavoritesListeners();  // NEU
-  attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
-  
-  // ... rest bleibt gleich
-    
+    // Binde Event-Listener
+    attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
+    attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
+    attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
+    attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
+    this._attachSummariesColumnsListener();
+    this._attachAlarmEntityListener();
+    this._attachFavoritesListeners();
+    attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
     // Sortiere die Area-Items nach displayOrder
     sortAreaItems(this);
@@ -639,6 +641,26 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Entferne areas_options wenn leer
     if (Object.keys(newConfig.areas_options).length === 0) {
       delete newConfig.areas_options;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  // Für Bereiche nach Etage anzeigen
+  _groupByFloorsChanged(groupByFloors) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      group_by_floors: groupByFloors
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (groupByFloors === false) {
+      delete newConfig.group_by_floors;
     }
 
     this._config = newConfig;

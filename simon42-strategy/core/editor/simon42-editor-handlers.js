@@ -209,6 +209,16 @@ export function attachEntityExpandButtonListeners(element, editorElement) {
   });
 }
 
+// Für Checkbox Bereiche nach Areal anzeigen
+export function attachGroupByFloorsCheckboxListener(element, callback) {
+  const groupByFloorsCheckbox = element.querySelector('#group-by-floors');
+  if (groupByFloorsCheckbox) {
+    groupByFloorsCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function sortAreaItems(element) {
   const areaList = element.querySelector('#area-list');
   if (!areaList) return;

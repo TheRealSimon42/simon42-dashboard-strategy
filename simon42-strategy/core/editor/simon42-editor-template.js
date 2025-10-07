@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, allEntities }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, allEntities, groupByFloors }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -119,6 +119,21 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           Zeigt die Unteransichten (Lichter, Rollos, Sicherheit, Batterien, Räume) in der oberen Navigation an.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Bereiche-Ansicht</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="group-by-floors" 
+            ${groupByFloors ? 'checked' : ''}
+          />
+          <label for="group-by-floors">Bereiche in Etagen gliedern</label>
+        </div>
+        <div class="description">
+          Gruppiert die Bereiche in der Übersicht nach Etagen. Wenn aktiviert, wird für jede Etage eine separate Section erstellt.
         </div>
       </div>
 
