@@ -62,7 +62,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showSearchCard = this._config.show_search_card === true;
     const showSubviews = this._config.show_subviews === true;
     const summariesColumns = this._config.summaries_columns || 2;
+    const alarmEntity = this._config.alarm_entity || '';
     const hasSearchCardDeps = this._checkSearchCardDependencies();
+    
+    // Sammle alle Alarm-Control-Panel-Entitäten
+    const alarmEntities = Object.keys(this._hass.states)
+      .filter(entityId => entityId.startsWith('alarm_control_panel.'))
+      .map(entityId => {
+        const state = this._hass.states[entityId];
+        return {
+          entity_id: entityId,
+          name: state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ')
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
     
     const allAreas = Object.values(this._hass.areas).sort((a, b) => 
       a.name.localeCompare(b.name)
@@ -81,7 +94,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showSubviews, 
         showSearchCard,
         hasSearchCardDeps,
-        summariesColumns
+        summariesColumns,
+        alarmEntity,
+        alarmEntities
       })}
     `;
 
@@ -90,7 +105,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
     this._attachSummariesColumnsListener();
+    this._attachAlarmEntityListener();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
+    
     
     // Sortiere die Area-Items nach displayOrder
     sortAreaItems(this);
@@ -229,6 +246,34 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
     if (showSearchCard === false) {
       delete newConfig.show_search_card;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _attachAlarmEntityListener() {
+    const alarmSelect = this.querySelector('#alarm-entity');
+    if (alarmSelect) {
+      alarmSelect.addEventListener('change', (e) => {
+        this._alarmEntityChanged(e.target.value);
+      });
+    }
+  }
+
+  _alarmEntityChanged(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      alarm_entity: entityId
+    };
+
+    // Wenn leer, entfernen wir die Property
+    if (!entityId || entityId === '') {
+      delete newConfig.alarm_entity;
     }
 
     this._config = newConfig;

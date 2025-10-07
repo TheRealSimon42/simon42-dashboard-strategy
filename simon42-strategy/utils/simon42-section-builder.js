@@ -14,16 +14,35 @@ export function createOverviewSection(data) {
       heading: "Übersicht",
       heading_style: "title",
       icon: "mdi:overscan"
-    },
-    {
+    }
+  ];
+
+  // Prüfe ob Alarm-Entity konfiguriert ist
+  const alarmEntity = config.alarm_entity;
+
+  if (alarmEntity) {
+    // Uhr und Alarm-Panel nebeneinander
+    cards.push({
+      type: "clock",
+      clock_size: "small",
+      show_seconds: false
+    });
+    cards.push({
+      type: "tile",
+      entity: alarmEntity,
+      vertical: false
+    });
+  } else {
+    // Nur Uhr in voller Breite
+    cards.push({
       type: "clock",
       clock_size: "small",
       show_seconds: false,
       grid_options: {
         columns: "full",
       }
-    }
-  ];
+    });
+  }
 
   // Füge Search-Card hinzu wenn aktiviert
   if (showSearchCard) {

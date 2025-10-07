@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -18,6 +18,24 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           Zeigt die Energie-Verteilungskarte in der Übersicht an, wenn Energiedaten verfügbar sind.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Alarm-Control-Panel</div>
+        <div class="form-row">
+          <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">Alarm-Entität:</label>
+          <select id="alarm-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">Keine (Uhr in voller Breite)</option>
+            ${alarmEntities.map(entity => `
+              <option value="${entity.entity_id}" ${entity.entity_id === alarmEntity ? 'selected' : ''}>
+                ${entity.name}
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="description">
+          Wähle eine Alarm-Control-Panel-Entität aus, um sie neben der Uhr anzuzeigen. "Keine" auswählen, um nur die Uhr in voller Breite anzuzeigen.
         </div>
       </div>
 

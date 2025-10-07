@@ -49,6 +49,22 @@ export function getEditorStyles() {
       cursor: not-allowed;
       opacity: 0.5;
     }
+
+    .form-row ha-entity-picker {
+      flex: 1;
+      max-width: 300px;
+    }
+
+    .form-row select {
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    
+    .form-row select:focus {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
     
     .description {
       font-size: 12px;
