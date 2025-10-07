@@ -63,6 +63,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showSubviews = this._config.show_subviews === true;
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
+    const favoriteEntities = this._config.favorite_entities || [];
     const hasSearchCardDeps = this._checkSearchCardDependencies();
     
     // Sammle alle Alarm-Control-Panel-Entitäten
@@ -76,6 +77,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Alle Entitäten für Favoriten-Select
+    const allEntities = this._getAllEntitiesForSelect();
     
     const allAreas = Object.values(this._hass.areas).sort((a, b) => 
       a.name.localeCompare(b.name)
@@ -96,17 +100,22 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         hasSearchCardDeps,
         summariesColumns,
         alarmEntity,
-        alarmEntities
+        alarmEntities,
+        favoriteEntities,
+        allEntities  // NEU
       })}
     `;
 
-    // Binde Event-Listener
-    attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
-    attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
-    attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
-    this._attachSummariesColumnsListener();
-    this._attachAlarmEntityListener();
-    attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
+  // Binde Event-Listener
+  attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
+  attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
+  attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
+  this._attachSummariesColumnsListener();
+  this._attachAlarmEntityListener();
+  this._attachFavoritesListeners();  // NEU
+  attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
+  
+  // ... rest bleibt gleich
     
     
     // Sortiere die Area-Items nach displayOrder
@@ -128,6 +137,40 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Restore expanded state
     this._restoreExpandedState();
+  }
+
+  _createFavoritesPicker(favoriteEntities) {
+    const container = this.querySelector('#favorites-picker-container');
+    if (!container) {
+      console.warn('Favorites picker container not found');
+      return;
+    }
+
+    // Erstelle ha-entities-picker Element
+    const picker = document.createElement('ha-entities-picker');
+    
+    // Füge Picker zum Container hinzu
+    container.innerHTML = '';
+    container.appendChild(picker);
+    
+    // Setze Properties nach einem kurzen Delay (gibt dem Element Zeit zu initialisieren)
+    requestAnimationFrame(() => {
+      picker.hass = this._hass;
+      picker.value = favoriteEntities || [];
+      
+      // Setze Attribute
+      picker.setAttribute('label', 'Favoriten-Entitäten');
+      picker.setAttribute('placeholder', 'Entität hinzufügen...');
+      picker.setAttribute('allow-custom-entity', '');
+      
+      // Event Listener für Änderungen
+      picker.addEventListener('value-changed', (e) => {
+        e.stopPropagation();
+        this._favoriteEntitiesChanged(e.detail.value);
+      });
+      
+      console.log('Favorites picker created:', picker);
+    });
   }
 
   _attachSummariesColumnsListener() {
@@ -164,6 +207,195 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (2) gesetzt ist, entfernen wir die Property
     if (columns === 2) {
       delete newConfig.summaries_columns;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _attachAlarmEntityListener() {
+    const alarmSelect = this.querySelector('#alarm-entity');
+    if (alarmSelect) {
+      alarmSelect.addEventListener('change', (e) => {
+        this._alarmEntityChanged(e.target.value);
+      });
+    }
+  }
+
+  _alarmEntityChanged(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      alarm_entity: entityId
+    };
+
+    // Wenn leer, entfernen wir die Property
+    if (!entityId || entityId === '') {
+      delete newConfig.alarm_entity;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _attachFavoritesListeners() {
+    // Add Button
+    const addBtn = this.querySelector('#add-favorite-btn');
+    const select = this.querySelector('#favorite-entity-select');
+    
+    if (addBtn && select) {
+      addBtn.addEventListener('click', () => {
+        const entityId = select.value;
+        if (entityId && entityId !== '') {
+          this._addFavoriteEntity(entityId);
+          select.value = ''; // Reset selection
+        }
+      });
+    }
+
+    // Remove Buttons
+    const removeButtons = this.querySelectorAll('.remove-favorite-btn');
+    removeButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const entityId = e.target.dataset.entityId;
+        this._removeFavoriteEntity(entityId);
+      });
+    });
+  }
+
+  _addFavoriteEntity(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentFavorites = this._config.favorite_entities || [];
+    
+    // Prüfe ob bereits vorhanden
+    if (currentFavorites.includes(entityId)) {
+      return;
+    }
+
+    const newFavorites = [...currentFavorites, entityId];
+
+    const newConfig = {
+      ...this._config,
+      favorite_entities: newFavorites
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Favoriten-Liste
+    this._updateFavoritesList();
+  }
+
+  _removeFavoriteEntity(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentFavorites = this._config.favorite_entities || [];
+    const newFavorites = currentFavorites.filter(id => id !== entityId);
+
+    const newConfig = {
+      ...this._config,
+      favorite_entities: newFavorites.length > 0 ? newFavorites : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newFavorites.length === 0) {
+      delete newConfig.favorite_entities;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Favoriten-Liste
+    this._updateFavoritesList();
+  }
+
+  _updateFavoritesList() {
+    const container = this.querySelector('#favorites-list');
+    if (!container) return;
+
+    const favoriteEntities = this._config.favorite_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      container.innerHTML = module.renderFavoritesList?.(favoriteEntities, allEntities) || 
+                          this._renderFavoritesListFallback(favoriteEntities, allEntities);
+      
+      // Reattach listeners
+      this._attachFavoritesListeners();
+    }).catch(() => {
+      // Fallback falls Import fehlschlägt
+      container.innerHTML = this._renderFavoritesListFallback(favoriteEntities, allEntities);
+      this._attachFavoritesListeners();
+    });
+  }
+
+  _renderFavoritesListFallback(favoriteEntities, allEntities) {
+    if (!favoriteEntities || favoriteEntities.length === 0) {
+      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Favoriten hinzugefügt</div>';
+    }
+
+    const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
+
+    return `
+      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+        ${favoriteEntities.map((entityId) => {
+          const name = entityMap.get(entityId) || entityId;
+          return `
+            <div class="favorite-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
+              <span style="flex: 1; font-size: 14px;">
+                <strong>${name}</strong>
+                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+              </span>
+              <button class="remove-favorite-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+                ✕
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  _getAllEntitiesForSelect() {
+    if (!this._hass) return [];
+
+    return Object.keys(this._hass.states)
+      .map(entityId => {
+        const state = this._hass.states[entityId];
+        return {
+          entity_id: entityId,
+          name: state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ')
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  // Kann weg?
+  _favoriteEntitiesChanged(entities) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    console.log('Favorites changed:', entities);
+
+    const newConfig = {
+      ...this._config,
+      favorite_entities: entities
+    };
+
+    // Wenn leer, entfernen wir die Property
+    if (!entities || entities.length === 0) {
+      delete newConfig.favorite_entities;
     }
 
     this._config = newConfig;
@@ -246,34 +478,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
     if (showSearchCard === false) {
       delete newConfig.show_search_card;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _attachAlarmEntityListener() {
-    const alarmSelect = this.querySelector('#alarm-entity');
-    if (alarmSelect) {
-      alarmSelect.addEventListener('change', (e) => {
-        this._alarmEntityChanged(e.target.value);
-      });
-    }
-  }
-
-  _alarmEntityChanged(entityId) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      alarm_entity: entityId
-    };
-
-    // Wenn leer, entfernen wir die Property
-    if (!entityId || entityId === '') {
-      delete newConfig.alarm_entity;
     }
 
     this._config = newConfig;

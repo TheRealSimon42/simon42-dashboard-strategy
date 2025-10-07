@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, allEntities }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -36,6 +36,27 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           Wähle eine Alarm-Control-Panel-Entität aus, um sie neben der Uhr anzuzeigen. "Keine" auswählen, um nur die Uhr in voller Breite anzuzeigen.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Favoriten</div>
+        <div id="favorites-list" style="margin-bottom: 12px;">
+          ${renderFavoritesList(favoriteEntities, allEntities)}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <select id="favorite-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">Entität auswählen...</option>
+            ${allEntities.map(entity => `
+              <option value="${entity.entity_id}">${entity.name}</option>
+            `).join('')}
+          </select>
+          <button id="add-favorite-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + Hinzufügen
+          </button>
+        </div>
+        <div class="description">
+          Wähle Entitäten aus, die als Favoriten unter den Zusammenfassungen angezeigt werden sollen. Die Entitäten werden als Kacheln angezeigt.
         </div>
       </div>
 
@@ -110,6 +131,35 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}
         </div>
       </div>
+    </div>
+  `;
+}
+
+function renderFavoritesList(favoriteEntities, allEntities) {
+  if (!favoriteEntities || favoriteEntities.length === 0) {
+    return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Favoriten hinzugefügt</div>';
+  }
+
+  // Erstelle Map für schnellen Zugriff auf Entity-Namen
+  const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
+
+  return `
+    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      ${favoriteEntities.map((entityId, index) => {
+        const name = entityMap.get(entityId) || entityId;
+        return `
+          <div class="favorite-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+            <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
+            <span style="flex: 1; font-size: 14px;">
+              <strong>${name}</strong>
+              <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+            </span>
+            <button class="remove-favorite-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('')}
     </div>
   `;
 }

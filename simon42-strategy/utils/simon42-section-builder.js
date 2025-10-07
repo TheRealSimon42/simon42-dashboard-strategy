@@ -6,7 +6,7 @@
  * Erstellt die Übersichts-Section mit Zusammenfassungen
  */
 export function createOverviewSection(data) {
-  const { someSensorId, showSearchCard, config } = data;
+  const { someSensorId, showSearchCard, config, hass } = data;
   
   const cards = [
     {
@@ -105,6 +105,27 @@ export function createOverviewSection(data) {
         cards: [summaryCards[2], summaryCards[3]]
       }
     );
+  }
+
+  // Favoriten Section
+  const favoriteEntities = (config.favorite_entities || [])
+    .filter(entityId => hass.states[entityId] !== undefined);
+
+  if (favoriteEntities.length > 0) {
+    cards.push({
+      type: "heading",
+      heading: "Favoriten"
+    });
+    
+    favoriteEntities.forEach(entityId => {
+      cards.push({
+        type: "tile",
+        entity: entityId,
+        show_entity_picture: true,
+        vertical: false,
+        state_content: "last_changed"
+      });
+    });
   }
 
   return {

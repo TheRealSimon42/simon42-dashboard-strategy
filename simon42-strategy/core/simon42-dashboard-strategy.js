@@ -62,7 +62,7 @@ class Simon42DashboardStrategy {
     const showSubviews = config.show_subviews === true;
 
     // Erstelle Sections für den Haupt-View
-    // WICHTIG: Übergebe die komplette config an createOverviewSection
+    // WICHTIG: Übergebe die komplette config UND hass an createOverviewSection
     const overviewSections = [
       createOverviewSection({
         lightsOn,
@@ -71,7 +71,8 @@ class Simon42DashboardStrategy {
         batteriesCritical,
         someSensorId,
         showSearchCard,
-        config // Übergebe config für die Summary Cards
+        config,
+        hass // NEU - übergebe hass für Favoriten
       }),
       createAreasSection(visibleAreas),
       createWeatherEnergySection(weatherEntity, showEnergy)
