@@ -1,5 +1,5 @@
 // ====================================================================
-// SIMON42 SUMMARY CARD - Reactive Summary Tile
+// SIMON42 SUMMARY CARD - Reactive Summary Tile (OPTIMIERT)
 // ====================================================================
 // Eine reactive Card die automatisch auf State-Änderungen reagiert
 // und die Anzahl von Entities dynamisch zählt
@@ -11,6 +11,7 @@ class Simon42SummaryCard extends HTMLElement {
     this.config = null;
     this._count = 0;
     this._excludeLabels = [];
+    this._hiddenFromConfigCache = null; // NEU: Cache für hidden entities
   }
 
   async setConfig(config) {
@@ -18,6 +19,8 @@ class Simon42SummaryCard extends HTMLElement {
       throw new Error("You need to define a summary_type");
     }
     this.config = config;
+    // Cache invalidieren bei Config-Änderung
+    this._hiddenFromConfigCache = null;
   }
 
   set hass(hass) {
@@ -64,50 +67,82 @@ class Simon42SummaryCard extends HTMLElement {
   }
 
   _getRelevantEntities(hass) {
-    // Hole alle Entity-IDs die für diesen Summary-Type relevant sind
-    const allEntities = Object.keys(hass.states);
-    const hiddenFromConfig = this._getHiddenFromConfig();
+    // Cache hidden entities (nur 1x berechnen pro hass-Update)
+    if (this._hiddenFromConfigCache === null) {
+      this._hiddenFromConfigCache = this._getHiddenFromConfig();
+    }
     
-    // Kombiniere Label-Ausschluss und Config-Ausschluss
-    const isExcluded = (id) => {
-      return this._excludeLabels.includes(id) || hiddenFromConfig.has(id);
-    };
+    const hiddenFromConfig = this._hiddenFromConfigCache;
+    const allEntityIds = Object.keys(hass.states);
+    
+    // OPTIMIERT: Reihenfolge der Filter für maximale Performance
+    // 1. Domain-Filter (reduziert drastisch die Entity-Anzahl)
+    // 2. State-Existence-Check (schnell)
+    // 3. Exclude-Checks (Set-Lookup ist O(1))
+    // 4. Komplexere Attribute-Checks am Ende
     
     switch (this.config.summary_type) {
       case 'lights':
-        return allEntities.filter(id => 
-          id.startsWith('light.') &&
-          !isExcluded(id) &&
-          hass.states[id]?.attributes?.entity_category !== 'config' &&
-          hass.states[id]?.attributes?.entity_category !== 'diagnostic'
-        );
+        return allEntityIds.filter(id => {
+          // 1. Domain-Check (z.B. 500 → 30 Entities)
+          if (!id.startsWith('light.')) return false;
+          
+          // 2. State-Check (verhindert undefined-Zugriffe)
+          const state = hass.states[id];
+          if (!state) return false;
+          
+          // 3. Exclude-Checks (Set-Lookup = O(1))
+          if (this._excludeLabels.includes(id)) return false;
+          if (hiddenFromConfig.has(id)) return false;
+          
+          // 4. Attribute-Checks am Ende
+          if (state.attributes?.entity_category === 'config') return false;
+          if (state.attributes?.entity_category === 'diagnostic') return false;
+          
+          return true;
+        });
       
       case 'covers':
-        return allEntities.filter(id => 
-          id.startsWith('cover.') &&
-          !isExcluded(id) &&
-          hass.states[id]?.attributes?.entity_category !== 'config' &&
-          hass.states[id]?.attributes?.entity_category !== 'diagnostic'
-        );
-      
-      case 'security':
-        return allEntities.filter(id => {
-          if (isExcluded(id)) return false;
+        return allEntityIds.filter(id => {
+          if (!id.startsWith('cover.')) return false;
           
           const state = hass.states[id];
           if (!state) return false;
           
-          // Locks
-          if (id.startsWith('lock.')) return true;
+          if (this._excludeLabels.includes(id)) return false;
+          if (hiddenFromConfig.has(id)) return false;
           
-          // Covers mit security device_class
-          if (id.startsWith('cover.')) {
+          if (state.attributes?.entity_category === 'config') return false;
+          if (state.attributes?.entity_category === 'diagnostic') return false;
+          
+          return true;
+        });
+      
+      case 'security':
+        return allEntityIds.filter(id => {
+          const state = hass.states[id];
+          if (!state) return false;
+          
+          // Domain-Check zuerst (locks, covers, binary_sensors)
+          const isLock = id.startsWith('lock.');
+          const isCover = id.startsWith('cover.');
+          const isBinarySensor = id.startsWith('binary_sensor.');
+          
+          if (!isLock && !isCover && !isBinarySensor) return false;
+          
+          // Exclude-Checks
+          if (this._excludeLabels.includes(id)) return false;
+          if (hiddenFromConfig.has(id)) return false;
+          
+          // Device-Class-Check nur für relevante Domains
+          if (isLock) return true;
+          
+          if (isCover) {
             const deviceClass = state.attributes?.device_class;
             return ['door', 'garage', 'gate'].includes(deviceClass);
           }
           
-          // Binary sensors
-          if (id.startsWith('binary_sensor.')) {
+          if (isBinarySensor) {
             const deviceClass = state.attributes?.device_class;
             return ['door', 'window', 'garage_door', 'opening'].includes(deviceClass);
           }
@@ -116,13 +151,15 @@ class Simon42SummaryCard extends HTMLElement {
         });
       
       case 'batteries':
-        return allEntities.filter(id => {
-          if (isExcluded(id)) return false;
-          
+        return allEntityIds.filter(id => {
           const state = hass.states[id];
           if (!state) return false;
           
-          // Batterie-Entities
+          // Exclude-Checks früh
+          if (this._excludeLabels.includes(id)) return false;
+          if (hiddenFromConfig.has(id)) return false;
+          
+          // Battery-Check (String-includes ist schneller als Attribute-Lookup)
           if (id.includes('battery')) return true;
           if (state.attributes?.device_class === 'battery') return true;
           
@@ -141,12 +178,12 @@ class Simon42SummaryCard extends HTMLElement {
       return hiddenEntities;
     }
     
+    // Welche Gruppen sind für diesen Summary-Type relevant?
+    const relevantGroups = this._getRelevantGroupsForSummary();
+    
     // Durchlaufe alle Bereiche und sammle versteckte Entities
     for (const areaOptions of Object.values(this.config.areas_options)) {
       if (!areaOptions.groups_options) continue;
-      
-      // Durchlaufe alle relevanten Gruppen basierend auf summary_type
-      const relevantGroups = this._getRelevantGroupsForSummary();
       
       for (const groupKey of relevantGroups) {
         const groupOptions = areaOptions.groups_options[groupKey];

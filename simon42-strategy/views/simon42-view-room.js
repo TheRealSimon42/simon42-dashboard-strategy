@@ -1,5 +1,5 @@
 // ====================================================================
-// VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges)
+// VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT
 // ====================================================================
 import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged } from '../utils/simon42-helpers.js';
 
@@ -10,7 +10,7 @@ class Simon42ViewRoomStrategy {
     // Hole groups_options aus der Dashboard-Config (falls vorhanden)
     const groupsOptions = config.groups_options || {};
     
-    // Finde alle Geräte im Raum
+    // Finde alle Geräte im Raum - als Set für O(1) Lookup
     const areaDevices = new Set();
     for (const device of devices) {
       if (device.area_id === area.area_id) {
@@ -45,122 +45,151 @@ class Simon42ViewRoomStrategy {
       battery: []      // Batterie (nur niedrige Werte)
     };
 
-    // Labels für Filterung
-    const excludeLabels = entities
-      .filter(e => e.labels?.includes("no_dboard"))
-      .map(e => e.entity_id);
+    // Labels für Filterung - als Set für O(1) Lookup
+    const excludeLabels = new Set(
+      entities
+        .filter(e => e.labels?.includes("no_dboard"))
+        .map(e => e.entity_id)
+    );
     
-    const showDboardLabels = entities
-      .filter(e => e.labels?.includes("show_dboard"))
-      .map(e => e.entity_id);
+    const showDboardLabels = new Set(
+      entities
+        .filter(e => e.labels?.includes("show_dboard"))
+        .map(e => e.entity_id)
+    );
 
+    // OPTIMIERT: Hauptfilter-Loop
     for (const entity of entities) {
-      // Prüfe ob Entität zum Raum gehört
-      // Fall 1: Entität hat direkte Area-Zuweisung -> nur diese zählt
-      // Fall 2: Entität hat keine Area-Zuweisung -> verwende Area vom Gerät
+      const entityId = entity.entity_id;
+      
+      // 1. Prüfe ob Entität zum Raum gehört (früh ausschließen)
       let belongsToArea = false;
       
       if (entity.area_id) {
-        // Entität hat explizite Area-Zuweisung
         belongsToArea = entity.area_id === area.area_id;
       } else if (entity.device_id && areaDevices.has(entity.device_id)) {
-        // Entität hat keine Area-Zuweisung, aber Gerät ist im Raum
         belongsToArea = true;
       }
       
       if (!belongsToArea) continue;
       
-      // Exkludiere no_dboard Entitäten
-      if (excludeLabels.includes(entity.entity_id)) continue;
+      // 2. Exclude-Check (Set-Lookup = O(1))
+      if (excludeLabels.has(entityId)) continue;
 
-      // Prüfe ob Entität in hass.states existiert
-      if (!hass.states[entity.entity_id]) continue;
+      // 3. State-Existence-Check
+      const state = hass.states[entityId];
+      if (!state) continue;
 
-      // Filtere versteckte und deaktivierte Entitäten
+      // 4. Hidden/Disabled-Check
       if (isEntityHiddenOrDisabled(entity, hass)) continue;
 
-      const domain = entity.entity_id.split('.')[0];
-      const state = hass.states[entity.entity_id];
+      // 5. Domain-basierte Kategorisierung
+      const domain = entityId.split('.')[0];
       const deviceClass = state.attributes?.device_class;
       const unit = state.attributes?.unit_of_measurement;
 
-      // Kategorisiere nach Domain
+      // Kategorisiere nach Domain (frühe Returns für Performance)
       if (domain === 'light') {
-        roomEntities.lights.push(entity.entity_id);
-      } 
-      else if (domain === 'cover') {
+        roomEntities.lights.push(entityId);
+        continue;
+      }
+      
+      if (domain === 'cover') {
         if (deviceClass === 'curtain' || deviceClass === 'blind') {
-          roomEntities.covers_curtain.push(entity.entity_id);
+          roomEntities.covers_curtain.push(entityId);
         } else {
-          roomEntities.covers.push(entity.entity_id);
+          roomEntities.covers.push(entityId);
         }
+        continue;
       }
-      else if (domain === 'scene') {
-        roomEntities.scenes.push(entity.entity_id);
+      
+      if (domain === 'scene') {
+        roomEntities.scenes.push(entityId);
+        continue;
       }
-      else if (domain === 'climate') {
-        roomEntities.climate.push(entity.entity_id);
+      
+      if (domain === 'climate') {
+        roomEntities.climate.push(entityId);
+        continue;
       }
-      else if (domain === 'media_player') {
-        roomEntities.media_player.push(entity.entity_id);
+      
+      if (domain === 'media_player') {
+        roomEntities.media_player.push(entityId);
+        continue;
       }
-      else if (domain === 'vacuum') {
-        roomEntities.vacuum.push(entity.entity_id);
+      
+      if (domain === 'vacuum') {
+        roomEntities.vacuum.push(entityId);
+        continue;
       }
-      else if (domain === 'fan') {
-        roomEntities.fan.push(entity.entity_id);
+      
+      if (domain === 'fan') {
+        roomEntities.fan.push(entityId);
+        continue;
       }
-      else if (domain === 'switch') {
-        roomEntities.switches.push(entity.entity_id);
+      
+      if (domain === 'switch') {
+        roomEntities.switches.push(entityId);
+        continue;
       }
       
       // === SENSOREN FÜR BADGES ===
-      else if (domain === 'sensor') {
+      if (domain === 'sensor') {
         // Temperatur
         if (deviceClass === 'temperature' || unit === '°C' || unit === '°F') {
-          sensorEntities.temperature.push(entity.entity_id);
+          sensorEntities.temperature.push(entityId);
+          continue;
         }
         // Luftfeuchtigkeit
-        else if (deviceClass === 'humidity' || unit === '%') {
-          sensorEntities.humidity.push(entity.entity_id);
+        if (deviceClass === 'humidity' || unit === '%') {
+          sensorEntities.humidity.push(entityId);
+          continue;
         }
-        // Feinstaub PM2.5
-        else if (deviceClass === 'pm25' || entity.entity_id.includes('pm_2_5') || entity.entity_id.includes('pm25')) {
-          sensorEntities.pm25.push(entity.entity_id);
+        // Feinstaub PM2.5 (String-includes ist schneller als komplexe Checks)
+        if (deviceClass === 'pm25' || entityId.includes('pm_2_5') || entityId.includes('pm25')) {
+          sensorEntities.pm25.push(entityId);
+          continue;
         }
         // Feinstaub PM10
-        else if (deviceClass === 'pm10' || entity.entity_id.includes('pm_10') || entity.entity_id.includes('pm10')) {
-          sensorEntities.pm10.push(entity.entity_id);
+        if (deviceClass === 'pm10' || entityId.includes('pm_10') || entityId.includes('pm10')) {
+          sensorEntities.pm10.push(entityId);
+          continue;
         }
         // CO2
-        else if (deviceClass === 'carbon_dioxide' || entity.entity_id.includes('co2')) {
-          sensorEntities.co2.push(entity.entity_id);
+        if (deviceClass === 'carbon_dioxide' || entityId.includes('co2')) {
+          sensorEntities.co2.push(entityId);
+          continue;
         }
         // VOC
-        else if (deviceClass === 'volatile_organic_compounds' || entity.entity_id.includes('voc')) {
-          sensorEntities.voc.push(entity.entity_id);
+        if (deviceClass === 'volatile_organic_compounds' || entityId.includes('voc')) {
+          sensorEntities.voc.push(entityId);
+          continue;
         }
         // Helligkeit
-        else if (deviceClass === 'illuminance' || unit === 'lx') {
-          sensorEntities.illuminance.push(entity.entity_id);
+        if (deviceClass === 'illuminance' || unit === 'lx') {
+          sensorEntities.illuminance.push(entityId);
+          continue;
         }
         // Batterie (nur niedrige Werte < 20%)
-        else if (deviceClass === 'battery') {
+        if (deviceClass === 'battery') {
           const batteryLevel = parseFloat(state.state);
           if (!isNaN(batteryLevel) && batteryLevel < 20) {
-            sensorEntities.battery.push(entity.entity_id);
+            sensorEntities.battery.push(entityId);
           }
+          continue;
         }
       }
+      
       // Binäre Sensoren
-      else if (domain === 'binary_sensor') {
+      if (domain === 'binary_sensor') {
         // Bewegung
         if (deviceClass === 'motion') {
-          sensorEntities.motion.push(entity.entity_id);
+          sensorEntities.motion.push(entityId);
+          continue;
         }
         // Präsenz
-        else if (deviceClass === 'occupancy') {
-          sensorEntities.occupancy.push(entity.entity_id);
+        if (deviceClass === 'occupancy') {
+          sensorEntities.occupancy.push(entityId);
         }
       }
     }
@@ -175,7 +204,8 @@ class Simon42ViewRoomStrategy {
       
       // Filtere versteckte Entities
       if (groupOptions.hidden && groupOptions.hidden.length > 0) {
-        filtered = filtered.filter(e => !groupOptions.hidden.includes(e));
+        const hiddenSet = new Set(groupOptions.hidden);
+        filtered = filtered.filter(e => !hiddenSet.has(e));
       }
       
       // Sortiere nach order (falls vorhanden)
@@ -213,7 +243,7 @@ class Simon42ViewRoomStrategy {
     // Prüfe ob area Attribute für Temperatur/Luftfeuchtigkeit gesetzt sind
     if (area.temperature_entity_id && 
         hass.states[area.temperature_entity_id] && 
-        !excludeLabels.includes(area.temperature_entity_id)) {
+        !excludeLabels.has(area.temperature_entity_id)) {
       // Prüfe ob versteckt über hass.entities
       const entityRegistry = hass.entities?.[area.temperature_entity_id];
       if (!entityRegistry || (!entityRegistry.hidden_by && !entityRegistry.disabled_by)) {
@@ -223,7 +253,7 @@ class Simon42ViewRoomStrategy {
 
     if (area.humidity_entity_id && 
         hass.states[area.humidity_entity_id] && 
-        !excludeLabels.includes(area.humidity_entity_id)) {
+        !excludeLabels.has(area.humidity_entity_id)) {
       // Prüfe ob versteckt über hass.entities
       const entityRegistry = hass.entities?.[area.humidity_entity_id];
       if (!entityRegistry || (!entityRegistry.hidden_by && !entityRegistry.disabled_by)) {

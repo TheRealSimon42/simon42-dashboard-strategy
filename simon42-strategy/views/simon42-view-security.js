@@ -1,5 +1,5 @@
 // ====================================================================
-// VIEW STRATEGY - SECURITY (Schlösser + Türen/Garagen + Fenster)
+// VIEW STRATEGY - SECURITY (Schlösser + Türen/Garagen + Fenster) - OPTIMIERT
 // ====================================================================
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
 
@@ -8,6 +8,7 @@ class Simon42ViewSecurityStrategy {
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
+    const excludeSet = new Set(excludeLabels);
     
     // Hole hidden entities aus areas_options (wenn config übergeben wurde)
     const hiddenFromConfig = new Set();
@@ -29,22 +30,31 @@ class Simon42ViewSecurityStrategy {
     const garages = []; // Cover mit garage device_class
     const windows = []; // Binary Sensors mit door/window device_class
 
+    // OPTIMIERT: Filter-Logik
     entities
-      .filter(e => !excludeLabels.includes(e.entity_id))
-      .filter(e => !hiddenFromConfig.has(e.entity_id))
-      .filter(e => hass.states[e.entity_id] !== undefined)
+      .filter(e => {
+        const id = e.entity_id;
+        
+        // 1. State-Existence-Check
+        if (hass.states[id] === undefined) return false;
+        
+        // 2. Exclude-Checks (Set-Lookup = O(1))
+        if (excludeSet.has(id)) return false;
+        if (hiddenFromConfig.has(id)) return false;
+        
+        return true;
+      })
       .forEach(entity => {
         const entityId = entity.entity_id;
         const state = hass.states[entityId];
         if (!state) return;
         
-        // Locks
+        // Domain-Checks mit frühem Return
         if (entityId.startsWith('lock.')) {
           locks.push(entityId);
           return;
         }
         
-        // Covers nach device_class
         if (entityId.startsWith('cover.')) {
           const deviceClass = state.attributes?.device_class;
           if (deviceClass === 'garage') {
@@ -55,7 +65,6 @@ class Simon42ViewSecurityStrategy {
           return;
         }
         
-        // Binary Sensors (Fenster/Türen)
         if (entityId.startsWith('binary_sensor.')) {
           const deviceClass = state.attributes?.device_class;
           if (['door', 'window', 'garage_door', 'opening'].includes(deviceClass)) {

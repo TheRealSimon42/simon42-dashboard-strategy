@@ -1,5 +1,5 @@
 // ====================================================================
-// VIEW STRATEGY - LICHTER (alle Lichter)
+// VIEW STRATEGY - LICHTER (alle Lichter) - OPTIMIERT
 // ====================================================================
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
 
@@ -8,6 +8,7 @@ class Simon42ViewLightsStrategy {
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
+    const excludeSet = new Set(excludeLabels);
     
     // Hole hidden entities aus areas_options (wenn config übergeben wurde)
     const hiddenFromConfig = new Set();
@@ -19,11 +20,23 @@ class Simon42ViewLightsStrategy {
       }
     }
 
+    // OPTIMIERT: Filter-Reihenfolge
     const lightEntities = entities
-      .filter(e => e.entity_id.startsWith('light.'))
-      .filter(e => !excludeLabels.includes(e.entity_id))
-      .filter(e => !hiddenFromConfig.has(e.entity_id))
-      .filter(e => hass.states[e.entity_id] !== undefined)
+      .filter(e => {
+        const id = e.entity_id;
+        
+        // 1. Domain-Check zuerst
+        if (!id.startsWith('light.')) return false;
+        
+        // 2. State-Existence-Check
+        if (hass.states[id] === undefined) return false;
+        
+        // 3. Exclude-Checks (Set-Lookup = O(1))
+        if (excludeSet.has(id)) return false;
+        if (hiddenFromConfig.has(id)) return false;
+        
+        return true;
+      })
       .map(e => e.entity_id);
 
     const lightsOn = [];

@@ -1,5 +1,5 @@
 // ====================================================================
-// VIEW STRATEGY - BATTERIEN (Batterie-Übersicht)
+// VIEW STRATEGY - BATTERIEN (Batterie-Übersicht) - OPTIMIERT
 // ====================================================================
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
 
@@ -8,6 +8,7 @@ class Simon42ViewBatteriesStrategy {
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
+    const excludeSet = new Set(excludeLabels);
     
     // Hole hidden entities aus areas_options (wenn config übergeben wurde)
     // Batterien könnten in verschiedenen Gruppen sein, daher alle durchsuchen
@@ -25,22 +26,22 @@ class Simon42ViewBatteriesStrategy {
       }
     }
 
-    // Finde alle Batterie-Entitäten
+    // OPTIMIERT: Filter-Reihenfolge
     const batteryEntities = Object.keys(hass.states)
-      .filter(entityId => !excludeLabels.includes(entityId))
-      .filter(entityId => !hiddenFromConfig.has(entityId))
       .filter(entityId => {
         const state = hass.states[entityId];
         if (!state) return false;
         
-        // Prüfe ob es eine Batterie-Entität ist
-        if (entityId.includes('battery')) return true;
-        if (state.attributes?.device_class === 'battery') return true;
+        // 1. Battery-Check zuerst (String-includes ist schnell)
+        const isBattery = entityId.includes('battery') || 
+                         state.attributes?.device_class === 'battery';
+        if (!isBattery) return false;
         
-        return false;
-      })
-      .filter(entityId => {
-        const state = hass.states[entityId];
+        // 2. Exclude-Checks (Set-Lookup = O(1))
+        if (excludeSet.has(entityId)) return false;
+        if (hiddenFromConfig.has(entityId)) return false;
+        
+        // 3. Value-Check am Ende
         const value = parseFloat(state.state);
         return !isNaN(value); // Nur numerische Werte
       });
