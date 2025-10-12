@@ -1,7 +1,7 @@
 // ====================================================================
 // VIEW STRATEGY - COVERS (Rollos/Vorhänge) - OPTIMIERT
 // ====================================================================
-import { getExcludedLabels } from '../utils/simon42-helpers.js';
+import { getExcludedLabels, stripCoverType } from '../utils/simon42-helpers.js';
 
 class Simon42ViewCoversStrategy {
   static async generate(config, hass) {
@@ -91,6 +91,7 @@ class Simon42ViewCoversStrategy {
           ...coversOpen.map(entity => ({
             type: "tile",
             entity: entity,
+            name: stripCoverType(entity, hass),
             features: [{ type: "cover-open-close" }],
             vertical: false,
             features_position: "inline",
@@ -129,6 +130,7 @@ class Simon42ViewCoversStrategy {
           ...coversClosed.map(entity => ({
             type: "tile",
             entity: entity,
+            name: stripCoverType(entity, hass),
             features: [{ type: "cover-open-close" }],
             vertical: false,
             features_position: "inline",

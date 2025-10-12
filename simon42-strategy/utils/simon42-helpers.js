@@ -74,6 +74,46 @@ export function stripAreaName(entityId, area, hass) {
 }
 
 /**
+ * Entfernt Cover-Typ-Begriffe aus dem Entity-Namen
+ * @param {string} entityId - Entity ID
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {string} Bereinigter Name
+ */
+export function stripCoverType(entityId, hass) {
+  const state = hass.states[entityId];
+  if (!state) return null;
+  
+  let name = state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+  
+  // Liste der zu entfernenden Begriffe
+  const coverTypes = [
+    'Rollo', 'Rollos',
+    'Rolladen', 'Rolläden',
+    'Vorhang', 'Vorhänge',
+    'Jalousie', 'Jalousien',
+    'Shutter', 'Shutters',
+    'Blind', 'Blinds'
+  ];
+  
+  // Entferne Cover-Typen am Anfang, Ende oder in der Mitte
+  coverTypes.forEach(type => {
+    const regex = new RegExp(`\\b${type}\\b`, 'gi');
+    name = name.replace(regex, '').trim();
+  });
+  
+  // Entferne mehrfache Leerzeichen
+  name = name.replace(/\s+/g, ' ').trim();
+  
+  // Nur verwenden wenn noch ein sinnvoller Name übrig ist
+  if (name && name.length > 0) {
+    return name;
+  }
+  
+  // Fallback zum Original-Namen
+  return state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+}
+
+/**
  * Prüft ob eine Entität versteckt oder deaktiviert ist
  * @param {Object} entity - Entity-Objekt aus der Registry
  * @param {Object} hass - Home Assistant Objekt

@@ -1,5 +1,5 @@
 // ====================================================================
-// VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT
+// VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT + KAMERAS
 // ====================================================================
 import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged } from '../utils/simon42-helpers.js';
 
@@ -12,9 +12,11 @@ class Simon42ViewRoomStrategy {
     
     // Finde alle Geräte im Raum - als Set für O(1) Lookup
     const areaDevices = new Set();
+    const areaDeviceObjects = []; // Speichere Device-Objekte für Reolink-Check
     for (const device of devices) {
       if (device.area_id === area.area_id) {
         areaDevices.add(device.id);
+        areaDeviceObjects.push(device);
       }
     }
 
@@ -28,7 +30,8 @@ class Simon42ViewRoomStrategy {
       media_player: [],
       vacuum: [],
       fan: [],
-      switches: []
+      switches: [],
+      cameras: [] // NEU: Kameras
     };
 
     // Sensor-Kategorien für Badges
@@ -57,6 +60,17 @@ class Simon42ViewRoomStrategy {
         .filter(e => e.labels?.includes("show_dboard"))
         .map(e => e.entity_id)
     );
+
+    // Map für Device-ID zu Entity-ID (für Reolink-Zuordnung)
+    const entityDeviceMap = new Map();
+    for (const entity of entities) {
+      if (entity.device_id) {
+        if (!entityDeviceMap.has(entity.device_id)) {
+          entityDeviceMap.set(entity.device_id, []);
+        }
+        entityDeviceMap.get(entity.device_id).push(entity.entity_id);
+      }
+    }
 
     // OPTIMIERT: Hauptfilter-Loop
     for (const entity of entities) {
@@ -130,6 +144,12 @@ class Simon42ViewRoomStrategy {
       
       if (domain === 'switch') {
         roomEntities.switches.push(entityId);
+        continue;
+      }
+      
+      // NEU: Kamera-Erkennung
+      if (domain === 'camera') {
+        roomEntities.cameras.push(entityId);
         continue;
       }
       
@@ -231,6 +251,7 @@ class Simon42ViewRoomStrategy {
     roomEntities.vacuum = applyGroupFilter('vacuum');
     roomEntities.fan = applyGroupFilter('fan');
     roomEntities.switches = applyGroupFilter('switches');
+    roomEntities.cameras = applyGroupFilter('cameras'); // NEU
 
     // === BADGES ERSTELLEN ===
     const badges = [];
@@ -373,6 +394,97 @@ class Simon42ViewRoomStrategy {
 
     // === HAUPTINHALT - SECTIONS ===
     const sections = [];
+
+    // NEU: Kameras-Section (ganz oben nach Badges)
+    if (roomEntities.cameras.length > 0) {
+      const cameraCards = [];
+      
+      roomEntities.cameras.forEach(cameraId => {
+        const cameraState = hass.states[cameraId];
+        if (!cameraState) return;
+        
+        // Finde Device-ID der Kamera
+        const cameraEntity = entities.find(e => e.entity_id === cameraId);
+        const deviceId = cameraEntity?.device_id;
+        
+        // Prüfe ob es ein Reolink-Gerät ist
+        let isReolink = false;
+        if (deviceId) {
+          const device = devices.find(d => d.id === deviceId);
+          if (device) {
+            // Prüfe Manufacturer oder Model
+            const manufacturer = device.manufacturer?.toLowerCase() || '';
+            const model = device.model?.toLowerCase() || '';
+            isReolink = manufacturer.includes('reolink') || model.includes('reolink');
+          }
+        }
+        
+        if (isReolink && deviceId) {
+          // Reolink: picture-glance mit zusätzlichen Entitäten
+          const deviceEntities = entityDeviceMap.get(deviceId) || [];
+          
+          // Suche spezifische Entitäten des gleichen Geräts
+          const spotlightEntity = deviceEntities.find(id => 
+            id.startsWith('light.') && 
+            hass.states[id] && 
+            !excludeLabels.has(id)
+          );
+          
+          const motionEntity = deviceEntities.find(id => 
+            id.startsWith('binary_sensor.') && 
+            hass.states[id]?.attributes?.device_class === 'motion' &&
+            !excludeLabels.has(id)
+          );
+          
+          const sirenEntity = deviceEntities.find(id => 
+            id.startsWith('siren.') && 
+            hass.states[id] &&
+            !excludeLabels.has(id)
+          );
+          
+          // Baue entities-Array (nur verfügbare Entities)
+          const glanceEntities = [];
+          if (spotlightEntity) glanceEntities.push({ entity: spotlightEntity });
+          if (motionEntity) glanceEntities.push({ entity: motionEntity });
+          if (sirenEntity) glanceEntities.push({ entity: sirenEntity });
+          
+          cameraCards.push({
+            type: "picture-glance",
+            camera_image: cameraId,
+            camera_view: "auto",
+            fit_mode: "cover",
+            title: stripAreaName(cameraId, area, hass),
+            entities: glanceEntities
+          });
+        } else {
+          // Standard-Kamera: picture-entity
+          cameraCards.push({
+            type: "picture-entity",
+            entity: cameraId,
+            camera_image: cameraId,
+            camera_view: "auto",
+            name: stripAreaName(cameraId, area, hass),
+            show_name: true,
+            show_state: false
+          });
+        }
+      });
+      
+      if (cameraCards.length > 0) {
+        sections.push({
+          type: "grid",
+          cards: [
+            {
+              type: "heading",
+              heading: "Kameras",
+              heading_style: "title",
+              icon: "mdi:cctv"
+            },
+            ...cameraCards
+          ]
+        });
+      }
+    }
 
     // Sortiere Lights nach last_changed (nur wenn keine custom order vorhanden)
     if (!groupsOptions.lights?.order) {
