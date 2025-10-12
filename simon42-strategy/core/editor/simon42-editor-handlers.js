@@ -1,5 +1,5 @@
 // ====================================================================
-// SIMON42 EDITOR HANDLERS
+// SIMON42 EDITOR HANDLERS (MIT REGISTRY CACHE)
 // ====================================================================
 // Event-Handler für den Dashboard Strategy Editor
 
@@ -332,13 +332,23 @@ export function attachDragAndDropListeners(element, onOrderChange) {
 // Helper-Funktionen
 
 async function getAreaGroupedEntities(areaId, hass) {
-  // Diese Funktion muss die Entitäten eines Areals gruppieren
-  // Analog zur simon42-view-room.js Logik
+  // OPTIMIERT: Nutze Registry Cache
+  const registryCache = window.simon42RegistryCache;
   
-  const [devices, entities] = await Promise.all([
-    hass.callWS({ type: "config/device_registry/list" }),
-    hass.callWS({ type: "config/entity_registry/list" }),
-  ]);
+  let devices, entities;
+  
+  if (!registryCache) {
+    console.warn('Registry cache not available, falling back to direct calls');
+    [devices, entities] = await Promise.all([
+      hass.callWS({ type: "config/device_registry/list" }),
+      hass.callWS({ type: "config/entity_registry/list" }),
+    ]);
+  } else {
+    [devices, entities] = await Promise.all([
+      registryCache.get(hass, "config/device_registry/list"),
+      registryCache.get(hass, "config/entity_registry/list"),
+    ]);
+  }
   
   // Finde alle Geräte im Raum
   const areaDevices = new Set();

@@ -48,14 +48,28 @@ class Simon42SummaryCard extends HTMLElement {
 
   async _loadEntityRegistry() {
     try {
-      const entities = await this._hass.callWS({ 
-        type: "config/entity_registry/list" 
-      });
+      // OPTIMIERT: Nutze Registry Cache
+      const registryCache = window.simon42RegistryCache;
       
-      // Filtere Entities mit no_dboard Label
-      this._excludeLabels = entities
-        .filter(e => e.labels?.includes("no_dboard"))
-        .map(e => e.entity_id);
+      if (!registryCache) {
+        console.warn('Registry cache not available, falling back to direct call');
+        const entities = await this._hass.callWS({ 
+          type: "config/entity_registry/list" 
+        });
+        this._excludeLabels = entities
+          .filter(e => e.labels?.includes("no_dboard"))
+          .map(e => e.entity_id);
+      } else {
+        const entities = await registryCache.get(
+          this._hass, 
+          "config/entity_registry/list"
+        );
+        
+        // Filtere Entities mit no_dboard Label
+        this._excludeLabels = entities
+          .filter(e => e.labels?.includes("no_dboard"))
+          .map(e => e.entity_id);
+      }
       
       // Trigger Re-Render nach dem Laden
       this._count = this._calculateCount();

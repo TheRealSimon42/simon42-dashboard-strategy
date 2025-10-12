@@ -1,6 +1,7 @@
 // ====================================================================
-// DASHBOARD STRATEGY - Generiert die Hauptstruktur
+// DASHBOARD STRATEGY - Generiert die Hauptstruktur (MIT REGISTRY CACHE)
 // ====================================================================
+import registryCache from '../utils/simon42-registry-cache.js';
 import { getVisibleAreas } from '../utils/simon42-helpers.js';
 import { 
   collectPersons, 
@@ -25,12 +26,19 @@ import {
 
 class Simon42DashboardStrategy {
   static async generate(config, hass) {
-    // Hole alle benötigten Daten
-    const [areas, devices, entities] = await Promise.all([
-      hass.callWS({ type: "config/area_registry/list" }),
-      hass.callWS({ type: "config/device_registry/list" }),
-      hass.callWS({ type: "config/entity_registry/list" }),
+    // OPTIMIERT: Nutze Registry Cache statt mehrfacher callWS()
+    const [areas, devices, entities, floors] = await Promise.all([
+      registryCache.get(hass, "config/area_registry/list"),
+      registryCache.get(hass, "config/device_registry/list"),
+      registryCache.get(hass, "config/entity_registry/list"),
+      registryCache.get(hass, "config/floor_registry/list")
     ]);
+
+    // Speichere Floors in hass für späteren Zugriff
+    hass.floors = {};
+    floors.forEach(floor => {
+      hass.floors[floor.floor_id] = floor;
+    });
 
     // Labels für Filterung von Entitäten
     const excludeLabels = entities
@@ -40,14 +48,14 @@ class Simon42DashboardStrategy {
     // Filtere und sortiere Areale basierend auf Config
     const visibleAreas = getVisibleAreas(areas, config.areas_display);
 
-    // Sammle alle benötigten Daten (übergebe entities für Registry-Prüfung)
-    const persons = collectPersons(hass, excludeLabels, config, entities);
-    const lightsOn = collectLights(hass, excludeLabels, config, entities);
-    const coversOpen = collectCovers(hass, excludeLabels, config, entities);
-    const securityUnsafe = collectSecurityUnsafe(hass, excludeLabels, config, entities);
-    const batteriesCritical = collectBatteriesCritical(hass, excludeLabels, config, entities);
-    const weatherEntity = findWeatherEntity(hass, excludeLabels, config, entities);
-    const someSensorId = findDummySensor(hass, excludeLabels, config, entities);
+    // Sammle alle benötigten Daten (übergebe config für areas_options Filterung)
+    const persons = collectPersons(hass, excludeLabels, config);
+    const lightsOn = collectLights(hass, excludeLabels, config);
+    const coversOpen = collectCovers(hass, excludeLabels, config);
+    const securityUnsafe = collectSecurityUnsafe(hass, excludeLabels, config);
+    const batteriesCritical = collectBatteriesCritical(hass, excludeLabels, config);
+    const weatherEntity = findWeatherEntity(hass, excludeLabels, config);
+    const someSensorId = findDummySensor(hass, excludeLabels, config);
 
     // Erstelle Person-Badges
     const personBadges = createPersonBadges(persons);
@@ -61,8 +69,13 @@ class Simon42DashboardStrategy {
     // Prüfe ob Unteransichten angezeigt werden sollen (Standard: false)
     const showSubviews = config.show_subviews === true;
 
+    // Prüfe ob Bereiche nach Etagen gruppiert werden sollen (Standard: false)
+    const groupByFloors = config.group_by_floors === true;
+
+    // Erstelle Bereiche-Section(s)
+    const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
+
     // Erstelle Sections für den Haupt-View
-    // WICHTIG: Übergebe die komplette config UND hass an createOverviewSection
     const overviewSections = [
       createOverviewSection({
         lightsOn,
@@ -74,8 +87,12 @@ class Simon42DashboardStrategy {
         config,
         hass
       }),
-      createAreasSection(visibleAreas),
-      createWeatherEnergySection(weatherEntity, showEnergy)
+      // Wenn groupByFloors aktiv ist, ist areasSections ein Array von Sections
+      ...(Array.isArray(areasSections) ? areasSections : [areasSections]),
+      // Übergebe groupByFloors an createWeatherEnergySection
+      ...(Array.isArray(createWeatherEnergySection(weatherEntity, showEnergy, groupByFloors)) 
+        ? createWeatherEnergySection(weatherEntity, showEnergy, groupByFloors) 
+        : [createWeatherEnergySection(weatherEntity, showEnergy, groupByFloors)])
     ];
 
     // Erstelle alle Views mit areas_options und config

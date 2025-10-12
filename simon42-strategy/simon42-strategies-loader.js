@@ -1,5 +1,5 @@
 // ====================================================================
-// SIMON42 DASHBOARD STRATEGIES - LOADER
+// SIMON42 DASHBOARD STRATEGIES - LOADER (MIT REGISTRY CACHE)
 // ====================================================================
 // Diese Datei lädt alle Strategy-Module
 // 
@@ -17,7 +17,10 @@
 //   type: custom:simon42-dashboard
 // ====================================================================
 
-// Lade Helper-Funktionen zuerst
+// WICHTIG: Registry Cache zuerst laden!
+import './utils/simon42-registry-cache.js';
+
+// Lade Helper-Funktionen
 import './utils/simon42-helpers.js';
 import './utils/simon42-data-collectors.js';
 import './utils/simon42-badge-builder.js';
@@ -37,4 +40,4 @@ import './views/simon42-view-covers.js';
 import './views/simon42-view-security.js';
 import './views/simon42-view-batteries.js';
 
-console.log('Simon42 Dashboard Strategies loaded successfully!');
+console.log('Simon42 Dashboard Strategies loaded successfully with Registry Cache!');
