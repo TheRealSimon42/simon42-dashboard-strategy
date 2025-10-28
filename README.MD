@@ -693,7 +693,13 @@ Dieses Projekt sucht aktiv nach Maintainern, die bei der Weiterentwicklung helfe
 - 🚫 **Nicht kommerziell** - Keine kommerzielle Nutzung
 - 🔄 **Weitergabe unter gleichen Bedingungen** - Bei Veränderungen unter gleicher Lizenz
 
-**Siehe LICENSE-Datei für Details**
+### 💼 Kommerzielle Nutzung
+
+Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenzvereinbarungen:
+
+**👉 [Kontaktformular](https://www.simon42.com/contact/)**
+
+**Siehe LICENSE-Datei für vollständige Details**
 
 ## 🙏 Credits & Danksagungen
 
