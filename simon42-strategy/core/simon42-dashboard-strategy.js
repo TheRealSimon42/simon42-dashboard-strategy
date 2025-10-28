@@ -54,8 +54,8 @@ class Simon42DashboardStrategy {
     const weatherEntity = findWeatherEntity(hass, excludeLabels, config);
     const someSensorId = findDummySensor(hass, excludeLabels, config);
 
-    // Erstelle Person-Badges
-    const personBadges = createPersonBadges(persons);
+    // Erstelle Person-Badges (KORRIGIERT: mit hass Parameter)
+    const personBadges = createPersonBadges(persons, hass);
 
     // Prüfe ob Energie-Dashboard angezeigt werden soll (Standard: true)
     const showEnergy = config.show_energy !== false;

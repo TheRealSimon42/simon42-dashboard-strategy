@@ -1,6 +1,9 @@
 // ====================================================================
 // VIEW STRATEGY - BATTERIEN (Batterie-Übersicht) - OPTIMIERT
 // ====================================================================
+// KEIN unnötiges Map-Caching mehr - nutzt direkt hass.entities[entityId]
+// ====================================================================
+
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
 
 class Simon42ViewBatteriesStrategy {
@@ -26,13 +29,7 @@ class Simon42ViewBatteriesStrategy {
       }
     }
 
-    // Erstelle ein Map der Entity Registry für schnelle Lookups
-    const entityRegistryMap = new Map();
-    entities.forEach(e => {
-      entityRegistryMap.set(e.entity_id, e);
-    });
-
-    // OPTIMIERT: Filter-Reihenfolge
+    // OPTIMIERT: Filter-Reihenfolge - KEIN Map-Caching mehr!
     const batteryEntities = Object.keys(hass.states)
       .filter(entityId => {
         const state = hass.states[entityId];
@@ -43,12 +40,9 @@ class Simon42ViewBatteriesStrategy {
                          state.attributes?.device_class === 'battery';
         if (!isBattery) return false;
         
-        // 2. Registry-Checks (NEU) - nur wenn Entity in Registry ist
-        const registryEntry = entityRegistryMap.get(entityId);
-        if (registryEntry) {
-          // Nur hidden === true filtern (die anderen Checks können Probleme machen)
-          if (registryEntry.hidden === true) return false;
-        }
+        // 2. Registry-Check - DIREKT aus hass.entities (O(1) Lookup)
+        const registryEntry = hass.entities?.[entityId];
+        if (registryEntry?.hidden === true) return false;
         
         // 3. Exclude-Checks (Set-Lookup = O(1))
         if (excludeSet.has(entityId)) return false;

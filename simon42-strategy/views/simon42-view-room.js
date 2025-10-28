@@ -208,7 +208,7 @@ class Simon42ViewRoomStrategy {
           continue;
         }
         // Präsenz
-        if (deviceClass === 'occupancy') {
+        if (deviceClass === 'presence') {
           sensorEntities.occupancy.push(entityId);
         }
       }

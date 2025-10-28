@@ -1,8 +1,9 @@
 // ====================================================================
-// SIMON42 SUMMARY CARD - Reactive Summary Tile
+// SIMON42 SUMMARY CARD - Reactive Summary Tile - OPTIMIZED
 // ====================================================================
 // Eine reactive Card die automatisch auf State-Änderungen reagiert
 // und die Anzahl von Entities dynamisch zählt
+// KEIN redundantes Caching von Registry-Daten mehr!
 // ====================================================================
 
 class Simon42SummaryCard extends HTMLElement {
@@ -11,7 +12,7 @@ class Simon42SummaryCard extends HTMLElement {
     this._hass = null;
     this.config = null;
     this._count = 0;
-    this._excludeLabels = [];
+    this._excludeLabelsSet = new Set(); // OPTIMIERT: Set statt Array für O(1) Lookups
     this._hiddenFromConfigCache = null;
   }
 
@@ -28,8 +29,8 @@ class Simon42SummaryCard extends HTMLElement {
     const oldHass = this._hass;
     this._hass = hass;
     
-    // Beim ersten Mal: Lade excluded Labels aus Entity Registry
-    if (!oldHass && hass) {
+    // Beim ersten Mal oder wenn sich Entities geändert haben: Lade excluded Labels
+    if (!oldHass || oldHass.entities !== hass.entities) {
       this._loadExcludedLabels();
     }
     
@@ -48,19 +49,20 @@ class Simon42SummaryCard extends HTMLElement {
   }
 
   _loadExcludedLabels() {
-    // Nutze die bereits im hass-Objekt verfügbare Entity Registry
-    // Keine WebSocket-Calls mehr nötig!
+    // OPTIMIERT: Als Set für O(1) Lookups
+    this._excludeLabelsSet = new Set();
+    
     if (!this._hass.entities) {
       console.warn('[Simon42 Summary Card] hass.entities not available');
-      this._excludeLabels = [];
       return;
     }
 
     // Konvertiere Entity Registry Object zu Array und filtere nach no_dboard Label
-    const entities = Object.values(this._hass.entities);
-    this._excludeLabels = entities
-      .filter(e => e.labels?.includes("no_dboard"))
-      .map(e => e.entity_id);
+    Object.values(this._hass.entities).forEach(entity => {
+      if (entity.labels?.includes("no_dboard")) {
+        this._excludeLabelsSet.add(entity.entity_id);
+      }
+    });
   }
 
   _getRelevantEntities(hass) {
@@ -76,7 +78,8 @@ class Simon42SummaryCard extends HTMLElement {
     // 1. Domain-Filter (reduziert drastisch die Entity-Anzahl)
     // 2. State-Existence-Check (schnell)
     // 3. Exclude-Checks (Set-Lookup ist O(1))
-    // 4. Komplexere Attribute-Checks am Ende
+    // 4. Registry-Checks direkt aus hass.entities
+    // 5. Komplexere Attribute-Checks am Ende
     
     switch (this.config.summary_type) {
       case 'lights':
@@ -89,10 +92,14 @@ class Simon42SummaryCard extends HTMLElement {
           if (!state) return false;
           
           // 3. Exclude-Checks (Set-Lookup = O(1))
-          if (this._excludeLabels.includes(id)) return false;
+          if (this._excludeLabelsSet.has(id)) return false;
           if (hiddenFromConfig.has(id)) return false;
           
-          // 4. Attribute-Checks am Ende
+          // 4. Registry-Check - DIREKT aus hass.entities
+          const registryEntry = hass.entities?.[id];
+          if (registryEntry?.hidden === true) return false;
+          
+          // 5. Category-Checks
           if (state.attributes?.entity_category === 'config') return false;
           if (state.attributes?.entity_category === 'diagnostic') return false;
           
@@ -101,14 +108,22 @@ class Simon42SummaryCard extends HTMLElement {
       
       case 'covers':
         return allEntityIds.filter(id => {
+          // Domain-Check
           if (!id.startsWith('cover.')) return false;
           
+          // State-Check
           const state = hass.states[id];
           if (!state) return false;
           
-          if (this._excludeLabels.includes(id)) return false;
+          // Exclude-Checks
+          if (this._excludeLabelsSet.has(id)) return false;
           if (hiddenFromConfig.has(id)) return false;
           
+          // Registry-Check
+          const registryEntry = hass.entities?.[id];
+          if (registryEntry?.hidden === true) return false;
+          
+          // Category-Checks
           if (state.attributes?.entity_category === 'config') return false;
           if (state.attributes?.entity_category === 'diagnostic') return false;
           
@@ -120,7 +135,7 @@ class Simon42SummaryCard extends HTMLElement {
           const state = hass.states[id];
           if (!state) return false;
           
-          // Domain-Check zuerst (locks, covers, binary_sensors)
+          // Domain-Pre-Filter (nur relevante Domains)
           const isLock = id.startsWith('lock.');
           const isCover = id.startsWith('cover.');
           const isBinarySensor = id.startsWith('binary_sensor.');
@@ -128,8 +143,12 @@ class Simon42SummaryCard extends HTMLElement {
           if (!isLock && !isCover && !isBinarySensor) return false;
           
           // Exclude-Checks
-          if (this._excludeLabels.includes(id)) return false;
+          if (this._excludeLabelsSet.has(id)) return false;
           if (hiddenFromConfig.has(id)) return false;
+          
+          // Registry-Check
+          const registryEntry = hass.entities?.[id];
+          if (registryEntry?.hidden === true) return false;
           
           // Device-Class-Check nur für relevante Domains
           if (isLock) return true;
@@ -152,15 +171,21 @@ class Simon42SummaryCard extends HTMLElement {
           const state = hass.states[id];
           if (!state) return false;
           
-          // Exclude-Checks früh
-          if (this._excludeLabels.includes(id)) return false;
+          // Battery-Check (String-includes ist schneller als Attribute-Lookup)
+          if (!id.includes('battery') && 
+              state.attributes?.device_class !== 'battery') {
+            return false;
+          }
+          
+          // Exclude-Checks
+          if (this._excludeLabelsSet.has(id)) return false;
           if (hiddenFromConfig.has(id)) return false;
           
-          // Battery-Check (String-includes ist schneller als Attribute-Lookup)
-          if (id.includes('battery')) return true;
-          if (state.attributes?.device_class === 'battery') return true;
+          // Registry-Check
+          const registryEntry = hass.entities?.[id];
+          if (registryEntry?.hidden === true) return false;
           
-          return false;
+          return true;
         });
       
       default:
@@ -292,8 +317,8 @@ class Simon42SummaryCard extends HTMLElement {
       },
       batteries: {
         icon: hasItems ? 'mdi:battery-alert' : 'mdi:battery-charging',
-        name: hasItems ? `${count} ${count === 1 ? 'Batterie kritisch' : 'Batterien kritisch'}` : 'Alle Batterien OK',
-        color: hasItems ? 'red' : 'green',
+        name: hasItems ? `${count} ${count === 1 ? 'Batterie' : 'Batterien'} kritisch` : 'Alle Batterien OK',
+        color: hasItems ? 'red' : 'grey',
         path: 'batteries'
       }
     };

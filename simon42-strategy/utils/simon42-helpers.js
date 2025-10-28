@@ -1,7 +1,8 @@
 // ====================================================================
-// SIMON42 HELPER FUNCTIONS
+// SIMON42 HELPER FUNCTIONS - OPTIMIZED
 // ====================================================================
 // Gemeinsame Helper-Funktionen für alle Strategies
+// KEIN redundantes Caching oder doppelte Registry-Lookups mehr!
 // ====================================================================
 
 /**
@@ -115,15 +116,13 @@ export function stripCoverType(entityId, hass) {
 
 /**
  * Prüft ob eine Entität versteckt, deaktiviert ist oder nicht angezeigt werden soll
+ * OPTIMIERT: Keine redundanten Registry-Lookups mehr!
  * @param {Object} entity - Entity-Objekt aus der Registry
  * @param {Object} hass - Home Assistant Objekt
  * @returns {boolean} True wenn versteckt, deaktiviert oder nicht sichtbar
  */
 export function isEntityHiddenOrDisabled(entity, hass) {
-  const entityId = entity.entity_id;
-  
   // Prüfe direkt im entity-Objekt (aus der Entity Registry)
-  
   // WICHTIG: Das 'hidden' Feld (boolean) wird gesetzt wenn die Entität in der UI auf "Sichtbar = false" gesetzt wird
   if (entity.hidden === true) {
     return true;
@@ -143,34 +142,11 @@ export function isEntityHiddenOrDisabled(entity, hass) {
     return true;
   }
   
-  // Zusätzlich auch in hass.entities prüfen (falls vorhanden)
-  const entityRegistry = hass.entities?.[entityId];
-  if (entityRegistry) {
-    // Auch hier das 'hidden' Feld prüfen
-    if (entityRegistry.hidden === true) {
-      return true;
-    }
-    
-    if (entityRegistry.hidden_by) {
-      return true;
-    }
-    
-    if (entityRegistry.disabled_by) {
-      return true;
-    }
-    
-    // Auch hier entity_category prüfen
-    if (entityRegistry.entity_category === 'config' || entityRegistry.entity_category === 'diagnostic') {
-      return true;
-    }
-  }
-  
   // Prüfe auch im State-Objekt (manche Entity Categories sind nur dort verfügbar)
-  const state = hass.states?.[entityId];
-  if (state?.attributes?.entity_category) {
-    if (state.attributes.entity_category === 'config' || state.attributes.entity_category === 'diagnostic') {
-      return true;
-    }
+  const state = hass.states?.[entity.entity_id];
+  if (state?.attributes?.entity_category === 'config' || 
+      state?.attributes?.entity_category === 'diagnostic') {
+    return true;
   }
   
   return false;
