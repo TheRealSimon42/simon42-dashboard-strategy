@@ -709,9 +709,8 @@ Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenz
 
 ## 📞 Support & Kontakt
 
-- **GitHub Issues:** [Projektname auf GitHub]
-- **Home Assistant Forum:** [Forum-Thread]
-- **Community Discord:** [Discord-Link falls vorhanden]
+- **[GitHub Issues](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues)**
+- **[simon42 Community](https://community.simon42.com/):** Suchfunktion hilft immer 😜 
 
 ---
 
