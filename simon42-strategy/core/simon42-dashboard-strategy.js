@@ -1,7 +1,10 @@
 // ====================================================================
-// DASHBOARD STRATEGY - Generiert die Hauptstruktur (MIT REGISTRY CACHE)
+// DASHBOARD STRATEGY - Generiert die Hauptstruktur
 // ====================================================================
-import registryCache from '../utils/simon42-registry-cache.js';
+// Nutzt direkt die im hass-Objekt verfügbaren Registry-Daten
+// Keine WebSocket-Calls mehr nötig!
+// ====================================================================
+
 import { getVisibleAreas } from '../utils/simon42-helpers.js';
 import { 
   collectPersons, 
@@ -26,19 +29,13 @@ import {
 
 class Simon42DashboardStrategy {
   static async generate(config, hass) {
-    // OPTIMIERT: Nutze Registry Cache statt mehrfacher callWS()
-    const [areas, devices, entities, floors] = await Promise.all([
-      registryCache.get(hass, "config/area_registry/list"),
-      registryCache.get(hass, "config/device_registry/list"),
-      registryCache.get(hass, "config/entity_registry/list"),
-      registryCache.get(hass, "config/floor_registry/list")
-    ]);
-
-    // Speichere Floors in hass für späteren Zugriff
-    hass.floors = {};
-    floors.forEach(floor => {
-      hass.floors[floor.floor_id] = floor;
-    });
+    // Nutze die bereits im hass-Objekt verfügbaren Registry-Daten
+    // Diese sind als Objects verfügbar mit ID als Key
+    // Konvertiere sie zu Arrays für die weitere Verarbeitung
+    const areas = Object.values(hass.areas || {});
+    const devices = Object.values(hass.devices || {});
+    const entities = Object.values(hass.entities || {});
+    const floors = Object.values(hass.floors || {});
 
     // Labels für Filterung von Entitäten
     const excludeLabels = entities

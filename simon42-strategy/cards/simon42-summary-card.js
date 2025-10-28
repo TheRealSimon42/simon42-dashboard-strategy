@@ -1,8 +1,9 @@
 // ====================================================================
-// SIMON42 SUMMARY CARD - Reactive Summary Tile (OPTIMIERT)
+// SIMON42 SUMMARY CARD - Reactive Summary Tile
 // ====================================================================
 // Eine reactive Card die automatisch auf State-Änderungen reagiert
 // und die Anzahl von Entities dynamisch zählt
+// ====================================================================
 
 class Simon42SummaryCard extends HTMLElement {
   constructor() {
@@ -11,7 +12,7 @@ class Simon42SummaryCard extends HTMLElement {
     this.config = null;
     this._count = 0;
     this._excludeLabels = [];
-    this._hiddenFromConfigCache = null; // NEU: Cache für hidden entities
+    this._hiddenFromConfigCache = null;
   }
 
   async setConfig(config) {
@@ -27,9 +28,9 @@ class Simon42SummaryCard extends HTMLElement {
     const oldHass = this._hass;
     this._hass = hass;
     
-    // Beim ersten Mal: Lade Entity Registry für Label-Filterung
+    // Beim ersten Mal: Lade excluded Labels aus Entity Registry
     if (!oldHass && hass) {
-      this._loadEntityRegistry();
+      this._loadExcludedLabels();
     }
     
     // Berechne Count neu
@@ -46,38 +47,20 @@ class Simon42SummaryCard extends HTMLElement {
     return this._hass;
   }
 
-  async _loadEntityRegistry() {
-    try {
-      // OPTIMIERT: Nutze Registry Cache
-      const registryCache = window.simon42RegistryCache;
-      
-      if (!registryCache) {
-        console.warn('Registry cache not available, falling back to direct call');
-        const entities = await this._hass.callWS({ 
-          type: "config/entity_registry/list" 
-        });
-        this._excludeLabels = entities
-          .filter(e => e.labels?.includes("no_dboard"))
-          .map(e => e.entity_id);
-      } else {
-        const entities = await registryCache.get(
-          this._hass, 
-          "config/entity_registry/list"
-        );
-        
-        // Filtere Entities mit no_dboard Label
-        this._excludeLabels = entities
-          .filter(e => e.labels?.includes("no_dboard"))
-          .map(e => e.entity_id);
-      }
-      
-      // Trigger Re-Render nach dem Laden
-      this._count = this._calculateCount();
-      this._render();
-    } catch (err) {
-      console.warn('Could not load entity registry for simon42-summary-card:', err);
+  _loadExcludedLabels() {
+    // Nutze die bereits im hass-Objekt verfügbare Entity Registry
+    // Keine WebSocket-Calls mehr nötig!
+    if (!this._hass.entities) {
+      console.warn('[Simon42 Summary Card] hass.entities not available');
       this._excludeLabels = [];
+      return;
     }
+
+    // Konvertiere Entity Registry Object zu Array und filtere nach no_dboard Label
+    const entities = Object.values(this._hass.entities);
+    this._excludeLabels = entities
+      .filter(e => e.labels?.includes("no_dboard"))
+      .map(e => e.entity_id);
   }
 
   _getRelevantEntities(hass) {

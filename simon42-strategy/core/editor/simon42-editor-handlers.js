@@ -1,9 +1,10 @@
 // ====================================================================
-// SIMON42 EDITOR HANDLERS (MIT REGISTRY CACHE)
+// SIMON42 DASHBOARD EDITOR - Event Handlers
 // ====================================================================
-// Event-Handler für den Dashboard Strategy Editor
+// Event-Handler für den grafischen Editor
+// ====================================================================
 
-import { renderAreaEntitiesHTML } from './simon42-editor-template.js';
+// Export der Attach-Funktionen
 
 export function attachEnergyCheckboxListener(element, callback) {
   const energyCheckbox = element.querySelector('#show-energy');
@@ -32,19 +33,73 @@ export function attachSubviewsCheckboxListener(element, callback) {
   }
 }
 
+export function attachGroupByFloorsCheckboxListener(element, callback) {
+  const groupByFloorsCheckbox = element.querySelector('#group-by-floors');
+  if (groupByFloorsCheckbox) {
+    groupByFloorsCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachAreaCheckboxListeners(element, callback) {
   const areaCheckboxes = element.querySelectorAll('.area-checkbox');
+  
   areaCheckboxes.forEach(checkbox => {
     checkbox.addEventListener('change', (e) => {
       const areaId = e.target.dataset.areaId;
       const isVisible = e.target.checked;
-      callback(areaId, isVisible);
       
-      // Disable/Enable expand button
-      const areaItem = e.target.closest('.area-item');
-      const expandButton = areaItem.querySelector('.expand-button');
-      if (expandButton) {
-        expandButton.disabled = !isVisible;
+      callback(areaId, null, null, isVisible); // null, null = kompletter Bereich
+    });
+  });
+}
+
+export function attachEntityCheckboxListeners(element, callback) {
+  const entityCheckboxes = element.querySelectorAll('.entity-checkbox');
+  
+  entityCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const areaId = e.target.dataset.areaId;
+      const group = e.target.dataset.group;
+      const entityId = e.target.dataset.entityId;
+      const isVisible = e.target.checked;
+      
+      callback(areaId, group, entityId, isVisible);
+    });
+  });
+}
+
+export function attachEntityExpandButtonListeners(element, editorElement) {
+  const expandButtons = element.querySelectorAll('.expand-group-button');
+  
+  expandButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      const areaId = button.dataset.areaId;
+      const group = button.dataset.group;
+      const groupId = `${areaId}-${group}`;
+      
+      const content = element.querySelector(`.entity-list-content[data-group-id="${groupId}"]`);
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        button.classList.add('expanded');
+        
+        // Track expanded state pro Bereich UND Gruppe
+        if (editorElement._expandedGroups) {
+          if (!editorElement._expandedGroups.has(areaId)) {
+            editorElement._expandedGroups.set(areaId, new Set());
+          }
+          editorElement._expandedGroups.get(areaId).add(group);
+        }
+      } else {
+        content.style.display = 'none';
+        button.classList.remove('expanded');
+        
+        if (editorElement._expandedGroups) {
+          editorElement._expandedGroups.get(areaId)?.delete(group);
+        }
       }
     });
   });
@@ -55,10 +110,9 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
   
   expandButtons.forEach(button => {
     button.addEventListener('click', async (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       const areaId = button.dataset.areaId;
-      const areaItem = button.closest('.area-item');
-      const content = areaItem.querySelector(`.area-content[data-area-id="${areaId}"]`);
+      const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
       const icon = button.querySelector('.expand-icon');
       
       if (content.style.display === 'none') {
@@ -117,211 +171,156 @@ export function attachGroupCheckboxListeners(element, callback) {
       callback(areaId, group, null, isVisible); // null = alle Entities in der Gruppe
       
       // Update alle Entity-Checkboxen in dieser Gruppe
-      const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-      if (entityList) {
-        const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
-        entityCheckboxes.forEach(cb => {
-          cb.checked = isVisible;
-        });
-      }
+      const groupId = `${areaId}-${group}`;
+      const entityCheckboxes = element.querySelectorAll(
+        `.entity-checkbox[data-area-id="${areaId}"][data-group="${group}"]`
+      );
       
-      // Entferne indeterminate state
-      e.target.indeterminate = false;
-      e.target.removeAttribute('data-indeterminate');
-    });
-  });
-}
-
-export function attachEntityCheckboxListeners(element, callback) {
-  const entityCheckboxes = element.querySelectorAll('.entity-checkbox');
-  
-  entityCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', (e) => {
-      const areaId = e.target.dataset.areaId;
-      const group = e.target.dataset.group;
-      const entityId = e.target.dataset.entityId;
-      const isVisible = e.target.checked;
-      
-      callback(areaId, group, entityId, isVisible);
-      
-      // Update Group-Checkbox state (all/some/none checked)
-      const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-      const groupCheckbox = element.querySelector(`.group-checkbox[data-area-id="${areaId}"][data-group="${group}"]`);
-      
-      if (entityList && groupCheckbox) {
-        const allCheckboxes = Array.from(entityList.querySelectorAll('.entity-checkbox'));
-        const checkedCount = allCheckboxes.filter(cb => cb.checked).length;
-        
-        if (checkedCount === 0) {
-          groupCheckbox.checked = false;
-          groupCheckbox.indeterminate = false;
-          groupCheckbox.removeAttribute('data-indeterminate');
-        } else if (checkedCount === allCheckboxes.length) {
-          groupCheckbox.checked = true;
-          groupCheckbox.indeterminate = false;
-          groupCheckbox.removeAttribute('data-indeterminate');
-        } else {
-          groupCheckbox.checked = false;
-          groupCheckbox.indeterminate = true;
-          groupCheckbox.setAttribute('data-indeterminate', 'true');
+      entityCheckboxes.forEach(entityCheckbox => {
+        if (entityCheckbox.checked !== isVisible) {
+          entityCheckbox.checked = isVisible;
+          // Trigger auch die Entity-Callback
+          const entityId = entityCheckbox.dataset.entityId;
+          callback(areaId, group, entityId, isVisible);
         }
-      }
-    });
-  });
-}
-
-export function attachEntityExpandButtonListeners(element, editorElement) {
-  const expandButtons = element.querySelectorAll('.expand-button-small');
-  
-  expandButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const areaId = button.dataset.areaId;
-      const group = button.dataset.group;
-      const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
+      });
       
-      if (entityList) {
-        if (entityList.style.display === 'none') {
-          entityList.style.display = 'block';
-          button.classList.add('expanded');
-          
-          // Track expanded state
-          if (editorElement._expandedGroups) {
-            if (!editorElement._expandedGroups.has(areaId)) {
-              editorElement._expandedGroups.set(areaId, new Set());
-            }
-            editorElement._expandedGroups.get(areaId).add(group);
-          }
-        } else {
-          entityList.style.display = 'none';
-          button.classList.remove('expanded');
-          
-          // Track collapsed state
-          if (editorElement._expandedGroups) {
-            const areaGroups = editorElement._expandedGroups.get(areaId);
-            if (areaGroups) {
-              areaGroups.delete(group);
-            }
-          }
-        }
-      }
+      // Entferne indeterminate State
+      checkbox.indeterminate = false;
     });
   });
 }
 
-// Für Checkbox Bereiche nach Areal anzeigen
-export function attachGroupByFloorsCheckboxListener(element, callback) {
-  const groupByFloorsCheckbox = element.querySelector('#group-by-floors');
-  if (groupByFloorsCheckbox) {
-    groupByFloorsCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function sortAreaItems(element) {
-  const areaList = element.querySelector('#area-list');
-  if (!areaList) return;
-
-  const items = Array.from(areaList.querySelectorAll('.area-item'));
-  items.sort((a, b) => {
-    const orderA = parseInt(a.dataset.order);
-    const orderB = parseInt(b.dataset.order);
-    return orderA - orderB;
-  });
-
-  items.forEach(item => areaList.appendChild(item));
-}
-
-export function attachDragAndDropListeners(element, onOrderChange) {
-  const areaList = element.querySelector('#area-list');
-  if (!areaList) return;
-  
-  const areaItems = areaList.querySelectorAll('.area-item');
+export function attachDragAndDropListeners(element) {
+  const areaItems = element.querySelectorAll('.area-item');
   
   let draggedElement = null;
+  let placeholder = null;
 
-  const handleDragStart = (ev) => {
-    // Nur auf dem Header draggable machen
-    const dragHandle = ev.target.closest('.drag-handle');
-    if (!dragHandle) {
-      ev.preventDefault();
-      return;
-    }
-    
-    const areaItem = ev.target.closest('.area-item');
-    if (!areaItem) {
-      ev.preventDefault();
-      return;
-    }
-    
-    areaItem.classList.add('dragging');
-    ev.dataTransfer.effectAllowed = 'move';
-    ev.dataTransfer.setData('text/html', areaItem.innerHTML);
-    draggedElement = areaItem;
+  const createPlaceholder = () => {
+    const div = document.createElement('div');
+    div.className = 'drag-placeholder';
+    div.style.height = '60px';
+    div.style.background = 'var(--primary-color, #03a9f4)';
+    div.style.opacity = '0.2';
+    div.style.border = '2px dashed var(--primary-color, #03a9f4)';
+    div.style.borderRadius = '8px';
+    div.style.margin = '8px 0';
+    return div;
   };
 
-  const handleDragEnd = (ev) => {
-    const areaItem = ev.target.closest('.area-item');
-    if (areaItem) {
-      areaItem.classList.remove('dragging');
+  const handleDragStart = (e) => {
+    draggedElement = e.target.closest('.area-item');
+    draggedElement.style.opacity = '0.4';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', draggedElement.innerHTML);
+    
+    // Erstelle Placeholder
+    placeholder = createPlaceholder();
+  };
+
+  const handleDragEnd = (e) => {
+    draggedElement.style.opacity = '1';
+    
+    // Entferne Placeholder
+    if (placeholder && placeholder.parentNode) {
+      placeholder.parentNode.removeChild(placeholder);
     }
     
     // Entferne alle drag-over Klassen
-    const items = areaList.querySelectorAll('.area-item');
-    items.forEach(item => item.classList.remove('drag-over'));
+    areaItems.forEach(item => {
+      item.classList.remove('drag-over');
+    });
   };
 
-  const handleDragOver = (ev) => {
-    if (ev.preventDefault) {
-      ev.preventDefault();
+  const handleDragOver = (e) => {
+    if (e.preventDefault) {
+      e.preventDefault();
     }
-    ev.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = 'move';
     
-    const item = ev.currentTarget;
-    if (item !== draggedElement) {
-      item.classList.add('drag-over');
+    const afterElement = getDragAfterElement(e.target.closest('.area-list'), e.clientY);
+    const container = e.target.closest('.area-list');
+    
+    if (afterElement == null) {
+      container.appendChild(placeholder);
+    } else {
+      container.insertBefore(placeholder, afterElement);
     }
     
     return false;
   };
 
-  const handleDragLeave = (ev) => {
-    ev.currentTarget.classList.remove('drag-over');
+  const handleDrop = (e) => {
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+    
+    if (draggedElement !== e.target.closest('.area-item')) {
+      // Verschiebe das Element
+      const afterElement = placeholder;
+      const container = e.target.closest('.area-list');
+      container.insertBefore(draggedElement, afterElement);
+      
+      // Trigger custom event für Config-Update
+      const event = new CustomEvent('areas-reordered', {
+        detail: {
+          areaIds: Array.from(container.querySelectorAll('.area-item')).map(
+            item => item.dataset.areaId
+          )
+        },
+        bubbles: true,
+        composed: true
+      });
+      element.dispatchEvent(event);
+    }
+    
+    return false;
   };
 
-  const handleDrop = (ev) => {
-    if (ev.stopPropagation) {
-      ev.stopPropagation();
-    }
-    if (ev.preventDefault) {
-      ev.preventDefault();
-    }
+  const handleDragLeave = (e) => {
+    e.target.closest('.area-item')?.classList.remove('drag-over');
+  };
 
-    const dropTarget = ev.currentTarget;
-    dropTarget.classList.remove('drag-over');
-
-    if (draggedElement && draggedElement !== dropTarget) {
-      const allItems = Array.from(areaList.querySelectorAll('.area-item'));
-      const draggedIndex = allItems.indexOf(draggedElement);
-      const dropIndex = allItems.indexOf(dropTarget);
-
-      if (draggedIndex < dropIndex) {
-        dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
+  const getDragAfterElement = (container, y) => {
+    const draggableElements = [...container.querySelectorAll('.area-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
       } else {
-        dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+        return closest;
       }
-
-      // Update die Reihenfolge in der Config
-      onOrderChange();
-    }
-
-    return false;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
   };
 
+  // Nur Drag-Handles sollen draggable sein
+  const dragHandles = element.querySelectorAll('.drag-handle');
+  dragHandles.forEach(handle => {
+    handle.addEventListener('mousedown', (e) => {
+      const areaItem = handle.closest('.area-item');
+      areaItem.setAttribute('draggable', 'true');
+    });
+    
+    handle.addEventListener('mouseup', (e) => {
+      const areaItem = handle.closest('.area-item');
+      areaItem.removeAttribute('draggable');
+    });
+  });
+
+  // Verhindere Drag auf anderen Elementen
   areaItems.forEach(item => {
-    item.setAttribute('draggable', 'true');
-    item.addEventListener('dragstart', handleDragStart);
+    item.addEventListener('dragstart', (e) => {
+      if (!item.hasAttribute('draggable')) {
+        e.preventDefault();
+        return false;
+      }
+      handleDragStart(e);
+    });
+
     item.addEventListener('dragend', handleDragEnd);
     item.addEventListener('dragover', handleDragOver);
     item.addEventListener('drop', handleDrop);
@@ -332,23 +331,12 @@ export function attachDragAndDropListeners(element, onOrderChange) {
 // Helper-Funktionen
 
 async function getAreaGroupedEntities(areaId, hass) {
-  // OPTIMIERT: Nutze Registry Cache
-  const registryCache = window.simon42RegistryCache;
+  // Nutze die bereits im hass-Objekt verfügbaren Registry-Daten
+  // Keine WebSocket-Calls mehr nötig!
   
-  let devices, entities;
-  
-  if (!registryCache) {
-    console.warn('Registry cache not available, falling back to direct calls');
-    [devices, entities] = await Promise.all([
-      hass.callWS({ type: "config/device_registry/list" }),
-      hass.callWS({ type: "config/entity_registry/list" }),
-    ]);
-  } else {
-    [devices, entities] = await Promise.all([
-      registryCache.get(hass, "config/device_registry/list"),
-      registryCache.get(hass, "config/entity_registry/list"),
-    ]);
-  }
+  // Konvertiere Objects zu Arrays
+  const devices = Object.values(hass.devices || {});
+  const entities = Object.values(hass.entities || {});
   
   // Finde alle Geräte im Raum
   const areaDevices = new Set();
@@ -462,4 +450,121 @@ function getEntityOrdersForArea(areaId, config) {
   }
   
   return orders;
+}
+
+function renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, entityOrders, hass) {
+  const groupLabels = {
+    lights: 'Beleuchtung',
+    covers: 'Rollos & Jalousien',
+    covers_curtain: 'Vorhänge',
+    scenes: 'Szenen',
+    climate: 'Klima',
+    media_player: 'Medien',
+    vacuum: 'Staubsauger',
+    fan: 'Lüfter',
+    switches: 'Schalter'
+  };
+
+  const groupIcons = {
+    lights: 'mdi:lightbulb',
+    covers: 'mdi:window-shutter',
+    covers_curtain: 'mdi:curtains',
+    scenes: 'mdi:palette',
+    climate: 'mdi:thermostat',
+    media_player: 'mdi:cast',
+    vacuum: 'mdi:robot-vacuum',
+    fan: 'mdi:fan',
+    switches: 'mdi:light-switch'
+  };
+
+  let html = '';
+
+  for (const [group, entityIds] of Object.entries(groupedEntities)) {
+    if (entityIds.length === 0) continue;
+
+    const groupHidden = hiddenEntities[group] || [];
+    const groupOrder = entityOrders[group] || [];
+    
+    // Sortiere Entities nach Order (falls vorhanden)
+    let sortedEntities = [...entityIds];
+    if (groupOrder.length > 0) {
+      sortedEntities.sort((a, b) => {
+        const indexA = groupOrder.indexOf(a);
+        const indexB = groupOrder.indexOf(b);
+        
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return 0;
+      });
+    }
+    
+    const visibleCount = entityIds.filter(id => !groupHidden.includes(id)).length;
+    const totalCount = entityIds.length;
+    const allVisible = visibleCount === totalCount;
+    const someVisible = visibleCount > 0 && visibleCount < totalCount;
+
+    const groupId = `${areaId}-${group}`;
+
+    html += `
+      <div class="entity-group">
+        <div class="entity-group-header">
+          <label class="group-checkbox-label">
+            <input 
+              type="checkbox" 
+              class="group-checkbox" 
+              data-area-id="${areaId}" 
+              data-group="${group}"
+              ${allVisible ? 'checked' : ''}
+              ${someVisible ? 'data-indeterminate="true"' : ''}
+            />
+            <ha-icon icon="${groupIcons[group]}" class="group-icon"></ha-icon>
+            <span class="group-name">${groupLabels[group]}</span>
+            <span class="entity-count">(${visibleCount}/${totalCount})</span>
+          </label>
+          <button class="expand-group-button" data-area-id="${areaId}" data-group="${group}">
+            <ha-icon icon="mdi:chevron-right" class="expand-icon"></ha-icon>
+          </button>
+        </div>
+        <div class="entity-list-content" data-group-id="${groupId}" style="display: none;">
+          ${sortedEntities.map(entityId => {
+            const state = hass.states[entityId];
+            const isHidden = groupHidden.includes(entityId);
+            const friendlyName = state?.attributes?.friendly_name || entityId;
+            
+            return `
+              <label class="entity-checkbox-label">
+                <input 
+                  type="checkbox" 
+                  class="entity-checkbox" 
+                  data-area-id="${areaId}" 
+                  data-group="${group}" 
+                  data-entity-id="${entityId}"
+                  ${!isHidden ? 'checked' : ''}
+                />
+                <span class="entity-name">${friendlyName}</span>
+                <span class="entity-id">${entityId}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  return html || '<div class="no-entities">Keine Entitäten gefunden</div>';
+}
+
+export function sortAreaItems(element) {
+  const areaList = element.querySelector('#area-list');
+  if (!areaList) return;
+
+  const items = Array.from(areaList.querySelectorAll('.area-item'));
+  items.sort((a, b) => {
+    const orderA = parseInt(a.dataset.order);
+    const orderB = parseInt(b.dataset.order);
+    return orderA - orderB;
+  });
+
+  items.forEach(item => areaList.appendChild(item));
 }
