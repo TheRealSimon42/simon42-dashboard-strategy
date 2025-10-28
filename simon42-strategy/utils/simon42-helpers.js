@@ -114,13 +114,21 @@ export function stripCoverType(entityId, hass) {
 }
 
 /**
- * Prüft ob eine Entität versteckt oder deaktiviert ist
+ * Prüft ob eine Entität versteckt, deaktiviert ist oder nicht angezeigt werden soll
  * @param {Object} entity - Entity-Objekt aus der Registry
  * @param {Object} hass - Home Assistant Objekt
- * @returns {boolean} True wenn versteckt oder deaktiviert
+ * @returns {boolean} True wenn versteckt, deaktiviert oder nicht sichtbar
  */
 export function isEntityHiddenOrDisabled(entity, hass) {
+  const entityId = entity.entity_id;
+  
   // Prüfe direkt im entity-Objekt (aus der Entity Registry)
+  
+  // WICHTIG: Das 'hidden' Feld (boolean) wird gesetzt wenn die Entität in der UI auf "Sichtbar = false" gesetzt wird
+  if (entity.hidden === true) {
+    return true;
+  }
+  
   if (entity.hidden_by) {
     return true;
   }
@@ -129,14 +137,38 @@ export function isEntityHiddenOrDisabled(entity, hass) {
     return true;
   }
   
+  // Prüfe entity_category in der Registry
+  // Diese Kategorien werden in Home Assistant als "nicht sichtbar" in der UI behandelt
+  if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') {
+    return true;
+  }
+  
   // Zusätzlich auch in hass.entities prüfen (falls vorhanden)
-  const entityRegistry = hass.entities?.[entity.entity_id];
+  const entityRegistry = hass.entities?.[entityId];
   if (entityRegistry) {
+    // Auch hier das 'hidden' Feld prüfen
+    if (entityRegistry.hidden === true) {
+      return true;
+    }
+    
     if (entityRegistry.hidden_by) {
       return true;
     }
     
     if (entityRegistry.disabled_by) {
+      return true;
+    }
+    
+    // Auch hier entity_category prüfen
+    if (entityRegistry.entity_category === 'config' || entityRegistry.entity_category === 'diagnostic') {
+      return true;
+    }
+  }
+  
+  // Prüfe auch im State-Objekt (manche Entity Categories sind nur dort verfügbar)
+  const state = hass.states?.[entityId];
+  if (state?.attributes?.entity_category) {
+    if (state.attributes.entity_category === 'config' || state.attributes.entity_category === 'diagnostic') {
       return true;
     }
   }

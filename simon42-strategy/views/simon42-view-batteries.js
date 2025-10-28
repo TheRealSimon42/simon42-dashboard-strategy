@@ -26,6 +26,12 @@ class Simon42ViewBatteriesStrategy {
       }
     }
 
+    // Erstelle ein Map der Entity Registry für schnelle Lookups
+    const entityRegistryMap = new Map();
+    entities.forEach(e => {
+      entityRegistryMap.set(e.entity_id, e);
+    });
+
     // OPTIMIERT: Filter-Reihenfolge
     const batteryEntities = Object.keys(hass.states)
       .filter(entityId => {
@@ -37,11 +43,18 @@ class Simon42ViewBatteriesStrategy {
                          state.attributes?.device_class === 'battery';
         if (!isBattery) return false;
         
-        // 2. Exclude-Checks (Set-Lookup = O(1))
+        // 2. Registry-Checks (NEU) - nur wenn Entity in Registry ist
+        const registryEntry = entityRegistryMap.get(entityId);
+        if (registryEntry) {
+          // Nur hidden === true filtern (die anderen Checks können Probleme machen)
+          if (registryEntry.hidden === true) return false;
+        }
+        
+        // 3. Exclude-Checks (Set-Lookup = O(1))
         if (excludeSet.has(entityId)) return false;
         if (hiddenFromConfig.has(entityId)) return false;
         
-        // 3. Value-Check am Ende
+        // 4. Value-Check am Ende
         const value = parseFloat(state.state);
         return !isNaN(value); // Nur numerische Werte
       });

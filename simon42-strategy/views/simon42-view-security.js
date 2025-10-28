@@ -35,10 +35,18 @@ class Simon42ViewSecurityStrategy {
       .filter(e => {
         const id = e.entity_id;
         
-        // 1. State-Existence-Check
+        // 1. Hidden/Disabled-Checks (Registry)
+        if (e.hidden === true) return false;
+        if (e.hidden_by) return false;
+        if (e.disabled_by) return false;
+        
+        // 2. Entity Category Check
+        if (e.entity_category === 'config' || e.entity_category === 'diagnostic') return false;
+        
+        // 3. State-Existence-Check
         if (hass.states[id] === undefined) return false;
         
-        // 2. Exclude-Checks (Set-Lookup = O(1))
+        // 4. Exclude-Checks (Set-Lookup = O(1))
         if (excludeSet.has(id)) return false;
         if (hiddenFromConfig.has(id)) return false;
         
@@ -77,49 +85,49 @@ class Simon42ViewSecurityStrategy {
 
     // Schlösser Section
     if (locks.length > 0) {
-      const locksOpen = locks.filter(e => hass.states[e]?.state === 'unlocked');
-      const locksClosed = locks.filter(e => hass.states[e]?.state === 'locked');
+      const locksUnlocked = locks.filter(e => hass.states[e]?.state === 'unlocked');
+      const locksLocked = locks.filter(e => hass.states[e]?.state === 'locked');
       
       const lockCards = [];
       
-      if (locksOpen.length > 0) {
+      if (locksUnlocked.length > 0) {
         lockCards.push({
           type: "heading",
-          heading: "🔓 Entriegelt",
+          heading: "🔓 Schlösser - Entriegelt",
           heading_style: "subtitle",
           badges: [
             {
               type: "entity",
-              entity: locksOpen[0],
+              entity: locksUnlocked[0],
               show_name: false,
               show_state: false,
               tap_action: {
                 action: "perform-action",
                 perform_action: "lock.lock",
-                target: { entity_id: locksOpen }
+                target: { entity_id: locksUnlocked }
               },
               icon: "mdi:lock"
             }
           ]
         });
-        lockCards.push(...locksOpen.map(entity => ({
+        lockCards.push(...locksUnlocked.map(entity => ({
           type: "tile",
           entity: entity,
-          features_position: "inline",
+          features: [{ type: "lock-commands" }],
           state_content: "last_changed"
         })));
       }
       
-      if (locksClosed.length > 0) {
+      if (locksLocked.length > 0) {
         lockCards.push({
           type: "heading",
-          heading: "🔒 Verriegelt",
+          heading: "🔒 Schlösser - Verriegelt",
           heading_style: "subtitle"
         });
-        lockCards.push(...locksClosed.map(entity => ({
+        lockCards.push(...locksLocked.map(entity => ({
           type: "tile",
           entity: entity,
-          features_position: "inline",
+          features: [{ type: "lock-commands" }],
           state_content: "last_changed"
         })));
       }

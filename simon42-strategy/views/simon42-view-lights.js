@@ -28,10 +28,18 @@ class Simon42ViewLightsStrategy {
         // 1. Domain-Check zuerst
         if (!id.startsWith('light.')) return false;
         
-        // 2. State-Existence-Check
+        // 2. Hidden/Disabled-Checks (Registry)
+        if (e.hidden === true) return false;
+        if (e.hidden_by) return false;
+        if (e.disabled_by) return false;
+        
+        // 3. Entity Category Check
+        if (e.entity_category === 'config' || e.entity_category === 'diagnostic') return false;
+        
+        // 4. State-Existence-Check
         if (hass.states[id] === undefined) return false;
         
-        // 3. Exclude-Checks (Set-Lookup = O(1))
+        // 5. Exclude-Checks (Set-Lookup = O(1))
         if (excludeSet.has(id)) return false;
         if (hiddenFromConfig.has(id)) return false;
         
@@ -120,9 +128,7 @@ class Simon42ViewLightsStrategy {
           ...lightsOff.map(entity => ({
             type: "tile",
             entity: entity,
-            features: [{ type: "light-brightness" }],
             vertical: false,
-            features_position: "inline",
             state_content: "last_changed"
           }))
         ]
