@@ -1,7 +1,8 @@
 // ====================================================================
-// SIMON42 DASHBOARD STRATEGIES - LOADER
+// SIMON42 DASHBOARD STRATEGIES - LOADER (MIT REAKTIVEN GROUP-CARDS)
 // ====================================================================
-// Diese Datei lädt alle Strategy-Module
+// Diese Datei lädt alle Strategy-Module inklusive der neuen reaktiven
+// Lights Group Cards
 // 
 // Installation in Home Assistant:
 // 1. Alle Dateien in /config/www/simon42-strategy/ speichern
@@ -26,15 +27,17 @@ import './utils/simon42-view-builder.js';
 
 // Lade Custom Cards
 import './cards/simon42-summary-card.js';
+import './cards/simon42-lights-group-card.js'; // NEU: Reaktive Lights Group Card
+import './cards/simon42-covers-group-card.js'; // NEU: Reaktive Covers Group Card
 
 // Lade Core-Module
 import './core/simon42-dashboard-strategy.js';
 
 // Lade View-Module
 import './views/simon42-view-room.js';
-import './views/simon42-view-lights.js';
+import './views/simon42-view-lights.js'; // Nutzt jetzt die reaktiven Group-Cards
 import './views/simon42-view-covers.js';
 import './views/simon42-view-security.js';
 import './views/simon42-view-batteries.js';
 
-console.log('Simon42 Dashboard Strategies loaded successfully!');
+console.log('Simon42 Dashboard Strategies loaded successfully (with reactive lights + covers cards)!');

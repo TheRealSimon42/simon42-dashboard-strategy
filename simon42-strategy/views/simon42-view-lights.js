@@ -1,146 +1,42 @@
 // ====================================================================
-// VIEW STRATEGY - LICHTER (alle Lichter) - OPTIMIERT
+// VIEW STRATEGY - LICHTER (alle Lichter) - MIT REAKTIVEN GROUP-CARDS
+// ====================================================================
+// Nutzt zwei reaktive Group-Cards (on/off) die sich automatisch aktualisieren
 // ====================================================================
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
 
 class Simon42ViewLightsStrategy {
   static async generate(config, hass) {
-    const { entities } = config;
+    // Die Strategy generiert zwei reaktive Group-Cards
+    // Eine für eingeschaltete, eine für ausgeschaltete Lichter
+    // Jede Card aktualisiert sich automatisch und zeigt/versteckt sich bei Bedarf
     
-    const excludeLabels = getExcludedLabels(entities);
-    const excludeSet = new Set(excludeLabels);
-    
-    // Hole hidden entities aus areas_options (wenn config übergeben wurde)
-    const hiddenFromConfig = new Set();
-    if (config.config?.areas_options) {
-      for (const areaOptions of Object.values(config.config.areas_options)) {
-        if (areaOptions.groups_options?.lights?.hidden) {
-          areaOptions.groups_options.lights.hidden.forEach(id => hiddenFromConfig.add(id));
-        }
-      }
-    }
-
-    // OPTIMIERT: Filter-Reihenfolge
-    const lightEntities = entities
-      .filter(e => {
-        const id = e.entity_id;
-        
-        // 1. Domain-Check zuerst
-        if (!id.startsWith('light.')) return false;
-        
-        // 2. Hidden/Disabled-Checks (Registry)
-        if (e.hidden === true) return false;
-        if (e.hidden_by) return false;
-        if (e.disabled_by) return false;
-        
-        // 3. Entity Category Check
-        if (e.entity_category === 'config' || e.entity_category === 'diagnostic') return false;
-        
-        // 4. State-Existence-Check
-        if (hass.states[id] === undefined) return false;
-        
-        // 5. Exclude-Checks (Set-Lookup = O(1))
-        if (excludeSet.has(id)) return false;
-        if (hiddenFromConfig.has(id)) return false;
-        
-        return true;
-      })
-      .map(e => e.entity_id);
-
-    const lightsOn = [];
-    const lightsOff = [];
-
-    lightEntities.forEach(entity => {
-      const state = hass.states[entity];
-      if (state?.state === 'on') {
-        lightsOn.push(entity);
-      } else {
-        lightsOff.push(entity);
-      }
-    });
-
-    const sections = [];
-
-    // Eingeschaltete Lichter
-    if (lightsOn.length > 0) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: `💡 Eingeschaltete Lichter (${lightsOn.length})`,
-            heading_style: "title",
-            badges: [
-              {
-                type: "entity",
-                entity: lightsOn[0], // Dummy entity für den Badge
-                show_name: false,
-                show_state: false,
-                tap_action: {
-                  action: "perform-action",
-                  perform_action: "light.turn_off",
-                  target: {
-                    entity_id: lightsOn
-                  }
-                },
-                icon: "mdi:lightbulb-off"
-              }
-            ]
-          },
-          ...lightsOn.map(entity => ({
-            type: "tile",
-            entity: entity,
-            features: [{ type: "light-brightness" }],
-            vertical: false,
-            features_position: "inline",
-            state_content: "last_changed"
-          }))
-        ]
-      });
-    }
-
-    // Ausgeschaltete Lichter
-    if (lightsOff.length > 0) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: `🌙 Ausgeschaltete Lichter (${lightsOff.length})`,
-            heading_style: "title",
-            badges: lightsOff.length > 0 ? [
-              {
-                type: "entity",
-                entity: lightsOff[0], // Dummy entity für den Badge
-                show_name: false,
-                show_state: false,
-                tap_action: {
-                  action: "perform-action",
-                  perform_action: "light.turn_on",
-                  target: {
-                    entity_id: lightsOff
-                  }
-                },
-                icon: "mdi:lightbulb-on"
-              }
-            ] : []
-          },
-          ...lightsOff.map(entity => ({
-            type: "tile",
-            entity: entity,
-            vertical: false,
-            state_content: "last_changed"
-          }))
-        ]
-      });
-    }
-
     return {
       type: "sections",
-      sections: sections
+      sections: [
+        {
+          type: "grid",
+          cards: [
+            {
+              type: "custom:simon42-lights-group-card",
+              entities: config.entities,
+              config: config.config,
+              group_type: "on"
+            },
+            {
+              type: "custom:simon42-lights-group-card",
+              entities: config.entities,
+              config: config.config,
+              group_type: "off"
+            }
+          ]
+        }
+      ]
     };
   }
 }
 
 // Registriere Custom Element
 customElements.define("ll-strategy-simon42-view-lights", Simon42ViewLightsStrategy);
+
+console.log('✅ Simon42 View Lights Strategy (with reactive group cards) loaded');
