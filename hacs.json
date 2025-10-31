@@ -1,0 +1,7 @@
+{
+  "name": "Simon42 Dashboard Strategy",
+  "filename": "simon42-dashboard-strategy.js",
+  "content_in_root": false,
+  "render_readme": true,
+  "homeassistant": "2021.12.0"
+}
