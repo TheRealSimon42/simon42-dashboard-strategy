@@ -4,6 +4,28 @@
 
 Eine modulare und hochkonfigurierbare Dashboard-Strategy für Home Assistant, die automatisch Views basierend auf Bereichen, Entitäten und deren Zuständen generiert. Wächst mit dem User mit und ist sowohl für Anfänger als auch Fortgeschrittene interessant.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=TheRealSimon42&repository=simon42-dashboard-strategy&category=integration)
+
+---
+
+## 💖 Unterstütze dieses Projekt
+
+Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklung:
+
+<p align="center">
+  <a href="https://youtube.com/@simon42/join">
+    <img src="https://img.shields.io/badge/YouTube-Kanalmitglied_werden-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube Kanalmitglied werden" />
+  </a>
+  <br/>
+  <em>🫶 Bevorzugte Unterstützung: Werde Kanalmitglied auf YouTube!</em>
+  <br/><br/>
+  <a href="https://www.buymeacoffee.com/simon42official">
+    <img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Spende_einen_Kaffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" />
+  </a>
+</p>
+
+---
+
 ## ✨ Features im Überblick
 
 ### 🎨 Benutzerfreundlichkeit
@@ -48,14 +70,16 @@ Eine modulare und hochkonfigurierbare Dashboard-Strategy für Home Assistant, di
 
 ## 📦 Installation
 
-### Schritt 1: Dateien kopieren
+### Option 1: Manuelle Installation
 
-Kopiere alle Dateien aus dem `simon42-strategy` Ordner nach:
+#### Schritt 1: Dateien kopieren
+
+Kopiere alle Dateien aus dem `dist` Ordner nach:
 ```
 /config/www/simon42-strategy/
 ```
 
-### Schritt 2: Resource registrieren
+#### Schritt 2: Resource registrieren
 
 Füge in deiner `configuration.yaml` hinzu:
 
@@ -63,15 +87,15 @@ Füge in deiner `configuration.yaml` hinzu:
 lovelace:
   mode: storage
   resources:
-    - url: /local/simon42-strategy/simon42-strategies-loader.js
+    - url: /local/simon42-strategy/simon42-dashboard-strategy.js
       type: module
 ```
 
-### Schritt 3: Home Assistant neu starten
+#### Schritt 3: Home Assistant neu starten
 
 Starte Home Assistant neu, damit die neue Resource geladen wird.
 
-### Schritt 4: Dashboard erstellen
+#### Schritt 4: Dashboard erstellen
 
 1. Gehe zu **Einstellungen** → **Dashboards**
 2. Klicke auf **Dashboard hinzufügen**
@@ -85,6 +109,26 @@ strategy:
 ```
 
 6. Speichere und schließe - der grafische Editor öffnet sich automatisch!
+
+### Option 2: Installation über HACS (empfohlen)
+
+1. Gehe zu HACS → **Custom repositories**
+2. Füge das Repository hinzu: `https://github.com/TheRealSimon42/simon42-dashboard-strategy`
+3. Installiere die "Simon42 Dashboard Strategy"
+4. Folge den Anweisungen in HACS für die Resource-Registrierung und Dashboard-Erstellung.
+
+## 🤖 Projekt-Kontext für KI-Assistenten
+
+Dieses Projekt ist eine modulare Lovelace Dashboard-Strategy für Home Assistant, entwickelt von Simon42. Es generiert automatisch Views basierend auf HA-Areas, Devices und Entities. Die Codebasis ist in JavaScript (ES6-Module) strukturiert:
+
+- **Entry-Point**: `dist/simon42-dashboard-strategy.js` (lädt den Loader)
+- **Loader**: `dist/simon42-strategies-loader.js` (importiert alle Module)
+- **Core**: Haupt-Strategy und Editor in `dist/core/`
+- **Utils**: Hilfsfunktionen in `dist/utils/`
+- **Views**: Spezialisierte View-Strategien in `dist/views/`
+- **Cards**: Custom Cards in `dist/cards/`
+
+Für Änderungen: Respektiere die modulare Struktur, nutze ES6-Imports/Exports, teste in HA-Umgebung. HACS-kompatibel seit Version X.X.X.
 
 ## 🎨 Grafischer Konfigurator
 
