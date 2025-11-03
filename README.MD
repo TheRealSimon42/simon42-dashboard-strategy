@@ -443,6 +443,7 @@ Pro Bereich wird automatisch eine Detail-Ansicht generiert:
 - Config-Aware: Respektiert `areas_options.groups_options.hidden`
 - Batch-Aktionen: Heading-Badges für Gruppensteuerung
 - Last Changed: Sortierung nach letzter Aktivität
+- Smart Sensor Selection: Verwendet bevorzugt die in der Area-Konfiguration hinterlegten Temperatur- und Luftfeuchtigkeitssensoren (Fallback: automatisch erkannte Sensoren)
 
 ### 💡 Lichter-Übersicht
 
