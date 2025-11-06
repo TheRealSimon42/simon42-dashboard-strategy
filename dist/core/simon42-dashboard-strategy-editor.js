@@ -8,6 +8,7 @@ import {
   attachSearchCardCheckboxListener,
   attachSubviewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
+  attachCoversSummaryCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
   attachExpandButtonListeners,
@@ -63,6 +64,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showSearchCard = this._config.show_search_card === true;
     const showSubviews = this._config.show_subviews === true;
     const groupByFloors = this._config.group_by_floors === true; // NEU
+    const showCoversSummary = this._config.show_covers_summary !== false;
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
@@ -106,7 +108,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         alarmEntities,
         favoriteEntities,
         allEntities,
-        groupByFloors // NEU
+        groupByFloors, // NEU
+        showCoversSummary
       })}
     `;
 
@@ -115,6 +118,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
+    attachCoversSummaryCheckboxListener(this, (showCoversSummary) => this._showCoversSummaryChanged(showCoversSummary));
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
@@ -661,6 +665,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
     if (groupByFloors === false) {
       delete newConfig.group_by_floors;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showCoversSummaryChanged(showCoversSummary) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_covers_summary: showCoversSummary
+    };
+
+    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
+    if (showCoversSummary === true) {
+      delete newConfig.show_covers_summary;
     }
 
     this._config = newConfig;

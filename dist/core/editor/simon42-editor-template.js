@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, allEntities, groupByFloors }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, allEntities, groupByFloors, showCoversSummary }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -81,6 +81,21 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       </div>
 
       <div class="section">
+        <div class="section-title">Zusammenfassungen</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-covers-summary" 
+            ${showCoversSummary !== false ? 'checked' : ''}
+          />
+          <label for="show-covers-summary">Rollo-Zusammenfassung anzeigen</label>
+        </div>
+        <div class="description">
+          Zeigt die Rollo-Zusammenfassungskarte in der Übersicht an.
+        </div>
+      </div>
+
+      <div class="section">
         <div class="section-title">Zusammenfassungen Layout</div>
         <div class="form-row">
           <input 
@@ -103,7 +118,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <label for="summaries-4-columns">4 Spalten (1x4 Reihe)</label>
         </div>
         <div class="description">
-          Wähle aus, wie die Zusammenfassungskarten (Lichter, Rollos, Sicherheit, Batterien) angezeigt werden sollen.
+          Wähle aus, wie die Zusammenfassungskarten angezeigt werden sollen. Das Layout passt sich automatisch an, wenn Karten ausgeblendet werden.
         </div>
       </div>
 

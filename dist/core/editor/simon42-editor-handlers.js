@@ -41,6 +41,15 @@ export function attachGroupByFloorsCheckboxListener(element, callback) {
   }
 }
 
+export function attachCoversSummaryCheckboxListener(element, callback) {
+  const coversSummaryCheckbox = element.querySelector('#show-covers-summary');
+  if (coversSummaryCheckbox) {
+    coversSummaryCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachAreaCheckboxListeners(element, callback) {
   const areaCheckboxes = element.querySelectorAll('.area-checkbox');
   areaCheckboxes.forEach(checkbox => {

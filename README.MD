@@ -206,6 +206,8 @@ strategy:
   show_energy: true              # Energie-Dashboard anzeigen
   show_subviews: false           # Utility Views als Subviews
   show_search_card: false        # Optional: Search Card in Overview
+  show_covers_summary: true      # Rollo-Zusammenfassung anzeigen
+  summaries_columns: 2           # Layout: 2 (2x2) oder 4 (1x4)
   group_by_floors: false         # Bereiche nach Etagen gruppieren
 ```
 
@@ -266,6 +268,8 @@ strategy:
 | `show_energy` | boolean | `true` | Zeigt das Energie-Dashboard in der Übersicht |
 | `show_subviews` | boolean | `false` | Zeigt Utility-Views in der Navigation |
 | `show_search_card` | boolean | `false` | Zeigt optional eine Search Card in der Übersicht |
+| `show_covers_summary` | boolean | `true` | Zeigt die Rollo-Zusammenfassungskarte in der Übersicht |
+| `summaries_columns` | number | `2` | Layout der Zusammenfassungskarten: `2` (2x2 Grid) oder `4` (1x4 Reihe) |
 | `group_by_floors` | boolean | `false` | Gruppiert Bereiche nach Etagen/Floors |
 
 #### `areas_display` - Bereich-Verwaltung

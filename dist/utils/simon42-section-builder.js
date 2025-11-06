@@ -56,6 +56,7 @@ export function createOverviewSection(data) {
 
   // Prüfe ob summaries_columns konfiguriert ist (Standard: 2)
   const summariesColumns = config.summaries_columns || 2;
+  const showCoversSummary = config.show_covers_summary !== false;
 
   // Füge Zusammenfassungen hinzu
   cards.push({
@@ -63,18 +64,25 @@ export function createOverviewSection(data) {
     heading: "Zusammenfassungen"
   });
 
-  // Erstelle die Summary-Cards
+  // Erstelle die Summary-Cards basierend auf Konfiguration
   const summaryCards = [
     {
       type: "custom:simon42-summary-card",
       summary_type: "lights",
       areas_options: config.areas_options || {}
-    },
-    {
+    }
+  ];
+
+  // Covers optional hinzufügen
+  if (showCoversSummary) {
+    summaryCards.push({
       type: "custom:simon42-summary-card",
       summary_type: "covers",
       areas_options: config.areas_options || {}
-    },
+    });
+  }
+
+  summaryCards.push(
     {
       type: "custom:simon42-summary-card",
       summary_type: "security",
@@ -85,26 +93,26 @@ export function createOverviewSection(data) {
       summary_type: "batteries",
       areas_options: config.areas_options || {}
     }
-  ];
+  );
 
-  // Wenn 4 Spalten gewünscht: Wrappen in horizontal-stack
+  // Layout-Logik: Dynamisch an Anzahl der Cards anpassen
   if (summariesColumns === 4) {
+    // Bei 4 Spalten: Alle Cards in einer Reihe
     cards.push({
       type: "horizontal-stack",
       cards: summaryCards
     });
   } else {
-    // Bei 2 Spalten: Zwei horizontal-stacks mit je 2 Cards
-    cards.push(
-      {
+    // Bei 2 Spalten: Aufteilen in mehrere Reihen à 2 Cards
+    for (let i = 0; i < summaryCards.length; i += 2) {
+      const rowCards = summaryCards.slice(i, i + 2);
+      
+      // Wenn nur eine Karte übrig (ungerade Anzahl), trotzdem horizontal-stack verwenden
+      cards.push({
         type: "horizontal-stack",
-        cards: [summaryCards[0], summaryCards[1]]
-      },
-      {
-        type: "horizontal-stack",
-        cards: [summaryCards[2], summaryCards[3]]
-      }
-    );
+        cards: rowCards
+      });
+    }
   }
 
   // Favoriten Section
