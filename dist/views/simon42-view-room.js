@@ -111,6 +111,7 @@ class Simon42ViewRoomStrategy {
       }
 
       // 5. Domain-basierte Kategorisierung
+      const domain = entityId.split('.')[0];
       const deviceClass = state.attributes?.device_class;
       const unit = state.attributes?.unit_of_measurement;
 
