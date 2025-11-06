@@ -263,16 +263,18 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
 /**
  * Erstellt die Wetter & Energie-Section(s)
  * @param {string} weatherEntity - Weather Entity ID
+ * @param {boolean} showWeather - Ob Wetter-Karte angezeigt werden soll
  * @param {boolean} showEnergy - Ob Energie-Dashboard angezeigt werden soll
  * @param {boolean} groupByFloors - Ob nach Etagen gruppiert wird
+ * @returns {Array|Object|null} Section(s) oder null wenn keine Karten angezeigt werden
  */
-export function createWeatherEnergySection(weatherEntity, showEnergy, groupByFloors = false) {
+export function createWeatherEnergySection(weatherEntity, showWeather, showEnergy, groupByFloors = false) {
   // Wenn Etagen-Gruppierung aktiv: Separate Sections zurückgeben
   if (groupByFloors) {
     const sections = [];
     
-    // Weather Section (wenn vorhanden)
-    if (weatherEntity) {
+    // Weather Section (wenn vorhanden UND aktiviert)
+    if (weatherEntity && showWeather) {
       sections.push({
         type: "grid",
         cards: [
@@ -310,14 +312,15 @@ export function createWeatherEnergySection(weatherEntity, showEnergy, groupByFlo
       });
     }
     
+    // Gib leeres Array zurück wenn keine Sections vorhanden
     return sections;
   }
   
   // Standard: Alles in einer Section (wie bisher)
   const cards = [];
   
-  // Füge Weather Forecast hinzu, wenn eine Weather-Entität gefunden wurde
-  if (weatherEntity) {
+  // Füge Weather Forecast hinzu, wenn eine Weather-Entität gefunden wurde UND aktiviert
+  if (weatherEntity && showWeather) {
     cards.push({
       type: "heading",
       heading: "Wetter",
@@ -343,6 +346,11 @@ export function createWeatherEnergySection(weatherEntity, showEnergy, groupByFlo
       type: "energy-distribution",
       link_dashboard: true
     });
+  }
+  
+  // Gib null zurück wenn keine Karten vorhanden (verhindert leere Section)
+  if (cards.length === 0) {
+    return null;
   }
   
   return {

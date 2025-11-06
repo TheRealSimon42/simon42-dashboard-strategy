@@ -57,6 +57,9 @@ class Simon42DashboardStrategy {
     // Erstelle Person-Badges (KORRIGIERT: mit hass Parameter)
     const personBadges = createPersonBadges(persons, hass);
 
+    // Prüfe ob Wetter-Karte angezeigt werden soll (Standard: true)
+    const showWeather = config.show_weather !== false;
+
     // Prüfe ob Energie-Dashboard angezeigt werden soll (Standard: true)
     const showEnergy = config.show_energy !== false;
 
@@ -72,6 +75,9 @@ class Simon42DashboardStrategy {
     // Erstelle Bereiche-Section(s)
     const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
 
+    // Erstelle Wetter & Energie Section(s)
+    const weatherEnergySection = createWeatherEnergySection(weatherEntity, showWeather, showEnergy, groupByFloors);
+    
     // Erstelle Sections für den Haupt-View
     const overviewSections = [
       createOverviewSection({
@@ -86,10 +92,12 @@ class Simon42DashboardStrategy {
       }),
       // Wenn groupByFloors aktiv ist, ist areasSections ein Array von Sections
       ...(Array.isArray(areasSections) ? areasSections : [areasSections]),
-      // Übergebe groupByFloors an createWeatherEnergySection
-      ...(Array.isArray(createWeatherEnergySection(weatherEntity, showEnergy, groupByFloors)) 
-        ? createWeatherEnergySection(weatherEntity, showEnergy, groupByFloors) 
-        : [createWeatherEnergySection(weatherEntity, showEnergy, groupByFloors)])
+      // Füge Wetter & Energie Section(s) nur hinzu wenn nicht null/leer
+      ...(weatherEnergySection 
+        ? (Array.isArray(weatherEnergySection) 
+          ? weatherEnergySection 
+          : [weatherEnergySection])
+        : [])
     ];
 
     // Erstelle alle Views mit areas_options und config

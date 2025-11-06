@@ -204,6 +204,7 @@ In der aufgeklappten Entity-Liste:
 ```yaml
 strategy:
   type: custom:simon42-dashboard
+  show_weather: true             # Wetter-Karte anzeigen
   show_energy: true              # Energie-Dashboard anzeigen
   show_subviews: false           # Utility Views als Subviews
   show_search_card: false        # Optional: Search Card in Overview
@@ -217,6 +218,7 @@ strategy:
 ```yaml
 strategy:
   type: custom:simon42-dashboard
+  show_weather: true
   show_energy: true
   show_subviews: false
   group_by_floors: true
@@ -266,6 +268,7 @@ strategy:
 
 | Parameter | Typ | Standard | Beschreibung |
 |-----------|-----|----------|--------------|
+| `show_weather` | boolean | `true` | Zeigt die Wetter-Karte in der Übersicht (falls Weather-Entity vorhanden) |
 | `show_energy` | boolean | `true` | Zeigt das Energie-Dashboard in der Übersicht |
 | `show_subviews` | boolean | `false` | Zeigt Utility-Views in der Navigation |
 | `show_search_card` | boolean | `false` | Zeigt optional eine Search Card in der Übersicht |

@@ -4,6 +4,7 @@
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
 import { 
+  attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
   attachSearchCardCheckboxListener,
   attachSubviewsCheckboxListener,
@@ -60,6 +61,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return;
     }
 
+    const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
     const showSearchCard = this._config.show_search_card === true;
     const showSubviews = this._config.show_subviews === true;
@@ -100,6 +102,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         allAreas, 
         hiddenAreas, 
         areaOrder, 
+        showWeather,
         showEnergy, 
         showSubviews, 
         showSearchCard,
@@ -116,6 +119,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     `;
 
     // Binde Event-Listener
+    attachWeatherCheckboxListener(this, (showWeather) => this._showWeatherChanged(showWeather));
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
@@ -606,6 +610,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         order: newOrder
       }
     };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showWeatherChanged(showWeather) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_weather: showWeather
+    };
+
+    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
+    if (showWeather === true) {
+      delete newConfig.show_weather;
+    }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);

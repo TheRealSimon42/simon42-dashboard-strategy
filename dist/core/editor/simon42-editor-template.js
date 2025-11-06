@@ -3,11 +3,22 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
   return `
     <div class="card-config">
       <div class="section">
-        <div class="section-title">Energie-Dashboard</div>
+        <div class="section-title">Info-Karten</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-weather" 
+            ${showWeather !== false ? 'checked' : ''}
+          />
+          <label for="show-weather">Wetter-Karte anzeigen</label>
+        </div>
+        <div class="description">
+          Zeigt die Wettervorhersage-Karte in der Übersicht an, wenn eine Wetter-Entität verfügbar ist.
+        </div>
         <div class="form-row">
           <input 
             type="checkbox" 

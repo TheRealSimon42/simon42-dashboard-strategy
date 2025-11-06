@@ -5,6 +5,15 @@
 
 import { renderAreaEntitiesHTML } from './simon42-editor-template.js';
 
+export function attachWeatherCheckboxListener(element, callback) {
+  const weatherCheckbox = element.querySelector('#show-weather');
+  if (weatherCheckbox) {
+    weatherCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachEnergyCheckboxListener(element, callback) {
   const energyCheckbox = element.querySelector('#show-energy');
   if (energyCheckbox) {
