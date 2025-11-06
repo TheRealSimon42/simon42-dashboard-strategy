@@ -98,10 +98,19 @@ class Simon42ViewRoomStrategy {
       if (!state) continue;
 
       // 4. Hidden/Disabled-Check
-      if (isEntityHiddenOrDisabled(entity, hass)) continue;
+      // Batterie-Sensoren: Ignoriere 'hidden_by' (oft von Integrations gesetzt), aber respektiere manuelles 'hidden'
+      const isBatterySensor = entityId.includes('battery') || state.attributes?.device_class === 'battery';
+      
+      if (isBatterySensor) {
+        // Für Batterie-Sensoren: Nur prüfen auf manuelles Hidden (konsistent mit Battery-View und Summary)
+        if (entity.hidden === true) continue;
+        // hidden_by wird ignoriert für kritische Batterien (wichtige Info!)
+      } else {
+        // Für alle anderen: Vollständige Hidden-Prüfung
+        if (isEntityHiddenOrDisabled(entity, hass)) continue;
+      }
 
       // 5. Domain-basierte Kategorisierung
-      const domain = entityId.split('.')[0];
       const deviceClass = state.attributes?.device_class;
       const unit = state.attributes?.unit_of_measurement;
 
@@ -158,6 +167,14 @@ class Simon42ViewRoomStrategy {
       
       // === SENSOREN FÜR BADGES ===
       if (domain === 'sensor') {
+        // Batterie (nur niedrige Werte < 20%) - ZUERST prüfen, bevor % für Humidity matcht!
+        if (entityId.includes('battery') || deviceClass === 'battery') {
+          const batteryLevel = parseFloat(state.state);
+          if (!isNaN(batteryLevel) && batteryLevel < 20) {
+            sensorEntities.battery.push(entityId);
+          }
+          continue;
+        }
         // Temperatur
         if (deviceClass === 'temperature' || unit === '°C' || unit === '°F') {
           sensorEntities.temperature.push(entityId);
@@ -191,14 +208,6 @@ class Simon42ViewRoomStrategy {
         // Helligkeit
         if (deviceClass === 'illuminance' || unit === 'lx') {
           sensorEntities.illuminance.push(entityId);
-          continue;
-        }
-        // Batterie (nur niedrige Werte < 20%)
-        if (deviceClass === 'battery') {
-          const batteryLevel = parseFloat(state.state);
-          if (!isNaN(batteryLevel) && batteryLevel < 20) {
-            sensorEntities.battery.push(entityId);
-          }
           continue;
         }
       }

@@ -163,6 +163,7 @@ export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
 /**
  * Zählt kritische Batterien (unter 20%)
  * OPTIMIERT: Battery-ID-Check zuerst, dann Exclude-Checks
+ * Ignoriert hidden_by (Integration), respektiert aber manuelles hidden
  */
 export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
@@ -178,11 +179,15 @@ export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
                        state.attributes?.device_class === 'battery';
       if (!isBattery) return false;
       
-      // 2. Exclude-Checks
+      // 2. Registry-Check: Nur manuell versteckte ausschließen (hidden_by wird ignoriert)
+      const registryEntry = hass.entities?.[entityId];
+      if (registryEntry?.hidden === true) return false;
+      
+      // 3. Exclude-Checks
       if (excludeSet.has(entityId)) return false;
       if (hiddenFromConfig.has(entityId)) return false;
       
-      // 3. Value-Check am Ende
+      // 4. Value-Check am Ende
       const value = parseFloat(state.state);
       return !isNaN(value) && value < 20;
     });
