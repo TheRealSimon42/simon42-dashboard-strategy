@@ -25,13 +25,13 @@ export function createOverviewView(sections, personBadges) {
 /**
  * Erstellt die Utility-Views (Lichter, Covers, Security, Batterien)
  */
-export function createUtilityViews(entities, showSubviews = false, config = {}) {
+export function createUtilityViews(entities, showSummaryViews = false, config = {}) {
   return [
     {
       title: "Lichter",
       path: "lights",
       icon: "mdi:lamps",
-      subview: !showSubviews,
+      subview: !showSummaryViews,
       strategy: {
         type: "custom:simon42-view-lights",
         entities,
@@ -42,7 +42,7 @@ export function createUtilityViews(entities, showSubviews = false, config = {}) 
       title: "Rollos & Vorhänge",
       path: "covers",
       icon: "mdi:blinds-horizontal",
-      subview: !showSubviews,
+      subview: !showSummaryViews,
       strategy: {
         type: "custom:simon42-view-covers",
         entities,
@@ -54,7 +54,7 @@ export function createUtilityViews(entities, showSubviews = false, config = {}) 
       title: "Sicherheit",
       path: "security",
       icon: "mdi:security",
-      subview: !showSubviews,
+      subview: !showSummaryViews,
       strategy: {
         type: "custom:simon42-view-security",
         entities,
@@ -65,7 +65,7 @@ export function createUtilityViews(entities, showSubviews = false, config = {}) 
       title: "Batterien",
       path: "batteries",
       icon: "mdi:battery-alert",
-      subview: !showSubviews,
+      subview: !showSummaryViews,
       strategy: {
         type: "custom:simon42-view-batteries",
         entities,
@@ -78,7 +78,7 @@ export function createUtilityViews(entities, showSubviews = false, config = {}) 
 /**
  * Erstellt Views für jeden sichtbaren Bereich
  */
-export function createAreaViews(visibleAreas, devices, entities, showSubviews = false, areasOptions = {}, dashboardConfig = {}) {
+export function createAreaViews(visibleAreas, devices, entities, showRoomViews = false, areasOptions = {}, dashboardConfig = {}) {
   return visibleAreas.map(area => {
     const areaOptions = areasOptions[area.area_id] || {};
     
@@ -86,7 +86,7 @@ export function createAreaViews(visibleAreas, devices, entities, showSubviews = 
       title: area.name,
       path: area.area_id,
       icon: area.icon || "mdi:floor-plan",
-      subview: !showSubviews,
+      subview: !showRoomViews,
       strategy: {
         type: "custom:simon42-view-room",
         area,

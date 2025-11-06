@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -161,13 +161,24 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="form-row">
           <input 
             type="checkbox" 
-            id="show-subviews" 
-            ${showSubviews ? 'checked' : ''}
+            id="show-summary-views" 
+            ${showSummaryViews ? 'checked' : ''}
           />
-          <label for="show-subviews">Unteransichten anzeigen</label>
+          <label for="show-summary-views">Zusammenfassungs-Views anzeigen</label>
         </div>
         <div class="description">
-          Zeigt die Unteransichten (Lichter, Rollos, Sicherheit, Batterien, Räume) in der oberen Navigation an.
+          Zeigt die Zusammenfassungs-Views (Lichter, Rollos, Sicherheit, Batterien) in der oberen Navigation an.
+        </div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-room-views" 
+            ${showRoomViews ? 'checked' : ''}
+          />
+          <label for="show-room-views">Raum-Views anzeigen</label>
+        </div>
+        <div class="description">
+          Zeigt die einzelnen Raum-Views in der oberen Navigation an.
         </div>
       </div>
 

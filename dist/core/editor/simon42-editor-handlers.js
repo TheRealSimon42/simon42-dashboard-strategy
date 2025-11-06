@@ -32,10 +32,19 @@ export function attachSearchCardCheckboxListener(element, callback) {
   }
 }
 
-export function attachSubviewsCheckboxListener(element, callback) {
-  const subviewsCheckbox = element.querySelector('#show-subviews');
-  if (subviewsCheckbox) {
-    subviewsCheckbox.addEventListener('change', (e) => {
+export function attachSummaryViewsCheckboxListener(element, callback) {
+  const summaryViewsCheckbox = element.querySelector('#show-summary-views');
+  if (summaryViewsCheckbox) {
+    summaryViewsCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
+export function attachRoomViewsCheckboxListener(element, callback) {
+  const roomViewsCheckbox = element.querySelector('#show-room-views');
+  if (roomViewsCheckbox) {
+    roomViewsCheckbox.addEventListener('change', (e) => {
       callback(e.target.checked);
     });
   }

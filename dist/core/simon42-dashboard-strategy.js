@@ -66,8 +66,11 @@ class Simon42DashboardStrategy {
     // Prüfe ob Such-Karte angezeigt werden soll (Standard: false)
     const showSearchCard = config.show_search_card === true;
 
-    // Prüfe ob Unteransichten angezeigt werden sollen (Standard: false)
-    const showSubviews = config.show_subviews === true;
+    // Prüfe ob Zusammenfassungs-Views angezeigt werden sollen (Standard: false)
+    const showSummaryViews = config.show_summary_views === true;
+
+    // Prüfe ob Raum-Views angezeigt werden sollen (Standard: false)
+    const showRoomViews = config.show_room_views === true;
 
     // Prüfe ob Bereiche nach Etagen gruppiert werden sollen (Standard: false)
     const groupByFloors = config.group_by_floors === true;
@@ -103,8 +106,8 @@ class Simon42DashboardStrategy {
     // Erstelle alle Views mit areas_options und config
     const views = [
       createOverviewView(overviewSections, personBadges),
-      ...createUtilityViews(entities, showSubviews, config),
-      ...createAreaViews(visibleAreas, devices, entities, showSubviews, config.areas_options || {}, config)
+      ...createUtilityViews(entities, showSummaryViews, config),
+      ...createAreaViews(visibleAreas, devices, entities, showRoomViews, config.areas_options || {}, config)
     ];
 
     return {

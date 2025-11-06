@@ -7,7 +7,8 @@ import {
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
   attachSearchCardCheckboxListener,
-  attachSubviewsCheckboxListener,
+  attachSummaryViewsCheckboxListener,
+  attachRoomViewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
   attachCoversSummaryCheckboxListener,
   attachAreaCheckboxListeners,
@@ -64,7 +65,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
     const showSearchCard = this._config.show_search_card === true;
-    const showSubviews = this._config.show_subviews === true;
+    const showSummaryViews = this._config.show_summary_views === true; // Standard: false
+    const showRoomViews = this._config.show_room_views === true; // Standard: false
     const groupByFloors = this._config.group_by_floors === true; // NEU
     const showCoversSummary = this._config.show_covers_summary !== false;
     const summariesColumns = this._config.summaries_columns || 2;
@@ -104,7 +106,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         areaOrder, 
         showWeather,
         showEnergy, 
-        showSubviews, 
+        showSummaryViews, 
+        showRoomViews,
         showSearchCard,
         hasSearchCardDeps,
         summariesColumns,
@@ -122,7 +125,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachWeatherCheckboxListener(this, (showWeather) => this._showWeatherChanged(showWeather));
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
-    attachSubviewsCheckboxListener(this, (showSubviews) => this._showSubviewsChanged(showSubviews));
+    attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
+    attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
     attachCoversSummaryCheckboxListener(this, (showCoversSummary) => this._showCoversSummaryChanged(showCoversSummary));
     this._attachSummariesColumnsListener();
@@ -672,19 +676,38 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._fireConfigChanged(newConfig);
   }
 
-  _showSubviewsChanged(showSubviews) {
+  _showSummaryViewsChanged(showSummaryViews) {
     if (!this._config || !this._hass) {
       return;
     }
 
     const newConfig = {
       ...this._config,
-      show_subviews: showSubviews
+      show_summary_views: showSummaryViews
     };
 
     // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showSubviews === false) {
-      delete newConfig.show_subviews;
+    if (showSummaryViews === false) {
+      delete newConfig.show_summary_views;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showRoomViewsChanged(showRoomViews) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_room_views: showRoomViews
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (showRoomViews === false) {
+      delete newConfig.show_room_views;
     }
 
     this._config = newConfig;
