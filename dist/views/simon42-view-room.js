@@ -7,6 +7,9 @@ class Simon42ViewRoomStrategy {
   static async generate(config, hass) {
     const { area, devices, entities } = config;
     
+    // Hole Dashboard-Config für Raum-Pins (wird über ViewBuilder übergeben)
+    const dashboardConfig = config.dashboardConfig || {};
+    
     // Hole groups_options aus der Dashboard-Config (falls vorhanden)
     const groupsOptions = config.groups_options || {};
     
@@ -696,6 +699,43 @@ class Simon42ViewRoomStrategy {
             icon: "mdi:dots-horizontal"
           },
           ...miscCards
+        ]
+      });
+    }
+
+    // === RAUM-PINS SECTION (am Ende) ===
+    // Filtere Raum-Pins für diesen Raum
+    const roomPinEntities = dashboardConfig.room_pin_entities || [];
+    const roomPinsForThisArea = roomPinEntities.filter(entityId => {
+      const entity = entities.find(e => e.entity_id === entityId);
+      if (!entity) return false;
+      
+      // Prüfe ob Entity diesem Raum zugeordnet ist
+      if (entity.area_id === area.area_id) return true;
+      
+      // Oder über Device zugeordnet
+      if (entity.device_id && areaDevices.has(entity.device_id)) return true;
+      
+      return false;
+    });
+
+    if (roomPinsForThisArea.length > 0) {
+      sections.push({
+        type: "grid",
+        cards: [
+          {
+            type: "heading",
+            heading: "Raum-Pins",
+            heading_style: "title",
+            icon: "mdi:pin"
+          },
+          ...roomPinsForThisArea.map(entity => ({
+            type: "tile",
+            entity: entity,
+            name: stripAreaName(entity, area, hass),
+            vertical: false,
+            state_content: "last_changed"
+          }))
         ]
       });
     }

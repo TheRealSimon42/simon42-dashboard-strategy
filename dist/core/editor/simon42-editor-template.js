@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, allEntities, groupByFloors, showCoversSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showSubviews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -57,6 +57,29 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           Wähle Entitäten aus, die als Favoriten unter den Zusammenfassungen angezeigt werden sollen. Die Entitäten werden als Kacheln angezeigt.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Raum-Pins</div>
+        <div id="room-pins-list" style="margin-bottom: 12px;">
+          ${renderRoomPinsList(roomPinEntities, allEntities, allAreas)}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <select id="room-pin-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">Entität auswählen...</option>
+            ${allEntities
+              .filter(entity => entity.area_id || entity.device_area_id)
+              .map(entity => `
+                <option value="${entity.entity_id}">${entity.name}</option>
+              `).join('')}
+          </select>
+          <button id="add-room-pin-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + Hinzufügen
+          </button>
+        </div>
+        <div class="description">
+          Wähle Entitäten aus, die in ihren zugeordneten Räumen als erstes angezeigt werden sollen. Ideal für Entitäten die normalerweise nicht automatisch erfasst werden (z.B. Wetterstationen, spezielle Sensoren). <strong>Nur Entitäten mit Raum-Zuordnung können ausgewählt werden.</strong> Diese Pins erscheinen nur im jeweiligen Raum, nicht in der Übersicht.
         </div>
       </div>
 
@@ -185,6 +208,42 @@ function renderFavoritesList(favoriteEntities, allEntities) {
               <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
             </span>
             <button class="remove-favorite-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
+  if (!roomPinEntities || roomPinEntities.length === 0) {
+    return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Raum-Pins hinzugefügt</div>';
+  }
+
+  // Erstelle Maps für schnellen Zugriff
+  const entityMap = new Map(allEntities.map(e => [e.entity_id, e]));
+  const areaMap = new Map(allAreas.map(a => [a.area_id, a.name]));
+
+  return `
+    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      ${roomPinEntities.map((entityId, index) => {
+        const entity = entityMap.get(entityId);
+        const name = entity?.name || entityId;
+        const areaId = entity?.area_id || entity?.device_area_id;
+        const areaName = areaId ? areaMap.get(areaId) || areaId : 'Kein Raum';
+        
+        return `
+          <div class="room-pin-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+            <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
+            <span style="flex: 1; font-size: 14px;">
+              <strong>${name}</strong>
+              <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+              <br>
+              <span style="font-size: 11px; color: var(--secondary-text-color);">📍 ${areaName}</span>
+            </span>
+            <button class="remove-room-pin-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
               ✕
             </button>
           </div>

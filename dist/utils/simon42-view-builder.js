@@ -78,7 +78,7 @@ export function createUtilityViews(entities, showSubviews = false, config = {}) 
 /**
  * Erstellt Views für jeden sichtbaren Bereich
  */
-export function createAreaViews(visibleAreas, devices, entities, showSubviews = false, areasOptions = {}) {
+export function createAreaViews(visibleAreas, devices, entities, showSubviews = false, areasOptions = {}, dashboardConfig = {}) {
   return visibleAreas.map(area => {
     const areaOptions = areasOptions[area.area_id] || {};
     
@@ -92,7 +92,8 @@ export function createAreaViews(visibleAreas, devices, entities, showSubviews = 
         area,
         devices,
         entities,
-        groups_options: areaOptions.groups_options || {}
+        groups_options: areaOptions.groups_options || {},
+        dashboardConfig // Übergebe vollständige Dashboard-Config für Raum-Pins
       }
     };
   });

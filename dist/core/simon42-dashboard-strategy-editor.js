@@ -68,6 +68,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
+    const roomPinEntities = this._config.room_pin_entities || [];
     const hasSearchCardDeps = this._checkSearchCardDependencies();
     
     // Sammle alle Alarm-Control-Panel-Entitäten
@@ -107,6 +108,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         alarmEntity,
         alarmEntities,
         favoriteEntities,
+        roomPinEntities,
         allEntities,
         groupByFloors, // NEU
         showCoversSummary
@@ -122,6 +124,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
+    this._attachRoomPinsListeners();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
     // Sortiere die Area-Items nach displayOrder
@@ -372,15 +375,171 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     `;
   }
 
+  _attachRoomPinsListeners() {
+    // Add Button
+    const addBtn = this.querySelector('#add-room-pin-btn');
+    const select = this.querySelector('#room-pin-entity-select');
+    
+    if (addBtn && select) {
+      addBtn.addEventListener('click', () => {
+        const entityId = select.value;
+        if (entityId && entityId !== '') {
+          this._addRoomPinEntity(entityId);
+          select.value = ''; // Reset selection
+        }
+      });
+    }
+
+    // Remove Buttons
+    const removeButtons = this.querySelectorAll('.remove-room-pin-btn');
+    removeButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const entityId = e.target.dataset.entityId;
+        this._removeRoomPinEntity(entityId);
+      });
+    });
+  }
+
+  _addRoomPinEntity(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentPins = this._config.room_pin_entities || [];
+    
+    // Prüfe ob bereits vorhanden
+    if (currentPins.includes(entityId)) {
+      return;
+    }
+
+    const newPins = [...currentPins, entityId];
+
+    const newConfig = {
+      ...this._config,
+      room_pin_entities: newPins
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Raum-Pins-Liste
+    this._updateRoomPinsList();
+  }
+
+  _removeRoomPinEntity(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentPins = this._config.room_pin_entities || [];
+    const newPins = currentPins.filter(id => id !== entityId);
+
+    const newConfig = {
+      ...this._config,
+      room_pin_entities: newPins.length > 0 ? newPins : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newPins.length === 0) {
+      delete newConfig.room_pin_entities;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Raum-Pins-Liste
+    this._updateRoomPinsList();
+  }
+
+  _updateRoomPinsList() {
+    const container = this.querySelector('#room-pins-list');
+    if (!container) return;
+
+    const roomPinEntities = this._config.room_pin_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+    const allAreas = Object.values(this._hass.areas).sort((a, b) => 
+      a.name.localeCompare(b.name)
+    );
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      container.innerHTML = module.renderRoomPinsList?.(roomPinEntities, allEntities, allAreas) || 
+                          this._renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas);
+      
+      // Reattach listeners
+      this._attachRoomPinsListeners();
+    }).catch(() => {
+      // Fallback falls Import fehlschlägt
+      container.innerHTML = this._renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas);
+      this._attachRoomPinsListeners();
+    });
+  }
+
+  _renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas) {
+    if (!roomPinEntities || roomPinEntities.length === 0) {
+      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Raum-Pins hinzugefügt</div>';
+    }
+
+    const entityMap = new Map(allEntities.map(e => [e.entity_id, e]));
+    const areaMap = new Map(allAreas.map(a => [a.area_id, a.name]));
+
+    return `
+      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+        ${roomPinEntities.map((entityId) => {
+          const entity = entityMap.get(entityId);
+          const name = entity?.name || entityId;
+          const areaId = entity?.area_id || entity?.device_area_id;
+          const areaName = areaId ? areaMap.get(areaId) || areaId : 'Kein Raum';
+          
+          return `
+            <div class="room-pin-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
+              <span style="flex: 1; font-size: 14px;">
+                <strong>${name}</strong>
+                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+                <br>
+                <span style="font-size: 11px; color: var(--secondary-text-color);">📍 ${areaName}</span>
+              </span>
+              <button class="remove-room-pin-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+                ✕
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
   _getAllEntitiesForSelect() {
     if (!this._hass) return [];
+
+    const entities = Object.values(this._hass.entities || {});
+    const devices = Object.values(this._hass.devices || {});
+    
+    // Erstelle Device-zu-Area Map für Lookup
+    const deviceAreaMap = new Map();
+    devices.forEach(device => {
+      if (device.area_id) {
+        deviceAreaMap.set(device.id, device.area_id);
+      }
+    });
 
     return Object.keys(this._hass.states)
       .map(entityId => {
         const state = this._hass.states[entityId];
+        const entity = entities.find(e => e.entity_id === entityId);
+        
+        // Ermittle area_id: Entweder direkt oder über Device
+        let areaId = entity?.area_id;
+        if (!areaId && entity?.device_id) {
+          areaId = deviceAreaMap.get(entity.device_id);
+        }
+        
         return {
           entity_id: entityId,
-          name: state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ')
+          name: state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+          area_id: areaId,
+          device_area_id: areaId // Für Backward-Kompatibilität
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name));

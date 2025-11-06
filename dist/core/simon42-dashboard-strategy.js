@@ -96,7 +96,7 @@ class Simon42DashboardStrategy {
     const views = [
       createOverviewView(overviewSections, personBadges),
       ...createUtilityViews(entities, showSubviews, config),
-      ...createAreaViews(visibleAreas, devices, entities, showSubviews, config.areas_options || {})
+      ...createAreaViews(visibleAreas, devices, entities, showSubviews, config.areas_options || {}, config)
     ];
 
     return {
