@@ -47,7 +47,8 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Label-System** - Globale Entity-Filterung via `no_dboard` Label
 - **Bereich-spezifische Konfiguration** - Jeder Raum individuell anpassbar
 - **Domain-Gruppierung** - Intelligente Zusammenfassung nach Entity-Typen
-- **Favoriten-System** - Markiere wichtige Bereiche
+- **Favoriten-System** - Markiere wichtige Entitäten in der Übersicht
+- **Raum-Pins** - Pinne spezielle Entitäten in ihren zugeordneten Räumen
 
 ### 📊 Spezialisierte Views
 - **Lichter-Übersicht** - Alle Lichter, gruppiert nach Status (on/off)
@@ -448,6 +449,7 @@ Pro Bereich wird automatisch eine Detail-Ansicht generiert:
 - Batch-Aktionen: Heading-Badges für Gruppensteuerung
 - Last Changed: Sortierung nach letzter Aktivität
 - Smart Sensor Selection: Verwendet bevorzugt die in der Area-Konfiguration hinterlegten Temperatur- und Luftfeuchtigkeitssensoren (Fallback: automatisch erkannte Sensoren)
+- Raum-Pins: Zeige spezielle Entitäten am Ende der Raum-View (ideal für Wetterstationen, Admin-Sensoren, etc.)
 
 ### 💡 Lichter-Übersicht
 
@@ -513,6 +515,37 @@ Alle Batterie-Entities, gruppiert nach Status:
 - Visuelle Warnung bei kritischen Batterien
 
 ## 🎯 Erweiterte Features
+
+### Raum-Pins
+
+Pinne spezielle Entitäten, die nur in ihren zugeordneten Räumen angezeigt werden sollen:
+
+**Verwendung:**
+1. Öffne den Dashboard-Editor
+2. Scrolle zur Sektion "Raum-Pins"
+3. Wähle eine Entität aus dem Dropdown (nur Entitäten mit Raum-Zuordnung)
+4. Klicke auf "+ Hinzufügen"
+
+**Ideal für:**
+- Wetterstationen mit spezifischen Sensoren
+- Admin-Entitäten, die nicht automatisch erkannt werden
+- Spezielle Entitäten, die nur in einem bestimmten Raum relevant sind
+- Entities mit speziellen Device-Classes
+
+**Verhalten:**
+- Pins erscheinen **nur** im zugeordneten Raum (nicht in der Übersicht)
+- Anzeige am **Ende** der Raum-View (nach allen anderen Sections)
+- Überschrift: "Raum-Pins" mit Pin-Icon
+
+**Config:**
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  room_pin_entities:
+    - sensor.wetterstation_temperatur
+    - sensor.wetterstation_luftfeuchtigkeit
+    - sensor.admin_sensor
+```
 
 ### Floor-basierte Organisation
 
