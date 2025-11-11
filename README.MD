@@ -71,7 +71,11 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 
 ## 📦 Installation
 
-### Option 1: Manuelle Installation
+### Option 1: Manuelle Installation (Nicht empfohlen!)
+
+<details>
+
+<summary>Manuelle Installationsschritte</summary>
 
 #### Schritt 1: Dateien kopieren
 
@@ -110,6 +114,8 @@ strategy:
 ```
 
 6. Speichere und schließe - der grafische Editor öffnet sich automatisch!
+
+</details>
 
 ### Option 2: Installation über HACS (empfohlen)
 
