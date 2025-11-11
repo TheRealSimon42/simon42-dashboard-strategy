@@ -119,10 +119,35 @@ strategy:
 
 ### Option 2: Installation über HACS (empfohlen)
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=TheRealSimon42&repository=simon42-dashboard-strategy&category=plugin)
+
+
+<details>
+
+<summary>Alternative zum Button oben 👆</summary>
+
 1. Gehe zu HACS → **Custom repositories**
 2. Füge das Repository hinzu: `https://github.com/TheRealSimon42/simon42-dashboard-strategy`
 3. Installiere die "Simon42 Dashboard Strategy"
 4. Folge den Anweisungen in HACS für die Resource-Registrierung und Dashboard-Erstellung.
+
+</details>
+
+## 🖥️ Benutzung / Dashboard erstellen
+
+1. Gehe zu **Einstellungen** → **Dashboards**
+2. Klicke auf **Dashboard hinzufügen**
+3. Wähle **Neues Dashboard von Grund auf** und vergebe einen Namen
+4. Dann das neue Dashboard aufrufen und den **Edit-Modus** oben rechts aktivieren.
+5. Klicke auf die **drei Punkte** (⋮) → **Raw-Konfigurationseditor**
+6. Füge die folgende Konfiguration ein:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+```
+
+Nicht vergessen, anschließend den Browser-Cache zu leeren 👍
 
 ## 🤖 Projekt-Kontext für KI-Assistenten
 
@@ -135,7 +160,7 @@ Dieses Projekt ist eine modulare Lovelace Dashboard-Strategy für Home Assistant
 - **Views**: Spezialisierte View-Strategien in `dist/views/`
 - **Cards**: Custom Cards in `dist/cards/`
 
-Für Änderungen: Respektiere die modulare Struktur, nutze ES6-Imports/Exports, teste in HA-Umgebung. HACS-kompatibel seit Version X.X.X.
+Für Änderungen: Respektiere die modulare Struktur, nutze ES6-Imports/Exports, teste in HA-Umgebung. HACS-kompatibel seit Version 1.0.2.
 
 ## 🎨 Grafischer Konfigurator
 
@@ -754,10 +779,10 @@ Dieses Projekt sucht aktiv nach Maintainern, die bei der Weiterentwicklung helfe
 
 ## 📋 Roadmap & Geplante Features
 
-- [ ] Entity-Sortierung per Drag & Drop im Editor
+- [x] Entity-Sortierung per Drag & Drop im Editor
 - [ ] Preset-Templates für verschiedene Use-Cases
 - [ ] Import von Views aus anderen Dashboards
-- [ ] Erweiterte Favoriten-Funktionen
+- [x] Erweiterte Favoriten-Funktionen
 - [ ] Themes & Custom Styling
 - [ ] Export/Import von Konfigurationen
 - [ ] Mehrsprachigkeit (i18n)
