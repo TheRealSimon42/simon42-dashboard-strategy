@@ -3,11 +3,22 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
   return `
     <div class="card-config">
       <div class="section">
         <div class="section-title">Info-Karten</div>
+        <div class="form-row">
+          <input
+            type="checkbox"
+            id="show-person-badges"
+            ${showPersonBadges !== false ? 'checked' : ''}
+          />
+          <label for="show-person-badges">Personen-Badges in der Übersicht anzeigen</label>
+        </div>
+        <div class="description">
+          Blendet die Personen-Badges im Kopfbereich der Übersicht ein oder aus.
+        </div>
         <div class="form-row">
           <input 
             type="checkbox" 

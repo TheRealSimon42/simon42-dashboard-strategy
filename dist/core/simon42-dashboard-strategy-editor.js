@@ -4,6 +4,7 @@
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
 import { 
+  attachPersonBadgesCheckboxListener,
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
   attachSearchCardCheckboxListener,
@@ -62,6 +63,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return;
     }
 
+    const showPersonBadges = this._config.show_person_badges !== false;
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
     const showSearchCard = this._config.show_search_card === true;
@@ -104,9 +106,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         allAreas, 
         hiddenAreas, 
         areaOrder, 
+        showPersonBadges,
         showWeather,
-        showEnergy, 
-        showSummaryViews, 
+        showEnergy,
+        showSummaryViews,
         showRoomViews,
         showSearchCard,
         hasSearchCardDeps,
@@ -122,6 +125,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     `;
 
     // Binde Event-Listener
+    attachPersonBadgesCheckboxListener(this, (showPersonBadges) => this._showPersonBadgesChanged(showPersonBadges));
     attachWeatherCheckboxListener(this, (showWeather) => this._showWeatherChanged(showWeather));
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
@@ -614,6 +618,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         order: newOrder
       }
     };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showPersonBadgesChanged(showPersonBadges) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_person_badges: showPersonBadges
+    };
+
+    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
+    if (showPersonBadges === true) {
+      delete newConfig.show_person_badges;
+    }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);

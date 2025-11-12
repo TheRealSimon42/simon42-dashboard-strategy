@@ -235,6 +235,7 @@ In der aufgeklappten Entity-Liste:
 ```yaml
 strategy:
   type: custom:simon42-dashboard
+  show_person_badges: true       # Person Badges anzeigen
   show_weather: true             # Wetter-Karte anzeigen
   show_energy: true              # Energie-Dashboard anzeigen
   show_subviews: false           # Utility Views als Subviews
@@ -249,6 +250,7 @@ strategy:
 ```yaml
 strategy:
   type: custom:simon42-dashboard
+  show_person_badges: true
   show_weather: true
   show_energy: true
   show_subviews: false
@@ -299,6 +301,7 @@ strategy:
 
 | Parameter | Typ | Standard | Beschreibung |
 |-----------|-----|----------|--------------|
+| `show_person_badges` | boolean | `true` | Zeige die Person Badges in der Übersicht |
 | `show_weather` | boolean | `true` | Zeigt die Wetter-Karte in der Übersicht (falls Weather-Entity vorhanden) |
 | `show_energy` | boolean | `true` | Zeigt das Energie-Dashboard in der Übersicht |
 | `show_subviews` | boolean | `false` | Zeigt Utility-Views in der Navigation |
