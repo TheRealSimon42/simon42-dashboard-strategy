@@ -6,9 +6,13 @@
  * Erstellt Badges für Personen (zuhause/nicht zuhause)
  * WICHTIG: Nutzt hass.states um nur sichtbare Badges zu erstellen
  */
-export function createPersonBadges(persons, hass) {
+export function createPersonBadges(persons, hass, showPersonBadges) {
   const badges = [];
   
+  if (!showPersonBadges) {
+    return badges; // Leeres Array zurückgeben wenn deaktiviert
+  }
+
   persons.forEach(person => {
     const state = hass.states[person.entity_id];
     if (!state) return; // Überspringe wenn keine State vorhanden

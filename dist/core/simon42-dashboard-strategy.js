@@ -54,8 +54,8 @@ class Simon42DashboardStrategy {
     const weatherEntity = findWeatherEntity(hass, excludeLabels, config);
     const someSensorId = findDummySensor(hass, excludeLabels, config);
 
-    // Erstelle Person-Badges (KORRIGIERT: mit hass Parameter)
-    const personBadges = createPersonBadges(persons, hass);
+    // Prüfe ob Personen-Badges angezeigt werden sollen (Standard: true)
+    const showPersonBadges = config.show_person_badges !== false;
 
     // Prüfe ob Wetter-Karte angezeigt werden soll (Standard: true)
     const showWeather = config.show_weather !== false;
@@ -74,6 +74,9 @@ class Simon42DashboardStrategy {
 
     // Prüfe ob Bereiche nach Etagen gruppiert werden sollen (Standard: false)
     const groupByFloors = config.group_by_floors === true;
+
+    // Erstelle Person-Badges (KORRIGIERT: mit hass Parameter)
+    const personBadges = createPersonBadges(persons, hass, showPersonBadges);
 
     // Erstelle Bereiche-Section(s)
     const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
