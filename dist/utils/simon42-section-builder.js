@@ -6,34 +6,25 @@
  * Erstellt die Übersichts-Section mit Zusammenfassungen
  */
 export function createOverviewSection(data) {
-  const { someSensorId, showSearchCard, config, hass } = data;
+  const { someSensorId, showSearchCard, showClockCard, config, hass } = data;
   
-  const cards = [
-    {
-      type: "heading",
-      heading: "Übersicht",
-      heading_style: "title",
-      icon: "mdi:overscan"
-    }
-  ];
+  const cards = [];
 
   // Prüfe ob Alarm-Entity konfiguriert ist
   const alarmEntity = config.alarm_entity;
+  
+  // Überschrift nur hinzufügen wenn Uhr oder Alarm-Panel angezeigt wird
+  if (showClockCard || alarmEntity) {
+    cards.push({
+      type: "heading",
+        heading: "Übersicht",
+        heading_style: "title",
+        icon: "mdi:overscan"
+    });
+  }
 
-  if (alarmEntity) {
-    // Uhr und Alarm-Panel nebeneinander
-    cards.push({
-      type: "clock",
-      clock_size: "small",
-      show_seconds: false
-    });
-    cards.push({
-      type: "tile",
-      entity: alarmEntity,
-      vertical: false
-    });
-  } else {
-    // Nur Uhr in voller Breite
+  // Nur die Uhr anzeigen
+  if (showClockCard && !alarmEntity) {
     cards.push({
       type: "clock",
       clock_size: "small",
@@ -44,6 +35,35 @@ export function createOverviewSection(data) {
     });
   }
 
+  // AlarmPanel und bei auswahl auch Uhr nebeneinander
+  if (alarmEntity && showClockCard) {
+    cards.push({
+      type: "tile",
+      entity: alarmEntity,
+      vertical: false
+    });
+    // Uhr bei auswahl anzeigen
+    if (showClockCard) {
+      cards.push({
+        type: "clock",
+        clock_size: "small",
+        show_seconds: false,
+      });
+    }
+  } 
+
+  // Nur AlarmPanel
+  if (alarmEntity && !showClockCard) {
+    cards.push({
+      type: "tile",
+      entity: alarmEntity,
+      vertical: false,
+      grid_options: {
+        columns: "full",
+      }
+    });
+  }
+  
   // Füge Search-Card hinzu wenn aktiviert
   if (showSearchCard) {
     cards.push({

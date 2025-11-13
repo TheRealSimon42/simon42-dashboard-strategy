@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary, showBatterySummary, showLightSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, showClockCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary, showBatterySummary, showLightSummary }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -28,16 +28,29 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <label for="show-energy">Energie-Dashboard anzeigen</label>
         </div>
         <div class="description">
-          Zeigt die Energie-Verteilungskarte in der Übersicht an, wenn Energiedaten verfügbar sind.
+          Wähle eine Alarm-Control-Panel-Entität aus, um sie neben der Uhr anzuzeigen.
+        </div>
+        <div class="form-row">
+          <input
+            type="checkbox"
+            id="show-clock-card"
+            ${showClockCard ? '' : 'checked'}
+          />
+          <label for="show-clock-card" >
+            Uhr-Karte in Übersicht anzeigen
+          </label>
+        </div>
+        <div class="description">
+          Zeigt die standardmäßige Uhr-Karte direkt unter der Uhr in der Übersicht an.
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Alarm-Control-Panel</div>
+        <div class="section-title">Übersicht</div>
         <div class="form-row">
           <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">Alarm-Entität:</label>
           <select id="alarm-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">Keine (Uhr in voller Breite)</option>
+            <option value="">Keine</option>
             ${alarmEntities.map(entity => `
               <option value="${entity.entity_id}" ${entity.entity_id === alarmEntity ? 'selected' : ''}>
                 ${entity.name}

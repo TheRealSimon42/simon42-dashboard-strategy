@@ -239,6 +239,7 @@ strategy:
   show_energy: true              # Energie-Dashboard anzeigen
   show_subviews: false           # Utility Views als Subviews
   show_search_card: false        # Optional: Search Card in Overview
+  show_clock_card: false         # Optional: Clock Card in Overview
   show_covers_summary: true      # Rollo-Zusammenfassung anzeigen
   show_security_summary: true    # Alarm-Zusammenfassung anzeigen
   show_light_summary: true       # Licht-Zusammenfassung anzeigen
@@ -306,6 +307,7 @@ strategy:
 | `show_energy` | boolean | `true` | Zeigt das Energie-Dashboard in der Übersicht |
 | `show_subviews` | boolean | `false` | Zeigt Utility-Views in der Navigation |
 | `show_search_card` | boolean | `false` | Zeigt optional eine Search Card in der Übersicht |
+| `show_clock_card` | boolean | `false` | Zeigt optional eine Uhr in der Übersicht an |
 | `show_covers_summary` | boolean | `true` | Zeigt die Rollo-Zusammenfassungskarte in der Übersicht |
 | `show_security_summary` | boolean | `true` | Zeigt die Alarm-Zusammenfassungskarte in der Übersicht |
 | `show_light_summary` | boolean | `true` | Zeigt die Licht-Zusammenfassungskarte in der Übersicht |

@@ -7,6 +7,7 @@ import {
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
   attachSearchCardCheckboxListener,
+  attachClockCardCheckboxListener,
   attachSummaryViewsCheckboxListener,
   attachRoomViewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
@@ -115,6 +116,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showSummaryViews, 
         showRoomViews,
         showSearchCard,
+        showClockCard, 
         hasSearchCardDeps,
         summariesColumns,
         alarmEntity,
@@ -134,6 +136,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachWeatherCheckboxListener(this, (showWeather) => this._showWeatherChanged(showWeather));
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
+    attachClockCardCheckboxListener(this, (showClockCard) => this._showClockCardChanged(showClockCard)); 
     attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU

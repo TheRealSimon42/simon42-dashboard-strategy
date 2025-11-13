@@ -66,6 +66,9 @@ class Simon42DashboardStrategy {
     // Prüfe ob Such-Karte angezeigt werden soll (Standard: false)
     const showSearchCard = config.show_search_card === true;
 
+    // Prüfe ob Such-Karte angezeigt werden soll (Standard: false)
+    const showClockCard = config.show_clock_card === true;
+
     // Prüfe ob Zusammenfassungs-Views angezeigt werden sollen (Standard: false)
     const showSummaryViews = config.show_summary_views === true;
 
@@ -90,6 +93,7 @@ class Simon42DashboardStrategy {
         batteriesCritical,
         someSensorId,
         showSearchCard,
+        showClockCard,
         config,
         hass
       }),
