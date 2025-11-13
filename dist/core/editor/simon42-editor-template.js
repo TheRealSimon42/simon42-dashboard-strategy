@@ -28,20 +28,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <label for="show-energy">Energie-Dashboard anzeigen</label>
         </div>
         <div class="description">
-          Wähle eine Alarm-Control-Panel-Entität aus, um sie neben der Uhr anzuzeigen.
-        </div>
-        <div class="form-row">
-          <input
-            type="checkbox"
-            id="show-clock-card"
-            ${showClockCard ? '' : 'checked'}
-          />
-          <label for="show-clock-card" >
-            Uhr-Karte in Übersicht anzeigen
-          </label>
-        </div>
-        <div class="description">
-          Zeigt die standardmäßige Uhr-Karte direkt unter der Uhr in der Übersicht an.
+          Zeigt die Energie-Verteilungskarte in der Übersicht an, wenn Energiedaten verfügbar sind.
         </div>
       </div>
 
@@ -60,6 +47,16 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           Wähle eine Alarm-Control-Panel-Entität aus, um sie neben der Uhr anzuzeigen. "Keine" auswählen, um nur die Uhr in voller Breite anzuzeigen.
+        </div>
+        <div class="form-row">
+          <input
+            type="checkbox"
+            id="show-clock-card"
+            ${showClockCard ? '' : 'checked'}
+          />
+          <label for="show-clock-card" >
+            Uhr-Karte in Übersicht anzeigen
+          </label>
         </div>
       </div>
 

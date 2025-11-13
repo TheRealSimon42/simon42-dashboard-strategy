@@ -69,6 +69,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
     const showSearchCard = this._config.show_search_card === true;
+    const showClockCard = this._config.show_clock_card !== true;
     const showSummaryViews = this._config.show_summary_views === true; // Standard: false
     const showRoomViews = this._config.show_room_views === true; // Standard: false
     const groupByFloors = this._config.group_by_floors === true; // NEU
