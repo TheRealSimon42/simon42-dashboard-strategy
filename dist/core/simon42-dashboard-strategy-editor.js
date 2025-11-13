@@ -7,10 +7,14 @@ import {
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
   attachSearchCardCheckboxListener,
+  attachClockCardCheckboxListener,
   attachSummaryViewsCheckboxListener,
   attachRoomViewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
   attachCoversSummaryCheckboxListener,
+  attachSecuritySummaryCheckboxListener,
+  attachBatterySummaryCheckboxListener,
+  attachLightSummaryCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
   attachExpandButtonListeners,
@@ -65,10 +69,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
     const showSearchCard = this._config.show_search_card === true;
+    const showClockCard = this._config.show_clock_card !== true;
     const showSummaryViews = this._config.show_summary_views === true; // Standard: false
     const showRoomViews = this._config.show_room_views === true; // Standard: false
     const groupByFloors = this._config.group_by_floors === true; // NEU
     const showCoversSummary = this._config.show_covers_summary !== false;
+    const showSecuritySummary = this._config.show_security_summary !== false;
+    const showBatterySummary = this._config.show_battery_summary !== false;
+    const showLightSummary = this._config.show_light_summary !== false;
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
@@ -109,6 +117,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showSummaryViews, 
         showRoomViews,
         showSearchCard,
+        showClockCard, 
         hasSearchCardDeps,
         summariesColumns,
         alarmEntity,
@@ -116,8 +125,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         favoriteEntities,
         roomPinEntities,
         allEntities,
-        groupByFloors, // NEU
-        showCoversSummary
+        groupByFloors, 
+        showCoversSummary,
+        showSecuritySummary,
+        showBatterySummary,
+        showLightSummary
       })}
     `;
 
@@ -125,10 +137,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachWeatherCheckboxListener(this, (showWeather) => this._showWeatherChanged(showWeather));
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
+    attachClockCardCheckboxListener(this, (showClockCard) => this._showClockCardChanged(showClockCard)); 
     attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
     attachCoversSummaryCheckboxListener(this, (showCoversSummary) => this._showCoversSummaryChanged(showCoversSummary));
+    attachSecuritySummaryCheckboxListener(this, (showSecuritySummary) => this._showSecuritySummaryChanged(showSecuritySummary));
+    attachBatterySummaryCheckboxListener(this, (showBatterySummary) => this._showBatterySummaryChanged(showBatterySummary));
+    attachLightSummaryCheckboxListener(this, (showLightSummary) => this._showLightSummaryChanged(showLightSummary));
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
@@ -676,6 +692,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._fireConfigChanged(newConfig);
   }
 
+  _showClockCardChanged(showClockCard) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_clock_card: showClockCard
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (showClockCard === false) {
+      delete newConfig.show_clock_card;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
   _showSummaryViewsChanged(showSummaryViews) {
     if (!this._config || !this._hass) {
       return;
@@ -889,6 +924,63 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
     if (showCoversSummary === true) {
       delete newConfig.show_covers_summary;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showSecuritySummaryChanged(showSecuritySummary) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_security_summary: showSecuritySummary
+    };
+
+    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
+    if (showSecuritySummary === true) {
+      delete newConfig.show_security_summary;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showBatterySummaryChanged(showBatterySummary) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_battery_summary: showBatterySummary
+    };
+
+    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
+    if (showBatterySummary === true) {
+      delete newConfig.show_battery_summary;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showLightSummaryChanged(showLightSummary) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_light_summary: showLightSummary
+    };
+
+    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
+    if (showLightSummary === true) {
+      delete newConfig.show_light_summary;
     }
 
     this._config = newConfig;

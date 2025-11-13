@@ -6,34 +6,25 @@
  * Erstellt die Übersichts-Section mit Zusammenfassungen
  */
 export function createOverviewSection(data) {
-  const { someSensorId, showSearchCard, config, hass } = data;
+  const { someSensorId, showSearchCard, showClockCard, config, hass } = data;
   
-  const cards = [
-    {
-      type: "heading",
-      heading: "Übersicht",
-      heading_style: "title",
-      icon: "mdi:overscan"
-    }
-  ];
+  const cards = [];
 
   // Prüfe ob Alarm-Entity konfiguriert ist
   const alarmEntity = config.alarm_entity;
+  
+  // Überschrift nur hinzufügen wenn Uhr oder Alarm-Panel angezeigt wird
+  if (showClockCard || alarmEntity) {
+    cards.push({
+      type: "heading",
+        heading: "Übersicht",
+        heading_style: "title",
+        icon: "mdi:overscan"
+    });
+  }
 
-  if (alarmEntity) {
-    // Uhr und Alarm-Panel nebeneinander
-    cards.push({
-      type: "clock",
-      clock_size: "small",
-      show_seconds: false
-    });
-    cards.push({
-      type: "tile",
-      entity: alarmEntity,
-      vertical: false
-    });
-  } else {
-    // Nur Uhr in voller Breite
+  // Nur die Uhr anzeigen
+  if (showClockCard && !alarmEntity) {
     cards.push({
       type: "clock",
       clock_size: "small",
@@ -44,6 +35,35 @@ export function createOverviewSection(data) {
     });
   }
 
+  // AlarmPanel und bei auswahl auch Uhr nebeneinander
+  if (alarmEntity && showClockCard) {
+    cards.push({
+      type: "tile",
+      entity: alarmEntity,
+      vertical: false
+    });
+    // Uhr bei auswahl anzeigen
+    if (showClockCard) {
+      cards.push({
+        type: "clock",
+        clock_size: "small",
+        show_seconds: false,
+      });
+    }
+  } 
+
+  // Nur AlarmPanel
+  if (alarmEntity && !showClockCard) {
+    cards.push({
+      type: "tile",
+      entity: alarmEntity,
+      vertical: false,
+      grid_options: {
+        columns: "full",
+      }
+    });
+  }
+  
   // Füge Search-Card hinzu wenn aktiviert
   if (showSearchCard) {
     cards.push({
@@ -57,21 +77,30 @@ export function createOverviewSection(data) {
   // Prüfe ob summaries_columns konfiguriert ist (Standard: 2)
   const summariesColumns = config.summaries_columns || 2;
   const showCoversSummary = config.show_covers_summary !== false;
+  const showSecuritySummary = config.show_security_summary !== false;
+  const showBatterySummary = config.show_battery_summary !== false;
+  const showLightSummary = config.show_light_summary !== false;
 
-  // Füge Zusammenfassungen hinzu
-  cards.push({
-    type: "heading",
-    heading: "Zusammenfassungen"
-  });
+  // Fügt die Überschrift des Abschnitts "Zusammenfassungen" hinzu
+  if (showCoversSummary || showSecuritySummary || showBatterySummary || showLightSummary) {
+    cards.push({
+      type: "heading",
+      heading: "Zusammenfassungen"
+    });
+  }
 
   // Erstelle die Summary-Cards basierend auf Konfiguration
-  const summaryCards = [
-    {
-      type: "custom:simon42-summary-card",
-      summary_type: "lights",
-      areas_options: config.areas_options || {}
-    }
-  ];
+  // TODO Option hinzufügen
+  const summaryCards = [];
+
+  if (showLightSummary) {
+    summaryCards.push({
+        type: "custom:simon42-summary-card",
+        summary_type: "lights",
+        areas_options: config.areas_options || {}
+      });
+  }
+
 
   // Covers optional hinzufügen
   if (showCoversSummary) {
@@ -82,18 +111,26 @@ export function createOverviewSection(data) {
     });
   }
 
+  // Security
+  if (showSecuritySummary) {
   summaryCards.push(
     {
       type: "custom:simon42-summary-card",
       summary_type: "security",
       areas_options: config.areas_options || {}
-    },
-    {
-      type: "custom:simon42-summary-card",
-      summary_type: "batteries",
-      areas_options: config.areas_options || {}
-    }
-  );
+    });
+  }
+   
+  // Batery
+  if (showBatterySummary) {
+    summaryCards.push(
+      {
+        type: "custom:simon42-summary-card",
+        summary_type: "batteries",
+        areas_options: config.areas_options || {}
+      }
+    );
+  }  
 
   // Layout-Logik: Dynamisch an Anzahl der Cards anpassen
   if (summariesColumns === 4) {
