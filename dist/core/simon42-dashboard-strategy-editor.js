@@ -692,6 +692,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._fireConfigChanged(newConfig);
   }
 
+  _showClockCardChanged(showClockCard) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_clock_card: showClockCard
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (showClockCard === false) {
+      delete newConfig.show_clock_card;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
   _showSummaryViewsChanged(showSummaryViews) {
     if (!this._config || !this._hass) {
       return;
