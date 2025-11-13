@@ -57,21 +57,30 @@ export function createOverviewSection(data) {
   // Prüfe ob summaries_columns konfiguriert ist (Standard: 2)
   const summariesColumns = config.summaries_columns || 2;
   const showCoversSummary = config.show_covers_summary !== false;
+  const showSecuritySummary = config.show_security_summary !== false;
+  const showBatterySummary = config.show_battery_summary !== false;
+  const showLightSummary = config.show_light_summary !== false;
 
-  // Füge Zusammenfassungen hinzu
-  cards.push({
-    type: "heading",
-    heading: "Zusammenfassungen"
-  });
+  // Fügt die Überschrift des Abschnitts "Zusammenfassungen" hinzu
+  if (showCoversSummary || showSecuritySummary || showBatterySummary || showLightSummary) {
+    cards.push({
+      type: "heading",
+      heading: "Zusammenfassungen"
+    });
+  }
 
   // Erstelle die Summary-Cards basierend auf Konfiguration
-  const summaryCards = [
-    {
-      type: "custom:simon42-summary-card",
-      summary_type: "lights",
-      areas_options: config.areas_options || {}
-    }
-  ];
+  // TODO Option hinzufügen
+  const summaryCards = [];
+
+  if (showLightSummary) {
+    summaryCards.push({
+        type: "custom:simon42-summary-card",
+        summary_type: "lights",
+        areas_options: config.areas_options || {}
+      });
+  }
+
 
   // Covers optional hinzufügen
   if (showCoversSummary) {
@@ -82,18 +91,26 @@ export function createOverviewSection(data) {
     });
   }
 
+  // Security
+  if (showSecuritySummary) {
   summaryCards.push(
     {
       type: "custom:simon42-summary-card",
       summary_type: "security",
       areas_options: config.areas_options || {}
-    },
-    {
-      type: "custom:simon42-summary-card",
-      summary_type: "batteries",
-      areas_options: config.areas_options || {}
-    }
-  );
+    });
+  }
+   
+  // Batery
+  if (showBatterySummary) {
+    summaryCards.push(
+      {
+        type: "custom:simon42-summary-card",
+        summary_type: "batteries",
+        areas_options: config.areas_options || {}
+      }
+    );
+  }  
 
   // Layout-Logik: Dynamisch an Anzahl der Cards anpassen
   if (summariesColumns === 4) {

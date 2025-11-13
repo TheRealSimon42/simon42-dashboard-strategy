@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary, showBatterySummary, showLightSummary }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -124,8 +124,32 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           />
           <label for="show-covers-summary">Rollo-Zusammenfassung anzeigen</label>
         </div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-security-summary" 
+            ${showSecuritySummary !== false ? 'checked' : ''}
+          />
+          <label for="show-security-summary">Sicherheits-Zusammenfassung anzeigen</label>
+        </div>
+         <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-battery-summary" 
+            ${showBatterySummary !== false ? 'checked' : ''}
+          />
+          <label for="show-battery-summary">Batterie-Zusammenfassung anzeigen</label>
+        </div>
+         <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-light-summary" 
+            ${showLightSummary !== false ? 'checked' : ''}
+          />
+          <label for="show-light-summary">Licht-Zusammenfassung anzeigen</label>
+        </div>
         <div class="description">
-          Zeigt die Rollo-Zusammenfassungskarte in der Übersicht an.
+          Wähle aus, welche Zusammenfassungskarten angezeigt werden sollen. Das Layout passt sich automatisch an, wenn Karten ausgeblendet werden. Ist keine Karte ausgewählt, wird der gesamte Zusammenfassungsbereich inklusive Überschrift ausgeblendet.
         </div>
       </div>
 
