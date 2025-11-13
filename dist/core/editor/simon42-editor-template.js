@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, showClockCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary, showBatterySummary, showLightSummary }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -33,11 +33,11 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       </div>
 
       <div class="section">
-        <div class="section-title">Alarm-Control-Panel</div>
+        <div class="section-title">Übersicht</div>
         <div class="form-row">
           <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">Alarm-Entität:</label>
           <select id="alarm-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">Keine (Uhr in voller Breite)</option>
+            <option value="">Keine</option>
             ${alarmEntities.map(entity => `
               <option value="${entity.entity_id}" ${entity.entity_id === alarmEntity ? 'selected' : ''}>
                 ${entity.name}
@@ -47,6 +47,16 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           Wähle eine Alarm-Control-Panel-Entität aus, um sie neben der Uhr anzuzeigen. "Keine" auswählen, um nur die Uhr in voller Breite anzuzeigen.
+        </div>
+        <div class="form-row">
+          <input
+            type="checkbox"
+            id="show-clock-card"
+            ${showClockCard ? '' : 'checked'}
+          />
+          <label for="show-clock-card" >
+            Uhr-Karte in Übersicht anzeigen
+          </label>
         </div>
       </div>
 
@@ -124,8 +134,32 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           />
           <label for="show-covers-summary">Rollo-Zusammenfassung anzeigen</label>
         </div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-security-summary" 
+            ${showSecuritySummary !== false ? 'checked' : ''}
+          />
+          <label for="show-security-summary">Sicherheits-Zusammenfassung anzeigen</label>
+        </div>
+         <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-battery-summary" 
+            ${showBatterySummary !== false ? 'checked' : ''}
+          />
+          <label for="show-battery-summary">Batterie-Zusammenfassung anzeigen</label>
+        </div>
+         <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-light-summary" 
+            ${showLightSummary !== false ? 'checked' : ''}
+          />
+          <label for="show-light-summary">Licht-Zusammenfassung anzeigen</label>
+        </div>
         <div class="description">
-          Zeigt die Rollo-Zusammenfassungskarte in der Übersicht an.
+          Wähle aus, welche Zusammenfassungskarten angezeigt werden sollen. Das Layout passt sich automatisch an, wenn Karten ausgeblendet werden. Ist keine Karte ausgewählt, wird der gesamte Zusammenfassungsbereich inklusive Überschrift ausgeblendet.
         </div>
       </div>
 

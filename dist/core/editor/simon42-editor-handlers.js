@@ -32,6 +32,16 @@ export function attachSearchCardCheckboxListener(element, callback) {
   }
 }
 
+
+export function attachClockCardCheckboxListener(element, callback) {
+  const clockCardCheckbox = element.querySelector('#show-clock-card');
+  if (clockCardCheckbox) {
+    clockCardCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachSummaryViewsCheckboxListener(element, callback) {
   const summaryViewsCheckbox = element.querySelector('#show-summary-views');
   if (summaryViewsCheckbox) {
@@ -63,6 +73,33 @@ export function attachCoversSummaryCheckboxListener(element, callback) {
   const coversSummaryCheckbox = element.querySelector('#show-covers-summary');
   if (coversSummaryCheckbox) {
     coversSummaryCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
+export function attachSecuritySummaryCheckboxListener(element, callback) {
+  const securitySummaryCheckbox = element.querySelector('#show-security-summary');
+  if (securitySummaryCheckbox) {
+    securitySummaryCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
+export function attachBatterySummaryCheckboxListener(element, callback) {
+  const batterySummaryCheckbox = element.querySelector('#show-battery-summary');
+  if (batterySummaryCheckbox) {
+    batterySummaryCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
+export function attachLightSummaryCheckboxListener(element, callback) {
+  const lightSummaryCheckbox = element.querySelector('#show-light-summary');
+  if (lightSummaryCheckbox) {
+    lightSummaryCheckbox.addEventListener('change', (e) => {
       callback(e.target.checked);
     });
   }
