@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -111,6 +111,26 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${hasSearchCardDeps 
             ? 'Zeigt die custom:search-card direkt unter der Uhr in der Übersicht an.' 
             : '⚠️ Benötigt <strong>custom:search-card</strong> und <strong>card-tools</strong>. Bitte installieren Sie beide Komponenten, um diese Funktion zu nutzen.'}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Better Thermostat</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-better-thermostat" 
+            ${showBetterThermostat ? 'checked' : ''}
+            ${!hasBetterThermostatDeps ? 'disabled' : ''}
+          />
+          <label for="show-better-thermostat" ${!hasBetterThermostatDeps ? 'class="disabled-label"' : ''}>
+            Better Thermostat UI verwenden
+          </label>
+        </div>
+        <div class="description">
+          ${hasBetterThermostatDeps 
+            ? 'Ersetzt die Standard-Thermostat-Karten in den Räumen durch Better Thermostat UI-Karten. Erfordert die Installation von <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>.' 
+            : '⚠️ Benötigt <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>. Bitte installieren Sie beide Komponenten, um diese Funktion zu nutzen.'}
         </div>
       </div>
 

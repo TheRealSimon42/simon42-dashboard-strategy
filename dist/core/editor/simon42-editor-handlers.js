@@ -68,6 +68,15 @@ export function attachCoversSummaryCheckboxListener(element, callback) {
   }
 }
 
+export function attachBetterThermostatCheckboxListener(element, callback) {
+  const betterThermostatCheckbox = element.querySelector('#show-better-thermostat');
+  if (betterThermostatCheckbox) {
+    betterThermostatCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachAreaCheckboxListeners(element, callback) {
   const areaCheckboxes = element.querySelectorAll('.area-checkbox');
   areaCheckboxes.forEach(checkbox => {

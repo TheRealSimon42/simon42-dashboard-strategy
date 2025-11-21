@@ -530,28 +530,95 @@ class Simon42ViewRoomStrategy {
 
     // Klima-Section
     if (roomEntities.climate.length > 0) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: "Klima",
-            heading_style: "title",
-            icon: "mdi:thermostat"
-          },
-          ...roomEntities.climate.map(entity => ({
-            type: "tile",
-            entity: entity,
-            name: stripAreaName(entity, area, hass),
-            features: [
-              { type: "climate-hvac-modes" }
-            ],
-            features_position: "inline",
-            vertical: false,
-            state_content: ["hvac_action", "current_temperature"]
-          }))
-        ]
-      });
+      // Prüfe ob Better Thermostat aktiviert ist
+      const showBetterThermostat = dashboardConfig.show_better_thermostat === true;
+      
+      // Wenn Better Thermostat aktiviert ist, trenne Better Thermostat und Standard-Thermostate
+      if (showBetterThermostat) {
+        const betterThermostatEntities = [];
+        const standardThermostatEntities = [];
+        
+        roomEntities.climate.forEach(entityId => {
+          const isBT = isBetterThermostatEntity(entityId, hass);
+          if (isBT) {
+            betterThermostatEntities.push(entityId);
+            console.log(`[Better Thermostat] Detected BT entity: ${entityId}`);
+          } else {
+            standardThermostatEntities.push(entityId);
+            console.log(`[Better Thermostat] Standard entity: ${entityId}`);
+          }
+        });
+        
+        // Better Thermostat Cards
+        if (betterThermostatEntities.length > 0) {
+          sections.push({
+            type: "grid",
+            cards: [
+              {
+                type: "heading",
+                heading: "Klima",
+                heading_style: "title",
+                icon: "mdi:thermostat"
+              },
+              ...betterThermostatEntities.map(entityId => ({
+                type: "custom:better-thermostat-ui-card",
+                entity: entityId,
+                name: stripAreaName(entityId, area, hass)
+              }))
+            ]
+          });
+        }
+        
+        // Standard Thermostat Cards (nur wenn es auch Standard-Thermostate gibt)
+        if (standardThermostatEntities.length > 0) {
+          sections.push({
+            type: "grid",
+            cards: [
+              ...(betterThermostatEntities.length === 0 ? [{
+                type: "heading",
+                heading: "Klima",
+                heading_style: "title",
+                icon: "mdi:thermostat"
+              }] : []),
+              ...standardThermostatEntities.map(entity => ({
+                type: "tile",
+                entity: entity,
+                name: stripAreaName(entity, area, hass),
+                features: [
+                  { type: "climate-hvac-modes" }
+                ],
+                features_position: "inline",
+                vertical: false,
+                state_content: ["hvac_action", "current_temperature"]
+              }))
+            ]
+          });
+        }
+      } else {
+        // Standard-Verhalten: Alle Thermostate als Standard-Cards
+        sections.push({
+          type: "grid",
+          cards: [
+            {
+              type: "heading",
+              heading: "Klima",
+              heading_style: "title",
+              icon: "mdi:thermostat"
+            },
+            ...roomEntities.climate.map(entity => ({
+              type: "tile",
+              entity: entity,
+              name: stripAreaName(entity, area, hass),
+              features: [
+                { type: "climate-hvac-modes" }
+              ],
+              features_position: "inline",
+              vertical: false,
+              state_content: ["hvac_action", "current_temperature"]
+            }))
+          ]
+        });
+      }
     }
 
     // Rollos/Jalousien
