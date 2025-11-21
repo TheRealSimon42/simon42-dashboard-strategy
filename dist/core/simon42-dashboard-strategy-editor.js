@@ -11,6 +11,7 @@ import {
   attachRoomViewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
   attachCoversSummaryCheckboxListener,
+  attachBetterThermostatCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
   attachExpandButtonListeners,
@@ -57,6 +58,38 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     return searchCardExists && cardToolsExists;
   }
 
+  _checkBetterThermostatDependencies() {
+    // Prüfe ob better_thermostat Integration vorhanden ist
+    // Better Thermostat entities haben platform: "better_thermostat" in der Entity Registry
+    const entities = Object.values(this._hass?.entities || {});
+    const hasBetterThermostatEntities = entities.some(entity => {
+      // Prüfe ob es eine climate entity mit better_thermostat platform ist
+      if (entity.entity_id?.startsWith('climate.')) {
+        // In Home Assistant wird die Platform in der Entity Registry gespeichert
+        // Prüfe über die platform property oder über den device_id
+        const platform = entity.platform;
+        if (platform === 'better_thermostat') {
+          return true;
+        }
+        // Alternative: Prüfe über den device_id oder config_entry_id
+        // Better Thermostat erstellt Entities mit bestimmten Attributen
+        const state = this._hass?.states?.[entity.entity_id];
+        if (state?.attributes?.integration === 'better_thermostat') {
+          return true;
+        }
+      }
+      return false;
+    });
+    
+    // Prüfe ob better-thermostat-ui-card verfügbar ist
+    // Die Card sollte als custom element registriert sein
+    const hasUICard = customElements.get('better-thermostat-ui-card') !== undefined ||
+                      window.customCards?.some(card => card.type === 'custom:better-thermostat-ui-card') ||
+                      document.querySelector('better-thermostat-ui-card') !== null;
+    
+    return hasBetterThermostatEntities && hasUICard;
+  }
+
   _render() {
     if (!this._hass || !this._config) {
       return;
@@ -69,11 +102,19 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showRoomViews = this._config.show_room_views === true; // Standard: false
     const groupByFloors = this._config.group_by_floors === true; // NEU
     const showCoversSummary = this._config.show_covers_summary !== false;
+    const showBetterThermostat = this._config.show_better_thermostat === true;
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
     const roomPinEntities = this._config.room_pin_entities || [];
     const hasSearchCardDeps = this._checkSearchCardDependencies();
+    let hasBetterThermostatDeps = false;
+    try {
+      hasBetterThermostatDeps = this._checkBetterThermostatDependencies();
+    } catch (e) {
+      console.warn('Error checking Better Thermostat dependencies:', e);
+      hasBetterThermostatDeps = false;
+    }
     
     // Sammle alle Alarm-Control-Panel-Entitäten
     const alarmEntities = Object.keys(this._hass.states)
@@ -117,7 +158,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         roomPinEntities,
         allEntities,
         groupByFloors, // NEU
-        showCoversSummary
+        showCoversSummary,
+        showBetterThermostat,
+        hasBetterThermostatDeps
       })}
     `;
 
@@ -129,6 +172,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
     attachCoversSummaryCheckboxListener(this, (showCoversSummary) => this._showCoversSummaryChanged(showCoversSummary));
+    attachBetterThermostatCheckboxListener(this, (showBetterThermostat) => this._showBetterThermostatChanged(showBetterThermostat));
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
@@ -889,6 +933,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
     if (showCoversSummary === true) {
       delete newConfig.show_covers_summary;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showBetterThermostatChanged(showBetterThermostat) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_better_thermostat: showBetterThermostat
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (showBetterThermostat === false) {
+      delete newConfig.show_better_thermostat;
     }
 
     this._config = newConfig;
