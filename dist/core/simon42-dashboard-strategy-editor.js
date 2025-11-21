@@ -14,6 +14,7 @@ import {
   attachBetterThermostatCheckboxListener,
   attachHorizonCardCheckboxListener,
   attachHorizonCardExtendedCheckboxListener,
+  attachPublicTransportCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
   attachExpandButtonListeners,
@@ -114,6 +115,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showBetterThermostat = this._config.show_better_thermostat === true;
     const showHorizonCard = this._config.show_horizon_card === true;
     const horizonCardExtended = this._config.horizon_card_extended === true;
+    const showPublicTransport = this._config.show_public_transport === true;
+    const publicTransportEntities = this._config.public_transport_entities || [];
+    const hvvMax = this._config.hvv_max !== undefined ? this._config.hvv_max : 10;
+    const hvvShowTime = this._config.hvv_show_time !== false;
+    const hvvShowTitle = this._config.hvv_show_title !== false;
+    const hvvTitle = this._config.hvv_title || 'HVV';
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
@@ -181,7 +188,13 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         hasBetterThermostatDeps,
         showHorizonCard,
         hasHorizonCardDeps,
-        horizonCardExtended
+        horizonCardExtended,
+        showPublicTransport,
+        publicTransportEntities,
+        hvvMax,
+        hvvShowTime,
+        hvvShowTitle,
+        hvvTitle
       })}
     `;
 
@@ -196,10 +209,13 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachBetterThermostatCheckboxListener(this, (showBetterThermostat) => this._showBetterThermostatChanged(showBetterThermostat));
     attachHorizonCardCheckboxListener(this, (showHorizonCard) => this._showHorizonCardChanged(showHorizonCard));
     attachHorizonCardExtendedCheckboxListener(this, (horizonCardExtended) => this._horizonCardExtendedChanged(horizonCardExtended));
+    attachPublicTransportCheckboxListener(this, (showPublicTransport) => this._showPublicTransportChanged(showPublicTransport));
+    this._attachHvvCardListeners();
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
     this._attachRoomPinsListeners();
+    this._attachPublicTransportListeners();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
     // Sortiere die Area-Items nach displayOrder
@@ -1014,6 +1030,263 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
     if (horizonCardExtended === false) {
       delete newConfig.horizon_card_extended;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showPublicTransportChanged(showPublicTransport) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_public_transport: showPublicTransport
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (showPublicTransport === false) {
+      delete newConfig.show_public_transport;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _attachPublicTransportListeners() {
+    // Add Button
+    const addBtn = this.querySelector('#add-public-transport-btn');
+    const select = this.querySelector('#public-transport-entity-select');
+    
+    if (addBtn && select) {
+      addBtn.addEventListener('click', () => {
+        const entityId = select.value;
+        if (entityId && entityId !== '') {
+          this._addPublicTransportEntity(entityId);
+          select.value = ''; // Reset selection
+        }
+      });
+    }
+
+    // Remove Buttons
+    const removeButtons = this.querySelectorAll('.remove-public-transport-btn');
+    removeButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const entityId = e.target.dataset.entityId;
+        this._removePublicTransportEntity(entityId);
+      });
+    });
+  }
+
+  _addPublicTransportEntity(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentEntities = this._config.public_transport_entities || [];
+    
+    // Prüfe ob bereits vorhanden
+    if (currentEntities.includes(entityId)) {
+      return;
+    }
+
+    const newEntities = [...currentEntities, entityId];
+
+    const newConfig = {
+      ...this._config,
+      public_transport_entities: newEntities
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Public Transport-Liste
+    this._updatePublicTransportList();
+  }
+
+  _removePublicTransportEntity(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentEntities = this._config.public_transport_entities || [];
+    const newEntities = currentEntities.filter(id => id !== entityId);
+
+    const newConfig = {
+      ...this._config,
+      public_transport_entities: newEntities.length > 0 ? newEntities : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newEntities.length === 0) {
+      delete newConfig.public_transport_entities;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Public Transport-Liste
+    this._updatePublicTransportList();
+  }
+
+  _updatePublicTransportList() {
+    const container = this.querySelector('#public-transport-list');
+    if (!container) return;
+
+    const publicTransportEntities = this._config.public_transport_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      // Die renderPublicTransportList Funktion ist nicht exportiert, verwende Fallback
+      container.innerHTML = this._renderPublicTransportListFallback(publicTransportEntities, allEntities);
+      
+      // Reattach listeners
+      this._attachPublicTransportListeners();
+    }).catch(() => {
+      // Fallback falls Import fehlschlägt
+      container.innerHTML = this._renderPublicTransportListFallback(publicTransportEntities, allEntities);
+      this._attachPublicTransportListeners();
+    });
+  }
+
+  _renderPublicTransportListFallback(publicTransportEntities, allEntities) {
+    if (!publicTransportEntities || publicTransportEntities.length === 0) {
+      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Entitäten hinzugefügt</div>';
+    }
+
+    const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
+
+    return `
+      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+        ${publicTransportEntities.map((entityId) => {
+          const name = entityMap.get(entityId) || entityId;
+          return `
+            <div class="public-transport-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
+              <span style="flex: 1; font-size: 14px;">
+                <strong>${name}</strong>
+                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+              </span>
+              <button class="remove-public-transport-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+                ✕
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  _attachHvvCardListeners() {
+    // Max input
+    const maxInput = this.querySelector('#hvv-max');
+    if (maxInput) {
+      maxInput.addEventListener('change', (e) => {
+        const value = parseInt(e.target.value, 10);
+        if (!isNaN(value) && value >= 1 && value <= 50) {
+          this._hvvMaxChanged(value);
+        }
+      });
+    }
+
+    // Show time checkbox
+    const showTimeCheckbox = this.querySelector('#hvv-show-time');
+    if (showTimeCheckbox) {
+      showTimeCheckbox.addEventListener('change', (e) => {
+        this._hvvShowTimeChanged(e.target.checked);
+      });
+    }
+
+    // Show title checkbox
+    const showTitleCheckbox = this.querySelector('#hvv-show-title');
+    if (showTitleCheckbox) {
+      showTitleCheckbox.addEventListener('change', (e) => {
+        this._hvvShowTitleChanged(e.target.checked);
+      });
+    }
+
+    // Title input
+    const titleInput = this.querySelector('#hvv-title');
+    if (titleInput) {
+      titleInput.addEventListener('change', (e) => {
+        this._hvvTitleChanged(e.target.value);
+      });
+    }
+  }
+
+  _hvvMaxChanged(max) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      hvv_max: max
+    };
+
+    // Wenn Standardwert (10), entfernen wir die Property
+    if (max === 10) {
+      delete newConfig.hvv_max;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _hvvShowTimeChanged(showTime) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      hvv_show_time: showTime
+    };
+
+    // Wenn Standardwert (true), entfernen wir die Property
+    if (showTime === true) {
+      delete newConfig.hvv_show_time;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _hvvShowTitleChanged(showTitle) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      hvv_show_title: showTitle
+    };
+
+    // Wenn Standardwert (true), entfernen wir die Property
+    if (showTitle === true) {
+      delete newConfig.hvv_show_title;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _hvvTitleChanged(title) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      hvv_title: title
+    };
+
+    // Wenn Standardwert ('HVV'), entfernen wir die Property
+    if (!title || title === 'HVV') {
+      delete newConfig.hvv_title;
     }
 
     this._config = newConfig;

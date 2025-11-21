@@ -95,6 +95,15 @@ export function attachHorizonCardExtendedCheckboxListener(element, callback) {
   }
 }
 
+export function attachPublicTransportCheckboxListener(element, callback) {
+  const publicTransportCheckbox = element.querySelector('#show-public-transport');
+  if (publicTransportCheckbox) {
+    publicTransportCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachAreaCheckboxListeners(element, callback) {
   const areaCheckboxes = element.querySelectorAll('.area-checkbox');
   areaCheckboxes.forEach(checkbox => {

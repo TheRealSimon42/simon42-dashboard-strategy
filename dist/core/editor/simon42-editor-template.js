@@ -3,7 +3,35 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false }) {
+function renderPublicTransportList(publicTransportEntities, allEntities) {
+  if (!publicTransportEntities || publicTransportEntities.length === 0) {
+    return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Entitäten hinzugefügt</div>';
+  }
+
+  const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
+
+  return `
+    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      ${publicTransportEntities.map((entityId) => {
+        const name = entityMap.get(entityId) || entityId;
+        return `
+          <div class="public-transport-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+            <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
+            <span style="flex: 1; font-size: 14px;">
+              <strong>${name}</strong>
+              <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+            </span>
+            <button class="remove-public-transport-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], hvvMax = 10, hvvShowTime = true, hvvShowTitle = true, hvvTitle = 'HVV' }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -169,6 +197,102 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </div>
         </div>
         ` : ''}
+      </div>
+
+      <div class="section">
+        <div class="section-title">Öffentlicher Nahverkehr</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-public-transport" 
+            ${showPublicTransport ? 'checked' : ''}
+          />
+          <label for="show-public-transport">Öffentlicher Nahverkehr in Übersicht anzeigen</label>
+        </div>
+        <div class="description">
+          Zeigt Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht an. Verwende die hvv-card für die Anzeige.
+        </div>
+        <div id="public-transport-list" style="margin-top: 12px; margin-bottom: 12px;">
+          ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <select id="public-transport-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">Entität auswählen...</option>
+            ${allEntities
+              .filter(entity => {
+                const entityId = entity.entity_id.toLowerCase();
+                const name = (entity.name || '').toLowerCase();
+                
+                // Filter für relevante Domains
+                if (!entityId.startsWith('sensor.') && !entityId.startsWith('button.')) {
+                  return false;
+                }
+                
+                // Filter für relevante Keywords in Entity-ID oder Name
+                const transportKeywords = [
+                  'departure', 'departures', 'abfahrt', 'abfahrten',
+                  'hvv', 'public_transport', 'public-transport', 'publictransport',
+                  'transport', 'verkehr', 'nahverkehr',
+                  'bus', 'bahn', 'train', 'u-bahn', 'ubahn', 's-bahn', 'sbahn',
+                  'station', 'haltestelle', 'stop'
+                ];
+                
+                const hasTransportKeyword = transportKeywords.some(keyword => 
+                  entityId.includes(keyword) || name.includes(keyword)
+                );
+                
+                return hasTransportKeyword;
+              })
+              .map(entity => `
+                <option value="${entity.entity_id}">${entity.name}</option>
+              `).join('')}
+          </select>
+          <button id="add-public-transport-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + Hinzufügen
+          </button>
+        </div>
+        <div class="description">
+          Wähle eine oder mehrere Entitäten aus, die Abfahrtszeiten bereitstellen. Diese werden in der Übersicht angezeigt.
+        </div>
+        <div style="margin-top: 16px;">
+          <div class="form-row">
+            <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">Max. Abfahrten:</label>
+            <input 
+              type="number" 
+              id="hvv-max" 
+              value="${hvvMax !== undefined ? hvvMax : 10}" 
+              min="1" 
+              max="50"
+              style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            />
+          </div>
+          <div class="form-row">
+            <input 
+              type="checkbox" 
+              id="hvv-show-time" 
+              ${hvvShowTime !== false ? 'checked' : ''}
+            />
+            <label for="hvv-show-time">Zeit anzeigen</label>
+          </div>
+          <div class="form-row">
+            <input 
+              type="checkbox" 
+              id="hvv-show-title" 
+              ${hvvShowTitle !== false ? 'checked' : ''}
+            />
+            <label for="hvv-show-title">Titel anzeigen</label>
+          </div>
+          <div class="form-row">
+            <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">Titel:</label>
+            <input 
+              type="text" 
+              id="hvv-title" 
+              value="${hvvTitle || 'HVV'}" 
+              placeholder="HVV"
+              style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            />
+          </div>
+        </div>
       </div>
 
       <div class="section">

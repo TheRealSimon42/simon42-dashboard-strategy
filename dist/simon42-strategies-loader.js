@@ -18,6 +18,9 @@
 //   type: custom:simon42-dashboard
 // ====================================================================
 
+// Lade Version-Info für Cache-Busting (muss zuerst geladen werden)
+import './utils/simon42-version.js';
+
 // Lade Helper-Funktionen
 import './utils/simon42-helpers.js';
 import './utils/simon42-data-collectors.js';
@@ -40,4 +43,9 @@ import './views/simon42-view-covers.js';
 import './views/simon42-view-security.js';
 import './views/simon42-view-batteries.js';
 
-console.log('Simon42 Dashboard Strategies loaded successfully (with reactive lights + covers cards)!');
+// Importiere Version für Logging
+import { VERSION, BUILD_DATE } from './utils/simon42-version.js';
+
+console.log(`%c✅ Simon42 Dashboard Strategies v${VERSION}`, 'color: #4CAF50; font-weight: bold; font-size: 14px;');
+console.log(`Build: ${BUILD_DATE} | Features: Better Thermostat, Public Transport (hvv-card), Reactive Group Cards`);
+console.log(`💡 Tipp: Prüfe 'window.Simon42DashboardVersion' in der Konsole für Versions-Info`);

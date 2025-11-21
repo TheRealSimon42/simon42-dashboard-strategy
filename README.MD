@@ -147,7 +147,11 @@ strategy:
   type: custom:simon42-dashboard
 ```
 
-Nicht vergessen, anschließend den Browser-Cache zu leeren 👍
+**Wichtig:** Nach Updates den Browser-Cache leeren:
+- **Hard Refresh**: `Ctrl+Shift+R` (Windows) oder `Cmd+Shift+R` (Mac)
+- **Chrome DevTools**: F12 → Rechtsklick auf Refresh → "Empty Cache and Hard Reload"
+
+Die aktuelle Version wird in der Browser-Konsole angezeigt. Prüfe `window.Simon42DashboardVersion` für Details.
 
 ## 🤖 Projekt-Kontext für KI-Assistenten
 
@@ -306,6 +310,12 @@ strategy:
 | `show_covers_summary` | boolean | `true` | Zeigt die Rollo-Zusammenfassungskarte in der Übersicht |
 | `summaries_columns` | number | `2` | Layout der Zusammenfassungskarten: `2` (2x2 Grid) oder `4` (1x4 Reihe) |
 | `group_by_floors` | boolean | `false` | Gruppiert Bereiche nach Etagen/Floors |
+| `show_public_transport` | boolean | `false` | Zeigt Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht |
+| `public_transport_entities` | array | `[]` | Array von Entity-IDs für Abfahrtszeiten (z.B. `['sensor.hvv_departures']`) |
+| `hvv_max` | number | `10` | Maximale Anzahl der angezeigten Abfahrten |
+| `hvv_show_time` | boolean | `true` | Zeigt die Zeit der Abfahrten an |
+| `hvv_show_title` | boolean | `true` | Zeigt den Titel der Card an |
+| `hvv_title` | string | `'HVV'` | Titel der Public Transport Card |
 
 #### `areas_display` - Bereich-Verwaltung
 
@@ -665,6 +675,28 @@ Erweiterte Unterstützung für Reolink-Kameras:
 - Automatische Erkennung von Reolink-Entities
 - Optimierte Card-Konfiguration
 - PTZ-Controls (falls unterstützt)
+
+#### Öffentlicher Nahverkehr
+
+Zeige Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_public_transport: true
+  public_transport_entities:
+    - sensor.hvv_departures
+    - sensor.bus_stop_main_street
+  hvv_max: 10
+  hvv_show_time: true
+  hvv_show_title: true
+  hvv_title: 'HVV'
+```
+
+**Voraussetzung:**
+- Die `hvv-card` muss installiert sein
+- Entities müssen Abfahrtszeiten bereitstellen (z.B. über die HVV-Integration)
+- Der Editor filtert automatisch relevante Entities (sensor/button mit Transport-Keywords)
 
 ### Batch-Aktionen
 

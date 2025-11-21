@@ -136,6 +136,33 @@ export function createOverviewSection(data) {
     });
   }
 
+  // Öffentlicher Nahverkehr Section
+  const showPublicTransport = config.show_public_transport === true;
+  const publicTransportEntities = (config.public_transport_entities || [])
+    .filter(entityId => hass.states[entityId] !== undefined);
+
+  if (showPublicTransport && publicTransportEntities.length > 0) {
+    cards.push({
+      type: "heading",
+      heading: "Öffentlicher Nahverkehr",
+      heading_style: "title",
+      icon: "mdi:bus"
+    });
+    
+    // Erstelle eine hvv-card mit allen Entities als Array und konfigurierten Optionen
+    // Verwende Config-Werte wenn vorhanden, sonst Defaults
+    const hvvCard = {
+      type: "custom:hvv-card",
+      entities: publicTransportEntities,
+      max: config.hvv_max !== undefined ? config.hvv_max : 10,
+      show_time: config.hvv_show_time !== undefined ? config.hvv_show_time : true,
+      show_title: config.hvv_show_title !== undefined ? config.hvv_show_title : true,
+      title: config.hvv_title || 'HVV'
+    };
+
+    cards.push(hvvCard);
+  }
+
   return {
     type: "grid",
     cards: cards
