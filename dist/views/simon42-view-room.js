@@ -3,6 +3,50 @@
 // ====================================================================
 import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged } from '../utils/simon42-helpers.js';
 
+/**
+ * Prüft ob eine Entity eine Better Thermostat Entity ist
+ * @param {string} entityId - Entity ID
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {boolean} True wenn es eine Better Thermostat Entity ist
+ */
+function isBetterThermostatEntity(entityId, hass) {
+  if (!entityId.startsWith('climate.')) {
+    return false;
+  }
+  
+  const entity = hass.entities?.[entityId];
+  if (!entity) {
+    return false;
+  }
+  
+  // Prüfe platform in der Entity Registry (primary check)
+  if (entity.platform === 'better_thermostat') {
+    return true;
+  }
+  
+  // Alternative: Prüfe über unique_id - Better Thermostat entities haben oft "bt_" prefix
+  if (entity.unique_id && entity.unique_id.startsWith('bt_')) {
+    return true;
+  }
+  
+  // Alternative: Prüfe über State-Attribute
+  const state = hass.states?.[entityId];
+  if (state?.attributes?.integration === 'better_thermostat') {
+    return true;
+  }
+  
+  // Alternative: Prüfe über device_id - Better Thermostat devices haben oft "better_thermostat" im Namen
+  if (entity.device_id) {
+    const device = hass.devices?.[entity.device_id];
+    if (device && (device.name?.toLowerCase().includes('better thermostat') || 
+                   device.manufacturer?.toLowerCase().includes('better thermostat'))) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 class Simon42ViewRoomStrategy {
   static async generate(config, hass) {
     const { area, devices, entities } = config;
