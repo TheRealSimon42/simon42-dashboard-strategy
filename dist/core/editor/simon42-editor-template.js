@@ -110,7 +110,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${hasSearchCardDeps 
             ? 'Zeigt die custom:search-card direkt unter der Uhr in der Übersicht an.' 
-            : '⚠️ Benötigt <strong>custom:search-card</strong> und <strong>card-tools</strong>. Bitte installieren Sie beide Komponenten, um diese Funktion zu nutzen.'}
+            : '⚠️ Benötigt <strong>custom:search-card</strong> und <strong>card-tools</strong>. Bitte installiere beide Komponenten, um diese Funktion zu nutzen.'}
         </div>
       </div>
 
@@ -130,7 +130,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${hasBetterThermostatDeps 
             ? 'Ersetzt die Standard-Thermostat-Karten in den Räumen durch Better Thermostat UI-Karten. Erfordert die Installation von <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>.' 
-            : '⚠️ Benötigt <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>. Bitte installieren Sie beide Komponenten, um diese Funktion zu nutzen.'}
+            : '⚠️ Benötigt <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>. Bitte installiere beide Komponenten, um diese Funktion zu nutzen.'}
         </div>
       </div>
 
