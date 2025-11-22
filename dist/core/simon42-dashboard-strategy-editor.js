@@ -71,12 +71,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         if (platform === 'better_thermostat') {
           return true;
         }
-        // Alternative: Prüfe über den device_id oder config_entry_id
-        // Better Thermostat erstellt Entities mit bestimmten Attributen
-        const state = this._hass?.states?.[entity.entity_id];
-        if (state?.attributes?.integration === 'better_thermostat') {
-          return true;
-        }
       }
       return false;
     });
