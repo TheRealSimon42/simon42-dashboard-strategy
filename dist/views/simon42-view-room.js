@@ -15,36 +15,7 @@ function isBetterThermostatEntity(entityId, hass) {
   }
   
   const entity = hass.entities?.[entityId];
-  if (!entity) {
-    return false;
-  }
-  
-  // Prüfe platform in der Entity Registry (primary check)
-  if (entity.platform === 'better_thermostat') {
-    return true;
-  }
-  
-  // Alternative: Prüfe über unique_id - Better Thermostat entities haben oft "bt_" prefix
-  if (entity.unique_id && entity.unique_id.startsWith('bt_')) {
-    return true;
-  }
-  
-  // Alternative: Prüfe über State-Attribute
-  const state = hass.states?.[entityId];
-  if (state?.attributes?.integration === 'better_thermostat') {
-    return true;
-  }
-  
-  // Alternative: Prüfe über device_id - Better Thermostat devices haben oft "better_thermostat" im Namen
-  if (entity.device_id) {
-    const device = hass.devices?.[entity.device_id];
-    if (device && (device.name?.toLowerCase().includes('better thermostat') || 
-                   device.manufacturer?.toLowerCase().includes('better thermostat'))) {
-      return true;
-    }
-  }
-  
-  return false;
+  return entity?.platform === 'better_thermostat';
 }
 
 class Simon42ViewRoomStrategy {
