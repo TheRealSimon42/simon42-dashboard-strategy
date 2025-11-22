@@ -77,6 +77,24 @@ export function attachBetterThermostatCheckboxListener(element, callback) {
   }
 }
 
+export function attachHorizonCardCheckboxListener(element, callback) {
+  const horizonCardCheckbox = element.querySelector('#show-horizon-card');
+  if (horizonCardCheckbox) {
+    horizonCardCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
+export function attachHorizonCardExtendedCheckboxListener(element, callback) {
+  const horizonCardExtendedCheckbox = element.querySelector('#horizon-card-extended');
+  if (horizonCardExtendedCheckbox) {
+    horizonCardExtendedCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachAreaCheckboxListeners(element, callback) {
   const areaCheckboxes = element.querySelectorAll('.area-checkbox');
   areaCheckboxes.forEach(checkbox => {

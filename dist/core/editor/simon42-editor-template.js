@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -132,6 +132,43 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             ? 'Ersetzt die Standard-Thermostat-Karten in den Räumen durch Better Thermostat UI-Karten. Erfordert die Installation von <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>.' 
             : '⚠️ Benötigt <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>. Bitte installiere beide Komponenten, um diese Funktion zu nutzen.'}
         </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Horizon Card</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-horizon-card" 
+            ${showHorizonCard ? 'checked' : ''}
+            ${!hasHorizonCardDeps ? 'disabled' : ''}
+          />
+          <label for="show-horizon-card" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
+            Horizon Card anzeigen
+          </label>
+        </div>
+        <div class="description">
+          ${hasHorizonCardDeps 
+            ? 'Zeigt die Horizon Card in der Wetter-Sektion an, um die Position der Sonne über dem Horizont zu visualisieren.' 
+            : '⚠️ Benötigt <strong>lovelace-horizon-card</strong>. Bitte installiere die Card über HACS, um diese Funktion zu nutzen.'}
+        </div>
+        ${hasHorizonCardDeps && showHorizonCard ? `
+        <div style="margin-top: 12px;">
+          <div class="form-row">
+            <input 
+              type="checkbox" 
+              id="horizon-card-extended" 
+              ${horizonCardExtended ? 'checked' : ''}
+            />
+            <label for="horizon-card-extended">
+              Erweiterte Informationen anzeigen
+            </label>
+          </div>
+          <div class="description">
+            Zeigt zusätzliche Informationen wie Azimut, Elevation, Mondaufgang/-untergang und Mondphase an.
+          </div>
+        </div>
+        ` : ''}
       </div>
 
       <div class="section">

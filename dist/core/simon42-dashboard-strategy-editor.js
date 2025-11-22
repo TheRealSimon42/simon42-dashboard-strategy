@@ -12,6 +12,8 @@ import {
   attachGroupByFloorsCheckboxListener, // NEU
   attachCoversSummaryCheckboxListener,
   attachBetterThermostatCheckboxListener,
+  attachHorizonCardCheckboxListener,
+  attachHorizonCardExtendedCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
   attachExpandButtonListeners,
@@ -84,6 +86,19 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     return hasBetterThermostatEntities && hasUICard;
   }
 
+  _checkHorizonCardDependencies() {
+    // Prüfe ob horizon-card verfügbar ist
+    const hasHorizonCard = customElements.get('horizon-card') !== undefined ||
+                           window.customCards?.some(card => card.type === 'custom:horizon-card') ||
+                           document.querySelector('horizon-card') !== null ||
+                           (window.customCards && window.customCards.some(card => 
+                             card.type === 'custom:horizon-card' || 
+                             card.name?.toLowerCase().includes('horizon')
+                           ));
+    
+    return hasHorizonCard;
+  }
+
   _render() {
     if (!this._hass || !this._config) {
       return;
@@ -97,6 +112,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const groupByFloors = this._config.group_by_floors === true; // NEU
     const showCoversSummary = this._config.show_covers_summary !== false;
     const showBetterThermostat = this._config.show_better_thermostat === true;
+    const showHorizonCard = this._config.show_horizon_card === true;
+    const horizonCardExtended = this._config.horizon_card_extended === true;
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
@@ -108,6 +125,13 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     } catch (e) {
       console.warn('Error checking Better Thermostat dependencies:', e);
       hasBetterThermostatDeps = false;
+    }
+    let hasHorizonCardDeps = false;
+    try {
+      hasHorizonCardDeps = this._checkHorizonCardDependencies();
+    } catch (e) {
+      console.warn('Error checking Horizon Card dependencies:', e);
+      hasHorizonCardDeps = false;
     }
     
     // Sammle alle Alarm-Control-Panel-Entitäten
@@ -154,7 +178,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         groupByFloors, // NEU
         showCoversSummary,
         showBetterThermostat,
-        hasBetterThermostatDeps
+        hasBetterThermostatDeps,
+        showHorizonCard,
+        hasHorizonCardDeps,
+        horizonCardExtended
       })}
     `;
 
@@ -167,6 +194,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
     attachCoversSummaryCheckboxListener(this, (showCoversSummary) => this._showCoversSummaryChanged(showCoversSummary));
     attachBetterThermostatCheckboxListener(this, (showBetterThermostat) => this._showBetterThermostatChanged(showBetterThermostat));
+    attachHorizonCardCheckboxListener(this, (showHorizonCard) => this._showHorizonCardChanged(showHorizonCard));
+    attachHorizonCardExtendedCheckboxListener(this, (horizonCardExtended) => this._horizonCardExtendedChanged(horizonCardExtended));
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
@@ -946,6 +975,45 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
     if (showBetterThermostat === false) {
       delete newConfig.show_better_thermostat;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _showHorizonCardChanged(showHorizonCard) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      show_horizon_card: showHorizonCard
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (showHorizonCard === false) {
+      delete newConfig.show_horizon_card;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    this._render();
+  }
+
+  _horizonCardExtendedChanged(horizonCardExtended) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      horizon_card_extended: horizonCardExtended
+    };
+
+    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
+    if (horizonCardExtended === false) {
+      delete newConfig.horizon_card_extended;
     }
 
     this._config = newConfig;

@@ -266,15 +266,75 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
  * @param {boolean} showWeather - Ob Wetter-Karte angezeigt werden soll
  * @param {boolean} showEnergy - Ob Energie-Dashboard angezeigt werden soll
  * @param {boolean} groupByFloors - Ob nach Etagen gruppiert wird
+ * @param {Object} config - Konfigurationsobjekt (für Horizon Card)
  * @returns {Array|Object|null} Section(s) oder null wenn keine Karten angezeigt werden
  */
-export function createWeatherEnergySection(weatherEntity, showWeather, showEnergy, groupByFloors = false) {
+export function createWeatherEnergySection(weatherEntity, showWeather, showEnergy, groupByFloors = false, config = {}) {
+  const showHorizonCard = config.show_horizon_card === true;
+  const horizonCardExtended = config.horizon_card_extended === true;
+  
+  // Erstelle Horizon Card Konfiguration
+  const createHorizonCardConfig = () => {
+    const baseConfig = {
+      type: "custom:horizon-card",
+      moon: true,
+      refresh_period: 60,
+      fields: {
+        sunrise: true,
+        sunset: true,
+        moonrise: true,
+        moonset: true
+      }
+    };
+    
+    if (horizonCardExtended) {
+      baseConfig.fields = {
+        sunrise: true,
+        sunset: true,
+        dawn: true,
+        noon: true,
+        dusk: true,
+        moonrise: true,
+        moonset: true,
+        azimuth: true,
+        elevation: true,
+        moon_phase: true
+      };
+    }
+    
+    return baseConfig;
+  };
   // Wenn Etagen-Gruppierung aktiv: Separate Sections zurückgeben
   if (groupByFloors) {
     const sections = [];
     
     // Weather Section (wenn vorhanden UND aktiviert)
     if (weatherEntity && showWeather) {
+      const weatherCards = [
+        {
+          type: "heading",
+          heading: "Wetter",
+          heading_style: "title",
+          icon: "mdi:weather-partly-cloudy"
+        },
+        {
+          type: "weather-forecast",
+          entity: weatherEntity,
+          forecast_type: "daily"
+        }
+      ];
+      
+      // Füge Horizon Card hinzu wenn aktiviert
+      if (showHorizonCard) {
+        weatherCards.push(createHorizonCardConfig());
+      }
+      
+      sections.push({
+        type: "grid",
+        cards: weatherCards
+      });
+    } else if (showHorizonCard) {
+      // Wenn nur Horizon Card ohne Weather Card
       sections.push({
         type: "grid",
         cards: [
@@ -284,11 +344,7 @@ export function createWeatherEnergySection(weatherEntity, showWeather, showEnerg
             heading_style: "title",
             icon: "mdi:weather-partly-cloudy"
           },
-          {
-            type: "weather-forecast",
-            entity: weatherEntity,
-            forecast_type: "daily"
-          }
+          createHorizonCardConfig()
         ]
       });
     }
@@ -332,6 +388,20 @@ export function createWeatherEnergySection(weatherEntity, showWeather, showEnerg
       entity: weatherEntity,
       forecast_type: "daily"
     });
+    
+    // Füge Horizon Card hinzu wenn aktiviert (unter der Weather Card)
+    if (showHorizonCard) {
+      cards.push(createHorizonCardConfig());
+    }
+  } else if (showHorizonCard) {
+    // Wenn nur Horizon Card ohne Weather Card
+    cards.push({
+      type: "heading",
+      heading: "Wetter",
+      heading_style: "title",
+      icon: "mdi:weather-partly-cloudy"
+    });
+    cards.push(createHorizonCardConfig());
   }
   
   // Energie-Dashboard (nur wenn aktiviert)
