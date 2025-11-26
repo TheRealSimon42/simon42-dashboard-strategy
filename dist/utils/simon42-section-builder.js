@@ -136,33 +136,6 @@ export function createOverviewSection(data) {
     });
   }
 
-  // Öffentlicher Nahverkehr Section
-  const showPublicTransport = config.show_public_transport === true;
-  const publicTransportEntities = (config.public_transport_entities || [])
-    .filter(entityId => hass.states[entityId] !== undefined);
-
-  if (showPublicTransport && publicTransportEntities.length > 0) {
-    cards.push({
-      type: "heading",
-      heading: "Öffentlicher Nahverkehr",
-      heading_style: "title",
-      icon: "mdi:bus"
-    });
-    
-    // Erstelle eine hvv-card mit allen Entities als Array und konfigurierten Optionen
-    // Verwende Config-Werte wenn vorhanden, sonst Defaults
-    const hvvCard = {
-      type: "custom:hvv-card",
-      entities: publicTransportEntities,
-      max: config.hvv_max !== undefined ? config.hvv_max : 10,
-      show_time: config.hvv_show_time !== undefined ? config.hvv_show_time : true,
-      show_title: config.hvv_show_title !== undefined ? config.hvv_show_title : true,
-      title: config.hvv_title || 'HVV'
-    };
-
-    cards.push(hvvCard);
-  }
-
   return {
     type: "grid",
     cards: cards
@@ -288,15 +261,13 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
 }
 
 /**
- * Erstellt die Wetter & Energie-Section(s)
+ * Erstellt die Wetter-Section
  * @param {string} weatherEntity - Weather Entity ID
  * @param {boolean} showWeather - Ob Wetter-Karte angezeigt werden soll
- * @param {boolean} showEnergy - Ob Energie-Dashboard angezeigt werden soll
- * @param {boolean} groupByFloors - Ob nach Etagen gruppiert wird
  * @param {Object} config - Konfigurationsobjekt (für Horizon Card)
- * @returns {Array|Object|null} Section(s) oder null wenn keine Karten angezeigt werden
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
  */
-export function createWeatherEnergySection(weatherEntity, showWeather, showEnergy, groupByFloors = false, config = {}) {
+export function createWeatherSection(weatherEntity, showWeather, config = {}) {
   const showHorizonCard = config.show_horizon_card === true;
   const horizonCardExtended = config.horizon_card_extended === true;
   
@@ -331,75 +302,7 @@ export function createWeatherEnergySection(weatherEntity, showWeather, showEnerg
     
     return baseConfig;
   };
-  // Wenn Etagen-Gruppierung aktiv: Separate Sections zurückgeben
-  if (groupByFloors) {
-    const sections = [];
-    
-    // Weather Section (wenn vorhanden UND aktiviert)
-    if (weatherEntity && showWeather) {
-      const weatherCards = [
-        {
-          type: "heading",
-          heading: "Wetter",
-          heading_style: "title",
-          icon: "mdi:weather-partly-cloudy"
-        },
-        {
-          type: "weather-forecast",
-          entity: weatherEntity,
-          forecast_type: "daily"
-        }
-      ];
-      
-      // Füge Horizon Card hinzu wenn aktiviert
-      if (showHorizonCard) {
-        weatherCards.push(createHorizonCardConfig());
-      }
-      
-      sections.push({
-        type: "grid",
-        cards: weatherCards
-      });
-    } else if (showHorizonCard) {
-      // Wenn nur Horizon Card ohne Weather Card
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: "Wetter",
-            heading_style: "title",
-            icon: "mdi:weather-partly-cloudy"
-          },
-          createHorizonCardConfig()
-        ]
-      });
-    }
-    
-    // Energie Section (wenn aktiviert)
-    if (showEnergy) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: "Energie",
-            heading_style: "title",
-            icon: "mdi:lightning-bolt"
-          },
-          {
-            type: "energy-distribution",
-            link_dashboard: true
-          }
-        ]
-      });
-    }
-    
-    // Gib leeres Array zurück wenn keine Sections vorhanden
-    return sections;
-  }
   
-  // Standard: Alles in einer Section (wie bisher)
   const cards = [];
   
   // Füge Weather Forecast hinzu, wenn eine Weather-Entität gefunden wurde UND aktiviert
@@ -416,7 +319,7 @@ export function createWeatherEnergySection(weatherEntity, showWeather, showEnerg
       forecast_type: "daily"
     });
     
-    // Füge Horizon Card hinzu wenn aktiviert (unter der Weather Card)
+    // Füge Horizon Card hinzu wenn aktiviert
     if (showHorizonCard) {
       cards.push(createHorizonCardConfig());
     }
@@ -431,21 +334,7 @@ export function createWeatherEnergySection(weatherEntity, showWeather, showEnerg
     cards.push(createHorizonCardConfig());
   }
   
-  // Energie-Dashboard (nur wenn aktiviert)
-  if (showEnergy) {
-    cards.push({
-      type: "heading",
-      heading: "Energie",
-      heading_style: "title",
-      icon: "mdi:lightning-bolt"
-    });
-    cards.push({
-      type: "energy-distribution",
-      link_dashboard: true
-    });
-  }
-  
-  // Gib null zurück wenn keine Karten vorhanden (verhindert leere Section)
+  // Gib null zurück wenn keine Karten vorhanden
   if (cards.length === 0) {
     return null;
   }
@@ -453,5 +342,70 @@ export function createWeatherEnergySection(weatherEntity, showWeather, showEnerg
   return {
     type: "grid",
     cards: cards
+  };
+}
+
+/**
+ * Erstellt die Public Transport-Section
+ * @param {Object} config - Konfigurationsobjekt
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
+ */
+export function createPublicTransportSection(config, hass) {
+  const showPublicTransport = config.show_public_transport === true;
+  const publicTransportEntities = (config.public_transport_entities || [])
+    .filter(entityId => hass.states[entityId] !== undefined);
+
+  if (!showPublicTransport || publicTransportEntities.length === 0) {
+    return null;
+  }
+  
+  const cards = [
+    {
+      type: "heading",
+      heading: "Öffentlicher Nahverkehr",
+      heading_style: "title",
+      icon: "mdi:bus"
+    },
+    {
+      type: "custom:hvv-card",
+      entities: publicTransportEntities,
+      max: config.hvv_max !== undefined ? config.hvv_max : 10,
+      show_time: config.hvv_show_time !== undefined ? config.hvv_show_time : true,
+      show_title: config.hvv_show_title !== undefined ? config.hvv_show_title : true,
+      title: config.hvv_title || 'HVV'
+    }
+  ];
+
+  return {
+    type: "grid",
+    cards: cards
+  };
+}
+
+/**
+ * Erstellt die Energie-Section
+ * @param {boolean} showEnergy - Ob Energie-Dashboard angezeigt werden soll
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
+ */
+export function createEnergySection(showEnergy) {
+  if (!showEnergy) {
+    return null;
+  }
+  
+  return {
+    type: "grid",
+    cards: [
+      {
+        type: "heading",
+        heading: "Energie",
+        heading_style: "title",
+        icon: "mdi:lightning-bolt"
+      },
+      {
+        type: "energy-distribution",
+        link_dashboard: true
+      }
+    ]
   };
 }

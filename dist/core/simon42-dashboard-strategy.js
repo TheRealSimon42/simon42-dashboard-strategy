@@ -19,7 +19,9 @@ import { createPersonBadges } from '../utils/simon42-badge-builder.js';
 import { 
   createOverviewSection, 
   createAreasSection, 
-  createWeatherEnergySection 
+  createWeatherSection,
+  createPublicTransportSection,
+  createEnergySection
 } from '../utils/simon42-section-builder.js';
 import { 
   createOverviewView, 
@@ -78,8 +80,10 @@ class Simon42DashboardStrategy {
     // Erstelle Bereiche-Section(s)
     const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
 
-    // Erstelle Wetter & Energie Section(s)
-    const weatherEnergySection = createWeatherEnergySection(weatherEntity, showWeather, showEnergy, groupByFloors, config);
+    // Erstelle separate Sections: Weather, Public Transport, Energy
+    const weatherSection = createWeatherSection(weatherEntity, showWeather, config);
+    const publicTransportSection = createPublicTransportSection(config, hass);
+    const energySection = createEnergySection(showEnergy);
     
     // Erstelle Sections für den Haupt-View
     const overviewSections = [
@@ -95,12 +99,10 @@ class Simon42DashboardStrategy {
       }),
       // Wenn groupByFloors aktiv ist, ist areasSections ein Array von Sections
       ...(Array.isArray(areasSections) ? areasSections : [areasSections]),
-      // Füge Wetter & Energie Section(s) nur hinzu wenn nicht null/leer
-      ...(weatherEnergySection 
-        ? (Array.isArray(weatherEnergySection) 
-          ? weatherEnergySection 
-          : [weatherEnergySection])
-        : [])
+      // Füge Sections in der richtigen Reihenfolge hinzu: Weather, Public Transport, Energy
+      ...(weatherSection ? [weatherSection] : []),
+      ...(publicTransportSection ? [publicTransportSection] : []),
+      ...(energySection ? [energySection] : [])
     ];
 
     // Erstelle alle Views mit areas_options und config
