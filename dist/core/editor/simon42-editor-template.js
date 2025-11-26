@@ -229,19 +229,31 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
                 }
                 
                 // Filter für relevante Keywords in Entity-ID oder Name
+                // Verwende Wortgrenzen für bessere Genauigkeit
                 const transportKeywords = [
                   'departure', 'departures', 'abfahrt', 'abfahrten',
                   'hvv', 'public_transport', 'public-transport', 'publictransport',
                   'transport', 'verkehr', 'nahverkehr',
                   'bus', 'bahn', 'train', 'u-bahn', 'ubahn', 's-bahn', 'sbahn',
-                  'station', 'haltestelle', 'stop'
+                  'haltestelle', 'stop'
                 ];
                 
+                // Spezielle Keywords die als ganze Wörter geprüft werden müssen
+                const wholeWordKeywords = ['station'];
+                
+                // Prüfe normale Keywords (können Teil eines Wortes sein)
                 const hasTransportKeyword = transportKeywords.some(keyword => 
                   entityId.includes(keyword) || name.includes(keyword)
                 );
                 
-                return hasTransportKeyword;
+                // Prüfe ganze-Wort Keywords (müssen als separates Wort vorkommen)
+                const hasWholeWordKeyword = wholeWordKeywords.some(keyword => {
+                  // Erstelle Regex für Wortgrenzen
+                  const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+                  return regex.test(entityId) || regex.test(name);
+                });
+                
+                return hasTransportKeyword || hasWholeWordKeyword;
               })
               .map(entity => `
                 <option value="${entity.entity_id}">${entity.name}</option>
