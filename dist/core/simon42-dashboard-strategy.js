@@ -33,6 +33,7 @@ import { initLanguage, t } from '../utils/simon42-i18n.js';
 class Simon42DashboardStrategy {
   static async generate(config, hass) {
     // Initialisiere Sprache basierend auf Config und hass-Einstellungen
+    // Wichtig: Muss VOR allen t()-Aufrufen passieren!
     initLanguage(config, hass);
     // Nutze die bereits im hass-Objekt verfügbaren Registry-Daten
     // Diese sind als Objects verfügbar mit ID als Key

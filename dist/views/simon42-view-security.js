@@ -2,10 +2,15 @@
 // VIEW STRATEGY - SECURITY (Schlösser + Türen/Garagen + Fenster) - OPTIMIERT
 // ====================================================================
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
-import { t } from '../utils/simon42-i18n.js';
+import { t, initLanguage } from '../utils/simon42-i18n.js';
 
 class Simon42ViewSecurityStrategy {
   static async generate(config, hass) {
+    // Initialisiere Sprache (falls noch nicht geschehen)
+    if (config.config) {
+      initLanguage(config.config, hass);
+    }
+    
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);

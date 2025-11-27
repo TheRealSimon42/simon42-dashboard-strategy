@@ -2,7 +2,7 @@
 // VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT + KAMERAS
 // ====================================================================
 import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged } from '../utils/simon42-helpers.js';
-import { t } from '../utils/simon42-i18n.js';
+import { t, initLanguage } from '../utils/simon42-i18n.js';
 
 /**
  * Prüft ob eine Entity eine Better Thermostat Entity ist
@@ -25,6 +25,9 @@ class Simon42ViewRoomStrategy {
     
     // Hole Dashboard-Config für Raum-Pins (wird über ViewBuilder übergeben)
     const dashboardConfig = config.dashboardConfig || {};
+    
+    // Initialisiere Sprache (falls noch nicht geschehen)
+    initLanguage(dashboardConfig, hass);
     
     // Hole groups_options aus der Dashboard-Config (falls vorhanden)
     const groupsOptions = config.groups_options || {};

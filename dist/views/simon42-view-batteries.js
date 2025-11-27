@@ -5,10 +5,15 @@
 // ====================================================================
 
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
-import { t } from '../utils/simon42-i18n.js';
+import { t, initLanguage } from '../utils/simon42-i18n.js';
 
 class Simon42ViewBatteriesStrategy {
   static async generate(config, hass) {
+    // Initialisiere Sprache (falls noch nicht geschehen)
+    if (config.config) {
+      initLanguage(config.config, hass);
+    }
+    
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
