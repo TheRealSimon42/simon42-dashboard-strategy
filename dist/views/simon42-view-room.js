@@ -2,6 +2,7 @@
 // VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT + KAMERAS
 // ====================================================================
 import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged } from '../utils/simon42-helpers.js';
+import { t } from '../utils/simon42-i18n.js';
 
 /**
  * Prüft ob eine Entity eine Better Thermostat Entity ist
@@ -504,7 +505,7 @@ class Simon42ViewRoomStrategy {
           cards: [
             {
               type: "heading",
-              heading: "Kameras",
+              heading: t('cameras'),
               heading_style: "title",
               icon: "mdi:cctv"
             },
@@ -526,7 +527,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Beleuchtung",
+            heading: t('lighting'),
             heading_style: "title",
             icon: "mdi:lightbulb"
           },
@@ -571,7 +572,7 @@ class Simon42ViewRoomStrategy {
             cards: [
               {
                 type: "heading",
-                heading: "Klima",
+                heading: t('climate'),
                 heading_style: "title",
                 icon: "mdi:thermostat"
               },
@@ -643,7 +644,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Rollos & Jalousien",
+            heading: t('blinds'),
             heading_style: "title",
             icon: "mdi:window-shutter"
           },
@@ -667,7 +668,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Vorhänge",
+            heading: t('curtains'),
             heading_style: "title",
             icon: "mdi:curtains"
           },
@@ -691,7 +692,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Medien",
+            heading: t('media'),
             heading_style: "title",
             icon: "mdi:speaker"
           },
@@ -715,7 +716,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Szenen",
+            heading: t('scenes'),
             heading_style: "title",
             icon: "mdi:palette"
           },
@@ -786,7 +787,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Sonstiges",
+            heading: t('misc'),
             heading_style: "title",
             icon: "mdi:dots-horizontal"
           },
@@ -817,7 +818,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Raum-Pins",
+            heading: t('roomPins'),
             heading_style: "title",
             icon: "mdi:pin"
           },

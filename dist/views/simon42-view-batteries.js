@@ -5,6 +5,7 @@
 // ====================================================================
 
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
+import { t } from '../utils/simon42-i18n.js';
 
 class Simon42ViewBatteriesStrategy {
   static async generate(config, hass) {
@@ -80,7 +81,7 @@ class Simon42ViewBatteriesStrategy {
         cards: [
           {
             type: "heading",
-            heading: `🔴 Kritisch (< 20%) - ${critical.length} ${critical.length === 1 ? 'Batterie' : 'Batterien'}`,
+            heading: `🔴 ${t('batteriesCritical')} - ${critical.length} ${critical.length === 1 ? t('battery') : t('batteriesPlural')}`,
             heading_style: "title"
           },
           ...critical.map(entity => ({
@@ -101,7 +102,7 @@ class Simon42ViewBatteriesStrategy {
         cards: [
           {
             type: "heading",
-            heading: `🟡 Niedrig (20-50%) - ${low.length} ${low.length === 1 ? 'Batterie' : 'Batterien'}`,
+            heading: `🟡 ${t('batteriesLow')} - ${low.length} ${low.length === 1 ? t('battery') : t('batteriesPlural')}`,
             heading_style: "title"
           },
           ...low.map(entity => ({
@@ -122,7 +123,7 @@ class Simon42ViewBatteriesStrategy {
         cards: [
           {
             type: "heading",
-            heading: `🟢 Gut (> 50%) - ${good.length} ${good.length === 1 ? 'Batterie' : 'Batterien'}`,
+            heading: `🟢 ${t('batteriesGood')} - ${good.length} ${good.length === 1 ? t('battery') : t('batteriesPlural')}`,
             heading_style: "title"
           },
           ...good.map(entity => ({

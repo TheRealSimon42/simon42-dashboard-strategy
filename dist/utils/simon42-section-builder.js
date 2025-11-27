@@ -2,6 +2,8 @@
 // SECTION BUILDER - Erstellt Dashboard-Sections
 // ====================================================================
 
+import { t } from './simon42-i18n.js';
+
 /**
  * Erstellt die Übersichts-Section mit Zusammenfassungen
  */
@@ -11,7 +13,7 @@ export function createOverviewSection(data) {
   const cards = [
     {
       type: "heading",
-      heading: "Übersicht",
+      heading: t('overview'),
       heading_style: "title",
       icon: "mdi:overscan"
     }
@@ -61,7 +63,7 @@ export function createOverviewSection(data) {
   // Füge Zusammenfassungen hinzu
   cards.push({
     type: "heading",
-    heading: "Zusammenfassungen"
+    heading: t('summaries')
   });
 
   // Erstelle die Summary-Cards basierend auf Konfiguration
@@ -122,7 +124,7 @@ export function createOverviewSection(data) {
   if (favoriteEntities.length > 0) {
     cards.push({
       type: "heading",
-      heading: "Favoriten"
+      heading: t('favorites')
     });
     
     favoriteEntities.forEach(entityId => {
@@ -157,7 +159,7 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
         {
           type: "heading",
           heading_style: "title",
-          heading: "Bereiche"
+          heading: t('areas')
         },
         ...visibleAreas.map((area) => ({
           type: "area",
@@ -239,7 +241,7 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
         {
           type: "heading",
           heading_style: "title",
-          heading: "Weitere Bereiche",
+          heading: t('moreAreas'),
           icon: "mdi:home-outline"
         },
         ...areasWithoutFloor.map((area) => ({
@@ -327,7 +329,7 @@ export function createWeatherSection(weatherEntity, showWeather, config = {}) {
     // Wenn nur Horizon Card ohne Weather Card
     cards.push({
       type: "heading",
-      heading: "Wetter",
+      heading: t('weather'),
       heading_style: "title",
       icon: "mdi:weather-partly-cloudy"
     });
@@ -363,7 +365,7 @@ export function createPublicTransportSection(config, hass) {
   const cards = [
     {
       type: "heading",
-      heading: "Öffentlicher Nahverkehr",
+      heading: t('publicTransport'),
       heading_style: "title",
       icon: "mdi:bus"
     },
@@ -398,7 +400,7 @@ export function createEnergySection(showEnergy) {
     cards: [
       {
         type: "heading",
-        heading: "Energie",
+        heading: t('energy'),
         heading_style: "title",
         icon: "mdi:lightning-bolt"
       },

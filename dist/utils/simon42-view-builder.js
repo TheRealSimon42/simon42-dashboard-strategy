@@ -2,12 +2,14 @@
 // VIEW BUILDER - Erstellt View-Definitionen
 // ====================================================================
 
+import { t } from './simon42-i18n.js';
+
 /**
  * Erstellt den Haupt-Übersichts-View
  */
 export function createOverviewView(sections, personBadges) {
   return {
-    title: "Übersicht",
+    title: t('overview'),
     path: "home",
     icon: "mdi:home",
     type: "sections",
@@ -28,7 +30,7 @@ export function createOverviewView(sections, personBadges) {
 export function createUtilityViews(entities, showSummaryViews = false, config = {}) {
   return [
     {
-      title: "Lichter",
+      title: t('lights'),
       path: "lights",
       icon: "mdi:lamps",
       subview: !showSummaryViews,
@@ -39,7 +41,7 @@ export function createUtilityViews(entities, showSummaryViews = false, config = 
       }
     },
     {
-      title: "Rollos & Vorhänge",
+      title: t('covers'),
       path: "covers",
       icon: "mdi:blinds-horizontal",
       subview: !showSummaryViews,
@@ -51,7 +53,7 @@ export function createUtilityViews(entities, showSummaryViews = false, config = 
       }
     },
     {
-      title: "Sicherheit",
+      title: t('security'),
       path: "security",
       icon: "mdi:security",
       subview: !showSummaryViews,
@@ -62,7 +64,7 @@ export function createUtilityViews(entities, showSummaryViews = false, config = 
       }
     },
     {
-      title: "Batterien",
+      title: t('batteries'),
       path: "batteries",
       icon: "mdi:battery-alert",
       subview: !showSummaryViews,

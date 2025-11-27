@@ -28,9 +28,12 @@ import {
   createUtilityViews, 
   createAreaViews 
 } from '../utils/simon42-view-builder.js';
+import { initLanguage, t } from '../utils/simon42-i18n.js';
 
 class Simon42DashboardStrategy {
   static async generate(config, hass) {
+    // Initialisiere Sprache basierend auf Config und hass-Einstellungen
+    initLanguage(config, hass);
     // Nutze die bereits im hass-Objekt verfügbaren Registry-Daten
     // Diese sind als Objects verfügbar mit ID als Key
     // Konvertiere sie zu Arrays für die weitere Verarbeitung
@@ -113,7 +116,7 @@ class Simon42DashboardStrategy {
     ];
 
     return {
-      title: "Dynamisches Dashboard",
+      title: t('dashboardTitle'),
       views
     };
   }
