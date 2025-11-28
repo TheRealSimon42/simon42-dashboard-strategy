@@ -2,9 +2,15 @@
 // VIEW STRATEGY - SECURITY (Schlösser + Türen/Garagen + Fenster) - OPTIMIERT
 // ====================================================================
 import { getExcludedLabels } from '../utils/simon42-helpers.js';
+import { t, initLanguage } from '../utils/simon42-i18n.js';
 
 class Simon42ViewSecurityStrategy {
   static async generate(config, hass) {
+    // Initialisiere Sprache (falls noch nicht geschehen)
+    if (config.config) {
+      initLanguage(config.config, hass);
+    }
+    
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
@@ -93,7 +99,7 @@ class Simon42ViewSecurityStrategy {
       if (locksUnlocked.length > 0) {
         lockCards.push({
           type: "heading",
-          heading: "🔓 Schlösser - Entriegelt",
+          heading: `🔓 ${t('locksUnlocked')}`,
           heading_style: "subtitle",
           badges: [
             {
@@ -121,7 +127,7 @@ class Simon42ViewSecurityStrategy {
       if (locksLocked.length > 0) {
         lockCards.push({
           type: "heading",
-          heading: "🔒 Schlösser - Verriegelt",
+          heading: `🔒 ${t('locksLocked')}`,
           heading_style: "subtitle"
         });
         lockCards.push(...locksLocked.map(entity => ({
@@ -150,7 +156,7 @@ class Simon42ViewSecurityStrategy {
       if (doorsOpen.length > 0) {
         doorCards.push({
           type: "heading",
-          heading: "🚪 Türen & Tore - Offen",
+          heading: `🚪 ${t('doorsOpen')}`,
           heading_style: "subtitle",
           badges: [
             {
@@ -179,7 +185,7 @@ class Simon42ViewSecurityStrategy {
       if (doorsClosed.length > 0) {
         doorCards.push({
           type: "heading",
-          heading: "🚪 Türen & Tore - Geschlossen",
+          heading: `🚪 ${t('doorsClosed')}`,
           heading_style: "subtitle"
         });
         doorCards.push(...doorsClosed.map(entity => ({
@@ -209,7 +215,7 @@ class Simon42ViewSecurityStrategy {
       if (garagesOpen.length > 0) {
         garageCards.push({
           type: "heading",
-          heading: "🏠 Garagen - Offen",
+          heading: `🏠 ${t('garagesOpen')}`,
           heading_style: "subtitle",
           badges: [
             {
@@ -238,7 +244,7 @@ class Simon42ViewSecurityStrategy {
       if (garagesClosed.length > 0) {
         garageCards.push({
           type: "heading",
-          heading: "🏠 Garagen - Geschlossen",
+          heading: `🏠 ${t('garagesClosed')}`,
           heading_style: "subtitle"
         });
         garageCards.push(...garagesClosed.map(entity => ({
@@ -268,7 +274,7 @@ class Simon42ViewSecurityStrategy {
       if (windowsOpen.length > 0) {
         windowCards.push({
           type: "heading",
-          heading: "🪟 Fenster & Öffnungen - Offen",
+          heading: `🪟 ${t('windowsOpen')}`,
           heading_style: "subtitle"
         });
         windowCards.push(...windowsOpen.map(entity => ({
@@ -281,7 +287,7 @@ class Simon42ViewSecurityStrategy {
       if (windowsClosed.length > 0) {
         windowCards.push({
           type: "heading",
-          heading: "🪟 Fenster & Öffnungen - Geschlossen",
+          heading: `🪟 ${t('windowsClosed')}`,
           heading_style: "subtitle"
         });
         windowCards.push(...windowsClosed.map(entity => ({

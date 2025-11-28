@@ -34,6 +34,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Intuitive Hierarchie** - Area → Domain → Entity-Struktur
 - **Echtzeit-Updates** - Änderungen werden sofort gespeichert
 - **Responsive Design** - Optimiert für Desktop, Tablet und Mobile
+- **Zweisprachigkeit** - Unterstützung für Deutsch und Englisch
 
 ### 🏠 Intelligente Automatisierung
 - **Automatische Raum-Erkennung** - Nutzt Home Assistant Areas & Devices
@@ -147,7 +148,11 @@ strategy:
   type: custom:simon42-dashboard
 ```
 
-Nicht vergessen, anschließend den Browser-Cache zu leeren 👍
+**Wichtig:** Nach Updates den Browser-Cache leeren:
+- **Hard Refresh**: `Ctrl+Shift+R` (Windows) oder `Cmd+Shift+R` (Mac)
+- **Chrome DevTools**: F12 → Rechtsklick auf Refresh → "Empty Cache and Hard Reload"
+
+Die aktuelle Version wird in der Browser-Konsole angezeigt. Prüfe `window.Simon42DashboardVersion` für Details.
 
 ## 🤖 Projekt-Kontext für KI-Assistenten
 
@@ -235,6 +240,7 @@ In der aufgeklappten Entity-Liste:
 ```yaml
 strategy:
   type: custom:simon42-dashboard
+  language: de                  # Sprache: 'de' (Deutsch) oder 'en' (Englisch)
   show_weather: true             # Wetter-Karte anzeigen
   show_energy: true              # Energie-Dashboard anzeigen
   show_subviews: false           # Utility Views als Subviews
@@ -243,6 +249,33 @@ strategy:
   summaries_columns: 2           # Layout: 2 (2x2) oder 4 (1x4)
   group_by_floors: false         # Bereiche nach Etagen gruppieren
 ```
+
+### Sprachauswahl
+
+Das Dashboard unterstützt Deutsch und Englisch. Die Sprache wird automatisch aus den Benutzereinstellungen von Home Assistant gelesen, kann aber auch manuell über den Parameter `language` gesteuert werden:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  language: en  # Optional: 'de' für Deutsch oder 'en' für Englisch
+```
+
+**Sprachpriorität:**
+1. Explizite `language`-Einstellung in der Config (höchste Priorität)
+2. Spracheinstellung des Benutzers in Home Assistant (`hass.language`)
+3. Deutsch als Standard-Sprache (Fallback)
+
+**Verfügbare Sprachen:**
+- `de` - Deutsch (Standard)
+- `en` - Englisch
+
+Alle Überschriften, Labels und Texte im Dashboard werden automatisch in der gewählten Sprache angezeigt. Dies betrifft:
+- View-Titel (Übersicht, Lichter, Rollos, etc.)
+- Section-Überschriften (Beleuchtung, Klima, Sicherheit, etc.)
+- Status-Beschreibungen (Eingeschaltete Lichter, Offene Rollos, etc.)
+- Button-Texte (Alle einschalten, Alle schließen, etc.)
+
+**Hinweis:** Wenn keine explizite Sprache in der Config gesetzt ist, verwendet das Dashboard automatisch die Spracheinstellung des aktuellen Benutzers aus Home Assistant. Dies ermöglicht es mehreren Benutzern, das Dashboard in ihrer bevorzugten Sprache zu sehen.
 
 ### Erweiterte Konfiguration mit Entity-Filterung
 
@@ -299,6 +332,7 @@ strategy:
 
 | Parameter | Typ | Standard | Beschreibung |
 |-----------|-----|----------|--------------|
+| `language` | string | `'de'` | Sprache des Dashboards: `'de'` (Deutsch) oder `'en'` (Englisch) |
 | `show_weather` | boolean | `true` | Zeigt die Wetter-Karte in der Übersicht (falls Weather-Entity vorhanden) |
 | `show_energy` | boolean | `true` | Zeigt das Energie-Dashboard in der Übersicht |
 | `show_subviews` | boolean | `false` | Zeigt Utility-Views in der Navigation |
@@ -306,6 +340,12 @@ strategy:
 | `show_covers_summary` | boolean | `true` | Zeigt die Rollo-Zusammenfassungskarte in der Übersicht |
 | `summaries_columns` | number | `2` | Layout der Zusammenfassungskarten: `2` (2x2 Grid) oder `4` (1x4 Reihe) |
 | `group_by_floors` | boolean | `false` | Gruppiert Bereiche nach Etagen/Floors |
+| `show_public_transport` | boolean | `false` | Zeigt Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht |
+| `public_transport_entities` | array | `[]` | Array von Entity-IDs für Abfahrtszeiten (z.B. `['sensor.hvv_departures']`) |
+| `hvv_max` | number | `10` | Maximale Anzahl der angezeigten Abfahrten |
+| `hvv_show_time` | boolean | `true` | Zeigt die Zeit der Abfahrten an |
+| `hvv_show_title` | boolean | `true` | Zeigt den Titel der Card an |
+| `hvv_title` | string | `'HVV'` | Titel der Public Transport Card |
 
 #### `areas_display` - Bereich-Verwaltung
 
@@ -666,6 +706,28 @@ Erweiterte Unterstützung für Reolink-Kameras:
 - Optimierte Card-Konfiguration
 - PTZ-Controls (falls unterstützt)
 
+#### Öffentlicher Nahverkehr
+
+Zeige Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_public_transport: true
+  public_transport_entities:
+    - sensor.hvv_departures
+    - sensor.bus_stop_main_street
+  hvv_max: 10
+  hvv_show_time: true
+  hvv_show_title: true
+  hvv_title: 'HVV'
+```
+
+**Voraussetzung:**
+- Die `hvv-card` muss installiert sein
+- Entities müssen Abfahrtszeiten bereitstellen (z.B. über die HVV-Integration)
+- Der Editor filtert automatisch relevante Entities (sensor/button mit Transport-Keywords)
+
 ### Batch-Aktionen
 
 Alle Gruppen-Views unterstützen Batch-Aktionen über Heading-Badges:
@@ -785,7 +847,7 @@ Dieses Projekt sucht aktiv nach Maintainern, die bei der Weiterentwicklung helfe
 - [x] Erweiterte Favoriten-Funktionen
 - [ ] Themes & Custom Styling
 - [ ] Export/Import von Konfigurationen
-- [ ] Mehrsprachigkeit (i18n)
+- [x] Mehrsprachigkeit (i18n) - Deutsch und Englisch
 
 ## 🐛 Bekannte Probleme & Limitationen
 

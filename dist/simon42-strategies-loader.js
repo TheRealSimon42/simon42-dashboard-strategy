@@ -40,4 +40,6 @@ import './views/simon42-view-covers.js';
 import './views/simon42-view-security.js';
 import './views/simon42-view-batteries.js';
 
-console.log('Simon42 Dashboard Strategies loaded successfully (with reactive lights + covers cards)!');
+console.log('%c✅ Simon42 Dashboard Strategies', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
+const features = ['Better Thermostat', 'Public Transport (hvv-card)', 'Reactive Group Cards', 'Bilingual Support (DE/EN)', 'Horizon Card'];
+console.log('Features:', features.join(', '));

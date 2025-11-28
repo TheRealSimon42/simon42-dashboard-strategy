@@ -5,6 +5,8 @@
 // und aktualisiert sich automatisch bei State-Änderungen
 // ====================================================================
 
+import { t, initLanguage } from '../utils/simon42-i18n.js';
+
 class Simon42LightsGroupCard extends HTMLElement {
   constructor() {
     super();
@@ -32,6 +34,11 @@ class Simon42LightsGroupCard extends HTMLElement {
   set hass(hass) {
     const oldHass = this._hass;
     this._hass = hass;
+    
+    // Initialisiere Sprache aus hass-Einstellungen (falls noch nicht geschehen)
+    if (hass && this._config?.config) {
+      initLanguage(this._config.config, hass);
+    }
     
     // Beim ersten Mal: Entity Registry hat sich möglicherweise geändert
     if (!oldHass || oldHass.entities !== hass.entities) {
@@ -126,7 +133,7 @@ class Simon42LightsGroupCard extends HTMLElement {
     this.style.display = 'block';
     
     const icon = isOn ? '💡' : '🌙';
-    const title = isOn ? 'Eingeschaltete Lichter' : 'Ausgeschaltete Lichter';
+    const title = isOn ? t('lightsOn') : t('lightsOff');
     const headingStyle = isOn ? 'title' : 'subtitle';
     const actionIcon = isOn ? 'mdi:lightbulb-off' : 'mdi:lightbulb-on';
     const actionService = isOn ? 'light.turn_off' : 'light.turn_on';
@@ -185,7 +192,7 @@ class Simon42LightsGroupCard extends HTMLElement {
           </h${isOn ? '2' : '3'}>
           <button class="batch-button" id="batch-action">
             <ha-icon icon="${actionIcon}"></ha-icon>
-            Alle ${isOn ? 'ausschalten' : 'einschalten'}
+            ${isOn ? t('turnAllOff') : t('turnAllOn')}
           </button>
         </div>
         <div class="light-grid" id="light-grid"></div>

@@ -2,6 +2,8 @@
 // SECTION BUILDER - Erstellt Dashboard-Sections
 // ====================================================================
 
+import { t } from './simon42-i18n.js';
+
 /**
  * Erstellt die Übersichts-Section mit Zusammenfassungen
  */
@@ -11,7 +13,7 @@ export function createOverviewSection(data) {
   const cards = [
     {
       type: "heading",
-      heading: "Übersicht",
+      heading: t('overview'),
       heading_style: "title",
       icon: "mdi:overscan"
     }
@@ -61,7 +63,7 @@ export function createOverviewSection(data) {
   // Füge Zusammenfassungen hinzu
   cards.push({
     type: "heading",
-    heading: "Zusammenfassungen"
+    heading: t('summaries')
   });
 
   // Erstelle die Summary-Cards basierend auf Konfiguration
@@ -122,7 +124,7 @@ export function createOverviewSection(data) {
   if (favoriteEntities.length > 0) {
     cards.push({
       type: "heading",
-      heading: "Favoriten"
+      heading: t('favorites')
     });
     
     favoriteEntities.forEach(entityId => {
@@ -157,7 +159,7 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
         {
           type: "heading",
           heading_style: "title",
-          heading: "Bereiche"
+          heading: t('areas')
         },
         ...visibleAreas.map((area) => ({
           type: "area",
@@ -239,7 +241,7 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
         {
           type: "heading",
           heading_style: "title",
-          heading: "Weitere Bereiche",
+          heading: t('moreAreas'),
           icon: "mdi:home-outline"
         },
         ...areasWithoutFloor.map((area) => ({
@@ -261,69 +263,55 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
 }
 
 /**
- * Erstellt die Wetter & Energie-Section(s)
+ * Erstellt die Wetter-Section
  * @param {string} weatherEntity - Weather Entity ID
  * @param {boolean} showWeather - Ob Wetter-Karte angezeigt werden soll
- * @param {boolean} showEnergy - Ob Energie-Dashboard angezeigt werden soll
- * @param {boolean} groupByFloors - Ob nach Etagen gruppiert wird
- * @returns {Array|Object|null} Section(s) oder null wenn keine Karten angezeigt werden
+ * @param {Object} config - Konfigurationsobjekt (für Horizon Card)
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
  */
-export function createWeatherEnergySection(weatherEntity, showWeather, showEnergy, groupByFloors = false) {
-  // Wenn Etagen-Gruppierung aktiv: Separate Sections zurückgeben
-  if (groupByFloors) {
-    const sections = [];
-    
-    // Weather Section (wenn vorhanden UND aktiviert)
-    if (weatherEntity && showWeather) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: "Wetter",
-            heading_style: "title",
-            icon: "mdi:weather-partly-cloudy"
-          },
-          {
-            type: "weather-forecast",
-            entity: weatherEntity,
-            forecast_type: "daily"
-          }
-        ]
-      });
-    }
-    
-    // Energie Section (wenn aktiviert)
-    if (showEnergy) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: "Energie",
-            heading_style: "title",
-            icon: "mdi:lightning-bolt"
-          },
-          {
-            type: "energy-distribution",
-            link_dashboard: true
-          }
-        ]
-      });
-    }
-    
-    // Gib leeres Array zurück wenn keine Sections vorhanden
-    return sections;
-  }
+export function createWeatherSection(weatherEntity, showWeather, config = {}) {
+  const showHorizonCard = config.show_horizon_card === true;
+  const horizonCardExtended = config.horizon_card_extended === true;
   
-  // Standard: Alles in einer Section (wie bisher)
+  // Erstelle Horizon Card Konfiguration
+  const createHorizonCardConfig = () => {
+    const baseConfig = {
+      type: "custom:horizon-card",
+      moon: true,
+      refresh_period: 60,
+      fields: {
+        sunrise: true,
+        sunset: true,
+        moonrise: true,
+        moonset: true
+      }
+    };
+    
+    if (horizonCardExtended) {
+      baseConfig.fields = {
+        sunrise: true,
+        sunset: true,
+        dawn: true,
+        noon: true,
+        dusk: true,
+        moonrise: true,
+        moonset: true,
+        azimuth: true,
+        elevation: true,
+        moon_phase: true
+      };
+    }
+    
+    return baseConfig;
+  };
+  
   const cards = [];
   
   // Füge Weather Forecast hinzu, wenn eine Weather-Entität gefunden wurde UND aktiviert
   if (weatherEntity && showWeather) {
     cards.push({
       type: "heading",
-      heading: "Wetter",
+      heading: t('weather'),
       heading_style: "title",
       icon: "mdi:weather-partly-cloudy"
     });
@@ -332,23 +320,23 @@ export function createWeatherEnergySection(weatherEntity, showWeather, showEnerg
       entity: weatherEntity,
       forecast_type: "daily"
     });
-  }
-  
-  // Energie-Dashboard (nur wenn aktiviert)
-  if (showEnergy) {
+    
+    // Füge Horizon Card hinzu wenn aktiviert
+    if (showHorizonCard) {
+      cards.push(createHorizonCardConfig());
+    }
+  } else if (showHorizonCard) {
+    // Wenn nur Horizon Card ohne Weather Card
     cards.push({
       type: "heading",
-      heading: "Energie",
+      heading: t('weather'),
       heading_style: "title",
-      icon: "mdi:lightning-bolt"
+      icon: "mdi:weather-partly-cloudy"
     });
-    cards.push({
-      type: "energy-distribution",
-      link_dashboard: true
-    });
+    cards.push(createHorizonCardConfig());
   }
   
-  // Gib null zurück wenn keine Karten vorhanden (verhindert leere Section)
+  // Gib null zurück wenn keine Karten vorhanden
   if (cards.length === 0) {
     return null;
   }
@@ -356,5 +344,70 @@ export function createWeatherEnergySection(weatherEntity, showWeather, showEnerg
   return {
     type: "grid",
     cards: cards
+  };
+}
+
+/**
+ * Erstellt die Public Transport-Section
+ * @param {Object} config - Konfigurationsobjekt
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
+ */
+export function createPublicTransportSection(config, hass) {
+  const showPublicTransport = config.show_public_transport === true;
+  const publicTransportEntities = (config.public_transport_entities || [])
+    .filter(entityId => hass.states[entityId] !== undefined);
+
+  if (!showPublicTransport || publicTransportEntities.length === 0) {
+    return null;
+  }
+  
+  const cards = [
+    {
+      type: "heading",
+      heading: t('publicTransport'),
+      heading_style: "title",
+      icon: "mdi:bus"
+    },
+    {
+      type: "custom:hvv-card",
+      entities: publicTransportEntities,
+      max: config.hvv_max !== undefined ? config.hvv_max : 10,
+      show_time: config.hvv_show_time !== undefined ? config.hvv_show_time : true,
+      show_title: config.hvv_show_title !== undefined ? config.hvv_show_title : true,
+      title: config.hvv_title || 'HVV'
+    }
+  ];
+
+  return {
+    type: "grid",
+    cards: cards
+  };
+}
+
+/**
+ * Erstellt die Energie-Section
+ * @param {boolean} showEnergy - Ob Energie-Dashboard angezeigt werden soll
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
+ */
+export function createEnergySection(showEnergy) {
+  if (!showEnergy) {
+    return null;
+  }
+  
+  return {
+    type: "grid",
+    cards: [
+      {
+        type: "heading",
+        heading: t('energy'),
+        heading_style: "title",
+        icon: "mdi:lightning-bolt"
+      },
+      {
+        type: "energy-distribution",
+        link_dashboard: true
+      }
+    ]
   };
 }

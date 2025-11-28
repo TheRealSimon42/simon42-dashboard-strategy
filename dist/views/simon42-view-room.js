@@ -2,6 +2,22 @@
 // VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT + KAMERAS
 // ====================================================================
 import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged } from '../utils/simon42-helpers.js';
+import { t, initLanguage } from '../utils/simon42-i18n.js';
+
+/**
+ * Prüft ob eine Entity eine Better Thermostat Entity ist
+ * @param {string} entityId - Entity ID
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {boolean} True wenn es eine Better Thermostat Entity ist
+ */
+function isBetterThermostatEntity(entityId, hass) {
+  if (!entityId.startsWith('climate.')) {
+    return false;
+  }
+  
+  const entity = hass.entities?.[entityId];
+  return entity?.platform === 'better_thermostat';
+}
 
 class Simon42ViewRoomStrategy {
   static async generate(config, hass) {
@@ -9,6 +25,9 @@ class Simon42ViewRoomStrategy {
     
     // Hole Dashboard-Config für Raum-Pins (wird über ViewBuilder übergeben)
     const dashboardConfig = config.dashboardConfig || {};
+    
+    // Initialisiere Sprache (falls noch nicht geschehen)
+    initLanguage(dashboardConfig, hass);
     
     // Hole groups_options aus der Dashboard-Config (falls vorhanden)
     const groupsOptions = config.groups_options || {};
@@ -489,7 +508,7 @@ class Simon42ViewRoomStrategy {
           cards: [
             {
               type: "heading",
-              heading: "Kameras",
+              heading: t('cameras'),
               heading_style: "title",
               icon: "mdi:cctv"
             },
@@ -511,7 +530,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Beleuchtung",
+            heading: t('lighting'),
             heading_style: "title",
             icon: "mdi:lightbulb"
           },
@@ -530,28 +549,95 @@ class Simon42ViewRoomStrategy {
 
     // Klima-Section
     if (roomEntities.climate.length > 0) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: "Klima",
-            heading_style: "title",
-            icon: "mdi:thermostat"
-          },
-          ...roomEntities.climate.map(entity => ({
-            type: "tile",
-            entity: entity,
-            name: stripAreaName(entity, area, hass),
-            features: [
-              { type: "climate-hvac-modes" }
-            ],
-            features_position: "inline",
-            vertical: false,
-            state_content: ["hvac_action", "current_temperature"]
-          }))
-        ]
-      });
+      // Prüfe ob Better Thermostat aktiviert ist
+      const showBetterThermostat = dashboardConfig.show_better_thermostat === true;
+      
+      // Wenn Better Thermostat aktiviert ist, trenne Better Thermostat und Standard-Thermostate
+      if (showBetterThermostat) {
+        const betterThermostatEntities = [];
+        const standardThermostatEntities = [];
+        
+        roomEntities.climate.forEach(entityId => {
+          const isBT = isBetterThermostatEntity(entityId, hass);
+          if (isBT) {
+            betterThermostatEntities.push(entityId);
+            console.log(`[Better Thermostat] Detected BT entity: ${entityId}`);
+          } else {
+            standardThermostatEntities.push(entityId);
+            console.log(`[Better Thermostat] Standard entity: ${entityId}`);
+          }
+        });
+        
+        // Better Thermostat Cards
+        if (betterThermostatEntities.length > 0) {
+          sections.push({
+            type: "grid",
+            cards: [
+              {
+                type: "heading",
+                heading: t('climate'),
+                heading_style: "title",
+                icon: "mdi:thermostat"
+              },
+              ...betterThermostatEntities.map(entityId => ({
+                type: "custom:better-thermostat-ui-card",
+                entity: entityId,
+                name: stripAreaName(entityId, area, hass)
+              }))
+            ]
+          });
+        }
+        
+        // Standard Thermostat Cards (nur wenn es auch Standard-Thermostate gibt)
+        if (standardThermostatEntities.length > 0) {
+          sections.push({
+            type: "grid",
+            cards: [
+              ...(betterThermostatEntities.length === 0 ? [{
+                type: "heading",
+                heading: t('climate'),
+                heading_style: "title",
+                icon: "mdi:thermostat"
+              }] : []),
+              ...standardThermostatEntities.map(entity => ({
+                type: "tile",
+                entity: entity,
+                name: stripAreaName(entity, area, hass),
+                features: [
+                  { type: "climate-hvac-modes" }
+                ],
+                features_position: "inline",
+                vertical: false,
+                state_content: ["hvac_action", "current_temperature"]
+              }))
+            ]
+          });
+        }
+      } else {
+        // Standard-Verhalten: Alle Thermostate als Standard-Cards
+        sections.push({
+          type: "grid",
+          cards: [
+            {
+              type: "heading",
+              heading: "Klima",
+              heading_style: "title",
+              icon: "mdi:thermostat"
+            },
+            ...roomEntities.climate.map(entity => ({
+              type: "tile",
+              entity: entity,
+              name: stripAreaName(entity, area, hass),
+              features: [
+                { type: "climate-hvac-modes" }
+              ],
+              features_position: "inline",
+              vertical: false,
+              state_content: ["hvac_action", "current_temperature"]
+            }))
+          ]
+        });
+      }
     }
 
     // Rollos/Jalousien
@@ -561,7 +647,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Rollos & Jalousien",
+            heading: t('blinds'),
             heading_style: "title",
             icon: "mdi:window-shutter"
           },
@@ -585,7 +671,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Vorhänge",
+            heading: t('curtains'),
             heading_style: "title",
             icon: "mdi:curtains"
           },
@@ -609,7 +695,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Medien",
+            heading: t('media'),
             heading_style: "title",
             icon: "mdi:speaker"
           },
@@ -633,7 +719,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Szenen",
+            heading: t('scenes'),
             heading_style: "title",
             icon: "mdi:palette"
           },
@@ -704,7 +790,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Sonstiges",
+            heading: t('misc'),
             heading_style: "title",
             icon: "mdi:dots-horizontal"
           },
@@ -735,7 +821,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Raum-Pins",
+            heading: t('roomPins'),
             heading_style: "title",
             icon: "mdi:pin"
           },
