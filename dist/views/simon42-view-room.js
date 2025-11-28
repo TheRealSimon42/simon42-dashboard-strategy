@@ -595,7 +595,7 @@ class Simon42ViewRoomStrategy {
             cards: [
               ...(betterThermostatEntities.length === 0 ? [{
                 type: "heading",
-                heading: "Klima",
+                heading: t('climate'),
                 heading_style: "title",
                 icon: "mdi:thermostat"
               }] : []),

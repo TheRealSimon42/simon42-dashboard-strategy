@@ -311,7 +311,7 @@ export function createWeatherSection(weatherEntity, showWeather, config = {}) {
   if (weatherEntity && showWeather) {
     cards.push({
       type: "heading",
-      heading: "Wetter",
+      heading: t('weather'),
       heading_style: "title",
       icon: "mdi:weather-partly-cloudy"
     });

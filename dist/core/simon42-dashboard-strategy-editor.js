@@ -3,6 +3,7 @@
 // ====================================================================
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
+import { initLanguage } from '../utils/simon42-i18n.js';
 import { 
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
@@ -104,6 +105,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     if (!this._hass || !this._config) {
       return;
     }
+
+    // Initialisiere Sprache für Editor
+    initLanguage(this._config, this._hass);
 
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;

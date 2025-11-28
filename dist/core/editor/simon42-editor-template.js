@@ -3,9 +3,11 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
+import { t } from '../utils/simon42-i18n.js';
+
 function renderPublicTransportList(publicTransportEntities, allEntities) {
   if (!publicTransportEntities || publicTransportEntities.length === 0) {
-    return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Entitäten hinzugefügt</div>';
+    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noEntitiesAdded')}</div>`;
   }
 
   const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
@@ -35,17 +37,17 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
   return `
     <div class="card-config">
       <div class="section">
-        <div class="section-title">Info-Karten</div>
+        <div class="section-title">${t('infoCards')}</div>
         <div class="form-row">
           <input 
             type="checkbox" 
             id="show-weather" 
             ${showWeather !== false ? 'checked' : ''}
           />
-          <label for="show-weather">Wetter-Karte anzeigen</label>
+          <label for="show-weather">${t('showWeatherCard')}</label>
         </div>
         <div class="description">
-          Zeigt die Wettervorhersage-Karte in der Übersicht an, wenn eine Wetter-Entität verfügbar ist.
+          ${t('weatherCardDescription')}
         </div>
         <div class="form-row">
           <input 
@@ -53,19 +55,19 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             id="show-energy" 
             ${showEnergy ? 'checked' : ''}
           />
-          <label for="show-energy">Energie-Dashboard anzeigen</label>
+          <label for="show-energy">${t('showEnergyDashboard')}</label>
         </div>
         <div class="description">
-          Zeigt die Energie-Verteilungskarte in der Übersicht an, wenn Energiedaten verfügbar sind.
+          ${t('energyCardDescription')}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Alarm-Control-Panel</div>
+        <div class="section-title">${t('alarmControlPanel')}</div>
         <div class="form-row">
-          <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">Alarm-Entität:</label>
+          <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${t('alarmEntity')}</label>
           <select id="alarm-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">Keine (Uhr in voller Breite)</option>
+            <option value="">${t('noneFullWidth')}</option>
             ${alarmEntities.map(entity => `
               <option value="${entity.entity_id}" ${entity.entity_id === alarmEntity ? 'selected' : ''}>
                 ${entity.name}
@@ -74,39 +76,39 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </select>
         </div>
         <div class="description">
-          Wähle eine Alarm-Control-Panel-Entität aus, um sie neben der Uhr anzuzeigen. "Keine" auswählen, um nur die Uhr in voller Breite anzuzeigen.
+          ${t('alarmEntityDescription')}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Favoriten</div>
+        <div class="section-title">${t('favorites')}</div>
         <div id="favorites-list" style="margin-bottom: 12px;">
           ${renderFavoritesList(favoriteEntities, allEntities)}
         </div>
         <div style="display: flex; gap: 8px; align-items: flex-start;">
           <select id="favorite-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">Entität auswählen...</option>
+            <option value="">${t('selectEntity')}</option>
             ${allEntities.map(entity => `
               <option value="${entity.entity_id}">${entity.name}</option>
             `).join('')}
           </select>
           <button id="add-favorite-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-            + Hinzufügen
+            + ${t('add')}
           </button>
         </div>
         <div class="description">
-          Wähle Entitäten aus, die als Favoriten unter den Zusammenfassungen angezeigt werden sollen. Die Entitäten werden als Kacheln angezeigt.
+          ${t('favoritesDescription')}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Raum-Pins</div>
+        <div class="section-title">${t('roomPins')}</div>
         <div id="room-pins-list" style="margin-bottom: 12px;">
           ${renderRoomPinsList(roomPinEntities, allEntities, allAreas)}
         </div>
         <div style="display: flex; gap: 8px; align-items: flex-start;">
           <select id="room-pin-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">Entität auswählen...</option>
+            <option value="">${t('selectEntity')}</option>
             ${allEntities
               .filter(entity => entity.area_id || entity.device_area_id)
               .map(entity => `
@@ -114,16 +116,16 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               `).join('')}
           </select>
           <button id="add-room-pin-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-            + Hinzufügen
+            + ${t('add')}
           </button>
         </div>
         <div class="description">
-          Wähle Entitäten aus, die in ihren zugeordneten Räumen als erstes angezeigt werden sollen. Ideal für Entitäten die normalerweise nicht automatisch erfasst werden (z.B. Wetterstationen, spezielle Sensoren). <strong>Nur Entitäten mit Raum-Zuordnung können ausgewählt werden.</strong> Diese Pins erscheinen nur im jeweiligen Raum, nicht in der Übersicht.
+          ${t('roomPinsDescription')}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Such-Karte</div>
+        <div class="section-title">${t('searchCard')}</div>
         <div class="form-row">
           <input 
             type="checkbox" 
@@ -132,18 +134,18 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             ${!hasSearchCardDeps ? 'disabled' : ''}
           />
           <label for="show-search-card" ${!hasSearchCardDeps ? 'class="disabled-label"' : ''}>
-            Such-Karte in Übersicht anzeigen
+            ${t('showSearchCard')}
           </label>
         </div>
         <div class="description">
           ${hasSearchCardDeps 
-            ? 'Zeigt die custom:search-card direkt unter der Uhr in der Übersicht an.' 
-            : '⚠️ Benötigt <strong>custom:search-card</strong> und <strong>card-tools</strong>. Bitte installiere beide Komponenten, um diese Funktion zu nutzen.'}
+            ? t('searchCardDescription')
+            : `⚠️ ${t('searchCardMissingDeps')}`}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Better Thermostat</div>
+        <div class="section-title">${t('betterThermostat')}</div>
         <div class="form-row">
           <input 
             type="checkbox" 
@@ -152,18 +154,18 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             ${!hasBetterThermostatDeps ? 'disabled' : ''}
           />
           <label for="show-better-thermostat" ${!hasBetterThermostatDeps ? 'class="disabled-label"' : ''}>
-            Better Thermostat UI verwenden
+            ${t('useBetterThermostatUI')}
           </label>
         </div>
         <div class="description">
           ${hasBetterThermostatDeps 
-            ? 'Ersetzt die Standard-Thermostat-Karten in den Räumen durch Better Thermostat UI-Karten. Erfordert die Installation von <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>.' 
-            : '⚠️ Benötigt <strong>better_thermostat</strong> Integration und <strong>better-thermostat-ui-card</strong>. Bitte installiere beide Komponenten, um diese Funktion zu nutzen.'}
+            ? t('betterThermostatDescription')
+            : `⚠️ ${t('betterThermostatMissingDeps')}`}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Horizon Card</div>
+        <div class="section-title">${t('horizonCard')}</div>
         <div class="form-row">
           <input 
             type="checkbox" 
@@ -172,13 +174,13 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             ${!hasHorizonCardDeps ? 'disabled' : ''}
           />
           <label for="show-horizon-card" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
-            Horizon Card anzeigen
+            ${t('showHorizonCard')}
           </label>
         </div>
         <div class="description">
           ${hasHorizonCardDeps 
-            ? 'Zeigt die Horizon Card in der Wetter-Sektion an, um die Position der Sonne über dem Horizont zu visualisieren.' 
-            : '⚠️ Benötigt <strong>lovelace-horizon-card</strong>. Bitte installiere die Card über HACS, um diese Funktion zu nutzen.'}
+            ? t('horizonCardDescription')
+            : `⚠️ ${t('horizonCardMissingDeps')}`}
         </div>
         ${hasHorizonCardDeps && showHorizonCard ? `
         <div style="margin-top: 12px;">
@@ -189,35 +191,35 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               ${horizonCardExtended ? 'checked' : ''}
             />
             <label for="horizon-card-extended">
-              Erweiterte Informationen anzeigen
+              ${t('showExtendedInfo')}
             </label>
           </div>
           <div class="description">
-            Zeigt zusätzliche Informationen wie Azimut, Elevation, Mondaufgang/-untergang und Mondphase an.
+            ${t('horizonCardExtendedDescription')}
           </div>
         </div>
         ` : ''}
       </div>
 
       <div class="section">
-        <div class="section-title">Öffentlicher Nahverkehr</div>
+        <div class="section-title">${t('publicTransport')}</div>
         <div class="form-row">
           <input 
             type="checkbox" 
             id="show-public-transport" 
             ${showPublicTransport ? 'checked' : ''}
           />
-          <label for="show-public-transport">Öffentlicher Nahverkehr in Übersicht anzeigen</label>
+          <label for="show-public-transport">${t('showPublicTransport')}</label>
         </div>
         <div class="description">
-          Zeigt Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht an. Verwende die hvv-card für die Anzeige.
+          ${t('publicTransportDescription')}
         </div>
         <div id="public-transport-list" style="margin-top: 12px; margin-bottom: 12px;">
           ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}
         </div>
         <div style="display: flex; gap: 8px; align-items: flex-start;">
           <select id="public-transport-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">Entität auswählen...</option>
+            <option value="">${t('selectEntity')}</option>
             ${allEntities
               .filter(entity => {
                 const entityId = entity.entity_id.toLowerCase();
@@ -260,15 +262,15 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               `).join('')}
           </select>
           <button id="add-public-transport-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-            + Hinzufügen
+            + ${t('add')}
           </button>
         </div>
         <div class="description">
-          Wähle eine oder mehrere Entitäten aus, die Abfahrtszeiten bereitstellen. Diese werden in der Übersicht angezeigt.
+          ${t('publicTransportEntitiesDescription')}
         </div>
         <div style="margin-top: 16px;">
           <div class="form-row">
-            <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">Max. Abfahrten:</label>
+            <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
             <input 
               type="number" 
               id="hvv-max" 
@@ -284,7 +286,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               id="hvv-show-time" 
               ${hvvShowTime !== false ? 'checked' : ''}
             />
-            <label for="hvv-show-time">Zeit anzeigen</label>
+            <label for="hvv-show-time">${t('showTime')}</label>
           </div>
           <div class="form-row">
             <input 
@@ -292,10 +294,10 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               id="hvv-show-title" 
               ${hvvShowTitle !== false ? 'checked' : ''}
             />
-            <label for="hvv-show-title">Titel anzeigen</label>
+            <label for="hvv-show-title">${t('showTitle')}</label>
           </div>
           <div class="form-row">
-            <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">Titel:</label>
+            <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">${t('title')}</label>
             <input 
               type="text" 
               id="hvv-title" 
@@ -308,22 +310,22 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       </div>
 
       <div class="section">
-        <div class="section-title">Zusammenfassungen</div>
+        <div class="section-title">${t('summaries')}</div>
         <div class="form-row">
           <input 
             type="checkbox" 
             id="show-covers-summary" 
             ${showCoversSummary !== false ? 'checked' : ''}
           />
-          <label for="show-covers-summary">Rollo-Zusammenfassung anzeigen</label>
+          <label for="show-covers-summary">${t('showCoversSummary')}</label>
         </div>
         <div class="description">
-          Zeigt die Rollo-Zusammenfassungskarte in der Übersicht an.
+          ${t('coversSummaryDescription')}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Zusammenfassungen Layout</div>
+        <div class="section-title">${t('summariesLayout')}</div>
         <div class="form-row">
           <input 
             type="radio" 
@@ -332,7 +334,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             value="2"
             ${summariesColumns === 2 ? 'checked' : ''}
           />
-          <label for="summaries-2-columns">2 Spalten (2x2 Grid)</label>
+          <label for="summaries-2-columns">${t('twoColumns')}</label>
         </div>
         <div class="form-row">
           <input 
@@ -342,25 +344,25 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             value="4"
             ${summariesColumns === 4 ? 'checked' : ''}
           />
-          <label for="summaries-4-columns">4 Spalten (1x4 Reihe)</label>
+          <label for="summaries-4-columns">${t('fourColumns')}</label>
         </div>
         <div class="description">
-          Wähle aus, wie die Zusammenfassungskarten angezeigt werden sollen. Das Layout passt sich automatisch an, wenn Karten ausgeblendet werden.
+          ${t('summariesLayoutDescription')}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Ansichten</div>
+        <div class="section-title">${t('views')}</div>
         <div class="form-row">
           <input 
             type="checkbox" 
             id="show-summary-views" 
             ${showSummaryViews ? 'checked' : ''}
           />
-          <label for="show-summary-views">Zusammenfassungs-Views anzeigen</label>
+          <label for="show-summary-views">${t('showSummaryViews')}</label>
         </div>
         <div class="description">
-          Zeigt die Zusammenfassungs-Views (Lichter, Rollos, Sicherheit, Batterien) in der oberen Navigation an.
+          ${t('summaryViewsDescription')}
         </div>
         <div class="form-row">
           <input 
@@ -368,32 +370,32 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             id="show-room-views" 
             ${showRoomViews ? 'checked' : ''}
           />
-          <label for="show-room-views">Raum-Views anzeigen</label>
+          <label for="show-room-views">${t('showRoomViews')}</label>
         </div>
         <div class="description">
-          Zeigt die einzelnen Raum-Views in der oberen Navigation an.
+          ${t('roomViewsDescription')}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Bereiche-Ansicht</div>
+        <div class="section-title">${t('areasView')}</div>
         <div class="form-row">
           <input 
             type="checkbox" 
             id="group-by-floors" 
             ${groupByFloors ? 'checked' : ''}
           />
-          <label for="group-by-floors">Bereiche in Etagen gliedern</label>
+          <label for="group-by-floors">${t('groupByFloors')}</label>
         </div>
         <div class="description">
-          Gruppiert die Bereiche in der Übersicht nach Etagen. Wenn aktiviert, wird für jede Etage eine separate Section erstellt.
+          ${t('groupByFloorsDescription')}
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Bereiche</div>
+        <div class="section-title">${t('areas')}</div>
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
-          Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten.
+          ${t('areasDescription')}
         </div>
         <div class="area-list" id="area-list">
           ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}
@@ -405,7 +407,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
 
 function renderFavoritesList(favoriteEntities, allEntities) {
   if (!favoriteEntities || favoriteEntities.length === 0) {
-    return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Favoriten hinzugefügt</div>';
+    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noFavoritesAdded')}</div>`;
   }
 
   // Erstelle Map für schnellen Zugriff auf Entity-Namen
@@ -434,7 +436,7 @@ function renderFavoritesList(favoriteEntities, allEntities) {
 
 export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
   if (!roomPinEntities || roomPinEntities.length === 0) {
-    return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Raum-Pins hinzugefügt</div>';
+    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noRoomPinsAdded')}</div>`;
   }
 
   // Erstelle Maps für schnellen Zugriff
@@ -447,7 +449,7 @@ export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
         const entity = entityMap.get(entityId);
         const name = entity?.name || entityId;
         const areaId = entity?.area_id || entity?.device_area_id;
-        const areaName = areaId ? areaMap.get(areaId) || areaId : 'Kein Raum';
+        const areaName = areaId ? areaMap.get(areaId) || areaId : t('noRoom');
         
         return `
           <div class="room-pin-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
@@ -470,7 +472,7 @@ export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
 
 function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
   if (allAreas.length === 0) {
-    return '<div class="empty-state">Keine Bereiche verfügbar</div>';
+    return `<div class="empty-state">${t('noAreasAvailable')}</div>`;
   }
 
   return allAreas.map((area, index) => {
@@ -497,7 +499,7 @@ function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
           </button>
         </div>
         <div class="area-content" data-area-id="${area.area_id}" style="display: none;">
-          <div class="loading-placeholder">Lade Entitäten...</div>
+          <div class="loading-placeholder">${t('loadingEntities')}</div>
         </div>
       </div>
     `;
@@ -506,15 +508,15 @@ function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
 
 export function renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, entityOrders, hass) {
   const domainGroups = [
-    { key: 'lights', label: 'Beleuchtung', icon: 'mdi:lightbulb' },
-    { key: 'climate', label: 'Klima', icon: 'mdi:thermostat' },
-    { key: 'covers', label: 'Rollos & Jalousien', icon: 'mdi:window-shutter' },
-    { key: 'covers_curtain', label: 'Vorhänge', icon: 'mdi:curtains' },
-    { key: 'media_player', label: 'Medien', icon: 'mdi:speaker' },
-    { key: 'scenes', label: 'Szenen', icon: 'mdi:palette' },
-    { key: 'vacuum', label: 'Staubsauger', icon: 'mdi:robot-vacuum' },
-    { key: 'fan', label: 'Ventilatoren', icon: 'mdi:fan' },
-    { key: 'switches', label: 'Schalter', icon: 'mdi:light-switch' }
+    { key: 'lights', label: t('lighting'), icon: 'mdi:lightbulb' },
+    { key: 'climate', label: t('climate'), icon: 'mdi:thermostat' },
+    { key: 'covers', label: t('blinds'), icon: 'mdi:window-shutter' },
+    { key: 'covers_curtain', label: t('curtains'), icon: 'mdi:curtains' },
+    { key: 'media_player', label: t('media'), icon: 'mdi:speaker' },
+    { key: 'scenes', label: t('scenes'), icon: 'mdi:palette' },
+    { key: 'vacuum', label: t('vacuum'), icon: 'mdi:robot-vacuum' },
+    { key: 'fan', label: t('fans'), icon: 'mdi:fan' },
+    { key: 'switches', label: t('switches'), icon: 'mdi:light-switch' }
   ];
 
   let html = '<div class="entity-groups">';
@@ -574,7 +576,7 @@ export function renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, 
   html += '</div>';
 
   if (html === '<div class="entity-groups"></div>') {
-    return '<div class="empty-state">Keine Entitäten in diesem Bereich gefunden</div>';
+    return `<div class="empty-state">${t('noEntitiesInArea')}</div>`;
   }
 
   return html;
