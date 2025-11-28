@@ -262,7 +262,7 @@ strategy:
 
 **Sprachpriorität:**
 1. Explizite `language`-Einstellung in der Config (höchste Priorität)
-2. Spracheinstellung des Benutzers in Home Assistant (`hass.selectedLanguage`)
+2. Spracheinstellung des Benutzers in Home Assistant (`hass.language`)
 3. Deutsch als Standard-Sprache (Fallback)
 
 **Verfügbare Sprachen:**

@@ -195,34 +195,16 @@ export function initLanguage(config, hass = null) {
     return;
   }
   
-  // 2. Versuche Sprache aus hass.selectedLanguage zu lesen
-  if (hass?.selectedLanguage) {
-    const selectedLang = hass.selectedLanguage.toLowerCase();
-    console.log(`[i18n] Found hass.selectedLanguage: ${hass.selectedLanguage} -> ${selectedLang}`);
-    if (translations[selectedLang]) {
-      setLanguage(selectedLang);
-      console.log(`[i18n] Language set to: ${selectedLang}`);
+  // 2. Versuche Sprache aus hass.language zu lesen
+  if (hass?.language) {
+    const lang = hass.language.toLowerCase();
+    console.log(`[i18n] Found hass.language: ${hass.language} -> ${lang}`);
+    if (translations[lang]) {
+      setLanguage(lang);
+      console.log(`[i18n] Language set to: ${lang}`);
       return;
     } else {
-      console.warn(`[i18n] Language '${selectedLang}' from hass.selectedLanguage not supported, using default`);
-    }
-  } else {
-    // Debug: Zeige verfügbare hass-Properties die mit Sprache zu tun haben
-    if (hass) {
-      const langRelatedKeys = Object.keys(hass).filter(k => {
-        const lower = k.toLowerCase();
-        return lower.includes('lang') || lower.includes('locale') || lower.includes('localization');
-      });
-      if (langRelatedKeys.length > 0) {
-        console.log(`[i18n] hass.selectedLanguage not found. Found language-related properties:`, langRelatedKeys.join(', '));
-        langRelatedKeys.forEach(key => {
-          console.log(`[i18n]   ${key}:`, hass[key]);
-        });
-      } else {
-        console.log(`[i18n] hass.selectedLanguage not found. No language-related properties found in hass object.`);
-      }
-    } else {
-      console.log(`[i18n] hass is null, cannot detect language`);
+      console.warn(`[i18n] Language '${lang}' from hass.language not supported, using default`);
     }
   }
   
