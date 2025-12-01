@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-import { t } from '../utils/simon42-i18n.js';
+import { t } from '../../utils/simon42-i18n.js';
 
 function renderPublicTransportList(publicTransportEntities, allEntities) {
   if (!publicTransportEntities || publicTransportEntities.length === 0) {
