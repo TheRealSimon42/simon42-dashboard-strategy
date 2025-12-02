@@ -34,13 +34,22 @@ function renderPublicTransportList(publicTransportEntities, allEntities) {
 }
 
 /**
- * Ersetzt Leerzeichen durch sichtbare Zeichen für die Anzeige
+ * Escaped HTML-Sonderzeichen und ersetzt Leerzeichen durch sichtbare Zeichen
  * @param {string} text - Der Text mit Leerzeichen
- * @returns {string} Text mit sichtbaren Leerzeichen-Markierungen
+ * @returns {string} HTML-escaped Text mit sichtbaren Leerzeichen-Markierungen
  */
 function makeSpacesVisible(text) {
-  // Ersetze normale Leerzeichen durch · (middle dot) für bessere Sichtbarkeit
-  return text.replace(/ /g, '·');
+  // Escaped zuerst HTML-Sonderzeichen
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+  
+  // Ersetze dann normale Leerzeichen durch · (middle dot) für bessere Sichtbarkeit
+  // Verwende HTML-Entity für zuverlässige Darstellung
+  return escaped.replace(/ /g, '&middot;');
 }
 
 export function renderEntityNamePatternsList(patterns) {

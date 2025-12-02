@@ -1305,8 +1305,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Patterns hinzugefügt</div>';
     }
 
-    // Hilfsfunktion: Ersetzt Leerzeichen durch sichtbare Zeichen
-    const makeSpacesVisible = (text) => text.replace(/ /g, '·');
+    // Hilfsfunktion: Escaped HTML-Sonderzeichen und ersetzt Leerzeichen durch sichtbare Zeichen
+    const makeSpacesVisible = (text) => {
+      // Escaped zuerst HTML-Sonderzeichen
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+      
+      // Ersetze dann normale Leerzeichen durch · (middle dot) für bessere Sichtbarkeit
+      // Verwende HTML-Entity für zuverlässige Darstellung
+      return escaped.replace(/ /g, '&middot;');
+    };
 
     return `
       <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
