@@ -198,7 +198,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         hvvMax,
         hvvShowTime,
         hvvShowTitle,
-        hvvTitle
+        hvvTitle,
+        entityNamePatterns: this._config.entity_name_patterns || []
       })}
     `;
 
@@ -220,6 +221,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._attachFavoritesListeners();
     this._attachRoomPinsListeners();
     this._attachPublicTransportListeners();
+    this._attachEntityNamePatternsListeners();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
     // Sortiere die Area-Items nach displayOrder
@@ -1175,6 +1177,144 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
                 <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
               </span>
               <button class="remove-public-transport-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+                ✕
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  _attachEntityNamePatternsListeners() {
+    // Add Button
+    const addBtn = this.querySelector('#add-pattern-btn');
+    const input = this.querySelector('#entity-name-pattern-input');
+    
+    if (addBtn && input) {
+      // Add on Enter key press
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addBtn.click();
+        }
+      });
+
+      // Add on button click
+      addBtn.addEventListener('click', () => {
+        const pattern = input.value.trim();
+        if (pattern) {
+          // Validate regex pattern
+          try {
+            new RegExp(pattern);
+            this._addEntityNamePattern(pattern);
+            input.value = ''; // Clear input
+          } catch (e) {
+            alert(`Ungültiges Regex-Pattern: ${e.message}`);
+          }
+        }
+      });
+    }
+
+    // Remove Buttons
+    const removeButtons = this.querySelectorAll('.remove-pattern-btn');
+    removeButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.patternIndex, 10);
+        this._removeEntityNamePattern(index);
+      });
+    });
+  }
+
+  _addEntityNamePattern(pattern) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentPatterns = this._config.entity_name_patterns || [];
+    
+    // Prüfe ob bereits vorhanden
+    if (currentPatterns.includes(pattern)) {
+      return;
+    }
+
+    const newPatterns = [...currentPatterns, pattern];
+
+    const newConfig = {
+      ...this._config,
+      entity_name_patterns: newPatterns
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Patterns-Liste
+    this._updateEntityNamePatternsList();
+  }
+
+  _removeEntityNamePattern(index) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentPatterns = this._config.entity_name_patterns || [];
+    const newPatterns = currentPatterns.filter((_, i) => i !== index);
+
+    const newConfig = {
+      ...this._config,
+      entity_name_patterns: newPatterns.length > 0 ? newPatterns : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newPatterns.length === 0) {
+      delete newConfig.entity_name_patterns;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Patterns-Liste
+    this._updateEntityNamePatternsList();
+  }
+
+  _updateEntityNamePatternsList() {
+    const container = this.querySelector('#entity-name-patterns-list');
+    if (!container) return;
+
+    const patterns = this._config.entity_name_patterns || [];
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      if (module.renderEntityNamePatternsList) {
+        container.innerHTML = module.renderEntityNamePatternsList(patterns);
+      } else {
+        container.innerHTML = this._renderEntityNamePatternsListFallback(patterns);
+      }
+      
+      // Reattach listeners
+      this._attachEntityNamePatternsListeners();
+    }).catch(() => {
+      // Fallback falls Import fehlschlägt
+      container.innerHTML = this._renderEntityNamePatternsListFallback(patterns);
+      this._attachEntityNamePatternsListeners();
+    });
+  }
+
+  _renderEntityNamePatternsListFallback(patterns) {
+    if (!patterns || patterns.length === 0) {
+      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Patterns hinzugefügt</div>';
+    }
+
+    return `
+      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+        ${patterns.map((pattern, index) => {
+          const patternText = typeof pattern === 'string' ? pattern : pattern.pattern || '';
+          return `
+            <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all;">
+                ${patternText}
+              </span>
+              <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; margin-left: 8px; flex-shrink: 0;">
                 ✕
               </button>
             </div>

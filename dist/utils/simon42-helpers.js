@@ -44,19 +44,61 @@ export function getVisibleAreas(areas, displayConfig) {
 }
 
 /**
- * Entfernt den Raumnamen aus dem Entity-Namen
+ * Transformiert Entity-Namen basierend auf konfigurierten Regex-Mustern
+ * @param {string} name - Der zu transformierende Name
+ * @param {Array} patterns - Array von Regex-Mustern (Strings) die entfernt werden sollen
+ * @returns {string} Transformierter Name
+ */
+function applyNamePatterns(name, patterns) {
+  if (!patterns || !Array.isArray(patterns) || patterns.length === 0) {
+    return name;
+  }
+  
+  let transformedName = name;
+  
+  // Wende jedes Pattern an
+  patterns.forEach(pattern => {
+    try {
+      // Pattern kann ein String (Regex) oder ein Objekt mit pattern-Eigenschaft sein
+      const regexPattern = typeof pattern === 'string' ? pattern : pattern.pattern;
+      if (!regexPattern) return;
+      
+      const regex = new RegExp(regexPattern, 'gi');
+      transformedName = transformedName.replace(regex, '');
+    } catch (e) {
+      // Bei ungültigem Regex-Pattern, ignoriere es und logge Warnung
+      console.warn(`[Simon42] Ungültiges Entity-Name-Pattern: ${pattern}`, e);
+    }
+  });
+  
+  // Bereinige mehrfache Leerzeichen und trimme
+  transformedName = transformedName.replace(/\s+/g, ' ').trim();
+  
+  // Nur verwenden wenn noch ein sinnvoller Name übrig ist
+  if (transformedName && transformedName.length > 0) {
+    return transformedName;
+  }
+  
+  // Fallback zum Original-Namen
+  return name;
+}
+
+/**
+ * Entfernt den Raumnamen aus dem Entity-Namen und wendet optional konfigurierte Patterns an
  * @param {string} entityId - Entity ID
  * @param {Object} area - Bereich-Objekt
  * @param {Object} hass - Home Assistant Objekt
+ * @param {Object} config - Optional: Dashboard-Config mit entity_name_patterns
  * @returns {string} Bereinigter Name
  */
-export function stripAreaName(entityId, area, hass) {
+export function stripAreaName(entityId, area, hass, config = {}) {
   const state = hass.states[entityId];
   if (!state) return null;
   
   let name = state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
-  const areaName = area.name;
+  const areaName = area?.name;
   
+  // 1. Entferne Raumnamen (falls vorhanden)
   if (areaName && name) {
     // Entferne Raumnamen am Anfang, Ende oder in der Mitte
     const cleanName = name
@@ -67,8 +109,14 @@ export function stripAreaName(entityId, area, hass) {
     
     // Nur verwenden wenn noch ein sinnvoller Name übrig ist
     if (cleanName && cleanName.length > 0 && cleanName.toLowerCase() !== areaName.toLowerCase()) {
-      return cleanName;
+      name = cleanName;
     }
+  }
+  
+  // 2. Wende konfigurierte Name-Patterns an (falls vorhanden)
+  const namePatterns = config.entity_name_patterns;
+  if (namePatterns) {
+    name = applyNamePatterns(name, namePatterns);
   }
   
   return name;

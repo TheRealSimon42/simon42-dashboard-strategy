@@ -33,7 +33,31 @@ function renderPublicTransportList(publicTransportEntities, allEntities) {
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], hvvMax = 10, hvvShowTime = true, hvvShowTitle = true, hvvTitle = 'HVV' }) {
+export function renderEntityNamePatternsList(patterns) {
+  if (!patterns || patterns.length === 0) {
+    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noPatternsAdded')}</div>`;
+  }
+
+  return `
+    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      ${patterns.map((pattern, index) => {
+        const patternText = typeof pattern === 'string' ? pattern : pattern.pattern || '';
+        return `
+          <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+            <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all;">
+              ${patternText}
+            </span>
+            <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; margin-left: 8px; flex-shrink: 0;">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], hvvMax = 10, hvvShowTime = true, hvvShowTitle = true, hvvTitle = 'HVV', entityNamePatterns = [] }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -374,6 +398,27 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           ${t('roomViewsDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('entityNamePatterns')}</div>
+        <div id="entity-name-patterns-list" style="margin-bottom: 12px;">
+          ${renderEntityNamePatternsList(entityNamePatterns || [])}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <input 
+            type="text" 
+            id="entity-name-pattern-input" 
+            placeholder="${t('patternPlaceholder')}"
+            style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace;"
+          />
+          <button id="add-pattern-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + ${t('addPattern')}
+          </button>
+        </div>
+        <div class="description">
+          ${t('entityNamePatternsDescription')}
         </div>
       </div>
 

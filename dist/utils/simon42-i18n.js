@@ -127,6 +127,11 @@ const translations = {
     summaryViewsDescription: "Zeigt die Zusammenfassungs-Views (Lichter, Rollos, Sicherheit, Batterien) in der oberen Navigation an.",
     roomViewsDescription: "Zeigt die einzelnen Raum-Views in der oberen Navigation an.",
     groupByFloorsDescription: "Gruppiert die Bereiche in der Übersicht nach Etagen. Wenn aktiviert, wird für jede Etage eine separate Section erstellt.",
+    entityNamePatterns: "Entity-Namen Transformation",
+    entityNamePatternsDescription: "Definiere Regex-Patterns, um Präfixe oder Suffixe aus Entity-Namen zu entfernen. Dies ist nützlich, wenn Entities strukturierte Namen haben (z.B. 'Socket - Raum - Name'). Patterns werden nacheinander angewendet.",
+    addPattern: "Pattern hinzufügen",
+    patternPlaceholder: "Regex-Pattern (z.B. '^.*? - .*? - ')",
+    noPatternsAdded: "Keine Patterns hinzugefügt",
     areasDescription: "Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten."
   },
   en: {
@@ -252,6 +257,11 @@ const translations = {
     summaryViewsDescription: "Shows the summary views (Lights, Blinds, Security, Batteries) in the top navigation.",
     roomViewsDescription: "Shows the individual room views in the top navigation.",
     groupByFloorsDescription: "Groups areas in the overview by floors. When enabled, a separate section is created for each floor.",
+    entityNamePatterns: "Entity Name Transformation",
+    entityNamePatternsDescription: "Define regex patterns to remove prefixes or suffixes from entity names. Useful when entities have structured names (e.g., 'Socket - Room - Name'). Patterns are applied sequentially.",
+    addPattern: "Add Pattern",
+    patternPlaceholder: "Regex pattern (e.g., '^.*? - .*? - ')",
+    noPatternsAdded: "No patterns added",
     areasDescription: "Choose which areas should be displayed in the dashboard and in what order. Expand areas to manage individual entities."
   }
 };

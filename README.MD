@@ -346,6 +346,7 @@ strategy:
 | `hvv_show_time` | boolean | `true` | Zeigt die Zeit der Abfahrten an |
 | `hvv_show_title` | boolean | `true` | Zeigt den Titel der Card an |
 | `hvv_title` | string | `'HVV'` | Titel der Public Transport Card |
+| `entity_name_patterns` | array | `[]` | Array von Regex-Patterns zum Transformieren von Entity-Namen (siehe unten) |
 
 #### `areas_display` - Bereich-Verwaltung
 
@@ -378,6 +379,59 @@ areas_options:
 - `locks` - Schlösser
 - `vacuum` - Saugroboter
 - `fan` - Ventilatoren
+
+#### `entity_name_patterns` - Entity-Namen Transformation
+
+Mit `entity_name_patterns` kannst du Entity-Namen dynamisch transformieren, um längere Namen zu kürzen oder unerwünschte Präfixe/Suffixe zu entfernen. Dies ist besonders nützlich, wenn Entities in Zigbee2MQTT oder anderen Integrations mit strukturierten Namen benannt wurden, die im Dashboard zu lang sind.
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  entity_name_patterns:
+    - "^.*? - .*? - "  # Entfernt alles vor dem letzten " - " (z.B. "Socket - Phillipp's Bed - " → entfernt)
+```
+
+**Beispiel:**
+Wenn deine Entities so benannt sind:
+- `Socket - Phillipp's Bed - Soundcore Wakey`
+- `Light - Kitchen - Ceiling Light`
+
+und du nur den letzten Teil anzeigen möchtest, kannst du folgendes Pattern verwenden:
+
+```yaml
+entity_name_patterns:
+  - "^.*? - .*? - "  # Entfernt "Socket - Phillipp's Bed - " und "Light - Kitchen - "
+```
+
+**Ergebnis:**
+- `Soundcore Wakey`
+- `Ceiling Light`
+
+**Pattern-Format:**
+- Patterns sind reguläre Ausdrücke (Regex)
+- Mehrere Patterns können angegeben werden und werden nacheinander angewendet
+- Patterns werden nach dem Entfernen des Raumnamens angewendet
+- Bei ungültigen Patterns wird eine Warnung geloggt und das Pattern ignoriert
+
+**Häufige Pattern-Beispiele:**
+
+```yaml
+# Entfernt Präfixe wie "Socket - ", "Light - ", etc.
+entity_name_patterns:
+  - "^[^-]+ - "  # Entfernt alles bis zum ersten " - "
+
+# Entfernt mehrere Segmente getrennt durch " - "
+entity_name_patterns:
+  - "^.*? - .*? - "  # Entfernt die ersten beiden Segmente
+
+# Entfernt spezifische Begriffe am Anfang
+entity_name_patterns:
+  - "^Socket - "
+  - "^Light - "
+  - "^Switch - "
+```
+
+**Hinweis:** Die Transformation wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant.
 
 ## 🏷️ Label-System
 

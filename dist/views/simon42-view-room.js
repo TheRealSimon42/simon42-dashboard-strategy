@@ -32,6 +32,9 @@ class Simon42ViewRoomStrategy {
     // Hole groups_options aus der Dashboard-Config (falls vorhanden)
     const groupsOptions = config.groups_options || {};
     
+    // Helper-Funktion für Entity-Namen mit Config-Unterstützung
+    const getEntityName = (entityId) => stripAreaName(entityId, area, hass, dashboardConfig);
+    
     // Finde alle Geräte im Raum - als Set für O(1) Lookup
     const areaDevices = new Set();
     const areaDeviceObjects = []; // Speichere Device-Objekte für Reolink-Check
@@ -485,7 +488,7 @@ class Simon42ViewRoomStrategy {
             camera_image: cameraId,
             camera_view: "auto",
             fit_mode: "cover",
-            title: stripAreaName(cameraId, area, hass),
+            title: getEntityName(cameraId),
             entities: glanceEntities
           });
         } else {
@@ -495,7 +498,7 @@ class Simon42ViewRoomStrategy {
             entity: cameraId,
             camera_image: cameraId,
             camera_view: "auto",
-            name: stripAreaName(cameraId, area, hass),
+            name: getEntityName(cameraId),
             show_name: true,
             show_state: false
           });
@@ -537,7 +540,7 @@ class Simon42ViewRoomStrategy {
           ...roomEntities.lights.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             features: [{ type: "light-brightness" }],
             vertical: false,
             features_position: "inline",
@@ -582,7 +585,7 @@ class Simon42ViewRoomStrategy {
               ...betterThermostatEntities.map(entityId => ({
                 type: "custom:better-thermostat-ui-card",
                 entity: entityId,
-                name: stripAreaName(entityId, area, hass)
+                name: getEntityName(entityId)
               }))
             ]
           });
@@ -602,7 +605,7 @@ class Simon42ViewRoomStrategy {
               ...standardThermostatEntities.map(entity => ({
                 type: "tile",
                 entity: entity,
-                name: stripAreaName(entity, area, hass),
+                name: getEntityName(entity),
                 features: [
                   { type: "climate-hvac-modes" }
                 ],
@@ -627,7 +630,7 @@ class Simon42ViewRoomStrategy {
             ...roomEntities.climate.map(entity => ({
               type: "tile",
               entity: entity,
-              name: stripAreaName(entity, area, hass),
+              name: getEntityName(entity),
               features: [
                 { type: "climate-hvac-modes" }
               ],
@@ -654,7 +657,7 @@ class Simon42ViewRoomStrategy {
           ...roomEntities.covers.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             features: [{ type: "cover-open-close" }],
             vertical: false,
             features_position: "inline",
@@ -678,7 +681,7 @@ class Simon42ViewRoomStrategy {
           ...roomEntities.covers_curtain.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             features: [{ type: "cover-open-close" }],
             vertical: false,
             features_position: "inline",
@@ -702,7 +705,7 @@ class Simon42ViewRoomStrategy {
           ...roomEntities.media_player.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             vertical: false,
             features: [{ type: "media-player-playback" }],
             features_position: "inline",
@@ -726,7 +729,7 @@ class Simon42ViewRoomStrategy {
           ...roomEntities.scenes.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             vertical: false,
             state_content: "last_changed"
           }))
@@ -742,7 +745,7 @@ class Simon42ViewRoomStrategy {
       miscCards.push({
         type: "tile",
         entity: entity,
-        name: stripAreaName(entity, area, hass),
+                name: getEntityName(entity),
         features: [{ type: "vacuum-commands" }],
         features_position: "inline",
         vertical: false,
@@ -755,7 +758,7 @@ class Simon42ViewRoomStrategy {
       miscCards.push({
         type: "tile",
         entity: entity,
-        name: stripAreaName(entity, area, hass),
+                name: getEntityName(entity),
         features: [{ type: "fan-speed" }],
         features_position: "inline",
         vertical: false,
@@ -768,7 +771,7 @@ class Simon42ViewRoomStrategy {
       miscCards.push({
         type: "tile",
         entity: entity,
-        name: stripAreaName(entity, area, hass),
+                name: getEntityName(entity),
         vertical: false,
         state_content: "last_changed"
       });
@@ -828,7 +831,7 @@ class Simon42ViewRoomStrategy {
           ...roomPinsForThisArea.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             vertical: false,
             state_content: "last_changed"
           }))
