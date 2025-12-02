@@ -33,6 +33,16 @@ function renderPublicTransportList(publicTransportEntities, allEntities) {
   `;
 }
 
+/**
+ * Ersetzt Leerzeichen durch sichtbare Zeichen für die Anzeige
+ * @param {string} text - Der Text mit Leerzeichen
+ * @returns {string} Text mit sichtbaren Leerzeichen-Markierungen
+ */
+function makeSpacesVisible(text) {
+  // Ersetze normale Leerzeichen durch · (middle dot) für bessere Sichtbarkeit
+  return text.replace(/ /g, '·');
+}
+
 export function renderEntityNamePatternsList(patterns) {
   if (!patterns || patterns.length === 0) {
     return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noPatternsAdded')}</div>`;
@@ -42,10 +52,11 @@ export function renderEntityNamePatternsList(patterns) {
     <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
       ${patterns.map((pattern, index) => {
         const patternText = typeof pattern === 'string' ? pattern : pattern.pattern || '';
+        const displayText = makeSpacesVisible(patternText);
         return `
           <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all;">
-              ${patternText}
+            <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all; white-space: pre-wrap;" title="${patternText.replace(/"/g, '&quot;')}">
+              ${displayText}
             </span>
             <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; margin-left: 8px; flex-shrink: 0;">
               ✕
