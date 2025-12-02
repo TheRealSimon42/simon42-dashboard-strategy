@@ -348,6 +348,9 @@ strategy:
 | `hvv_show_title` | boolean | `true` | Zeigt den Titel der Card an |
 | `hvv_title` | string | `'HVV'` | Titel der Public Transport Card |
 | `entity_name_patterns` | array | `[]` | Array von Regex-Patterns zum Transformieren von Entity-Namen (siehe unten) |
+| `show_better_thermostat` | boolean | `false` | Aktiviert Better Thermostat UI Cards in den Räumen |
+| `show_horizon_card` | boolean | `false` | Zeigt die Horizon Card in der Wetter-Sektion an |
+| `horizon_card_extended` | boolean | `false` | Zeigt erweiterte Informationen in der Horizon Card an (Azimut, Elevation, etc.) |
 
 #### `areas_display` - Bereich-Verwaltung
 
@@ -760,6 +763,46 @@ Erweiterte Unterstützung für Reolink-Kameras:
 - Automatische Erkennung von Reolink-Entities
 - Optimierte Card-Konfiguration
 - PTZ-Controls (falls unterstützt)
+
+#### Better Thermostat UI Card
+
+Ersetzt Standard-Thermostat-Karten durch Better Thermostat UI-Karten in den Räumen:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_better_thermostat: true
+```
+
+**Features:**
+- Automatische Erkennung von Better Thermostat Entities über die Platform in der Entity Registry
+- Getrennte Darstellung: Better Thermostat Entities werden mit der `better-thermostat-ui-card` angezeigt, Standard-Thermostate bleiben als Tile-Cards
+- Standard-Thermostate können separat ausgeblendet werden (über Editor oder Entity Visibility)
+
+**Voraussetzung:**
+- Better Thermostat Integration muss über HACS oder manuell installiert sein
+- Better Thermostat UI Card muss als Custom Card installiert sein
+- Der Editor prüft automatisch, ob beide Komponenten verfügbar sind
+
+#### Horizon Card
+
+Zeigt die Position der Sonne über dem Horizont in der Wetter-Sektion:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_horizon_card: true
+  horizon_card_extended: true  # Optional: Erweiterte Informationen
+```
+
+**Features:**
+- Basis-Modus: Sonnenaufgang, Sonnenuntergang, Mondaufgang, Monduntergang
+- Erweiterter Modus: Zusätzlich Azimut, Elevation, Mittag, Dämmerung und Mondphase
+- Automatische Integration in die Wetter-Sektion
+
+**Voraussetzung:**
+- `lovelace-horizon-card` muss über HACS installiert sein
+- Der Editor prüft automatisch, ob die Card verfügbar ist
 
 #### Öffentlicher Nahverkehr
 
