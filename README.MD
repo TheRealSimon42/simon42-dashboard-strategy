@@ -50,6 +50,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Domain-Gruppierung** - Intelligente Zusammenfassung nach Entity-Typen
 - **Favoriten-System** - Markiere wichtige Entitäten in der Übersicht
 - **Raum-Pins** - Pinne spezielle Entitäten in ihren zugeordneten Räumen
+- **Entity Name Transformation** - Transformiere Entity-Namen mit Regex-Patterns (z.B. entferne Präfixe für mobile Ansicht)
 
 ### 📊 Spezialisierte Views
 - **Lichter-Übersicht** - Alle Lichter, gruppiert nach Status (on/off)
