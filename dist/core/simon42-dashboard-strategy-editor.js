@@ -1202,8 +1202,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
       // Add on button click
       addBtn.addEventListener('click', () => {
-        const pattern = input.value.trim();
-        if (pattern) {
+        const pattern = input.value; // Nicht trimmen, da Leerzeichen Teil des Patterns sein können
+        if (pattern && pattern.trim()) { // Prüfe nur ob nicht komplett leer
           // Validate regex pattern
           try {
             new RegExp(pattern);
