@@ -51,28 +51,20 @@ export function getVisibleAreas(areas, displayConfig) {
  */
 function applyNamePatterns(name, patterns) {
   if (!patterns || !Array.isArray(patterns) || patterns.length === 0) {
-    console.log(`[Simon42] No patterns to apply or patterns is not an array`);
     return name;
   }
   
-  console.log(`[Simon42] applyNamePatterns called with name: "${name}", patterns:`, patterns);
   let transformedName = name;
   
   // Wende jedes Pattern an
-  patterns.forEach((pattern, index) => {
+  patterns.forEach(pattern => {
     try {
       // Pattern kann ein String (Regex) oder ein Objekt mit pattern-Eigenschaft sein
       const regexPattern = typeof pattern === 'string' ? pattern : pattern.pattern;
-      if (!regexPattern) {
-        console.warn(`[Simon42] Pattern at index ${index} is empty, skipping`);
-        return;
-      }
+      if (!regexPattern) return;
       
-      console.log(`[Simon42] Applying pattern ${index + 1}/${patterns.length}: "${regexPattern}"`);
       const regex = new RegExp(regexPattern, 'gi');
-      const before = transformedName;
       transformedName = transformedName.replace(regex, '');
-      console.log(`[Simon42] Pattern result: "${before}" -> "${transformedName}"`);
     } catch (e) {
       // Bei ungültigem Regex-Pattern, ignoriere es und logge Warnung
       console.warn(`[Simon42] Ungültiges Entity-Name-Pattern: ${pattern}`, e);
@@ -82,15 +74,12 @@ function applyNamePatterns(name, patterns) {
   // Bereinige mehrfache Leerzeichen und trimme
   transformedName = transformedName.replace(/\s+/g, ' ').trim();
   
-  console.log(`[Simon42] Final transformed name: "${transformedName}"`);
-  
   // Nur verwenden wenn noch ein sinnvoller Name übrig ist
   if (transformedName && transformedName.length > 0) {
     return transformedName;
   }
   
   // Fallback zum Original-Namen
-  console.log(`[Simon42] Transformed name is empty, using original: "${name}"`);
   return name;
 }
 
@@ -127,10 +116,7 @@ export function stripAreaName(entityId, area, hass, config = {}) {
   // 2. Wende konfigurierte Name-Patterns an (falls vorhanden)
   const namePatterns = config.entity_name_patterns;
   if (namePatterns) {
-    console.log(`[Simon42] Applying name patterns to "${name}":`, namePatterns);
-    const transformed = applyNamePatterns(name, namePatterns);
-    console.log(`[Simon42] Transformed to: "${transformed}"`);
-    name = transformed;
+    name = applyNamePatterns(name, namePatterns);
   }
   
   return name;

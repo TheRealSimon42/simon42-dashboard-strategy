@@ -26,13 +26,6 @@ class Simon42ViewRoomStrategy {
     // Hole Dashboard-Config für Raum-Pins (wird über ViewBuilder übergeben)
     const dashboardConfig = config.dashboardConfig || {};
     
-    // Debug: Prüfe ob Patterns vorhanden sind
-    console.log(`[Simon42] Room view for area "${area.name}":`, {
-      hasDashboardConfig: !!dashboardConfig,
-      entityNamePatterns: dashboardConfig.entity_name_patterns,
-      configKeys: Object.keys(dashboardConfig)
-    });
-    
     // Initialisiere Sprache (falls noch nicht geschehen)
     initLanguage(dashboardConfig, hass);
     
