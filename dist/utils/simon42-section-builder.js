@@ -482,12 +482,16 @@ export function createPublicTransportSection(config, hass) {
     const currentLang = getLanguage();
     const locale = currentLang === 'de' ? 'de-DE' : 'en-US';
     
-    // Format modify functions as arrow functions
-    // The modify property expects a string that will be evaluated as a function
-    // Based on official example, but formatted as arrow function with explicit returns
-    const formatTimeWithDelayStr = `(x => { var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { return '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } } })`;
+    // Format modify functions as direct JavaScript expressions
+    // The modify property expects a string that will be evaluated as JavaScript code
+    // x is automatically available and represents the cell value
+    // Based on official examples: https://github.com/custom-cards/flex-table-card/blob/master/docs/example-cfg-advanced-cell-formatting.md
+    // When data is an array like [['attr', 'Departure Time'], ['attr', 'Departure Time Real']],
+    // x will be a string with both values joined by space (default multi_delimiter)
+    // Format: "departureTime departureTimeReal" (e.g., "2024-01-01 10:00:00 2024-01-01 10:05:00")
+    const formatTimeWithDelayStr = `(function() { var parts = (x || '').toString().split(' '); var timeStr = parts[0] + ' ' + (parts[1] || ''); var timeRealStr = parts[2] + ' ' + (parts[3] || ''); var time = new Date(timeStr.trim()); var timeReal = timeRealStr.trim() ? new Date(timeRealStr.trim()) : null; if (!timeReal || isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { return '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } } })()`;
     
-    const formatSortTimeStr = `(x => { var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { return '<div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } })`;
+    const formatSortTimeStr = `(function() { var parts = (x || '').toString().split(' '); var timeStr = parts[0] + ' ' + (parts[1] || ''); var timeRealStr = parts[2] + ' ' + (parts[3] || ''); var time = new Date(timeStr.trim()); var timeReal = timeRealStr.trim() ? new Date(timeRealStr.trim()) : null; if (!timeReal || isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { return timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } })()`;
     
     // Configure columns as per db_info README (following official example)
     cardConfig.columns = [
