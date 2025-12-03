@@ -490,11 +490,10 @@ export function createPublicTransportSection(config, hass) {
     // x will be a string with both values joined by space (default multi_delimiter)
     // db_info uses ISO format: "2025-12-03T22:49:00 2025-12-03T22:49:00"
     // Format time with delay handling - parse ISO datetime strings
-    // Handle both single values and space-separated pairs
-    const formatTimeWithDelayStr = `(function() { try { var val = x; if (val === null || val === undefined) { return '-'; } var str = String(val).trim(); if (!str || str === 'undefined' || str === 'null' || str === '') { return '-'; } var parts = str.split(/\s+/); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr) { return '-'; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return '-'; } var timeFormatted = time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); if (!timeRealStr) { return timeFormatted; } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return timeFormatted; } if (time >= timeReal) { return '<div style="color:green">' + timeFormatted + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); var timeRealFormatted = timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); if (delayMinutes > 4) { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:red">' + timeRealFormatted + '</div>'; } else { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:green">' + timeRealFormatted + '</div>'; } } } catch(e) { return '-'; } })()`;
+    const formatTimeWithDelayStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return '-'; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; var time = timeStr ? new Date(timeStr) : null; var timeReal = timeRealStr ? new Date(timeRealStr) : null; if (!time || isNaN(time.getTime())) { return '-'; } if (!timeReal || isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { return '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } } } catch(e) { return '-'; } })()`;
     
     // Format sort time (use actual time if available, otherwise planned time)
-    const formatSortTimeStr = `(function() { try { var val = x; if (val === null || val === undefined) { return ''; } var str = String(val).trim(); if (!str || str === 'undefined' || str === 'null' || str === '') { return ''; } var parts = str.split(/\s+/); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr) { return ''; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return ''; } if (!timeRealStr) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } return timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } catch(e) { return ''; } })()`;
+    const formatSortTimeStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return ''; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; var time = timeStr ? new Date(timeStr) : null; var timeReal = timeRealStr ? new Date(timeRealStr) : null; if (!time || isNaN(time.getTime())) { return ''; } if (!timeReal || isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { return timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } } catch(e) { return ''; } })()`;
     
     // Configure columns as per db_info README (following official example)
     // Use new data syntax: comma-separated attribute names (replaces old multi syntax)
@@ -513,16 +512,12 @@ export function createPublicTransportSection(config, hass) {
       {
         name: t('publicTransportColumnDeparture'),
         data: 'Departure Time,Departure Time Real',  // ISO format: "2025-12-03T22:49:00 2025-12-03T22:49:00"
-        // Debug version to see what x contains - uncomment to debug:
-        modify: `(function() { try { var val = x; var str = String(val); var type = typeof val; var json = JSON.stringify(val); return 'Type: ' + type + ' | Value: ' + str + ' | JSON: ' + json; } catch(e) { return 'Error: ' + e.message; } })()`
-        // modify: formatTimeWithDelayStr
+        modify: formatTimeWithDelayStr
       },
       {
         name: t('publicTransportColumnArrival'),
         data: 'Arrival Time,Arrival Time Real',  // ISO format: "2025-12-03T22:58:00 2025-12-03T22:58:00"
-        // Debug version to see what x contains - uncomment to debug:
-        modify: `(function() { try { var val = x; var str = String(val); var type = typeof val; var json = JSON.stringify(val); return 'Type: ' + type + ' | Value: ' + str + ' | JSON: ' + json; } catch(e) { return 'Error: ' + e.message; } })()`
-        // modify: formatTimeWithDelayStr
+        modify: formatTimeWithDelayStr
       },
       {
         name: 'sort_time',
