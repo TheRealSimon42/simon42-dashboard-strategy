@@ -2,7 +2,7 @@
 // SECTION BUILDER - Erstellt Dashboard-Sections
 // ====================================================================
 
-import { t } from './simon42-i18n.js';
+import { t, getLanguage } from './simon42-i18n.js';
 
 /**
  * Erstellt die Übersichts-Section mit Zusammenfassungen
@@ -476,31 +476,36 @@ export function createPublicTransportSection(config, hass) {
     // Add sorting by departure time
     cardConfig.sort_by = 'sort_time';
     
+    // Get current language for locale settings
+    const currentLang = getLanguage();
+    const locale = currentLang === 'de' ? 'de-DE' : 'en-US';
+    
     // Configure columns as per db_info README
+    // Column names are in English (default language)
     cardConfig.columns = [
       {
         name: 'Start',
         data: 'Departure'
       },
       {
-        name: 'Verbindung',
+        name: 'Connection',
         data: 'Name'
       },
       {
-        name: 'Abfahrt',
+        name: 'Departure',
         multi: [
           ['attr', 'Departure Time'],
           ['attr', 'Departure Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
       },
       {
-        name: 'Ankunft',
+        name: 'Arrival',
         multi: [
           ['attr', 'Arrival Time'],
           ['attr', 'Arrival Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
       },
       {
         name: 'sort_time',
@@ -508,7 +513,7 @@ export function createPublicTransportSection(config, hass) {
           ['attr', 'Departure Time'],
           ['attr', 'Departure Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}); } else { '<div style="color:green">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; }`,
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { '<div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; }`,
         hidden: true
       }
     ];
