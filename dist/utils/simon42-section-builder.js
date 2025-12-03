@@ -482,6 +482,44 @@ export function createPublicTransportSection(config, hass) {
     const currentLang = getLanguage();
     const locale = currentLang === 'de' ? 'de-DE' : 'en-US';
     
+    // Helper function to format time with delays
+    const formatTimeWithDelay = (x) => {
+      const parts = x.split(" ");
+      const time = new Date(parts[0]);
+      const timeReal = parts[1] ? new Date(parts[1]) : null;
+      
+      if (!timeReal || isNaN(timeReal.getTime())) {
+        return time.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'});
+      }
+      
+      if (time >= timeReal) {
+        return '<div style="color:green">' + time.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'}) + '</div>';
+      }
+      
+      const delayMinutes = (timeReal - time) / (1000 * 60);
+      const timeStr = time.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'});
+      const timeRealStr = timeReal.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'});
+      
+      if (delayMinutes > 4) {
+        return '<s><div style="color:grey">' + timeStr + '</div></s><div style="color:red">' + timeRealStr + '</div>';
+      } else {
+        return '<s><div style="color:grey">' + timeStr + '</div></s><div style="color:green">' + timeRealStr + '</div>';
+      }
+    };
+    
+    // Helper function for sort_time column
+    const formatSortTime = (x) => {
+      const parts = x.split(" ");
+      const time = new Date(parts[0]);
+      const timeReal = parts[1] ? new Date(parts[1]) : null;
+      
+      if (!timeReal || isNaN(timeReal.getTime())) {
+        return time.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'});
+      }
+      
+      return '<div style="color:green">' + timeReal.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'}) + '</div>';
+    };
+    
     // Configure columns as per db_info README
     cardConfig.columns = [
       {
@@ -498,7 +536,7 @@ export function createPublicTransportSection(config, hass) {
           ['attr', 'Departure Time'],
           ['attr', 'Departure Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { return '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
+        modify: formatTimeWithDelay
       },
       {
         name: t('publicTransportColumnArrival'),
@@ -506,7 +544,7 @@ export function createPublicTransportSection(config, hass) {
           ['attr', 'Arrival Time'],
           ['attr', 'Arrival Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { return '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
+        modify: formatTimeWithDelay
       },
       {
         name: 'sort_time',
@@ -514,7 +552,7 @@ export function createPublicTransportSection(config, hass) {
           ['attr', 'Departure Time'],
           ['attr', 'Departure Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { return '<div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; }`,
+        modify: formatSortTime,
         hidden: true
       }
     ];
