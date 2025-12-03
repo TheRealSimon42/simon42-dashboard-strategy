@@ -482,13 +482,12 @@ export function createPublicTransportSection(config, hass) {
     const currentLang = getLanguage();
     const locale = currentLang === 'de' ? 'de-DE' : 'en-US';
     
-    // Format modify functions as multiline strings following the official example
-    // The modify property expects a string that will be evaluated as code
-    // Values are returned implicitly (no return statements needed)
-    // Format as single-line string with proper spacing (YAML > folds newlines to spaces)
-    const formatTimeWithDelayStr = `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`;
+    // Format modify functions as arrow functions
+    // The modify property expects a string that will be evaluated as a function
+    // Based on official example, but formatted as arrow function with explicit returns
+    const formatTimeWithDelayStr = `(x => { var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { return '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } } })`;
     
-    const formatSortTimeStr = `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { '<div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; }`;
+    const formatSortTimeStr = `(x => { var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { return '<div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } })`;
     
     // Configure columns as per db_info README (following official example)
     cardConfig.columns = [
