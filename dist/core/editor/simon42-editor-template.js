@@ -5,6 +5,94 @@
 
 import { t } from '../../utils/simon42-i18n.js';
 
+/**
+ * Filtert Entities basierend auf der ausgewählten Integration
+ * @param {Array} allEntities - Alle verfügbaren Entities
+ * @param {string} integration - Die ausgewählte Integration ('hvv', 'ha-departures', 'db_info')
+ * @returns {Array} Gefilterte Entities
+ */
+function filterEntitiesByIntegration(allEntities, integration) {
+  if (!integration || !allEntities) {
+    return [];
+  }
+
+  return allEntities.filter(entity => {
+    const entityId = entity.entity_id.toLowerCase();
+    const name = (entity.name || '').toLowerCase();
+    
+    // Filter für relevante Domains
+    if (!entityId.startsWith('sensor.') && !entityId.startsWith('button.')) {
+      return false;
+    }
+    
+    // Integration-spezifische Filter
+    switch (integration) {
+      case 'hvv':
+        // HVV-spezifische Keywords
+        return entityId.includes('hvv') || 
+               name.includes('hvv') ||
+               entityId.includes('departure') || 
+               entityId.includes('abfahrt') ||
+               name.includes('departure') || 
+               name.includes('abfahrt');
+      
+      case 'ha-departures':
+        // ha-departures erstellt Sensoren mit departure/abfahrt Keywords
+        // Aber nicht HVV-spezifisch
+        return (entityId.includes('departure') || 
+                entityId.includes('abfahrt') ||
+                name.includes('departure') || 
+                name.includes('abfahrt')) &&
+               !entityId.includes('hvv') &&
+               !name.includes('hvv');
+      
+      case 'db_info':
+        // db_info erstellt Sensoren mit Verbindung/connection Keywords
+        return entityId.includes('verbindung') ||
+               entityId.includes('connection') ||
+               name.includes('verbindung') ||
+               name.includes('connection') ||
+               entityId.includes('db_info') ||
+               name.includes('db info');
+      
+      default:
+        // Fallback: allgemeine Transport-Keywords
+        const transportKeywords = [
+          'departure', 'departures', 'abfahrt', 'abfahrten',
+          'public_transport', 'public-transport', 'publictransport',
+          'transport', 'verkehr', 'nahverkehr',
+          'bus', 'bahn', 'train', 'u-bahn', 'ubahn', 's-bahn', 'sbahn',
+          'haltestelle', 'stop'
+        ];
+        const wholeWordKeywords = ['station'];
+        
+        const hasTransportKeyword = transportKeywords.some(keyword => 
+          entityId.includes(keyword) || name.includes(keyword)
+        );
+        const hasWholeWordKeyword = wholeWordKeywords.some(keyword => {
+          const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+          return regex.test(entityId) || regex.test(name);
+        });
+        
+        return hasTransportKeyword || hasWholeWordKeyword;
+    }
+  });
+}
+
+/**
+ * Gibt den Card-Namen für eine Integration zurück
+ * @param {string} integration - Die Integration ('hvv', 'ha-departures', 'db_info')
+ * @returns {string} Der Card-Name für die Anzeige
+ */
+function getCardNameForIntegration(integration) {
+  const cardNames = {
+    'hvv': t('publicTransportCardHVV'),
+    'ha-departures': t('publicTransportCardHADepartures'),
+    'db_info': t('publicTransportCardDBInfo')
+  };
+  return cardNames[integration] || integration;
+}
+
 function renderPublicTransportList(publicTransportEntities, allEntities) {
   if (!publicTransportEntities || publicTransportEntities.length === 0) {
     return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noEntitiesAdded')}</div>`;
@@ -258,6 +346,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${t('publicTransportDescription')}
         </div>
+        ${showPublicTransport ? `
         <div style="margin-top: 16px;">
           <div class="form-row">
             <label for="public-transport-integration" style="margin-right: 8px; min-width: 120px;">${t('publicTransportIntegration')}</label>
@@ -271,126 +360,76 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <option value="db_info" ${publicTransportIntegration === 'db_info' ? 'selected' : ''}>${t('publicTransportIntegrationDBInfo')}</option>
             </select>
           </div>
-          <div class="form-row" style="margin-top: 12px;">
-            <label for="public-transport-card" style="margin-right: 8px; min-width: 120px;">${t('publicTransportCard')}</label>
-            <select 
-              id="public-transport-card" 
-              style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-              ${!publicTransportIntegration ? 'disabled' : ''}
-            >
-              <option value="">${t('selectCard')}</option>
-              ${publicTransportIntegration === 'hvv' ? `
-                <option value="hvv-card" ${publicTransportCard === 'hvv-card' ? 'selected' : ''}>${t('publicTransportCardHVV')}</option>
-              ` : ''}
-              ${publicTransportIntegration === 'ha-departures' ? `
-                <option value="ha-departures-card" ${publicTransportCard === 'ha-departures-card' ? 'selected' : ''}>${t('publicTransportCardHADepartures')}</option>
-              ` : ''}
-              ${publicTransportIntegration === 'db_info' ? `
-                <option value="db-info-card" ${publicTransportCard === 'db-info-card' ? 'selected' : ''}>${t('publicTransportCardDBInfo')}</option>
-              ` : ''}
-            </select>
-          </div>
-          ${publicTransportIntegration && publicTransportCard ? `
+          ${publicTransportIntegration ? `
           <div class="description" style="margin-top: 8px;">
             ${hasPublicTransportDeps 
               ? t('publicTransportCardAvailable')
-              : `⚠️ ${t('publicTransportCardMissingDeps', { card: publicTransportCard })}`}
+              : `⚠️ ${t('publicTransportCardMissingDeps', { card: getCardNameForIntegration(publicTransportIntegration) })}`}
+          </div>
+          ` : ''}
+          ${publicTransportIntegration && hasPublicTransportDeps ? `
+          <div id="public-transport-list" style="margin-top: 12px; margin-bottom: 12px;">
+            ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <select id="public-transport-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+              <option value="">${t('selectEntity')}</option>
+              ${filterEntitiesByIntegration(allEntities || [], publicTransportIntegration)
+                .map(entity => `
+                  <option value="${entity.entity_id}">${entity.name}</option>
+                `).join('')}
+            </select>
+            <button id="add-public-transport-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+              + ${t('add')}
+            </button>
+          </div>
+          <div class="description">
+            ${t('publicTransportEntitiesDescription')}
+          </div>
+          ` : ''}
+          ${publicTransportIntegration && hasPublicTransportDeps ? `
+          <div style="margin-top: 16px;">
+            <div class="form-row">
+              <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
+              <input 
+                type="number" 
+                id="hvv-max" 
+                value="${hvvMax !== undefined ? hvvMax : 10}" 
+                min="1" 
+                max="50"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="hvv-show-time" 
+                ${hvvShowTime !== false ? 'checked' : ''}
+              />
+              <label for="hvv-show-time">${t('showTime')}</label>
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="hvv-show-title" 
+                ${hvvShowTitle !== false ? 'checked' : ''}
+              />
+              <label for="hvv-show-title">${t('showTitle')}</label>
+            </div>
+            <div class="form-row">
+              <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">${t('title')}</label>
+              <input 
+                type="text" 
+                id="hvv-title" 
+                value="${hvvTitle || 'HVV'}" 
+                placeholder="HVV"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
           </div>
           ` : ''}
         </div>
-        <div id="public-transport-list" style="margin-top: 12px; margin-bottom: 12px;">
-          ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}
-        </div>
-        <div style="display: flex; gap: 8px; align-items: flex-start;">
-          <select id="public-transport-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">${t('selectEntity')}</option>
-            ${allEntities
-              .filter(entity => {
-                const entityId = entity.entity_id.toLowerCase();
-                const name = (entity.name || '').toLowerCase();
-                
-                // Filter für relevante Domains
-                if (!entityId.startsWith('sensor.') && !entityId.startsWith('button.')) {
-                  return false;
-                }
-                
-                // Filter für relevante Keywords in Entity-ID oder Name
-                // Verwende Wortgrenzen für bessere Genauigkeit
-                const transportKeywords = [
-                  'departure', 'departures', 'abfahrt', 'abfahrten',
-                  'hvv', 'public_transport', 'public-transport', 'publictransport',
-                  'transport', 'verkehr', 'nahverkehr',
-                  'bus', 'bahn', 'train', 'u-bahn', 'ubahn', 's-bahn', 'sbahn',
-                  'haltestelle', 'stop'
-                ];
-                
-                // Spezielle Keywords die als ganze Wörter geprüft werden müssen
-                const wholeWordKeywords = ['station'];
-                
-                // Prüfe normale Keywords (können Teil eines Wortes sein)
-                const hasTransportKeyword = transportKeywords.some(keyword => 
-                  entityId.includes(keyword) || name.includes(keyword)
-                );
-                
-                // Prüfe ganze-Wort Keywords (müssen als separates Wort vorkommen)
-                const hasWholeWordKeyword = wholeWordKeywords.some(keyword => {
-                  // Erstelle Regex für Wortgrenzen
-                  const regex = new RegExp(`\\b${keyword}\\b`, 'i');
-                  return regex.test(entityId) || regex.test(name);
-                });
-                
-                return hasTransportKeyword || hasWholeWordKeyword;
-              })
-              .map(entity => `
-                <option value="${entity.entity_id}">${entity.name}</option>
-              `).join('')}
-          </select>
-          <button id="add-public-transport-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-            + ${t('add')}
-          </button>
-        </div>
-        <div class="description">
-          ${t('publicTransportEntitiesDescription')}
-        </div>
-        <div style="margin-top: 16px;">
-          <div class="form-row">
-            <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
-            <input 
-              type="number" 
-              id="hvv-max" 
-              value="${hvvMax !== undefined ? hvvMax : 10}" 
-              min="1" 
-              max="50"
-              style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-            />
-          </div>
-          <div class="form-row">
-            <input 
-              type="checkbox" 
-              id="hvv-show-time" 
-              ${hvvShowTime !== false ? 'checked' : ''}
-            />
-            <label for="hvv-show-time">${t('showTime')}</label>
-          </div>
-          <div class="form-row">
-            <input 
-              type="checkbox" 
-              id="hvv-show-title" 
-              ${hvvShowTitle !== false ? 'checked' : ''}
-            />
-            <label for="hvv-show-title">${t('showTitle')}</label>
-          </div>
-          <div class="form-row">
-            <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">${t('title')}</label>
-            <input 
-              type="text" 
-              id="hvv-title" 
-              value="${hvvTitle || 'HVV'}" 
-              placeholder="HVV"
-              style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-            />
-          </div>
-        </div>
+        ` : ''}
       </div>
 
       <div class="section">

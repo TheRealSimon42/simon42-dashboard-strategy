@@ -1121,37 +1121,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       integrationSelect.addEventListener('change', (e) => {
         const integration = e.target.value;
         this._publicTransportIntegrationChanged(integration);
-        // Auto-update card based on integration
-        if (integration) {
-          this._updateCardBasedOnIntegration(integration);
-        } else {
-          // Clear card selection if no integration selected
-          const cardSelect = this.querySelector('#public-transport-card');
-          if (cardSelect) {
-            cardSelect.value = '';
-            cardSelect.disabled = true;
-          }
-          this._publicTransportCardChanged('');
-        }
-        // Re-render to update dependency check
+        // Re-render to update dependency check and entity selection
         this._render();
       });
-    }
-
-    // Card dropdown
-    const cardSelect = this.querySelector('#public-transport-card');
-    if (cardSelect) {
-      cardSelect.addEventListener('change', (e) => {
-        const card = e.target.value;
-        this._publicTransportCardChanged(card);
-        // Re-render to update dependency check
-        this._render();
-      });
-    }
-    
-    // Enable/disable card dropdown based on integration selection
-    if (integrationSelect && cardSelect) {
-      cardSelect.disabled = !integrationSelect.value;
     }
   }
 
@@ -1204,13 +1176,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     if (integration) {
       newConfig.public_transport_integration = integration;
       
-      // Validate card selection - remove if card doesn't match integration
-      const availableCards = this._getAvailableCardsForIntegration(integration);
-      const currentCard = newConfig.public_transport_card || '';
-      if (currentCard && !availableCards.includes(currentCard)) {
-        // Card doesn't match integration, remove it
-        delete newConfig.public_transport_card;
-      }
+      // Auto-set card based on integration (hardcoded mapping)
+      const cardMapping = {
+        'hvv': 'hvv-card',
+        'ha-departures': 'ha-departures-card',
+        'db_info': 'db-info-card'
+      };
+      
+      newConfig.public_transport_card = cardMapping[integration];
     } else {
       // Remove integration and card if integration is cleared
       delete newConfig.public_transport_integration;
