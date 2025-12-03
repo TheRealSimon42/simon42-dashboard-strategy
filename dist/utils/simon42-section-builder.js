@@ -363,8 +363,27 @@ export function createPublicTransportSection(config, hass) {
   }
   
   // Determine card type from config
-  const cardType = config.public_transport_card || 'db-info-card';
-  const integration = config.public_transport_integration || 'db_info';
+  const cardType = config.public_transport_card;
+  const integration = config.public_transport_integration;
+  
+  // If no integration/card configured, don't show section
+  if (!cardType || !integration) {
+    return null;
+  }
+  
+  // Validate card/integration combination
+  const validCombinations = {
+    'hvv': ['hvv-card'],
+    'ha-departures': ['ha-departures-card'],
+    'db_info': ['db-info-card']
+  };
+  
+  const validCards = validCombinations[integration] || [];
+  if (!validCards.includes(cardType)) {
+    // Invalid combination, don't show section
+    console.warn(`[simon42-dashboard] Invalid public transport card/integration combination: ${cardType} with ${integration}`);
+    return null;
+  }
   
   // Build card configuration based on card type
   let cardConfig = {

@@ -77,7 +77,7 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = 'db_info', publicTransportCard = 'db-info-card', hvvMax = 10, hvvShowTime = true, hvvShowTitle = true, hvvTitle = 'HVV', entityNamePatterns = [] }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = true, hvvShowTitle = true, hvvTitle = 'HVV', entityNamePatterns = [] }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -265,6 +265,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               id="public-transport-integration" 
               style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
             >
+              <option value="">${t('selectIntegration')}</option>
               <option value="hvv" ${publicTransportIntegration === 'hvv' ? 'selected' : ''}>${t('publicTransportIntegrationHVV')}</option>
               <option value="ha-departures" ${publicTransportIntegration === 'ha-departures' ? 'selected' : ''}>${t('publicTransportIntegrationHADepartures')}</option>
               <option value="db_info" ${publicTransportIntegration === 'db_info' ? 'selected' : ''}>${t('publicTransportIntegrationDBInfo')}</option>
@@ -275,12 +276,27 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             <select 
               id="public-transport-card" 
               style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              ${!publicTransportIntegration ? 'disabled' : ''}
             >
-              <option value="hvv-card" ${publicTransportCard === 'hvv-card' ? 'selected' : ''}>${t('publicTransportCardHVV')}</option>
-              <option value="ha-departures-card" ${publicTransportCard === 'ha-departures-card' ? 'selected' : ''}>${t('publicTransportCardHADepartures')}</option>
-              <option value="db-info-card" ${publicTransportCard === 'db-info-card' ? 'selected' : ''}>${t('publicTransportCardDBInfo')}</option>
+              <option value="">${t('selectCard')}</option>
+              ${publicTransportIntegration === 'hvv' ? `
+                <option value="hvv-card" ${publicTransportCard === 'hvv-card' ? 'selected' : ''}>${t('publicTransportCardHVV')}</option>
+              ` : ''}
+              ${publicTransportIntegration === 'ha-departures' ? `
+                <option value="ha-departures-card" ${publicTransportCard === 'ha-departures-card' ? 'selected' : ''}>${t('publicTransportCardHADepartures')}</option>
+              ` : ''}
+              ${publicTransportIntegration === 'db_info' ? `
+                <option value="db-info-card" ${publicTransportCard === 'db-info-card' ? 'selected' : ''}>${t('publicTransportCardDBInfo')}</option>
+              ` : ''}
             </select>
           </div>
+          ${publicTransportIntegration && publicTransportCard ? `
+          <div class="description" style="margin-top: 8px;">
+            ${hasPublicTransportDeps 
+              ? t('publicTransportCardAvailable')
+              : `⚠️ ${t('publicTransportCardMissingDeps', { card: publicTransportCard })}`}
+          </div>
+          ` : ''}
         </div>
         <div id="public-transport-list" style="margin-top: 12px; margin-bottom: 12px;">
           ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}

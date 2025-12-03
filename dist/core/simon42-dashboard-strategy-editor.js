@@ -101,6 +101,27 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     return hasHorizonCard;
   }
 
+  _checkPublicTransportDependencies(integration, card) {
+    // Prüfe ob die entsprechende Card verfügbar ist
+    const cardElementNames = {
+      'hvv-card': 'hvv-card',
+      'ha-departures-card': 'ha-departures-card',
+      'db-info-card': 'db-info-card'
+    };
+    
+    const cardElementName = cardElementNames[card];
+    if (!cardElementName) {
+      return false;
+    }
+    
+    // Prüfe ob die Card als custom element registriert ist
+    const hasCard = customElements.get(cardElementName) !== undefined
+                    || window.customCards?.some(c => c.type === `custom:${card}`)
+                    || document.querySelector(cardElementName) !== null;
+    
+    return hasCard;
+  }
+
   _render() {
     if (!this._hass || !this._config) {
       return;
@@ -121,8 +142,19 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const horizonCardExtended = this._config.horizon_card_extended === true;
     const showPublicTransport = this._config.show_public_transport === true;
     const publicTransportEntities = this._config.public_transport_entities || [];
-    const publicTransportIntegration = this._config.public_transport_integration || 'db_info';
-    const publicTransportCard = this._config.public_transport_card || 'db-info-card';
+    const publicTransportIntegration = this._config.public_transport_integration || '';
+    const publicTransportCard = this._config.public_transport_card || '';
+    
+    // Prüfe ob die gewählte Integration/Card verfügbar ist
+    let hasPublicTransportDeps = false;
+    if (publicTransportIntegration && publicTransportCard) {
+      try {
+        hasPublicTransportDeps = this._checkPublicTransportDependencies(publicTransportIntegration, publicTransportCard);
+      } catch (e) {
+        console.warn('Error checking Public Transport dependencies:', e);
+        hasPublicTransportDeps = false;
+      }
+    }
     const hvvMax = this._config.hvv_max !== undefined ? this._config.hvv_max : 10;
     const hvvShowTime = this._config.hvv_show_time !== false;
     const hvvShowTitle = this._config.hvv_show_title !== false;
@@ -199,6 +231,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         publicTransportEntities,
         publicTransportIntegration,
         publicTransportCard,
+        hasPublicTransportDeps,
         hvvMax,
         hvvShowTime,
         hvvShowTitle,
@@ -1074,7 +1107,19 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         const integration = e.target.value;
         this._publicTransportIntegrationChanged(integration);
         // Auto-update card based on integration
-        this._updateCardBasedOnIntegration(integration);
+        if (integration) {
+          this._updateCardBasedOnIntegration(integration);
+        } else {
+          // Clear card selection if no integration selected
+          const cardSelect = this.querySelector('#public-transport-card');
+          if (cardSelect) {
+            cardSelect.value = '';
+            cardSelect.disabled = true;
+          }
+          this._publicTransportCardChanged('');
+        }
+        // Re-render to update dependency check
+        this._render();
       });
     }
 
@@ -1084,24 +1129,52 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       cardSelect.addEventListener('change', (e) => {
         const card = e.target.value;
         this._publicTransportCardChanged(card);
+        // Re-render to update dependency check
+        this._render();
       });
     }
+    
+    // Enable/disable card dropdown based on integration selection
+    if (integrationSelect && cardSelect) {
+      cardSelect.disabled = !integrationSelect.value;
+    }
+  }
+
+  _getAvailableCardsForIntegration(integration) {
+    // Map integration to available cards
+    // This structure allows for multiple cards per integration in the future
+    const integrationCards = {
+      'hvv': ['hvv-card'],
+      'ha-departures': ['ha-departures-card'],
+      'db_info': ['db-info-card']
+    };
+    
+    return integrationCards[integration] || [];
   }
 
   _updateCardBasedOnIntegration(integration) {
     const cardSelect = this.querySelector('#public-transport-card');
     if (!cardSelect) return;
 
-    // Map integration to default card
-    const defaultCards = {
-      'hvv': 'hvv-card',
-      'ha-departures': 'ha-departures-card',
-      'db_info': 'db-info-card'
-    };
-
-    const defaultCard = defaultCards[integration] || 'db-info-card';
-    cardSelect.value = defaultCard;
-    this._publicTransportCardChanged(defaultCard);
+    const availableCards = this._getAvailableCardsForIntegration(integration);
+    
+    if (availableCards.length > 0) {
+      cardSelect.disabled = false;
+      
+      // Check if current card is valid for this integration
+      const currentCard = this._config.public_transport_card || '';
+      const isValidCard = availableCards.includes(currentCard);
+      
+      // Use current card if valid, otherwise use first available card
+      const cardToSelect = isValidCard ? currentCard : availableCards[0];
+      cardSelect.value = cardToSelect;
+      this._publicTransportCardChanged(cardToSelect);
+    } else {
+      // No cards available for this integration
+      cardSelect.disabled = true;
+      cardSelect.value = '';
+      this._publicTransportCardChanged('');
+    }
   }
 
   _publicTransportIntegrationChanged(integration) {
@@ -1110,13 +1183,23 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     }
 
     const newConfig = {
-      ...this._config,
-      public_transport_integration: integration
+      ...this._config
     };
 
-    // Wenn Standardwert ('db_info'), entfernen wir die Property
-    if (integration === 'db_info') {
+    if (integration) {
+      newConfig.public_transport_integration = integration;
+      
+      // Validate card selection - remove if card doesn't match integration
+      const availableCards = this._getAvailableCardsForIntegration(integration);
+      const currentCard = newConfig.public_transport_card || '';
+      if (currentCard && !availableCards.includes(currentCard)) {
+        // Card doesn't match integration, remove it
+        delete newConfig.public_transport_card;
+      }
+    } else {
+      // Remove integration and card if integration is cleared
       delete newConfig.public_transport_integration;
+      delete newConfig.public_transport_card;
     }
 
     this._config = newConfig;
@@ -1129,12 +1212,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     }
 
     const newConfig = {
-      ...this._config,
-      public_transport_card: card
+      ...this._config
     };
 
-    // Wenn Standardwert ('db-info-card'), entfernen wir die Property
-    if (card === 'db-info-card') {
+    if (card) {
+      newConfig.public_transport_card = card;
+    } else {
       delete newConfig.public_transport_card;
     }
 
