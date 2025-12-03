@@ -362,6 +362,43 @@ export function createPublicTransportSection(config, hass) {
     return null;
   }
   
+  // Determine card type from config
+  const cardType = config.public_transport_card || 'db-info-card';
+  const integration = config.public_transport_integration || 'db_info';
+  
+  // Build card configuration based on card type
+  let cardConfig = {
+    type: `custom:${cardType}`,
+    entities: publicTransportEntities
+  };
+  
+  // Add integration-specific options
+  if (cardType === 'hvv-card' || integration === 'hvv') {
+    // HVV card specific options
+    cardConfig.max = config.hvv_max !== undefined ? config.hvv_max : 10;
+    cardConfig.show_time = config.hvv_show_time !== undefined ? config.hvv_show_time : true;
+    cardConfig.show_title = config.hvv_show_title !== undefined ? config.hvv_show_title : true;
+    cardConfig.title = config.hvv_title || 'HVV';
+  } else if (cardType === 'ha-departures-card' || integration === 'ha-departures') {
+    // ha-departures card specific options (if needed)
+    // Add any ha-departures specific config here
+    if (config.hvv_max !== undefined) {
+      cardConfig.max = config.hvv_max;
+    }
+    if (config.hvv_title) {
+      cardConfig.title = config.hvv_title;
+    }
+  } else if (cardType === 'db-info-card' || integration === 'db_info') {
+    // db_info card specific options (if needed)
+    // Add any db_info specific config here
+    if (config.hvv_max !== undefined) {
+      cardConfig.max = config.hvv_max;
+    }
+    if (config.hvv_title) {
+      cardConfig.title = config.hvv_title;
+    }
+  }
+  
   const cards = [
     {
       type: "heading",
@@ -369,14 +406,7 @@ export function createPublicTransportSection(config, hass) {
       heading_style: "title",
       icon: "mdi:bus"
     },
-    {
-      type: "custom:hvv-card",
-      entities: publicTransportEntities,
-      max: config.hvv_max !== undefined ? config.hvv_max : 10,
-      show_time: config.hvv_show_time !== undefined ? config.hvv_show_time : true,
-      show_title: config.hvv_show_title !== undefined ? config.hvv_show_title : true,
-      title: config.hvv_title || 'HVV'
-    }
+    cardConfig
   ];
 
   return {

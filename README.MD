@@ -343,9 +343,11 @@ strategy:
 | `group_by_floors` | boolean | `false` | Gruppiert Bereiche nach Etagen/Floors |
 | `show_public_transport` | boolean | `false` | Zeigt Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht |
 | `public_transport_entities` | array | `[]` | Array von Entity-IDs für Abfahrtszeiten (z.B. `['sensor.hvv_departures']`) |
+| `public_transport_integration` | string | `'db_info'` | Integration: `'hvv'`, `'ha-departures'` oder `'db_info'` |
+| `public_transport_card` | string | `'db-info-card'` | Card-Typ: `'hvv-card'`, `'ha-departures-card'` oder `'db-info-card'` |
 | `hvv_max` | number | `10` | Maximale Anzahl der angezeigten Abfahrten |
-| `hvv_show_time` | boolean | `true` | Zeigt die Zeit der Abfahrten an |
-| `hvv_show_title` | boolean | `true` | Zeigt den Titel der Card an |
+| `hvv_show_time` | boolean | `true` | Zeigt die Zeit der Abfahrten an (nur für hvv-card) |
+| `hvv_show_title` | boolean | `true` | Zeigt den Titel der Card an (nur für hvv-card) |
 | `hvv_title` | string | `'HVV'` | Titel der Public Transport Card |
 | `entity_name_patterns` | array | `[]` | Array von Regex-Patterns zum Transformieren von Entity-Namen (siehe unten) |
 | `show_better_thermostat` | boolean | `false` | Aktiviert Better Thermostat UI Cards in den Räumen |
@@ -806,24 +808,53 @@ strategy:
 
 #### Öffentlicher Nahverkehr
 
-Zeige Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht:
+Zeige Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht. Unterstützt mehrere Integrationen:
 
+**HVV (Hamburg):**
 ```yaml
 strategy:
   type: custom:simon42-dashboard
   show_public_transport: true
+  public_transport_integration: hvv
+  public_transport_card: hvv-card
   public_transport_entities:
     - sensor.hvv_departures
-    - sensor.bus_stop_main_street
   hvv_max: 10
   hvv_show_time: true
   hvv_show_title: true
   hvv_title: 'HVV'
 ```
 
-**Voraussetzung:**
-- Die `hvv-card` muss installiert sein
-- Entities müssen Abfahrtszeiten bereitstellen (z.B. über die HVV-Integration)
+**ha-departures (EFA-basiert, Deutschland):**
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_public_transport: true
+  public_transport_integration: ha-departures
+  public_transport_card: ha-departures-card
+  public_transport_entities:
+    - sensor.furth_hauptbahnhof_bus_179_furth_sud
+  hvv_max: 10
+  hvv_title: 'Abfahrten'
+```
+
+**db_info (Deutsche Bahn):**
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_public_transport: true
+  public_transport_integration: db_info
+  public_transport_card: db-info-card
+  public_transport_entities:
+    - sensor.db_info_departures
+  hvv_max: 10
+  hvv_title: 'Bahn'
+```
+
+**Voraussetzungen:**
+- Die entsprechende Card muss installiert sein (`hvv-card`, `ha-departures-card` oder `db-info-card`)
+- Die entsprechende Integration muss installiert und konfiguriert sein
+- Entities müssen Abfahrtszeiten bereitstellen
 - Der Editor filtert automatisch relevante Entities (sensor/button mit Transport-Keywords)
 
 ### Batch-Aktionen

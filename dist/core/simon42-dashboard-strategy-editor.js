@@ -121,6 +121,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const horizonCardExtended = this._config.horizon_card_extended === true;
     const showPublicTransport = this._config.show_public_transport === true;
     const publicTransportEntities = this._config.public_transport_entities || [];
+    const publicTransportIntegration = this._config.public_transport_integration || 'db_info';
+    const publicTransportCard = this._config.public_transport_card || 'db-info-card';
     const hvvMax = this._config.hvv_max !== undefined ? this._config.hvv_max : 10;
     const hvvShowTime = this._config.hvv_show_time !== false;
     const hvvShowTitle = this._config.hvv_show_title !== false;
@@ -195,6 +197,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         horizonCardExtended,
         showPublicTransport,
         publicTransportEntities,
+        publicTransportIntegration,
+        publicTransportCard,
         hvvMax,
         hvvShowTime,
         hvvShowTitle,
@@ -215,6 +219,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachHorizonCardCheckboxListener(this, (showHorizonCard) => this._showHorizonCardChanged(showHorizonCard));
     attachHorizonCardExtendedCheckboxListener(this, (horizonCardExtended) => this._horizonCardExtendedChanged(horizonCardExtended));
     attachPublicTransportCheckboxListener(this, (showPublicTransport) => this._showPublicTransportChanged(showPublicTransport));
+    this._attachPublicTransportIntegrationListeners();
     this._attachHvvCardListeners();
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
@@ -1055,6 +1060,82 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
     if (showPublicTransport === false) {
       delete newConfig.show_public_transport;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _attachPublicTransportIntegrationListeners() {
+    // Integration dropdown
+    const integrationSelect = this.querySelector('#public-transport-integration');
+    if (integrationSelect) {
+      integrationSelect.addEventListener('change', (e) => {
+        const integration = e.target.value;
+        this._publicTransportIntegrationChanged(integration);
+        // Auto-update card based on integration
+        this._updateCardBasedOnIntegration(integration);
+      });
+    }
+
+    // Card dropdown
+    const cardSelect = this.querySelector('#public-transport-card');
+    if (cardSelect) {
+      cardSelect.addEventListener('change', (e) => {
+        const card = e.target.value;
+        this._publicTransportCardChanged(card);
+      });
+    }
+  }
+
+  _updateCardBasedOnIntegration(integration) {
+    const cardSelect = this.querySelector('#public-transport-card');
+    if (!cardSelect) return;
+
+    // Map integration to default card
+    const defaultCards = {
+      'hvv': 'hvv-card',
+      'ha-departures': 'ha-departures-card',
+      'db_info': 'db-info-card'
+    };
+
+    const defaultCard = defaultCards[integration] || 'db-info-card';
+    cardSelect.value = defaultCard;
+    this._publicTransportCardChanged(defaultCard);
+  }
+
+  _publicTransportIntegrationChanged(integration) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      public_transport_integration: integration
+    };
+
+    // Wenn Standardwert ('db_info'), entfernen wir die Property
+    if (integration === 'db_info') {
+      delete newConfig.public_transport_integration;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _publicTransportCardChanged(card) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      public_transport_card: card
+    };
+
+    // Wenn Standardwert ('db-info-card'), entfernen wir die Property
+    if (card === 'db-info-card') {
+      delete newConfig.public_transport_card;
     }
 
     this._config = newConfig;
