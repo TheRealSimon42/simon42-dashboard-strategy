@@ -528,7 +528,7 @@ export function createPublicTransportSection(config, hass) {
       },
       {
         name: t('publicTransportColumnDeparture'),
-        multi: [
+        data: [
           ['attr', 'Departure Time'],
           ['attr', 'Departure Time Real']
         ],
@@ -536,7 +536,7 @@ export function createPublicTransportSection(config, hass) {
       },
       {
         name: t('publicTransportColumnArrival'),
-        multi: [
+        data: [
           ['attr', 'Arrival Time'],
           ['attr', 'Arrival Time Real']
         ],
@@ -544,7 +544,7 @@ export function createPublicTransportSection(config, hass) {
       },
       {
         name: 'sort_time',
-        multi: [
+        data: [
           ['attr', 'Departure Time'],
           ['attr', 'Departure Time Real']
         ],
