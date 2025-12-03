@@ -387,7 +387,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             ${t('publicTransportEntitiesDescription')}
           </div>
           ` : ''}
-          ${publicTransportIntegration && hasPublicTransportDeps ? `
+          ${publicTransportIntegration === 'hvv' && hasPublicTransportDeps ? `
           <div style="margin-top: 16px;">
             <div class="form-row">
               <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>

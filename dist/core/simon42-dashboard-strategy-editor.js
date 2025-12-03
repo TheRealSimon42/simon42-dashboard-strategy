@@ -1175,6 +1175,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       ...this._config
     };
 
+    // Check if integration is actually changing
+    const currentIntegration = newConfig.public_transport_integration;
+    const isChanging = currentIntegration !== integration;
+
     if (integration) {
       newConfig.public_transport_integration = integration;
       
@@ -1186,10 +1190,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       };
       
       newConfig.public_transport_card = cardMapping[integration];
+      
+      // Clear all integration-specific settings when changing integration
+      if (isChanging) {
+        delete newConfig.public_transport_entities;
+        delete newConfig.hvv_max;
+        delete newConfig.hvv_show_time;
+        delete newConfig.hvv_show_title;
+        delete newConfig.hvv_title;
+      }
     } else {
       // Remove integration and card if integration is cleared
       delete newConfig.public_transport_integration;
       delete newConfig.public_transport_card;
+      // Also clear all related settings
+      delete newConfig.public_transport_entities;
+      delete newConfig.hvv_max;
+      delete newConfig.hvv_show_time;
+      delete newConfig.hvv_show_title;
+      delete newConfig.hvv_title;
     }
 
     this._config = newConfig;
