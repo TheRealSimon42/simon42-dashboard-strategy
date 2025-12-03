@@ -47,13 +47,35 @@ function filterEntitiesByIntegration(allEntities, integration) {
                !name.includes('hvv');
       
       case 'db_info':
-        // db_info erstellt Sensoren mit Verbindung/connection Keywords
-        return entityId.includes('verbindung') ||
-               entityId.includes('connection') ||
-               name.includes('verbindung') ||
-               name.includes('connection') ||
-               entityId.includes('db_info') ||
-               name.includes('db info');
+        // db_info erstellt Sensoren für öffentliche Verkehrsverbindungen
+        // Exclude network/router connections (Fritz!Box, etc.)
+        const dbInfoNetworkKeywords = ['fritz', 'router', 'network', 'wifi', 'ethernet', 'download', 'upload', 'throughput', 'wan', 'lan'];
+        const hasDbInfoNetworkKeyword = dbInfoNetworkKeywords.some(keyword => 
+          entityId.includes(keyword) || name.includes(keyword)
+        );
+        
+        if (hasDbInfoNetworkKeyword) {
+          return false;
+        }
+        
+        // db_info entities typically have 'db_info' in the entity_id
+        if (entityId.includes('db_info')) {
+          return true;
+        }
+        
+        // Or have 'verbindung'/'connection' combined with transport keywords
+        const dbInfoTransportKeywords = ['bahn', 'zug', 'train', 'bus', 'station', 'haltestelle', 'abfahrt', 'departure', 'ankunft', 'arrival'];
+        const hasDbInfoTransportKeyword = dbInfoTransportKeywords.some(keyword => 
+          entityId.includes(keyword) || name.includes(keyword)
+        );
+        
+        const hasDbInfoConnectionKeyword = entityId.includes('verbindung') ||
+                                           entityId.includes('connection') ||
+                                           name.includes('verbindung') ||
+                                           name.includes('connection');
+        
+        // Only match if it has connection keyword AND transport keyword (to exclude network connections)
+        return hasDbInfoConnectionKeyword && hasDbInfoTransportKeyword;
       
       default:
         // Fallback: allgemeine Transport-Keywords
