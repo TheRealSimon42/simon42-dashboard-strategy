@@ -426,17 +426,104 @@ export function createPublicTransportSection(config, hass) {
       cardConfig.showCardHeader = false;
     }
   } else if (cardType === 'db-info-card') {
-    // db_info integration doesn't have a specific card
-    // Use flex-table-card to display the sensors (as per db_info README)
+    // db_info integration uses flex-table-card with complex configuration
+    // Based on db_info README: https://homeassistant.phil-lipp.de/hacs/repository/1075370780
     cardConfig.type = 'custom:flex-table-card';
+    
     if (config.hvv_title) {
       cardConfig.title = config.hvv_title;
     }
-    // flex-table-card uses 'entities' with 'include' pattern for wildcards
-    // Limit entities if max is specified
-    if (config.hvv_max !== undefined && publicTransportEntities.length > config.hvv_max) {
-      cardConfig.entities = publicTransportEntities.slice(0, config.hvv_max);
+    
+    // Try to create a wildcard pattern from selected entities
+    // db_info entities follow pattern: sensor.*_verbindung_*
+    // If all entities share a common prefix, use wildcard pattern
+    let useWildcardPattern = false;
+    let wildcardPattern = null;
+    
+    if (publicTransportEntities.length > 0) {
+      // Extract common prefix (everything before the last _verbindung_ or _connection_)
+      const firstEntity = publicTransportEntities[0];
+      const verbindungIndex = firstEntity.indexOf('_verbindung_');
+      const connectionIndex = firstEntity.indexOf('_connection_');
+      const separatorIndex = verbindungIndex > -1 ? verbindungIndex : connectionIndex;
+      
+      if (separatorIndex > -1) {
+        const prefix = firstEntity.substring(0, separatorIndex);
+        // Check if all entities share this prefix
+        const allSharePrefix = publicTransportEntities.every(entity => 
+          entity.startsWith(prefix + '_verbindung_') || entity.startsWith(prefix + '_connection_')
+        );
+        
+        if (allSharePrefix) {
+          // Create wildcard pattern
+          const separator = verbindungIndex > -1 ? '_verbindung_' : '_connection_';
+          wildcardPattern = prefix + separator + '*';
+          useWildcardPattern = true;
+        }
+      }
     }
+    
+    // Configure entities - use wildcard pattern if available, otherwise list entities directly
+    if (useWildcardPattern && wildcardPattern) {
+      cardConfig.entities = {
+        include: wildcardPattern
+      };
+    } else {
+      // Use direct entity list (flex-table-card supports both)
+      cardConfig.entities = publicTransportEntities;
+    }
+    
+    // Add sorting by departure time
+    cardConfig.sort_by = 'sort_time';
+    
+    // Configure columns as per db_info README
+    cardConfig.columns = [
+      {
+        name: 'Start',
+        data: 'Departure'
+      },
+      {
+        name: 'Verbindung',
+        data: 'Name'
+      },
+      {
+        name: 'Abfahrt',
+        multi: [
+          ['attr', 'Departure Time'],
+          ['attr', 'Departure Time Real']
+        ],
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
+      },
+      {
+        name: 'Ankunft',
+        multi: [
+          ['attr', 'Arrival Time'],
+          ['attr', 'Arrival Time Real']
+        ],
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
+      },
+      {
+        name: 'sort_time',
+        multi: [
+          ['attr', 'Departure Time'],
+          ['attr', 'Departure Time Real']
+        ],
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}); } else { '<div style="color:green">' + timeReal.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}) + '</div>'; }`,
+        hidden: true
+      }
+    ];
+    
+    // Add CSS styling
+    cardConfig.css = {
+      'table+': 'padding: 1px 5px 16px 5px;'
+    };
+    
+    // Add card_mod styling for header
+    cardConfig.card_mod = {
+      style: {
+        '$': 'h1.card-header { font-size: 20px; padding-top: 3px; padding-bottom: 1px; }'
+      }
+    };
   }
   
   const cards = [
