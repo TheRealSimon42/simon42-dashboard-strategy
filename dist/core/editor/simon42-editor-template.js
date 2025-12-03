@@ -49,7 +49,7 @@ function filterEntitiesByIntegration(allEntities, integration) {
       case 'db_info':
         // db_info erstellt Sensoren für öffentliche Verkehrsverbindungen
         // Exclude network/router connections (Fritz!Box, etc.)
-        const dbInfoNetworkKeywords = ['fritz', 'router', 'network', 'wifi', 'ethernet', 'download', 'upload', 'throughput', 'wan', 'lan'];
+        const dbInfoNetworkKeywords = ['fritz', 'router', 'network', 'wifi', 'ethernet', 'download', 'upload', 'throughput', 'wan', 'lan', 'connection type', 'connectiontype'];
         const hasDbInfoNetworkKeyword = dbInfoNetworkKeywords.some(keyword => 
           entityId.includes(keyword) || name.includes(keyword)
         );
@@ -58,24 +58,21 @@ function filterEntitiesByIntegration(allEntities, integration) {
           return false;
         }
         
-        // db_info entities typically have 'db_info' in the entity_id
-        if (entityId.includes('db_info')) {
+        // db_info entities typically have 'db_info' in the entity_id or 'db info' in the name
+        if (entityId.includes('db_info') || name.includes('db info')) {
           return true;
         }
         
-        // Or have 'verbindung'/'connection' combined with transport keywords
-        const dbInfoTransportKeywords = ['bahn', 'zug', 'train', 'bus', 'station', 'haltestelle', 'abfahrt', 'departure', 'ankunft', 'arrival'];
-        const hasDbInfoTransportKeyword = dbInfoTransportKeywords.some(keyword => 
-          entityId.includes(keyword) || name.includes(keyword)
-        );
-        
+        // db_info creates sensors with 'verbindung' in the entity_id (e.g., sensor.*_verbindung_*)
+        // Check for verbindung/connection keywords but exclude network-related ones
         const hasDbInfoConnectionKeyword = entityId.includes('verbindung') ||
                                            entityId.includes('connection') ||
                                            name.includes('verbindung') ||
                                            name.includes('connection');
         
-        // Only match if it has connection keyword AND transport keyword (to exclude network connections)
-        return hasDbInfoConnectionKeyword && hasDbInfoTransportKeyword;
+        // If it has connection keyword and doesn't have network keywords, include it
+        // This will match db_info entities but exclude Fritz!Box network connections
+        return hasDbInfoConnectionKeyword;
       
       default:
         // Fallback: allgemeine Transport-Keywords
