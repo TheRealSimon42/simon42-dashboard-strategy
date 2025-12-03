@@ -108,7 +108,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const cardElementNames = {
       'hvv-card': 'hvv-card',
       'ha-departures-card': 'departures-card', // ha-departures-card uses 'departures-card' as element name
-      'db-info-card': 'flex-table-card' // db_info uses flex-table-card (generic card, always available)
+      'db-info-card': 'flex-table-card' // db_info uses flex-table-card
     };
     
     const cardElementName = cardElementNames[card];
@@ -116,17 +116,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return false;
     }
     
-    // For flex-table-card (db_info), it's a generic card that should always be available
-    // but we can't reliably check for it, so we'll assume it's available
-    if (card === 'db-info-card') {
-      return true; // flex-table-card is a generic card, assume available
-    }
-    
     // Prüfe ob die Card als custom element registriert ist
     // For ha-departures-card, check for 'departures-card' element or 'custom:departures-card' type
     const cardTypeMap = {
       'ha-departures-card': 'custom:departures-card',
-      'hvv-card': 'custom:hvv-card'
+      'hvv-card': 'custom:hvv-card',
+      'db-info-card': 'custom:flex-table-card' // db_info uses flex-table-card
     };
     const cardType = cardTypeMap[card] || `custom:${card}`;
     
@@ -162,9 +157,17 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Prüfe ob die gewählte Integration/Card verfügbar ist
     let hasPublicTransportDeps = false;
-    if (publicTransportIntegration && publicTransportCard) {
+    // Auto-determine card based on integration if not set (for dependency check)
+    const cardMapping = {
+      'hvv': 'hvv-card',
+      'ha-departures': 'ha-departures-card',
+      'db_info': 'db-info-card'
+    };
+    const cardToCheck = publicTransportCard || (publicTransportIntegration ? cardMapping[publicTransportIntegration] : null);
+    
+    if (publicTransportIntegration && cardToCheck) {
       try {
-        hasPublicTransportDeps = this._checkPublicTransportDependencies(publicTransportIntegration, publicTransportCard);
+        hasPublicTransportDeps = this._checkPublicTransportDependencies(publicTransportIntegration, cardToCheck);
       } catch (e) {
         console.warn('Error checking Public Transport dependencies:', e);
         hasPublicTransportDeps = false;

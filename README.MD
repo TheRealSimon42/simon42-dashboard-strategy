@@ -344,7 +344,7 @@ strategy:
 | `show_public_transport` | boolean | `false` | Zeigt Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht |
 | `public_transport_entities` | array | `[]` | Array von Entity-IDs für Abfahrtszeiten (z.B. `['sensor.hvv_departures']`) |
 | `public_transport_integration` | string | `'db_info'` | Integration: `'hvv'`, `'ha-departures'` oder `'db_info'` |
-| `public_transport_card` | string | `'db-info-card'` | Card-Typ: `'hvv-card'`, `'ha-departures-card'` oder `'db-info-card'` |
+| `public_transport_card` | string | `'flex-table-card'` | Card-Typ: `'hvv-card'`, `'ha-departures-card'` oder `'flex-table-card'` (für `db_info`) |
 | `hvv_max` | number | `10` | Maximale Anzahl der angezeigten Abfahrten |
 | `hvv_show_time` | boolean | `true` | Zeigt die Zeit der Abfahrten an (nur für hvv-card) |
 | `hvv_show_title` | boolean | `true` | Zeigt den Titel der Card an (nur für hvv-card) |
@@ -844,7 +844,7 @@ strategy:
   type: custom:simon42-dashboard
   show_public_transport: true
   public_transport_integration: db_info
-  public_transport_card: db-info-card
+  public_transport_card: flex-table-card
   public_transport_entities:
     - sensor.db_info_departures
   hvv_max: 10
@@ -852,8 +852,9 @@ strategy:
 ```
 
 **Voraussetzungen:**
-- Die entsprechende Card muss installiert sein (`hvv-card`, `ha-departures-card` oder `db-info-card`)
+- Die entsprechende Card muss installiert sein (`hvv-card`, `ha-departures-card` oder `flex-table-card` für `db_info`)
 - Die entsprechende Integration muss installiert und konfiguriert sein
+- Der Editor prüft automatisch, ob die benötigte Card verfügbar ist
 - Entities müssen Abfahrtszeiten bereitstellen
 - Der Editor filtert automatisch relevante Entities (sensor/button mit Transport-Keywords)
 
