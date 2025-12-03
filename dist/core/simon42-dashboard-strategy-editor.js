@@ -1112,6 +1112,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+    // Re-render to show/hide integration selection
+    this._render();
   }
 
   _attachPublicTransportIntegrationListeners() {
