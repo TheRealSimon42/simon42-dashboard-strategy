@@ -103,10 +103,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _checkPublicTransportDependencies(integration, card) {
     // Prüfe ob die entsprechende Card verfügbar ist
+    // Note: The card parameter is the internal card identifier (e.g., 'ha-departures-card')
+    // but the actual card element name may differ (e.g., 'departures-card' for ha-departures-card)
     const cardElementNames = {
       'hvv-card': 'hvv-card',
-      'ha-departures-card': 'ha-departures-card',
-      'db-info-card': 'db-info-card'
+      'ha-departures-card': 'departures-card', // ha-departures-card uses 'departures-card' as element name
+      'db-info-card': 'flex-table-card' // db_info uses flex-table-card (generic card, always available)
     };
     
     const cardElementName = cardElementNames[card];
@@ -114,9 +116,22 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return false;
     }
     
+    // For flex-table-card (db_info), it's a generic card that should always be available
+    // but we can't reliably check for it, so we'll assume it's available
+    if (card === 'db-info-card') {
+      return true; // flex-table-card is a generic card, assume available
+    }
+    
     // Prüfe ob die Card als custom element registriert ist
+    // For ha-departures-card, check for 'departures-card' element or 'custom:departures-card' type
+    const cardTypeMap = {
+      'ha-departures-card': 'custom:departures-card',
+      'hvv-card': 'custom:hvv-card'
+    };
+    const cardType = cardTypeMap[card] || `custom:${card}`;
+    
     const hasCard = customElements.get(cardElementName) !== undefined
-                    || window.customCards?.some(c => c.type === `custom:${card}`)
+                    || window.customCards?.some(c => c.type === cardType)
                     || document.querySelector(cardElementName) !== null;
     
     return hasCard;

@@ -375,46 +375,58 @@ export function createPublicTransportSection(config, hass) {
   const validCombinations = {
     'hvv': ['hvv-card'],
     'ha-departures': ['ha-departures-card'],
-    'db_info': ['db-info-card']
+    'db_info': ['db-info-card'] // Note: db_info uses flex-table-card, but we keep this for UI consistency
   };
-  
+
   const validCards = validCombinations[integration] || [];
   if (!validCards.includes(cardType)) {
     // Invalid combination, don't show section
     console.warn(`[simon42-dashboard] Invalid public transport card/integration combination: ${cardType} with ${integration}`);
     return null;
   }
-  
+
   // Build card configuration based on card type
+  // Note: We only check cardType, not integration, since cardType determines which card is rendered
   let cardConfig = {
-    type: `custom:${cardType}`,
     entities: publicTransportEntities
   };
-  
-  // Add integration-specific options
-  if (cardType === 'hvv-card' || integration === 'hvv') {
+
+  // Set card type and add card-specific options
+  if (cardType === 'hvv-card') {
     // HVV card specific options
+    cardConfig.type = 'custom:hvv-card';
     cardConfig.max = config.hvv_max !== undefined ? config.hvv_max : 10;
     cardConfig.show_time = config.hvv_show_time !== undefined ? config.hvv_show_time : true;
     cardConfig.show_title = config.hvv_show_title !== undefined ? config.hvv_show_title : true;
     cardConfig.title = config.hvv_title || 'HVV';
-  } else if (cardType === 'ha-departures-card' || integration === 'ha-departures') {
-    // ha-departures card specific options (if needed)
-    // Add any ha-departures specific config here
+  } else if (cardType === 'ha-departures-card') {
+    // ha-departures-card uses 'departures-card' as the type
+    // Based on ha-departures-card README: type is 'custom:departures-card'
+    cardConfig.type = 'custom:departures-card';
+    // ha-departures-card uses 'departuresToShow' instead of 'max' (max 5 departures)
     if (config.hvv_max !== undefined) {
-      cardConfig.max = config.hvv_max;
+      cardConfig.departuresToShow = Math.min(config.hvv_max, 5); // Limit to max 5 as per card docs
+    } else {
+      cardConfig.departuresToShow = 1; // Default is 1
     }
     if (config.hvv_title) {
       cardConfig.title = config.hvv_title;
     }
-  } else if (cardType === 'db-info-card' || integration === 'db_info') {
-    // db_info card specific options (if needed)
-    // Add any db_info specific config here
-    if (config.hvv_max !== undefined) {
-      cardConfig.max = config.hvv_max;
+    // Optional: showCardHeader defaults to true, but we can respect hvv_show_title if needed
+    if (config.hvv_show_title === false) {
+      cardConfig.showCardHeader = false;
     }
+  } else if (cardType === 'db-info-card') {
+    // db_info integration doesn't have a specific card
+    // Use flex-table-card to display the sensors (as per db_info README)
+    cardConfig.type = 'custom:flex-table-card';
     if (config.hvv_title) {
       cardConfig.title = config.hvv_title;
+    }
+    // flex-table-card uses 'entities' with 'include' pattern for wildcards
+    // Limit entities if max is specified
+    if (config.hvv_max !== undefined && publicTransportEntities.length > config.hvv_max) {
+      cardConfig.entities = publicTransportEntities.slice(0, config.hvv_max);
     }
   }
   
