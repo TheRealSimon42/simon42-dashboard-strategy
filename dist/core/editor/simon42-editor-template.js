@@ -194,7 +194,7 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = true, hvvShowTitle = true, hvvTitle = 'HVV', entityNamePatterns = [] }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', entityNamePatterns = [] }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -433,7 +433,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="hvv-show-time" 
-                ${hvvShowTime !== false ? 'checked' : ''}
+                ${hvvShowTime === true ? 'checked' : ''}
               />
               <label for="hvv-show-time">${t('showTime')}</label>
             </div>
@@ -441,7 +441,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="hvv-show-title" 
-                ${hvvShowTitle !== false ? 'checked' : ''}
+                ${hvvShowTitle === true ? 'checked' : ''}
               />
               <label for="hvv-show-title">${t('showTitle')}</label>
             </div>

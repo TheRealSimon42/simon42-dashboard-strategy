@@ -405,8 +405,8 @@ export function createPublicTransportSection(config, hass) {
     // HVV card specific options
     cardConfig.type = 'custom:hvv-card';
     cardConfig.max = config.hvv_max !== undefined ? config.hvv_max : 10;
-    cardConfig.show_time = config.hvv_show_time !== undefined ? config.hvv_show_time : true;
-    cardConfig.show_title = config.hvv_show_title !== undefined ? config.hvv_show_title : true;
+    cardConfig.show_time = config.hvv_show_time !== undefined ? config.hvv_show_time : false;
+    cardConfig.show_title = config.hvv_show_title !== undefined ? config.hvv_show_title : false;
     cardConfig.title = config.hvv_title || 'HVV';
   } else if (cardType === 'ha-departures-card') {
     // ha-departures-card uses 'departures-card' as the type

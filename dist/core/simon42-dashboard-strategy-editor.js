@@ -174,8 +174,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       }
     }
     const hvvMax = this._config.hvv_max !== undefined ? this._config.hvv_max : 10;
-    const hvvShowTime = this._config.hvv_show_time !== false;
-    const hvvShowTitle = this._config.hvv_show_title !== false;
+    const hvvShowTime = this._config.hvv_show_time === true;
+    const hvvShowTitle = this._config.hvv_show_title === true;
     const hvvTitle = this._config.hvv_title || 'HVV';
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';

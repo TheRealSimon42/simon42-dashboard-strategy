@@ -346,8 +346,8 @@ strategy:
 | `public_transport_integration` | string | `'db_info'` | Integration: `'hvv'`, `'ha-departures'` oder `'db_info'` |
 | `public_transport_card` | string | `'flex-table-card'` | Card-Typ: `'hvv-card'`, `'ha-departures-card'` oder `'flex-table-card'` (für `db_info`) |
 | `hvv_max` | number | `10` | Maximale Anzahl der angezeigten Abfahrten |
-| `hvv_show_time` | boolean | `true` | Zeigt die Zeit der Abfahrten an (nur für hvv-card) |
-| `hvv_show_title` | boolean | `true` | Zeigt den Titel der Card an (nur für hvv-card) |
+| `hvv_show_time` | boolean | `false` | Zeigt die Zeit der Abfahrten an (nur für hvv-card) |
+| `hvv_show_title` | boolean | `false` | Zeigt den Titel der Card an (nur für hvv-card) |
 | `hvv_title` | string | `'HVV'` | Titel der Public Transport Card |
 | `entity_name_patterns` | array | `[]` | Array von Regex-Patterns zum Transformieren von Entity-Namen (siehe unten) |
 | `show_better_thermostat` | boolean | `false` | Aktiviert Better Thermostat UI Cards in den Räumen |
