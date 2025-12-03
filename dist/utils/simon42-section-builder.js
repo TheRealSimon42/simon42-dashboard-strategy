@@ -396,12 +396,12 @@ export function createPublicTransportSection(config, hass) {
 
   // Build card configuration based on card type
   // Note: We only check cardType, not integration, since cardType determines which card is rendered
-  let cardConfig = {
-    entities: publicTransportEntities
-  };
+  let cardConfig = {};
 
   // Set card type and add card-specific options
   if (cardType === 'hvv-card') {
+    // HVV card uses entities array
+    cardConfig.entities = publicTransportEntities;
     // HVV card specific options
     cardConfig.type = 'custom:hvv-card';
     cardConfig.max = config.hvv_max !== undefined ? config.hvv_max : 10;
@@ -412,6 +412,8 @@ export function createPublicTransportSection(config, hass) {
     // ha-departures-card uses 'departures-card' as the type
     // Based on ha-departures-card README: type is 'custom:departures-card'
     cardConfig.type = 'custom:departures-card';
+    // ha-departures-card uses entities array
+    cardConfig.entities = publicTransportEntities;
     // ha-departures-card uses 'departuresToShow' instead of 'max' (max 5 departures)
     if (config.hvv_max !== undefined) {
       cardConfig.departuresToShow = Math.min(config.hvv_max, 5); // Limit to max 5 as per card docs
@@ -481,31 +483,30 @@ export function createPublicTransportSection(config, hass) {
     const locale = currentLang === 'de' ? 'de-DE' : 'en-US';
     
     // Configure columns as per db_info README
-    // Column names are in English (default language)
     cardConfig.columns = [
       {
-        name: 'Start',
+        name: t('publicTransportColumnStart'),
         data: 'Departure'
       },
       {
-        name: 'Connection',
+        name: t('publicTransportColumnConnection'),
         data: 'Name'
       },
       {
-        name: 'Departure',
+        name: t('publicTransportColumnDeparture'),
         multi: [
           ['attr', 'Departure Time'],
           ['attr', 'Departure Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { return '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
       },
       {
-        name: 'Arrival',
+        name: t('publicTransportColumnArrival'),
         multi: [
           ['attr', 'Arrival Time'],
           ['attr', 'Arrival Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else if (time >= timeReal) { return '<div style="color:green">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); if (delayMinutes > 4) { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:red">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } else { return '<s><div style="color:grey">' + time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div></s><div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; } }`
       },
       {
         name: 'sort_time',
@@ -513,17 +514,17 @@ export function createPublicTransportSection(config, hass) {
           ['attr', 'Departure Time'],
           ['attr', 'Departure Time Real']
         ],
-        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { '<div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; }`,
+        modify: `var time = new Date(x.split(" ")[0]); var timeReal = new Date(x.split(" ")[1]); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } else { return '<div style="color:green">' + timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}) + '</div>'; }`,
         hidden: true
       }
     ];
     
-    // Add CSS styling
+    // Add CSS styling (as per README: css: table+: "padding: 1px 5px 16px 5px;")
     cardConfig.css = {
       'table+': 'padding: 1px 5px 16px 5px;'
     };
     
-    // Add card_mod styling for header
+    // Add card_mod styling for header (as per README)
     cardConfig.card_mod = {
       style: {
         '$': 'h1.card-header { font-size: 20px; padding-top: 3px; padding-bottom: 1px; }'
