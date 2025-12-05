@@ -360,7 +360,13 @@ export function createWeatherSection(weatherEntity, showWeather, config = {}) {
 export function createPublicTransportSection(config, hass) {
   const showPublicTransport = config.show_public_transport === true;
   let publicTransportEntities = (config.public_transport_entities || [])
-    .filter(entityId => hass.states[entityId] !== undefined);
+    .filter(entityId => {
+      const state = hass.states[entityId];
+      // Filter out entities that don't exist or are unavailable/unknown
+      return state !== undefined && 
+             state.state !== 'unavailable' && 
+             state.state !== 'unknown';
+    });
 
   if (!showPublicTransport || publicTransportEntities.length === 0) {
     return null;
