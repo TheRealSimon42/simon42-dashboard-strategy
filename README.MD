@@ -82,7 +82,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Set-basierte Lookups** - Schnelle Entity-Suche
 - **Lazy Loading** - Entities werden erst bei Bedarf geladen
 
-### 🔌 Optionale Integrationen
+### 🔌 Anpassbar an deine Integrationen
 - **Search Card Support** - Integration für custom search cards
 - **Alarm Panel** - Unterstützung für Alarmanlagen
 - **Reolink Kameras** - Erweiterte Kamera-Integration
