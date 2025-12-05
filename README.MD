@@ -833,10 +833,17 @@ strategy:
   public_transport_integration: ha-departures
   public_transport_card: ha-departures-card
   public_transport_entities:
-    - sensor.furth_hauptbahnhof_bus_179_furth_sud
-  hvv_max: 10
+    - sensor.nurnberg_frankenstr_bus_45_ziegelstein_u_mogeldorf
+    - sensor.nurnberg_frankenstr_bus_51_k_schwarzenlohe_nord
+  hvv_max: 3  # Maximal 5 Abfahrten (wird automatisch begrenzt)
+  hvv_show_title: true
   hvv_title: 'Abfahrten'
 ```
+
+**Hinweise für ha-departures:**
+- Der Editor erkennt automatisch ha-departures Entities anhand ihrer Attribute (`line_name`, `transport`, `planned_departure_time`, `direction`)
+- Die ha-departures-card unterstützt maximal 5 Abfahrten pro Entity (wird automatisch begrenzt)
+- Entities werden auch erkannt, wenn sie keine "departure" oder "abfahrt" Keywords im Namen haben
 
 **db_info (Deutsche Bahn):**
 ```yaml
@@ -856,7 +863,8 @@ strategy:
 - Die entsprechende Integration muss installiert und konfiguriert sein
 - Der Editor prüft automatisch, ob die benötigte Card verfügbar ist
 - Entities müssen Abfahrtszeiten bereitstellen
-- Der Editor filtert automatisch relevante Entities (sensor/button mit Transport-Keywords)
+- **ha-departures:** Der Editor erkennt Entities automatisch anhand ihrer Attribute (`line_name`, `transport`, `planned_departure_time`, `direction`) - Keywords im Namen sind nicht erforderlich
+- **hvv/db_info:** Der Editor filtert automatisch relevante Entities (sensor/button mit Transport-Keywords)
 
 ### Batch-Aktionen
 

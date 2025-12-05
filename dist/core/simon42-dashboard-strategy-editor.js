@@ -125,11 +125,38 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     };
     const cardType = cardTypeMap[card] || `custom:${card}`;
     
-    const hasCard = customElements.get(cardElementName) !== undefined
-                    || window.customCards?.some(c => c.type === cardType)
-                    || document.querySelector(cardElementName) !== null;
+    // Prüfe auf verschiedene Arten, ob die Card verfügbar ist
+    // 1. Custom Element Registry - prüfe direkt auf 'departures-card' für ha-departures
+    if (card === 'ha-departures-card') {
+      // Für ha-departures-card: prüfe direkt auf 'departures-card' (nicht 'ha-departures-card')
+      if (customElements.get('departures-card') !== undefined) {
+        return true;
+      }
+    } else {
+      // Für andere Cards: normale Prüfung
+      if (customElements.get(cardElementName) !== undefined) {
+        return true;
+      }
+    }
     
-    return hasCard;
+    // 2. window.customCards Array (für HACS Cards)
+    if (window.customCards && Array.isArray(window.customCards)) {
+      // Prüfe nach cardType (z.B. 'custom:departures-card')
+      if (window.customCards.some(c => c.type === cardType)) {
+        return true;
+      }
+      // Auch nach Element-Name suchen
+      if (window.customCards.some(c => c.name === cardElementName)) {
+        return true;
+      }
+    }
+    
+    // 3. DOM Query (falls Card bereits im DOM ist)
+    if (document.querySelector(cardElementName)) {
+      return true;
+    }
+    
+    return false;
   }
 
   _render() {
@@ -254,7 +281,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         hvvShowTime,
         hvvShowTitle,
         hvvTitle,
-        entityNamePatterns: this._config.entity_name_patterns || []
+        entityNamePatterns: this._config.entity_name_patterns || [],
+        hass: this._hass
       })}
     `;
 

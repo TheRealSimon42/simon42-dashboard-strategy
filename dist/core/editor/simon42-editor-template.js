@@ -9,9 +9,10 @@ import { t } from '../../utils/simon42-i18n.js';
  * Filtert Entities basierend auf der ausgewählten Integration
  * @param {Array} allEntities - Alle verfügbaren Entities
  * @param {string} integration - Die ausgewählte Integration ('hvv', 'ha-departures', 'db_info')
+ * @param {Object} hass - Home Assistant Objekt (optional, für Attribute-Checks)
  * @returns {Array} Gefilterte Entities
  */
-function filterEntitiesByIntegration(allEntities, integration) {
+function filterEntitiesByIntegration(allEntities, integration, hass = null) {
   if (!integration || !allEntities) {
     return [];
   }
@@ -37,8 +38,29 @@ function filterEntitiesByIntegration(allEntities, integration) {
                name.includes('abfahrt');
       
       case 'ha-departures':
-        // ha-departures erstellt Sensoren mit departure/abfahrt Keywords
-        // Aber nicht HVV-spezifisch
+        // ha-departures erstellt Sensoren mit spezifischen Attributen
+        // Prüfe zuerst auf Attribute (genauer), dann auf Keywords (Fallback)
+        if (hass && hass.states && hass.states[entity.entity_id]) {
+          const state = hass.states[entity.entity_id];
+          const attrs = state.attributes || {};
+          
+          // Prüfe auf ha-departures-spezifische Attribute
+          // Diese Attribute sind charakteristisch für ha-departures Entities
+          const hasLineName = attrs.line_name !== undefined;
+          const hasTransport = attrs.transport !== undefined;
+          const hasPlannedDepartureTime = attrs.planned_departure_time !== undefined;
+          const hasDirection = attrs.direction !== undefined;
+          
+          // Wenn mehrere charakteristische Attribute vorhanden sind, ist es wahrscheinlich ha-departures
+          if ((hasLineName || hasTransport) && (hasPlannedDepartureTime || hasDirection)) {
+            // Zusätzlich prüfen, dass es nicht HVV ist
+            if (!entityId.includes('hvv') && !name.includes('hvv')) {
+              return true;
+            }
+          }
+        }
+        
+        // Fallback: Keyword-basierte Erkennung (für ältere oder andere Formate)
         return (entityId.includes('departure') || 
                 entityId.includes('abfahrt') ||
                 name.includes('departure') || 
@@ -194,7 +216,7 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', entityNamePatterns = [] }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', entityNamePatterns = [], hass = null }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -403,7 +425,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <div style="display: flex; gap: 8px; align-items: flex-start;">
             <select id="public-transport-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
               <option value="">${t('selectEntity')}</option>
-              ${filterEntitiesByIntegration(allEntities || [], publicTransportIntegration)
+              ${filterEntitiesByIntegration(allEntities || [], publicTransportIntegration, hass)
                 .map(entity => `
                   <option value="${entity.entity_id}">${entity.name}</option>
                 `).join('')}
@@ -452,6 +474,42 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
                 id="hvv-title" 
                 value="${hvvTitle || 'HVV'}" 
                 placeholder="HVV"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
+          </div>
+          ` : ''}
+          ${publicTransportIntegration === 'ha-departures' && hasPublicTransportDeps ? `
+          <div style="margin-top: 16px;">
+            <div class="form-row">
+              <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
+              <input 
+                type="number" 
+                id="hvv-max" 
+                value="${hvvMax !== undefined ? hvvMax : 1}" 
+                min="1" 
+                max="5"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
+            <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--secondary-text-color);">
+              ${t('haDeparturesMaxNote')}
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="hvv-show-title" 
+                ${hvvShowTitle !== false ? 'checked' : ''}
+              />
+              <label for="hvv-show-title">${t('showTitle')}</label>
+            </div>
+            <div class="form-row">
+              <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">${t('title')}</label>
+              <input 
+                type="text" 
+                id="hvv-title" 
+                value="${hvvTitle || ''}" 
+                placeholder=""
                 style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
               />
             </div>
