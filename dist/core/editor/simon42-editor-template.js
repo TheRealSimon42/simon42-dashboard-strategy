@@ -26,10 +26,43 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
       return false;
     }
     
-    // Integration-spezifische Filter
+    // Integration-spezifische Filter basierend auf Attribut-Struktur
     switch (integration) {
       case 'hvv':
-        // HVV-spezifische Keywords
+        // HVV-Entities haben charakteristische Attribute:
+        // - 'next' Array mit departure-Objekten
+        // - 'attribution' mit "hvv.de"
+        // - 'device_class: timestamp'
+        // - Top-level: 'line', 'origin', 'direction', 'type', 'id'
+        if (hass && hass.states && hass.states[entity.entity_id]) {
+          const state = hass.states[entity.entity_id];
+          const attrs = state.attributes || {};
+          
+          // Prüfe auf HVV-spezifische Attribute-Struktur
+          const hasNextArray = Array.isArray(attrs.next);
+          const hasHvvAttribution = attrs.attribution && 
+                                   (attrs.attribution.includes('hvv.de') || 
+                                    attrs.attribution.includes('hvv'));
+          const hasDeviceClassTimestamp = attrs.device_class === 'timestamp';
+          const hasHvvTopLevelAttrs = attrs.line !== undefined && 
+                                     attrs.origin !== undefined && 
+                                     attrs.direction !== undefined &&
+                                     attrs.type !== undefined &&
+                                     attrs.id !== undefined;
+          
+          // HVV-Entity wenn: next-Array vorhanden ODER (attribution mit hvv.de UND device_class timestamp)
+          if (hasNextArray || (hasHvvAttribution && hasDeviceClassTimestamp)) {
+            return true;
+          }
+          
+          // Auch wenn top-level HVV-Attribute vorhanden sind (aber kein next-Array)
+          if (hasHvvTopLevelAttrs && !attrs.line_name) {
+            // line_name würde auf ha-departures hinweisen
+            return true;
+          }
+        }
+        
+        // Fallback: Keyword-basierte Erkennung
         return entityId.includes('hvv') || 
                name.includes('hvv') ||
                entityId.includes('departure') || 
@@ -38,40 +71,102 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
                name.includes('abfahrt');
       
       case 'ha-departures':
-        // ha-departures erstellt Sensoren mit spezifischen Attributen
-        // Prüfe zuerst auf Attribute (genauer), dann auf Keywords (Fallback)
+        // ha-departures-Entities haben charakteristische Attribute:
+        // - 'line_name' (nicht 'line')
+        // - 'line_id' (nicht 'id')
+        // - 'transport' (nicht 'type')
+        // - 'data_provider'
+        // - 'planned_departure_time' und 'estimated_departure_time' (nicht in 'next' Array)
+        // - 'latitude', 'longitude'
+        // KEIN 'next' Array, KEIN 'attribution' mit hvv.de
+        
         if (hass && hass.states && hass.states[entity.entity_id]) {
           const state = hass.states[entity.entity_id];
           const attrs = state.attributes || {};
           
-          // Prüfe auf ha-departures-spezifische Attribute
-          // Diese Attribute sind charakteristisch für ha-departures Entities
-          const hasLineName = attrs.line_name !== undefined;
-          const hasTransport = attrs.transport !== undefined;
-          const hasPlannedDepartureTime = attrs.planned_departure_time !== undefined;
-          const hasDirection = attrs.direction !== undefined;
+          // Explizit HVV ausschließen: Hat 'next' Array oder hvv.de attribution
+          const hasNextArray = Array.isArray(attrs.next);
+          const hasHvvAttribution = attrs.attribution && 
+                                   (attrs.attribution.includes('hvv.de') || 
+                                    attrs.attribution.includes('hvv'));
           
-          // Wenn mehrere charakteristische Attribute vorhanden sind, ist es wahrscheinlich ha-departures
-          if ((hasLineName || hasTransport) && (hasPlannedDepartureTime || hasDirection)) {
-            // Zusätzlich prüfen, dass es nicht HVV ist
-            if (!entityId.includes('hvv') && !name.includes('hvv')) {
-              return true;
-            }
+          if (hasNextArray || hasHvvAttribution) {
+            return false;
+          }
+          
+          // Explizit db_info ausschließen: Hat Attribute mit Leerzeichen im Namen
+          const hasDbInfoAttrs = attrs['Departure Time'] !== undefined || 
+                                attrs['Arrival Time'] !== undefined ||
+                                attrs['Departure Time Real'] !== undefined;
+          
+          if (hasDbInfoAttrs) {
+            return false;
+          }
+          
+          // Prüfe auf ha-departures-spezifische Attribute-Struktur
+          const hasLineName = attrs.line_name !== undefined;
+          const hasLineId = attrs.line_id !== undefined;
+          const hasTransport = attrs.transport !== undefined;
+          const hasDataProvider = attrs.data_provider !== undefined;
+          const hasPlannedDepartureTime = attrs.planned_departure_time !== undefined;
+          const hasLatitude = attrs.latitude !== undefined;
+          const hasLongitude = attrs.longitude !== undefined;
+          
+          // ha-departures: Hat line_name UND (line_id ODER transport) UND planned_departure_time
+          // ODER: Hat data_provider UND planned_departure_time
+          if (hasLineName && hasPlannedDepartureTime && (hasLineId || hasTransport || hasDataProvider)) {
+            return true;
+          }
+          
+          // Auch wenn latitude/longitude vorhanden sind (typisch für ha-departures)
+          if (hasLatitude && hasLongitude && hasPlannedDepartureTime && !hasNextArray) {
+            return true;
           }
         }
         
-        // Fallback: Keyword-basierte Erkennung (für ältere oder andere Formate)
+        // Fallback: Keyword-basierte Erkennung, aber nur wenn nicht HVV
+        if (entityId.includes('hvv') || name.includes('hvv')) {
+          return false;
+        }
+        
         return (entityId.includes('departure') || 
                 entityId.includes('abfahrt') ||
                 name.includes('departure') || 
-                name.includes('abfahrt')) &&
-               !entityId.includes('hvv') &&
-               !name.includes('hvv');
+                name.includes('abfahrt'));
       
       case 'db_info':
-        // db_info erstellt Sensoren für öffentliche Verkehrsverbindungen
+        // db_info-Entities haben charakteristische Attribute:
+        // - Attribute mit Leerzeichen im Namen: 'Departure Time', 'Arrival Time', etc.
+        // - 'Departure', 'Arrival', 'Duration', 'Name', 'Transfers', 'Problems'
+        // - Friendly name enthält "→" und "Verbindung"
+        
+        if (hass && hass.states && hass.states[entity.entity_id]) {
+          const state = hass.states[entity.entity_id];
+          const attrs = state.attributes || {};
+          
+          // Prüfe auf db_info-spezifische Attribute-Struktur (Attribute mit Leerzeichen)
+          const hasDbInfoAttrs = attrs['Departure Time'] !== undefined || 
+                                attrs['Arrival Time'] !== undefined ||
+                                attrs['Departure Time Real'] !== undefined ||
+                                attrs['Arrival Time Real'] !== undefined ||
+                                attrs['Departure'] !== undefined ||
+                                attrs['Arrival'] !== undefined ||
+                                attrs['Duration'] !== undefined ||
+                                attrs['Name'] !== undefined ||
+                                attrs['Transfers'] !== undefined;
+          
+          if (hasDbInfoAttrs) {
+            return true;
+          }
+          
+          // Prüfe friendly_name für "→" und "Verbindung"
+          const friendlyName = attrs.friendly_name || name || '';
+          if (friendlyName.includes('→') && friendlyName.includes('Verbindung')) {
+            return true;
+          }
+        }
+        
         // Exclude network/router connections (Fritz!Box, etc.)
-        // Berücksichtige sowohl englische als auch deutsche Begriffe
         const dbInfoNetworkKeywords = [
           'fritz', 'router', 'network', 'netzwerk',
           'wifi', 'wlan',
@@ -98,12 +193,11 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
         // db_info creates sensors with 'verbindung' in the entity_id (e.g., sensor.*_verbindung_*)
         // Check for verbindung/connection keywords but exclude network-related ones
         const hasDbInfoConnectionKeyword = entityId.includes('verbindung') ||
-                                           name.includes('verbindung') ||
-                                           entityId.includes('connection') ||
-                                           name.includes('connection');
+                                         name.includes('verbindung') ||
+                                         entityId.includes('connection') ||
+                                         name.includes('connection');
         
         // If it has verbindung/connection keyword and doesn't have network keywords, include it
-        // This will match all db_info entities (which all have "verbindung") but exclude Fritz!Box network connections
         return hasDbInfoConnectionKeyword;
       
       default:
