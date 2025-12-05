@@ -15,7 +15,7 @@ Eine modulare und hochkonfigurierbare Dashboard-Strategy für Home Assistant, di
 - [🏷️ Label-System](#️-label-system)
 - [📊 Spezialisierte Views](#-spezialisierte-views)
 - [🎯 Erweiterte Features](#-erweiterte-features)
-- [🔌 Optionale Integrationen](#-optionale-integrationen)
+- [🔌 Optionale Integrationen](#optionale-integrationen)
 - [🤝 Contributing](#-contributing)
 - [📋 Roadmap & Geplante Features](#-roadmap--geplante-features)
 - [🐛 Bekannte Probleme & Limitationen](#-bekannte-probleme--limitationen)
