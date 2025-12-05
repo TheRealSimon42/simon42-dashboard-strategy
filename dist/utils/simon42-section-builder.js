@@ -532,6 +532,21 @@ export function createPublicTransportSection(config, hass) {
     const currentLang = getLanguage();
     const locale = currentLang === 'de' ? 'de-DE' : 'en-US';
     
+    // Check user's time format preference from Home Assistant
+    // hass.locale.time_format can be 'language' (uses locale default), '12', or '24'
+    // hass.localize is a function that respects user preferences
+    // Default to 24-hour format (hour12: false) if preference is '24' or not specified
+    // Use 12-hour format (hour12: true) only if preference is explicitly '12'
+    let hour12 = false; // Default to 24-hour format
+    if (hass?.locale?.time_format === '12') {
+      hour12 = true;
+    } else if (hass?.locale?.time_format === 'language') {
+      // If set to 'language', check if locale typically uses 12-hour format
+      // Most European locales (de-DE, etc.) use 24-hour, US uses 12-hour
+      hour12 = locale === 'en-US';
+    }
+    // Otherwise default to 24-hour format (hour12: false)
+    
     // Format modify functions as direct JavaScript expressions
     // The modify property expects a string that will be evaluated as JavaScript code
     // x is automatically available and represents the cell value
@@ -540,10 +555,11 @@ export function createPublicTransportSection(config, hass) {
     // x will be a string with both values joined by space (default multi_delimiter)
     // db_info uses ISO format: "2025-12-03T22:49:00 2025-12-03T22:49:00" or "2025-12-03T22:51:00 null"
     // Format time with delay handling - parse ISO datetime strings, handle null values
-    const formatTimeWithDelayStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return '-'; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr || timeStr === 'null' || timeStr === 'undefined') { return '-'; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return '-'; } var timeFormatted = time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); if (!timeRealStr || timeRealStr === 'null' || timeRealStr === 'undefined') { return timeFormatted; } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return timeFormatted; } if (time >= timeReal) { return '<div style="color:green">' + timeFormatted + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); var timeRealFormatted = timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); if (delayMinutes > 4) { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:red">' + timeRealFormatted + '</div>'; } else { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:green">' + timeRealFormatted + '</div>'; } } } catch(e) { return '-'; } })()`;
+    // Use hour12 option to respect user's time format preference (false = 24-hour, true = 12-hour)
+    const formatTimeWithDelayStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return '-'; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr || timeStr === 'null' || timeStr === 'undefined') { return '-'; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return '-'; } var timeFormatted = time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); if (!timeRealStr || timeRealStr === 'null' || timeRealStr === 'undefined') { return timeFormatted; } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return timeFormatted; } if (time >= timeReal) { return '<div style="color:green">' + timeFormatted + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); var timeRealFormatted = timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); if (delayMinutes > 4) { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:red">' + timeRealFormatted + '</div>'; } else { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:green">' + timeRealFormatted + '</div>'; } } } catch(e) { return '-'; } })()`;
     
     // Format sort time (use actual time if available, otherwise planned time)
-    const formatSortTimeStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return ''; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr || timeStr === 'null' || timeStr === 'undefined') { return ''; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return ''; } if (!timeRealStr || timeRealStr === 'null' || timeRealStr === 'undefined') { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } return timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit'}); } catch(e) { return ''; } })()`;
+    const formatSortTimeStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return ''; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr || timeStr === 'null' || timeStr === 'undefined') { return ''; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return ''; } if (!timeRealStr || timeRealStr === 'null' || timeRealStr === 'undefined') { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); } return timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); } catch(e) { return ''; } })()`;
     
     // Configure columns as per db_info README (following official example)
     // Use new data syntax: comma-separated attribute names (replaces old multi syntax)
