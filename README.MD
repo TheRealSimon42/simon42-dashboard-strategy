@@ -394,19 +394,19 @@ Mit `entity_name_patterns` kannst du Entity-Namen dynamisch transformieren, um l
 strategy:
   type: custom:simon42-dashboard
   entity_name_patterns:
-    - "^.*? - .*? - "  # Entfernt alles vor dem letzten " - " (z.B. "Socket - Phillipp's Bed - " → entfernt)
+    - "^.*? - .*? - "  # Entfernt alles vor dem letzten " - " (z.B. "Socket - My Bed - " → entfernt)
 ```
 
 **Beispiel:**
 Wenn deine Entities so benannt sind:
-- `Socket - Phillipp's Bed - Soundcore Wakey`
+- `Socket - My Bed - Soundcore Wakey`
 - `Light - Kitchen - Ceiling Light`
 
 und du nur den letzten Teil anzeigen möchtest, kannst du folgendes Pattern verwenden:
 
 ```yaml
 entity_name_patterns:
-  - "^.*? - .*? - "  # Entfernt "Socket - Phillipp's Bed - " und "Light - Kitchen - "
+  - "^.*? - .*? - "  # Entfernt "Socket - My Bed - " und "Light - Kitchen - "
 ```
 
 **Ergebnis:**
