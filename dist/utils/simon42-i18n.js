@@ -369,7 +369,7 @@ export function t(key, params = {}) {
   const translation = translations[currentLanguage]?.[key];
   
   if (!translation) {
-    console.warn(`[i18n] Translation key '${key}' not found for language '${currentLanguage}'`);
+    // Silent fallback to key - no console spam
     return key;
   }
   
@@ -394,7 +394,6 @@ export function initLanguage(config, hass = null) {
   // 1. Prüfe explizite Spracheinstellung in der Config
   if (config.language || config.lang) {
     const lang = config.language || config.lang;
-    console.log(`[i18n] Language set from config: ${lang}`);
     setLanguage(lang);
     return;
   }
@@ -402,10 +401,8 @@ export function initLanguage(config, hass = null) {
   // 2. Versuche Sprache aus hass.language zu lesen
   if (hass?.language) {
     const lang = hass.language.toLowerCase();
-    console.log(`[i18n] Found hass.language: ${hass.language} -> ${lang}`);
     if (translations[lang]) {
       setLanguage(lang);
-      console.log(`[i18n] Language set to: ${lang}`);
       return;
     } else {
       console.warn(`[i18n] Language '${lang}' from hass.language not supported, using default`);
@@ -413,7 +410,6 @@ export function initLanguage(config, hass = null) {
   }
   
   // 3. Fallback auf Standard-Sprache
-  console.log(`[i18n] Using default language: ${DEFAULT_LANGUAGE}`);
   setLanguage(DEFAULT_LANGUAGE);
 }
 
