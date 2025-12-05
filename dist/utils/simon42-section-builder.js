@@ -436,44 +436,9 @@ export function createPublicTransportSection(config, hass) {
       cardConfig.title = config.hvv_title;
     }
     
-    // Try to create a wildcard pattern from selected entities
-    // db_info entities follow pattern: sensor.*_verbindung_*
-    // If all entities share a common prefix, use wildcard pattern
-    let useWildcardPattern = false;
-    let wildcardPattern = null;
-    
-    if (publicTransportEntities.length > 0) {
-      // Extract common prefix (everything before the last _verbindung_ or _connection_)
-      const firstEntity = publicTransportEntities[0];
-      const verbindungIndex = firstEntity.indexOf('_verbindung_');
-      const connectionIndex = firstEntity.indexOf('_connection_');
-      const separatorIndex = verbindungIndex > -1 ? verbindungIndex : connectionIndex;
-      
-      if (separatorIndex > -1) {
-        const prefix = firstEntity.substring(0, separatorIndex);
-        // Check if all entities share this prefix
-        const allSharePrefix = publicTransportEntities.every(entity => 
-          entity.startsWith(prefix + '_verbindung_') || entity.startsWith(prefix + '_connection_')
-        );
-        
-        if (allSharePrefix) {
-          // Create wildcard pattern
-          const separator = verbindungIndex > -1 ? '_verbindung_' : '_connection_';
-          wildcardPattern = prefix + separator + '*';
-          useWildcardPattern = true;
-        }
-      }
-    }
-    
-    // Configure entities - use wildcard pattern if available, otherwise list entities directly
-    if (useWildcardPattern && wildcardPattern) {
-      cardConfig.entities = {
-        include: wildcardPattern
-      };
-    } else {
-      // Use direct entity list (flex-table-card supports both)
-      cardConfig.entities = publicTransportEntities;
-    }
+    // Use direct entity list - only show entities selected in the editor
+    // This allows flexible display of 1 to n connections based on user selection
+    cardConfig.entities = publicTransportEntities;
     
     // Add sorting by departure time
     cardConfig.sort_by = 'sort_time';
