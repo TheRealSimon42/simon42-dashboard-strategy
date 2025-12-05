@@ -102,6 +102,23 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
         // - 'latitude', 'longitude'
         // KEIN 'next' Array, KEIN 'attribution' mit hvv.de
         
+        // Exclude KVV entities - check friendly_name for "KVV"
+        if (hass && hass.states && hass.states[entity.entity_id]) {
+          const state = hass.states[entity.entity_id];
+          const attrs = state.attributes || {};
+          const friendlyName = (attrs.friendly_name || name || '').toUpperCase();
+          
+          // Exclude if friendly_name contains "KVV"
+          if (friendlyName.includes('KVV')) {
+            return false;
+          }
+        } else {
+          // Also check name/entityId for KVV exclusion
+          if (name.toUpperCase().includes('KVV') || entityId.toUpperCase().includes('KVV')) {
+            return false;
+          }
+        }
+        
         if (hass && hass.states && hass.states[entity.entity_id]) {
           const state = hass.states[entity.entity_id];
           const attrs = state.attributes || {};
@@ -146,8 +163,12 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
           }
         }
         
-        // Fallback: Keyword-basierte Erkennung, aber nur wenn nicht HVV
+        // Fallback: Keyword-basierte Erkennung, aber nur wenn nicht HVV oder KVV
         if (entityId.includes('hvv') || name.includes('hvv')) {
+          return false;
+        }
+        
+        if (name.toUpperCase().includes('KVV') || entityId.toUpperCase().includes('KVV')) {
           return false;
         }
         
