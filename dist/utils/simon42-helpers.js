@@ -65,9 +65,9 @@ function applyNamePatterns(name, patterns) {
       
       const regex = new RegExp(regexPattern, 'gi');
       transformedName = transformedName.replace(regex, '');
-    } catch (e) {
+    } catch (error) {
       // Bei ungültigem Regex-Pattern, ignoriere es und logge Warnung
-      console.warn(`[Simon42] Ungültiges Entity-Name-Pattern: ${pattern}`, e);
+      console.warn(`[Simon42] Ungültiges Entity-Name-Pattern: ${pattern}`, error);
     }
   });
   
