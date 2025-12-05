@@ -70,6 +70,9 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Alarm Panel** - Unterstützung für Alarmanlagen
 - **Reolink Kameras** - Erweiterte Kamera-Integration
 - **Masonry Layout** - Integration des s42-masonry-view Projekts
+- **Better Thermostat** - Ersetzt Standard-Thermostat-Karten durch Better Thermostat UI-Karten
+- **Horizon Card** - Zeigt Sonnen- und Mondposition über dem Horizont in der Wetter-Sektion
+- **Öffentlicher Nahverkehr** - Unterstützt HVV (Hamburg), ha-departures, KVV (Karlsruhe) und db_info Integrationen
 
 ## 📦 Installation
 
@@ -1098,4 +1101,4 @@ Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenz
 
 **Entwickelt mit ❤️ für die Home Assistant Community**
 
-*Letzte Aktualisierung: 05.12.2025* 😅
+*Letzte Aktualisierung: 05.12.2025*
