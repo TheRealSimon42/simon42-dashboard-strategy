@@ -200,6 +200,43 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
         // If it has verbindung/connection keyword and doesn't have network keywords, include it
         return hasDbInfoConnectionKeyword;
       
+      case 'kvv':
+        // KVV Departure Monitor entities have characteristic attributes:
+        // - 'abfahrten' array with departure objects
+        // - Each departure has: 'line', 'direction', 'countdown', 'realtime', 'dateTime'
+        // - Entity ID typically contains 'kvv' and 'abfahrten'
+        
+        if (hass && hass.states && hass.states[entity.entity_id]) {
+          const state = hass.states[entity.entity_id];
+          const attrs = state.attributes || {};
+          
+          // Check for KVV-specific attribute structure
+          const hasAbfahrtenArray = Array.isArray(attrs.abfahrten);
+          
+          if (hasAbfahrtenArray) {
+            // Verify it's actually KVV format (check first departure object structure)
+            if (attrs.abfahrten.length > 0) {
+              const firstDeparture = attrs.abfahrten[0];
+              const hasKvvStructure = firstDeparture.line !== undefined &&
+                                     firstDeparture.direction !== undefined &&
+                                     (firstDeparture.countdown !== undefined || firstDeparture.dateTime !== undefined);
+              
+              if (hasKvvStructure) {
+                return true;
+              }
+            } else {
+              // Empty array is still valid KVV entity
+              return true;
+            }
+          }
+        }
+        
+        // Fallback: Keyword-based detection
+        return entityId.includes('kvv') || 
+               name.includes('kvv') ||
+               (entityId.includes('abfahrten') && !entityId.includes('hvv')) ||
+               (name.includes('abfahrten') && !name.includes('hvv'));
+      
       default:
         // Fallback: allgemeine Transport-Keywords
         const transportKeywords = [
@@ -233,7 +270,8 @@ function getCardNameForIntegration(integration) {
   const cardNames = {
     'hvv': 'hvv-card',
     'ha-departures': 'departures-card', // ha-departures-card uses 'departures-card' as element name
-    'db_info': 'flex-table-card'
+    'db_info': 'flex-table-card',
+    'kvv': 'kvv-departures-card'
   };
   return cardNames[integration] || integration;
 }
@@ -256,6 +294,10 @@ function getPublicTransportUrls(integration) {
     'db_info': {
       integrationUrl: 'https://github.com/EiS94/db_info',
       cardUrl: 'https://github.com/custom-cards/flex-table-card'
+    },
+    'kvv': {
+      integrationUrl: 'https://github.com/drlaplace/KVV_Departure_Monitor',
+      cardUrl: 'https://github.com/drlaplace/kvv-departures-card'
     }
   };
   return urls[integration] || { integrationUrl: null, cardUrl: null };
@@ -526,6 +568,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <option value="hvv" ${publicTransportIntegration === 'hvv' ? 'selected' : ''}>${t('publicTransportIntegrationHVV')}</option>
               <option value="ha-departures" ${publicTransportIntegration === 'ha-departures' ? 'selected' : ''}>${t('publicTransportIntegrationHADepartures')}</option>
               <option value="db_info" ${publicTransportIntegration === 'db_info' ? 'selected' : ''}>${t('publicTransportIntegrationDBInfo')}</option>
+              <option value="kvv" ${publicTransportIntegration === 'kvv' ? 'selected' : ''}>${t('publicTransportIntegrationKVV')}</option>
             </select>
           </div>
           ${publicTransportIntegration && !hasPublicTransportDeps ? `

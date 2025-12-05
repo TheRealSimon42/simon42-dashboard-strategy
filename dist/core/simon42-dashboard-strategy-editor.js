@@ -108,7 +108,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const cardElementNames = {
       'hvv-card': 'hvv-card',
       'ha-departures-card': 'departures-card', // ha-departures-card uses 'departures-card' as element name
-      'db-info-card': 'flex-table-card' // db_info uses flex-table-card
+      'db-info-card': 'flex-table-card', // db_info uses flex-table-card
+      'kvv-departures-card': 'kvv-departures-card'
     };
     
     const cardElementName = cardElementNames[card];
@@ -121,7 +122,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const cardTypeMap = {
       'ha-departures-card': 'custom:departures-card',
       'hvv-card': 'custom:hvv-card',
-      'db-info-card': 'custom:flex-table-card' // db_info uses flex-table-card
+      'db-info-card': 'custom:flex-table-card', // db_info uses flex-table-card
+      'kvv-departures-card': 'custom:kvv-departures-card'
     };
     const cardType = cardTypeMap[card] || `custom:${card}`;
     
@@ -196,7 +198,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const cardMapping = {
       'hvv': 'hvv-card',
       'ha-departures': 'ha-departures-card',
-      'db_info': 'db-info-card'
+      'db_info': 'db-info-card',
+      'kvv': 'kvv-departures-card'
     };
     const cardToCheck = publicTransportCard || (publicTransportIntegration ? cardMapping[publicTransportIntegration] : null);
     
@@ -1190,7 +1193,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const integrationCards = {
       'hvv': ['hvv-card'],
       'ha-departures': ['ha-departures-card'],
-      'db_info': ['db-info-card']
+      'db_info': ['db-info-card'],
+      'kvv': ['kvv-departures-card']
     };
     
     return integrationCards[integration] || [];
@@ -1241,7 +1245,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       const cardMapping = {
         'hvv': 'hvv-card',
         'ha-departures': 'ha-departures-card',
-        'db_info': 'db-info-card'
+        'db_info': 'db-info-card',
+        'kvv': 'kvv-departures-card'
       };
       
       newConfig.public_transport_card = cardMapping[integration];

@@ -845,6 +845,22 @@ strategy:
 - Die ha-departures-card unterstützt maximal 5 Abfahrten pro Entity (wird automatisch begrenzt)
 - Entities werden auch erkannt, wenn sie keine "departure" oder "abfahrt" Keywords im Namen haben
 
+**KVV (Karlsruher Verkehrsverbund):**
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_public_transport: true
+  public_transport_integration: kvv
+  public_transport_card: kvv-departures-card
+  public_transport_entities:
+    - sensor.kvv_abfahrten_berghausen_baden_hummelberg
+```
+
+**Hinweise für KVV:**
+- Der Editor erkennt automatisch KVV Entities anhand ihrer Attribute (`abfahrten` Array mit `line`, `direction`, `countdown`, `realtime`, `dateTime`)
+- Die kvv-departures-card verwendet eine einzelne Entity pro Karte
+- Entities werden auch erkannt, wenn sie "kvv" oder "abfahrten" im Namen haben
+
 **db_info (Deutsche Bahn):**
 ```yaml
 strategy:
@@ -859,11 +875,12 @@ strategy:
 ```
 
 **Voraussetzungen:**
-- Die entsprechende Card muss installiert sein (`hvv-card`, `ha-departures-card` oder `flex-table-card` für `db_info`)
+- Die entsprechende Card muss installiert sein (`hvv-card`, `ha-departures-card`, `kvv-departures-card` oder `flex-table-card` für `db_info`)
 - Die entsprechende Integration muss installiert und konfiguriert sein
 - Der Editor prüft automatisch, ob die benötigte Card verfügbar ist
 - Entities müssen Abfahrtszeiten bereitstellen
 - **ha-departures:** Der Editor erkennt Entities automatisch anhand ihrer Attribute (`line_name`, `transport`, `planned_departure_time`, `direction`) - Keywords im Namen sind nicht erforderlich
+- **kvv:** Der Editor erkennt Entities automatisch anhand ihrer Attribute (`abfahrten` Array mit `line`, `direction`, `countdown`, `realtime`, `dateTime`)
 - **hvv/db_info:** Der Editor filtert automatisch relevante Entities (sensor/button mit Transport-Keywords)
 
 ### Batch-Aktionen

@@ -385,7 +385,8 @@ export function createPublicTransportSection(config, hass) {
   const cardMapping = {
     'hvv': 'hvv-card',
     'ha-departures': 'ha-departures-card',
-    'db_info': 'db-info-card'
+    'db_info': 'db-info-card',
+    'kvv': 'kvv-departures-card'
   };
   
   const cardType = config.public_transport_card || cardMapping[integration];
@@ -425,7 +426,8 @@ export function createPublicTransportSection(config, hass) {
   const validCombinations = {
     'hvv': ['hvv-card'],
     'ha-departures': ['ha-departures-card'],
-    'db_info': ['db-info-card'] // Note: db_info uses flex-table-card, but we keep this for UI consistency
+    'db_info': ['db-info-card'], // Note: db_info uses flex-table-card, but we keep this for UI consistency
+    'kvv': ['kvv-departures-card']
   };
 
   const validCards = validCombinations[integration] || [];
@@ -653,9 +655,18 @@ export function createPublicTransportSection(config, hass) {
     
     // Use pathCards as cardConfig for db_info
     cardConfig = pathCards;
+  } else if (cardType === 'kvv-departures-card') {
+    // KVV Departure Monitor card uses simple entity configuration
+    // Based on kvv-departures-card README: type is 'custom:kvv-departures-card'
+    // KVV card uses 'entity' (singular), so we need one card per entity
+    // Create an array of card configs, one for each entity
+    cardConfig = publicTransportEntities.map(entityId => ({
+      type: 'custom:kvv-departures-card',
+      entity: entityId
+    }));
   }
   
-  // Build cards array - handle db_info differently since it returns an array
+  // Build cards array - handle db_info and kvv differently since they return arrays
   const cards = [
     {
       type: "heading",
@@ -665,8 +676,8 @@ export function createPublicTransportSection(config, hass) {
     }
   ];
   
-  // For db_info, cardConfig is an array of cards, otherwise it's a single card
-  if (cardType === 'db-info-card' && Array.isArray(cardConfig)) {
+  // For db_info and kvv, cardConfig is an array of cards, otherwise it's a single card
+  if ((cardType === 'db-info-card' || cardType === 'kvv-departures-card') && Array.isArray(cardConfig)) {
     cards.push(...cardConfig);
   } else {
     cards.push(cardConfig);
