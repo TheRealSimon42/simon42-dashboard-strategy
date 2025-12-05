@@ -453,8 +453,11 @@ export function createPublicTransportSection(config, hass) {
     // ha-departures-card uses 'departures-card' as the type
     // Based on ha-departures-card README: type is 'custom:departures-card'
     cardConfig.type = 'custom:departures-card';
-    // ha-departures-card uses entities array
-    cardConfig.entities = publicTransportEntities;
+    // ha-departures-card expects entities as objects with 'entity' property
+    // Format: [{ entity: 'sensor.entity1' }, { entity: 'sensor.entity2' }]
+    cardConfig.entities = publicTransportEntities.map(entityId => ({
+      entity: entityId
+    }));
     // ha-departures-card uses 'departuresToShow' instead of 'max' (max 5 departures)
     if (config.hvv_max !== undefined) {
       cardConfig.departuresToShow = Math.min(config.hvv_max, 5); // Limit to max 5 as per card docs
