@@ -359,7 +359,7 @@ export function createWeatherSection(weatherEntity, showWeather, config = {}) {
  */
 export function createPublicTransportSection(config, hass) {
   const showPublicTransport = config.show_public_transport === true;
-  const publicTransportEntities = (config.public_transport_entities || [])
+  let publicTransportEntities = (config.public_transport_entities || [])
     .filter(entityId => hass.states[entityId] !== undefined);
 
   if (!showPublicTransport || publicTransportEntities.length === 0) {
@@ -383,6 +383,37 @@ export function createPublicTransportSection(config, hass) {
   };
   
   const cardType = config.public_transport_card || cardMapping[integration];
+  
+  // For ha-departures-card, filter entities to only include those with valid departure times
+  if (cardType === 'ha-departures-card') {
+    publicTransportEntities = publicTransportEntities.filter(entityId => {
+      const state = hass.states[entityId];
+      if (!state || !state.attributes) {
+        return false;
+      }
+      
+      const attrs = state.attributes;
+      // Check if entity has at least one valid departure time
+      // Check planned_departure_time (main) or planned_departure_time_1 through _4
+      const hasPlannedTime = attrs.planned_departure_time !== null && 
+                            attrs.planned_departure_time !== undefined;
+      
+      // Also check numbered departure times
+      const hasAnyPlannedTime = hasPlannedTime || 
+        (attrs.planned_departure_time_1 !== null && attrs.planned_departure_time_1 !== undefined) ||
+        (attrs.planned_departure_time_2 !== null && attrs.planned_departure_time_2 !== undefined) ||
+        (attrs.planned_departure_time_3 !== null && attrs.planned_departure_time_3 !== undefined) ||
+        (attrs.planned_departure_time_4 !== null && attrs.planned_departure_time_4 !== undefined);
+      
+      // Entity is valid if it has at least one planned departure time
+      return hasAnyPlannedTime;
+    });
+    
+    // If no valid entities remain, don't show section
+    if (publicTransportEntities.length === 0) {
+      return null;
+    }
+  }
   
   // Validate card/integration combination
   const validCombinations = {
