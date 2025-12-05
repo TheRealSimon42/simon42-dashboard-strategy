@@ -125,37 +125,57 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     };
     const cardType = cardTypeMap[card] || `custom:${card}`;
     
-    // Prüfe auf verschiedene Arten, ob die Card verfügbar ist
-    // 1. Custom Element Registry - prüfe direkt auf 'departures-card' für ha-departures
-    if (card === 'ha-departures-card') {
-      // Für ha-departures-card: prüfe direkt auf 'departures-card' (nicht 'ha-departures-card')
-      if (customElements.get('departures-card') !== undefined) {
-        return true;
-      }
-    } else {
-      // Für andere Cards: normale Prüfung
-      if (customElements.get(cardElementName) !== undefined) {
-        return true;
-      }
+    // Prüfe auf verschiedene Arten, ob die Card verfügbar ist (ähnlich wie horizon-card check)
+    // 1. Custom Element Registry - prüfe direkt auf Element-Name
+    const hasElement = customElements.get(cardElementName) !== undefined;
+    if (hasElement) {
+      console.log(`[simon42-dashboard] Found ${card} card via customElements.get('${cardElementName}')`);
+      return true;
     }
     
-    // 2. window.customCards Array (für HACS Cards)
+    // 2. window.customCards Array (für HACS Cards) - prüfe nach type
     if (window.customCards && Array.isArray(window.customCards)) {
-      // Prüfe nach cardType (z.B. 'custom:departures-card')
-      if (window.customCards.some(c => c.type === cardType)) {
+      // Prüfe nach exaktem cardType
+      const foundByType = window.customCards.some(c => c.type === cardType);
+      if (foundByType) {
+        console.log(`[simon42-dashboard] Found ${card} card via window.customCards (type: ${cardType})`);
         return true;
       }
-      // Auch nach Element-Name suchen
-      if (window.customCards.some(c => c.name === cardElementName)) {
+      
+      // Prüfe nach Element-Name
+      const foundByName = window.customCards.some(c => c.name === cardElementName || c.name === card);
+      if (foundByName) {
+        console.log(`[simon42-dashboard] Found ${card} card via window.customCards (name: ${cardElementName})`);
         return true;
+      }
+      
+      // Für departures-card: auch nach 'departures' im Namen oder Type suchen (flexibler)
+      if (card === 'ha-departures-card') {
+        const foundByKeyword = window.customCards.some(c => {
+          const name = (c.name || '').toLowerCase();
+          const type = (c.type || '').toLowerCase();
+          return name.includes('departure') || type.includes('departure');
+        });
+        if (foundByKeyword) {
+          console.log(`[simon42-dashboard] Found ${card} card via window.customCards (keyword: departure)`);
+          return true;
+        }
       }
     }
     
     // 3. DOM Query (falls Card bereits im DOM ist)
-    if (document.querySelector(cardElementName)) {
+    const foundInDOM = document.querySelector(cardElementName);
+    if (foundInDOM) {
+      console.log(`[simon42-dashboard] Found ${card} card via DOM query ('${cardElementName}')`);
       return true;
     }
     
+    // Debug: Log available cards if not found
+    if (card === 'ha-departures-card' && window.customCards) {
+      console.log('[simon42-dashboard] Available customCards:', window.customCards.map(c => ({ name: c.name, type: c.type })));
+    }
+    
+    console.log(`[simon42-dashboard] Card ${card} (element: ${cardElementName}, type: ${cardType}) not found`);
     return false;
   }
 
