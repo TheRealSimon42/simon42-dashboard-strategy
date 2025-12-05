@@ -6,6 +6,7 @@
 // ====================================================================
 
 import { t, getLanguage } from './simon42-i18n.js';
+import { getUserDarkMode, getUserLocale, getUserHour12 } from './simon42-user-preferences.js';
 
 /**
  * Integration/Card mapping
@@ -96,10 +97,8 @@ export function buildHvvCard(entityIds, config) {
  * @returns {Object} Card configuration
  */
 export function buildHaDeparturesCard(entityIds, config, hass) {
-  // Determine if dark mode is active
-  const isDarkMode = hass?.themes?.darkMode === true || 
-                     (hass?.themes?.themes && hass?.themes?.themes[hass?.themes?.selectedTheme]?.darkMode === true) ||
-                     (hass?.themes?.selectedTheme && hass?.themes?.selectedTheme.toLowerCase().includes('dark'));
+  // Get dark mode preference
+  const isDarkMode = getUserDarkMode(hass);
   
   // Use accent color that adapts to theme
   const lineColor = isDarkMode 
@@ -150,22 +149,7 @@ export function buildHaDeparturesCard(entityIds, config, hass) {
   return cardConfig;
 }
 
-/**
- * Gets time format preference from hass
- * @param {Object} hass - Home Assistant object
- * @param {string} locale - Locale string (e.g., 'de-DE', 'en-US')
- * @returns {boolean} True for 12-hour format, false for 24-hour format
- */
-function getTimeFormatPreference(hass, locale) {
-  let hour12 = false; // Default to 24-hour format
-  if (hass?.locale?.time_format === '12') {
-    hour12 = true;
-  } else if (hass?.locale?.time_format === 'language') {
-    // If set to 'language', check if locale typically uses 12-hour format
-    hour12 = locale === 'en-US';
-  }
-  return hour12;
-}
+// Time format preference now uses centralized user preferences utility
 
 /**
  * Builds db_info (flex-table-card) configuration
@@ -198,10 +182,9 @@ export function buildDbInfoCard(entityIds, config, hass) {
     pathGroups[groupKey].push(entityId);
   });
   
-  // Get locale and time format
-  const currentLang = getLanguage();
-  const locale = currentLang === 'de' ? 'de-DE' : 'en-US';
-  const hour12 = getTimeFormatPreference(hass, locale);
+  // Get locale and time format from user preferences
+  const locale = getUserLocale(hass, config);
+  const hour12 = getUserHour12(hass, config);
   
   // Format time with delay handling
   const formatTimeWithDelayStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return '-'; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr || timeStr === 'null' || timeStr === 'undefined') { return '-'; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return '-'; } var timeFormatted = time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); if (!timeRealStr || timeRealStr === 'null' || timeRealStr === 'undefined') { return timeFormatted; } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return timeFormatted; } if (time >= timeReal) { return '<div style="color:green">' + timeFormatted + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); var timeRealFormatted = timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); if (delayMinutes > 4) { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:red">' + timeRealFormatted + '</div>'; } else { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:green">' + timeRealFormatted + '</div>'; } } } catch(e) { return '-'; } })()`;
