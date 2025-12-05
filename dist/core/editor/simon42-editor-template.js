@@ -434,29 +434,27 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <option value="db_info" ${publicTransportIntegration === 'db_info' ? 'selected' : ''}>${t('publicTransportIntegrationDBInfo')}</option>
             </select>
           </div>
-          ${publicTransportIntegration ? `
+          ${publicTransportIntegration && !hasPublicTransportDeps ? `
           <div class="description" style="margin-top: 8px;">
-            ${hasPublicTransportDeps 
-              ? t('publicTransportCardAvailable')
-              : (() => {
-                  const cardName = getCardNameForIntegration(publicTransportIntegration);
-                  const urls = getPublicTransportUrls(publicTransportIntegration);
-                  let message = `⚠️ ${t('publicTransportCardMissingDeps', { card: cardName })}`;
-                  
-                  if (urls.integrationUrl || urls.cardUrl) {
-                    message += '<br><br>';
-                    if (urls.integrationUrl) {
-                      message += `${t('publicTransportIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
-                    } else if (publicTransportIntegration === 'hvv') {
-                      message += `${t('publicTransportIntegrationLink')}: ${t('publicTransportIntegrationAvailableInCore')}<br>`;
-                    }
-                    if (urls.cardUrl) {
-                      message += `${t('publicTransportCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
-                    }
+            ${(() => {
+                const cardName = getCardNameForIntegration(publicTransportIntegration);
+                const urls = getPublicTransportUrls(publicTransportIntegration);
+                let message = `⚠️ ${t('publicTransportCardMissingDeps', { card: cardName })}`;
+                
+                if (urls.integrationUrl || urls.cardUrl) {
+                  message += '<br><br>';
+                  if (urls.integrationUrl) {
+                    message += `${t('publicTransportIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
+                  } else if (publicTransportIntegration === 'hvv') {
+                    message += `${t('publicTransportIntegrationLink')}: ${t('publicTransportIntegrationAvailableInCore')}<br>`;
                   }
-                  
-                  return message;
-                })()}
+                  if (urls.cardUrl) {
+                    message += `${t('publicTransportCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+                  }
+                }
+                
+                return message;
+              })()}
           </div>
           ` : ''}
           ${publicTransportIntegration && hasPublicTransportDeps ? `
