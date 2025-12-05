@@ -41,5 +41,5 @@ import './views/simon42-view-security.js';
 import './views/simon42-view-batteries.js';
 
 console.log('%c✅ Simon42 Dashboard Strategies', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
-const features = ['Better Thermostat', 'Public Transport (HVV, ha-departures, db_info)', 'Reactive Group Cards', 'Bilingual Support (DE/EN)', 'Horizon Card', 'Entity Name Transformation'];
+const features = ['Better Thermostat', 'Public Transport (HVV, ha-departures, db_info, KVV)', 'Reactive Group Cards', 'Bilingual Support (DE/EN)', 'Horizon Card', 'Entity Name Transformation'];
 console.log('Features:', features.join(', '));
