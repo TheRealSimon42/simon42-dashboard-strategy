@@ -1,10 +1,27 @@
 # simon42 Dashboard Strategy
 
-> **⚠️ Hinweis:** Diese README wird nicht laufend aktualisiert, sondern nur gelegentlich und leider auch viel zu unregelmäßig. Der aktuelle Code ist vermutlich bereits weiter als hier dokumentiert. Im Zweifel: Code ist die Dokumentation! 😅
-
 Eine modulare und hochkonfigurierbare Dashboard-Strategy für Home Assistant, die automatisch Views basierend auf Bereichen, Entitäten und deren Zuständen generiert. Wächst mit dem User mit und ist sowohl für Anfänger als auch Fortgeschrittene interessant.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=TheRealSimon42&repository=simon42-dashboard-strategy&category=plugin)
+
+---
+
+## 📑 Inhaltsverzeichnis
+
+- [✨ Features im Überblick](#-features-im-überblick)
+- [📦 Installation](#-installation)
+- [🖥️ Benutzung / Dashboard erstellen](#️-benutzung--dashboard-erstellen)
+- [🎨 Grafischer Konfigurator (Editor)](#-grafischer-konfigurator-editor)
+- [🏷️ Label-System](#️-label-system)
+- [📊 Spezialisierte Views](#-spezialisierte-views)
+- [🎯 Erweiterte Features](#-erweiterte-features)
+- [🔌 Optionale Integrationen](#-optionale-integrationen)
+- [🤝 Contributing](#-contributing)
+- [📋 Roadmap & Geplante Features](#-roadmap--geplante-features)
+- [🐛 Bekannte Probleme & Limitationen](#-bekannte-probleme--limitationen)
+- [📄 Lizenz](#-lizenz)
+- [🙏 Credits & Danksagungen](#-credits--danksagungen)
+- [📞 Support & Kontakt](#-support--kontakt)
 
 ---
 
