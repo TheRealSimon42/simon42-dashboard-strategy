@@ -6,6 +6,12 @@ import { renderEditorHTML } from './editor/simon42-editor-template.js';
 import { initLanguage } from '../utils/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
 import { checkDependency, checkPublicTransportDependencies } from '../utils/simon42-dependency-checker.js';
+import { PUBLIC_TRANSPORT_MAPPING } from '../utils/simon42-public-transport-builders.js';
+import { 
+  getAllIntegrationProperties,
+  updateNestedConfig,
+  getEntitiesFromDOM
+} from './editor/simon42-editor-config-helpers.js';
 import { 
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
@@ -717,99 +723,42 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return;
     }
 
-    // Hole aktuelle groups_options für dieses Areal
+    // Get current hidden entities for this group
     const currentAreaOptions = this._config.areas_options?.[areaId] || {};
     const currentGroupsOptions = currentAreaOptions.groups_options || {};
     const currentGroupOptions = currentGroupsOptions[group] || {};
-    
     let hiddenEntities = [...(currentGroupOptions.hidden || [])];
     
     if (entityId === null) {
-      // Alle Entities in der Gruppe
-      // Wenn isVisible = false, alle Entities zur Hidden-Liste hinzufügen
-      // Wenn isVisible = true, alle Entities aus Hidden-Liste entfernen
+      // All entities in the group - get from DOM
+      const allEntities = getEntitiesFromDOM(this, areaId, group);
       
       if (!isVisible) {
-        // Hole alle Entities in dieser Gruppe und füge sie zu hidden hinzu
-        // Dies erfordert Zugriff auf die Entity-Liste, die wir aus dem DOM lesen können
-        const entityList = this.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-        if (entityList) {
-          const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
-          const allEntities = Array.from(entityCheckboxes).map(cb => cb.dataset.entityId);
-          hiddenEntities = [...new Set([...hiddenEntities, ...allEntities])];
-        }
+        // Add all entities to hidden list
+        hiddenEntities = [...new Set([...hiddenEntities, ...allEntities])];
       } else {
-        // Entferne alle Entities dieser Gruppe aus hidden
-        const entityList = this.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-        if (entityList) {
-          const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
-          const allEntities = Array.from(entityCheckboxes).map(cb => cb.dataset.entityId);
-          hiddenEntities = hiddenEntities.filter(e => !allEntities.includes(e));
-        }
+        // Remove all entities from hidden list
+        hiddenEntities = hiddenEntities.filter(e => !allEntities.includes(e));
       }
     } else {
-      // Einzelne Entity
+      // Single entity
       if (isVisible) {
-        // Entferne aus hidden
+        // Remove from hidden
         hiddenEntities = hiddenEntities.filter(e => e !== entityId);
       } else {
-        // Füge zu hidden hinzu
+        // Add to hidden (avoid duplicates)
         if (!hiddenEntities.includes(entityId)) {
           hiddenEntities.push(entityId);
         }
       }
     }
 
-    // Baue neue Config
-    const newGroupOptions = {
-      ...currentGroupOptions,
-      hidden: hiddenEntities
-    };
-
-    // Entferne hidden wenn leer
-    if (newGroupOptions.hidden.length === 0) {
-      delete newGroupOptions.hidden;
-    }
-
-    const newGroupsOptions = {
-      ...currentGroupsOptions,
-      [group]: newGroupOptions
-    };
-
-    // Entferne group wenn leer
-    if (Object.keys(newGroupsOptions[group]).length === 0) {
-      delete newGroupsOptions[group];
-    }
-
-    const newAreaOptions = {
-      ...currentAreaOptions,
-      groups_options: newGroupsOptions
-    };
-
-    // Entferne groups_options wenn leer
-    if (Object.keys(newAreaOptions.groups_options).length === 0) {
-      delete newAreaOptions.groups_options;
-    }
-
-    const newAreasOptions = {
-      ...this._config.areas_options,
-      [areaId]: newAreaOptions
-    };
-
-    // Entferne area wenn leer
-    if (Object.keys(newAreasOptions[areaId]).length === 0) {
-      delete newAreasOptions[areaId];
-    }
-
-    const newConfig = {
-      ...this._config,
-      areas_options: newAreasOptions
-    };
-
-    // Entferne areas_options wenn leer
-    if (Object.keys(newConfig.areas_options).length === 0) {
-      delete newConfig.areas_options;
-    }
+    // Update nested config structure with automatic cleanup
+    const newConfig = updateNestedConfig(
+      this._config,
+      ['areas_options', areaId, 'groups_options', group, 'hidden'],
+      hiddenEntities.length > 0 ? hiddenEntities : undefined
+    );
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
@@ -899,45 +848,36 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return;
     }
 
-    const newConfig = {
-      ...this._config
-    };
-
-    // Check if integration is actually changing
-    const currentIntegration = newConfig.public_transport_integration;
+    const currentIntegration = this._config.public_transport_integration;
     const isChanging = currentIntegration !== integration;
+    
+    const newConfig = { ...this._config };
 
     if (integration) {
+      // Set new integration
       newConfig.public_transport_integration = integration;
       
-      // Auto-set card based on integration (hardcoded mapping)
-      const cardMapping = {
-        'hvv': 'hvv-card',
-        'ha-departures': 'ha-departures-card',
-        'db_info': 'db-info-card',
-        'kvv': 'kvv-departures-card'
-      };
-      
-      newConfig.public_transport_card = cardMapping[integration];
+      // Auto-set card based on integration using centralized mapping
+      newConfig.public_transport_card = PUBLIC_TRANSPORT_MAPPING[integration];
       
       // Clear all integration-specific settings when changing integration
       if (isChanging) {
-        delete newConfig.public_transport_entities;
-        delete newConfig.hvv_max;
-        delete newConfig.hvv_show_time;
-        delete newConfig.hvv_show_title;
-        delete newConfig.hvv_title;
+        // Clear properties from all integrations (they'll be set fresh for the new one)
+        const allProps = getAllIntegrationProperties();
+        allProps.forEach(prop => {
+          delete newConfig[prop];
+        });
       }
     } else {
       // Remove integration and card if integration is cleared
       delete newConfig.public_transport_integration;
       delete newConfig.public_transport_card;
-      // Also clear all related settings
-      delete newConfig.public_transport_entities;
-      delete newConfig.hvv_max;
-      delete newConfig.hvv_show_time;
-      delete newConfig.hvv_show_title;
-      delete newConfig.hvv_title;
+      
+      // Clear all integration-specific properties
+      const allProps = getAllIntegrationProperties();
+      allProps.forEach(prop => {
+        delete newConfig[prop];
+      });
     }
 
     this._config = newConfig;
