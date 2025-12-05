@@ -226,3 +226,38 @@ export function getExcludedLabels(entities) {
     .filter(e => e.labels?.includes("no_dboard"))
     .map(e => e.entity_id);
 }
+
+/**
+ * Prüft ob ein Kamera-Stream verfügbar ist
+ * @param {string} cameraId - Entity ID der Kamera
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {boolean} True wenn der Stream verfügbar ist
+ */
+export function isCameraStreamAvailable(cameraId, hass) {
+  const cameraState = hass.states?.[cameraId];
+  if (!cameraState) {
+    return false;
+  }
+  
+  // Prüfe ob die Kamera verfügbar ist (nicht "unavailable")
+  if (cameraState.state === 'unavailable') {
+    return false;
+  }
+  
+  // Prüfe ob ein Stream-Source vorhanden ist
+  // Wenn privacy mode aktiv ist, fehlt oft der stream_source oder access_token
+  const streamSource = cameraState.attributes?.stream_source;
+  const accessToken = cameraState.attributes?.access_token;
+  
+  // Wenn kein stream_source vorhanden oder leer ist, ist der Stream nicht verfügbar
+  if (!streamSource || (typeof streamSource === 'string' && streamSource.trim() === '')) {
+    return false;
+  }
+  
+  // Wenn kein access_token vorhanden oder leer ist, kann der Stream nicht abgerufen werden
+  if (!accessToken || (typeof accessToken === 'string' && accessToken.trim() === '')) {
+    return false;
+  }
+  
+  return true;
+}

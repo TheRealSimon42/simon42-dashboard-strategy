@@ -1,7 +1,7 @@
 // ====================================================================
 // VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT + KAMERAS
 // ====================================================================
-import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged } from '../utils/simon42-helpers.js';
+import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged, isCameraStreamAvailable } from '../utils/simon42-helpers.js';
 import { t, initLanguage } from '../utils/simon42-i18n.js';
 
 /**
@@ -437,6 +437,9 @@ class Simon42ViewRoomStrategy {
       roomEntities.cameras.forEach(cameraId => {
         const cameraState = hass.states[cameraId];
         if (!cameraState) return;
+        
+        // Prüfe ob der Stream verfügbar ist (z.B. nicht im Privacy-Modus)
+        if (!isCameraStreamAvailable(cameraId, hass)) return;
         
         // Finde Device-ID der Kamera
         const cameraEntity = entities.find(e => e.entity_id === cameraId);
