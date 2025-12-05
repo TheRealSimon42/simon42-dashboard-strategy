@@ -453,23 +453,49 @@ export function createPublicTransportSection(config, hass) {
     // ha-departures-card uses 'departures-card' as the type
     // Based on ha-departures-card README: type is 'custom:departures-card'
     cardConfig.type = 'custom:departures-card';
+    
     // ha-departures-card expects entities as objects with 'entity' property
-    // Format: [{ entity: 'sensor.entity1' }, { entity: 'sensor.entity2' }]
-    cardConfig.entities = publicTransportEntities.map(entityId => ({
-      entity: entityId
-    }));
-    // ha-departures-card uses 'departuresToShow' instead of 'max' (max 5 departures)
-    if (config.hvv_max !== undefined) {
-      cardConfig.departuresToShow = Math.min(config.hvv_max, 5); // Limit to max 5 as per card docs
-    } else {
-      cardConfig.departuresToShow = 1; // Default is 1
-    }
-    if (config.hvv_title) {
-      cardConfig.title = config.hvv_title;
-    }
-    // Optional: showCardHeader defaults to true, but we can respect hvv_show_title if needed
-    if (config.hvv_show_title === false) {
+    // Apply global settings to each entity (line-specific options can be added later)
+    const timeStyle = config.ha_departures_time_style || 'dynamic';
+    cardConfig.entities = publicTransportEntities.map(entityId => {
+      const entityConfig = {
+        entity: entityId
+      };
+      
+      // Apply global timeStyle to each entity
+      if (timeStyle !== 'dynamic') {
+        entityConfig.timeStyle = timeStyle;
+      }
+      
+      return entityConfig;
+    });
+    
+    // Card-level options
+    // departuresToShow (max 5 departures)
+    const maxDepartures = config.ha_departures_max !== undefined ? config.ha_departures_max : 3;
+    cardConfig.departuresToShow = Math.min(maxDepartures, 5);
+    
+    // Icon (always set, default is mdi:bus-multiple)
+    cardConfig.icon = config.ha_departures_icon || 'mdi:bus-multiple';
+    
+    // showCardHeader (default: true)
+    if (config.ha_departures_show_card_header === false) {
       cardConfig.showCardHeader = false;
+    }
+    
+    // showAnimation (default: true)
+    if (config.ha_departures_show_animation === false) {
+      cardConfig.showAnimation = false;
+    }
+    
+    // showTransportIcon (default: false)
+    if (config.ha_departures_show_transport_icon === true) {
+      cardConfig.showTransportIcon = true;
+    }
+    
+    // hideEmptyDepartures (default: false)
+    if (config.ha_departures_hide_empty_departures === true) {
+      cardConfig.hideEmptyDepartures = true;
     }
   } else if (cardType === 'db-info-card') {
     // db_info integration uses flex-table-card with complex configuration

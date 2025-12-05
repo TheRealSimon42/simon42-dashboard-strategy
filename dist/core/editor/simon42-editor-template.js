@@ -239,7 +239,7 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', entityNamePatterns = [], hass = null }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], hass = null }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -521,11 +521,11 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${publicTransportIntegration === 'ha-departures' && hasPublicTransportDeps ? `
           <div style="margin-top: 16px;">
             <div class="form-row">
-              <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
+              <label for="ha-departures-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
               <input 
                 type="number" 
-                id="hvv-max" 
-                value="${hvvMax !== undefined ? hvvMax : 1}" 
+                id="ha-departures-max" 
+                value="${haDeparturesMax !== undefined ? haDeparturesMax : 3}" 
                 min="1" 
                 max="5"
                 style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
@@ -535,22 +535,56 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               ${t('haDeparturesMaxNote')}
             </div>
             <div class="form-row">
-              <input 
-                type="checkbox" 
-                id="hvv-show-title" 
-                ${hvvShowTitle !== false ? 'checked' : ''}
-              />
-              <label for="hvv-show-title">${t('showTitle')}</label>
-            </div>
-            <div class="form-row">
-              <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">${t('title')}</label>
+              <label for="ha-departures-icon" style="margin-right: 8px; min-width: 120px;">${t('icon')}</label>
               <input 
                 type="text" 
-                id="hvv-title" 
-                value="${hvvTitle || ''}" 
-                placeholder=""
+                id="ha-departures-icon" 
+                value="${haDeparturesIcon || 'mdi:bus-multiple'}" 
+                placeholder="mdi:bus-multiple"
                 style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
               />
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="ha-departures-show-card-header" 
+                ${haDeparturesShowCardHeader !== false ? 'checked' : ''}
+              />
+              <label for="ha-departures-show-card-header">${t('showCardHeader')}</label>
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="ha-departures-show-animation" 
+                ${haDeparturesShowAnimation !== false ? 'checked' : ''}
+              />
+              <label for="ha-departures-show-animation">${t('showAnimation')}</label>
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="ha-departures-show-transport-icon" 
+                ${haDeparturesShowTransportIcon === true ? 'checked' : ''}
+              />
+              <label for="ha-departures-show-transport-icon">${t('showTransportIcon')}</label>
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="ha-departures-hide-empty-departures" 
+                ${haDeparturesHideEmptyDepartures === true ? 'checked' : ''}
+              />
+              <label for="ha-departures-hide-empty-departures">${t('hideEmptyDepartures')}</label>
+            </div>
+            <div class="form-row">
+              <label for="ha-departures-time-style" style="margin-right: 8px; min-width: 120px;">${t('timeStyle')}</label>
+              <select 
+                id="ha-departures-time-style" 
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              >
+                <option value="dynamic" ${haDeparturesTimeStyle === 'dynamic' ? 'selected' : ''}>${t('timeStyleDynamic')}</option>
+                <option value="timestamp" ${haDeparturesTimeStyle === 'timestamp' ? 'selected' : ''}>${t('timeStyleTimestamp')}</option>
+              </select>
             </div>
           </div>
           ` : ''}

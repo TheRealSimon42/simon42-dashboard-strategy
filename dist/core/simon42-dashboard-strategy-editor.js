@@ -212,6 +212,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const hvvShowTime = this._config.hvv_show_time === true;
     const hvvShowTitle = this._config.hvv_show_title === true;
     const hvvTitle = this._config.hvv_title || 'HVV';
+    // ha-departures specific config
+    const haDeparturesMax = this._config.ha_departures_max !== undefined ? this._config.ha_departures_max : 3;
+    const haDeparturesShowCardHeader = this._config.ha_departures_show_card_header !== false; // Default true
+    const haDeparturesShowAnimation = this._config.ha_departures_show_animation !== false; // Default true
+    const haDeparturesShowTransportIcon = this._config.ha_departures_show_transport_icon === true; // Default false
+    const haDeparturesHideEmptyDepartures = this._config.ha_departures_hide_empty_departures === true; // Default false
+    const haDeparturesTimeStyle = this._config.ha_departures_time_style || 'dynamic'; // Default dynamic
+    const haDeparturesIcon = this._config.ha_departures_icon || 'mdi:bus-multiple';
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
@@ -289,6 +297,13 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         hvvShowTime,
         hvvShowTitle,
         hvvTitle,
+        haDeparturesMax,
+        haDeparturesShowCardHeader,
+        haDeparturesShowAnimation,
+        haDeparturesShowTransportIcon,
+        haDeparturesHideEmptyDepartures,
+        haDeparturesTimeStyle,
+        haDeparturesIcon,
         entityNamePatterns: this._config.entity_name_patterns || [],
         hass: this._hass
       })}
@@ -308,6 +323,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachPublicTransportCheckboxListener(this, (showPublicTransport) => this._showPublicTransportChanged(showPublicTransport));
     this._attachPublicTransportIntegrationListeners();
     this._attachHvvCardListeners();
+    this._attachHaDeparturesCardListeners();
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
@@ -1659,6 +1675,200 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Wenn Standardwert ('HVV'), entfernen wir die Property
     if (!title || title === 'HVV') {
       delete newConfig.hvv_title;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _attachHaDeparturesCardListeners() {
+    // Max input
+    const maxInput = this.querySelector('#ha-departures-max');
+    if (maxInput) {
+      maxInput.addEventListener('change', (e) => {
+        const value = parseInt(e.target.value, 10);
+        if (!isNaN(value) && value >= 1 && value <= 5) {
+          this._haDeparturesMaxChanged(value);
+        }
+      });
+    }
+
+    // Icon input
+    const iconInput = this.querySelector('#ha-departures-icon');
+    if (iconInput) {
+      iconInput.addEventListener('change', (e) => {
+        this._haDeparturesIconChanged(e.target.value);
+      });
+    }
+
+    // Show card header checkbox
+    const showCardHeaderCheckbox = this.querySelector('#ha-departures-show-card-header');
+    if (showCardHeaderCheckbox) {
+      showCardHeaderCheckbox.addEventListener('change', (e) => {
+        this._haDeparturesShowCardHeaderChanged(e.target.checked);
+      });
+    }
+
+    // Show animation checkbox
+    const showAnimationCheckbox = this.querySelector('#ha-departures-show-animation');
+    if (showAnimationCheckbox) {
+      showAnimationCheckbox.addEventListener('change', (e) => {
+        this._haDeparturesShowAnimationChanged(e.target.checked);
+      });
+    }
+
+    // Show transport icon checkbox
+    const showTransportIconCheckbox = this.querySelector('#ha-departures-show-transport-icon');
+    if (showTransportIconCheckbox) {
+      showTransportIconCheckbox.addEventListener('change', (e) => {
+        this._haDeparturesShowTransportIconChanged(e.target.checked);
+      });
+    }
+
+    // Hide empty departures checkbox
+    const hideEmptyDeparturesCheckbox = this.querySelector('#ha-departures-hide-empty-departures');
+    if (hideEmptyDeparturesCheckbox) {
+      hideEmptyDeparturesCheckbox.addEventListener('change', (e) => {
+        this._haDeparturesHideEmptyDeparturesChanged(e.target.checked);
+      });
+    }
+
+    // Time style select
+    const timeStyleSelect = this.querySelector('#ha-departures-time-style');
+    if (timeStyleSelect) {
+      timeStyleSelect.addEventListener('change', (e) => {
+        this._haDeparturesTimeStyleChanged(e.target.value);
+      });
+    }
+  }
+
+  _haDeparturesMaxChanged(max) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      ha_departures_max: max
+    };
+
+    // Wenn Standardwert (3), entfernen wir die Property
+    if (max === 3) {
+      delete newConfig.ha_departures_max;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _haDeparturesIconChanged(icon) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      ha_departures_icon: icon
+    };
+
+    // Wenn Standardwert, entfernen wir die Property
+    if (!icon || icon.trim() === '' || icon === 'mdi:bus-multiple') {
+      delete newConfig.ha_departures_icon;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _haDeparturesShowCardHeaderChanged(showCardHeader) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      ha_departures_show_card_header: showCardHeader
+    };
+
+    // Wenn Standardwert (true), entfernen wir die Property
+    if (showCardHeader === true) {
+      delete newConfig.ha_departures_show_card_header;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _haDeparturesShowAnimationChanged(showAnimation) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      ha_departures_show_animation: showAnimation
+    };
+
+    // Wenn Standardwert (true), entfernen wir die Property
+    if (showAnimation === true) {
+      delete newConfig.ha_departures_show_animation;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _haDeparturesShowTransportIconChanged(showTransportIcon) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      ha_departures_show_transport_icon: showTransportIcon
+    };
+
+    // Wenn Standardwert (false), entfernen wir die Property
+    if (showTransportIcon === false) {
+      delete newConfig.ha_departures_show_transport_icon;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _haDeparturesHideEmptyDeparturesChanged(hideEmptyDepartures) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      ha_departures_hide_empty_departures: hideEmptyDepartures
+    };
+
+    // Wenn Standardwert (false), entfernen wir die Property
+    if (hideEmptyDepartures === false) {
+      delete newConfig.ha_departures_hide_empty_departures;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _haDeparturesTimeStyleChanged(timeStyle) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      ha_departures_time_style: timeStyle
+    };
+
+    // Wenn Standardwert (dynamic), entfernen wir die Property
+    if (timeStyle === 'dynamic') {
+      delete newConfig.ha_departures_time_style;
     }
 
     this._config = newConfig;
