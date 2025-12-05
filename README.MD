@@ -152,13 +152,16 @@ strategy:
   type: custom:simon42-dashboard
 ```
 
+7. Speichere und schließe - der **grafische Editor öffnet sich automatisch**! 🎉
+
 **Wichtig:** Nach Updates den Browser-Cache leeren:
 - **Hard Refresh**: `Ctrl+Shift+R` (Windows) oder `Cmd+Shift+R` (Mac)
 - **Chrome DevTools**: F12 → Rechtsklick auf Refresh → "Empty Cache and Hard Reload"
 
 Die aktuelle Version wird in der Browser-Konsole angezeigt. Prüfe `window.Simon42DashboardVersion` für Details.
 
-## 🤖 Projekt-Kontext für KI-Assistenten
+<details>
+<summary><strong>🤖 Projekt-Kontext für KI-Assistenten</strong></summary>
 
 Dieses Projekt ist eine modulare Lovelace Dashboard-Strategy für Home Assistant, entwickelt von Simon42. Es generiert automatisch Views basierend auf HA-Areas, Devices und Entities. Die Codebasis ist in JavaScript (ES6-Module) strukturiert:
 
@@ -171,7 +174,11 @@ Dieses Projekt ist eine modulare Lovelace Dashboard-Strategy für Home Assistant
 
 Für Änderungen: Respektiere die modulare Struktur, nutze ES6-Imports/Exports, teste in HA-Umgebung. HACS-kompatibel seit Version 1.0.2.
 
-## 🎨 Grafischer Konfigurator
+</details>
+
+## 🎨 Grafischer Konfigurator (Editor)
+
+Der Editor ist das Herzstück der simon42 Dashboard Strategy - **keine YAML-Kenntnisse erforderlich!** Alle Konfigurationen können über die intuitive grafische Oberfläche vorgenommen werden.
 
 Der Editor bietet eine intuitive dreistufige Hierarchie zur Konfiguration:
 
@@ -236,8 +243,14 @@ In der aufgeklappten Entity-Liste:
 - **Intelligente Gruppierung** - Entities werden automatisch nach Domain erkannt
 - **Visuelle Hierarchie** - Einrückungen zeigen die Struktur klar
 - **Drag & Drop** - Intuitive Neuordnung per Maus
+- **Checkboxen** für alle Optionen (Wetter, Energie, etc.)
+- **Dropdown-Menüs** für Auswahlmöglichkeiten (Sprache, Integrationen, etc.)
+- **Entity-Auswahl** mit visueller Hierarchie
 
-## ⚙️ Konfiguration
+<details>
+<summary><strong>📝 Manuelle YAML-Konfiguration (für Fortgeschrittene)</strong></summary>
+
+Falls du die Konfiguration manuell anpassen möchtest, findest du hier alle verfügbaren Optionen:
 
 ### Basis-Konfiguration
 
@@ -403,6 +416,8 @@ areas_options:
 
 Mit `entity_name_patterns` kannst du Entity-Namen dynamisch transformieren, um längere Namen zu kürzen oder unerwünschte Präfixe/Suffixe zu entfernen. Dies ist besonders nützlich, wenn Entities in Zigbee2MQTT oder anderen Integrations mit strukturierten Namen benannt wurden, die im Dashboard zu lang sind.
 
+**Im Editor:** Die Entity-Name-Transformation kann im Editor unter "Entity Name Patterns" konfiguriert werden.
+
 ```yaml
 strategy:
   type: custom:simon42-dashboard
@@ -452,19 +467,13 @@ entity_name_patterns:
 
 **Hinweis:** Die Transformation wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant.
 
+</details>
+
 ## 🏷️ Label-System
 
-### Globale Labels
+Das Dashboard unterstützt Labels für die globale Filterung von Entities. Entities mit dem Label `no_dboard` werden automatisch überall ausgeblendet.
 
-Das Dashboard unterstützt Labels für die globale Filterung:
-
-| Label | Funktion | Verwendung |
-|-------|----------|------------|
-| `no_dboard` | **Globale Exklusion** | Entity wird nirgendwo im Dashboard angezeigt, auch nicht im Konfigurator |
-| `show_dboard` | *Reserviert* | Für zukünftige Verwendung |
-
-### Label verwenden
-
+**Verwendung:**
 1. Gehe zu **Einstellungen** → **Geräte & Dienste** → **Entities**
 2. Wähle die gewünschte Entity aus
 3. Klicke auf **Labels** und füge `no_dboard` hinzu
@@ -474,6 +483,16 @@ Das Dashboard unterstützt Labels für die globale Filterung:
 - Hilfs-Entities
 - Template-Sensoren für Automatisierungen
 - Interne Systemwerte
+
+<details>
+<summary><strong>📋 Details zum Label-System</strong></summary>
+
+### Globale Labels
+
+| Label | Funktion | Verwendung |
+|-------|----------|------------|
+| `no_dboard` | **Globale Exklusion** | Entity wird nirgendwo im Dashboard angezeigt, auch nicht im Konfigurator |
+| `show_dboard` | *Reserviert* | Für zukünftige Verwendung |
 
 ### Kombinierbarkeit
 
@@ -498,7 +517,10 @@ Labels und `groups_options` ergänzen sich perfekt:
 3. ✅ Entity Registry Status → Disabled/Hidden Entities werden gefiltert
 4. ✅ Entity Category → Config/Diagnostic Entities werden gefiltert
 
-## 🏗️ Projekt-Architektur
+</details>
+
+<details>
+<summary><strong>🏗️ Projekt-Architektur (Für Entwickler)</strong></summary>
 
 ### Verzeichnisstruktur
 
@@ -573,6 +595,8 @@ Das Dashboard registriert folgende Custom Elements:
 - `ll-strategy-simon42-view-covers` - Covers-View-Strategy
 - `ll-strategy-simon42-view-security` - Security-View-Strategy
 - `ll-strategy-simon42-view-batteries` - Batterie-View-Strategy
+
+</details>
 
 ## 📊 Spezialisierte Views
 
@@ -952,7 +976,8 @@ Alle Gruppen-Views unterstützen Batch-Aktionen über Heading-Badges:
 - Rollos (Alle öffnen/schließen)
 - Bereiche (Alle Lichter des Raums)
 
-## 🔍 Entity-Filterung im Detail
+<details>
+<summary><strong>🔍 Entity-Filterung im Detail (Technische Details)</strong></summary>
 
 ### Filterlogik (Reihenfolge)
 
@@ -1012,6 +1037,8 @@ Config:
 ❌ light.wohnzimmer_config (Category)
 ✅ light.wohnzimmer_stehlampe (nur im Raum-View ausgeblendet!)
 ```
+
+</details>
 
 ## 🤝 Contributing
 
