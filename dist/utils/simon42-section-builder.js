@@ -3,6 +3,13 @@
 // ====================================================================
 
 import { t, getLanguage } from './simon42-i18n.js';
+import {
+  filterValidEntities,
+  filterHaDeparturesEntities,
+  getCardType,
+  validateCombination,
+  CARD_BUILDERS
+} from './simon42-public-transport-builders.js';
 
 /**
  * Erstellt die Übersichts-Section mit Zusammenfassungen
@@ -359,314 +366,53 @@ export function createWeatherSection(weatherEntity, showWeather, config = {}) {
  */
 export function createPublicTransportSection(config, hass) {
   const showPublicTransport = config.show_public_transport === true;
-  let publicTransportEntities = (config.public_transport_entities || [])
-    .filter(entityId => {
-      const state = hass.states[entityId];
-      // Filter out entities that don't exist or are unavailable/unknown
-      return state !== undefined && 
-             state.state !== 'unavailable' && 
-             state.state !== 'unknown';
-    });
-
-  if (!showPublicTransport || publicTransportEntities.length === 0) {
+  if (!showPublicTransport) {
     return null;
   }
-  
-  // Determine card type from config
+
+  // Get integration and card type
   const integration = config.public_transport_integration;
-  
-  // If no integration configured, don't show section
   if (!integration) {
     return null;
   }
-  
-  // Auto-determine card type based on integration (hardcoded mapping)
-  // This ensures backward compatibility if card is not set
-  const cardMapping = {
-    'hvv': 'hvv-card',
-    'ha-departures': 'ha-departures-card',
-    'db_info': 'db-info-card',
-    'kvv': 'kvv-departures-card'
-  };
-  
-  const cardType = config.public_transport_card || cardMapping[integration];
-  
-  // For ha-departures-card, filter entities to only include those with valid departure times
-  if (cardType === 'ha-departures-card') {
-    publicTransportEntities = publicTransportEntities.filter(entityId => {
-      const state = hass.states[entityId];
-      if (!state || !state.attributes) {
-        return false;
-      }
-      
-      const attrs = state.attributes;
-      // Check if entity has at least one valid departure time
-      // Check planned_departure_time (main) or planned_departure_time_1 through _4
-      const hasPlannedTime = attrs.planned_departure_time !== null && 
-                            attrs.planned_departure_time !== undefined;
-      
-      // Also check numbered departure times
-      const hasAnyPlannedTime = hasPlannedTime || 
-        (attrs.planned_departure_time_1 !== null && attrs.planned_departure_time_1 !== undefined) ||
-        (attrs.planned_departure_time_2 !== null && attrs.planned_departure_time_2 !== undefined) ||
-        (attrs.planned_departure_time_3 !== null && attrs.planned_departure_time_3 !== undefined) ||
-        (attrs.planned_departure_time_4 !== null && attrs.planned_departure_time_4 !== undefined);
-      
-      // Entity is valid if it has at least one planned departure time
-      return hasAnyPlannedTime;
-    });
-    
-    // If no valid entities remain, don't show section
-    if (publicTransportEntities.length === 0) {
-      return null;
-    }
-  }
-  
-  // Validate card/integration combination
-  const validCombinations = {
-    'hvv': ['hvv-card'],
-    'ha-departures': ['ha-departures-card'],
-    'db_info': ['db-info-card'], // Note: db_info uses flex-table-card, but we keep this for UI consistency
-    'kvv': ['kvv-departures-card']
-  };
 
-  const validCards = validCombinations[integration] || [];
-  if (!cardType || !validCards.includes(cardType)) {
-    // Invalid combination, don't show section
+  const cardType = getCardType(integration, config.public_transport_card);
+  if (!cardType) {
+    return null;
+  }
+
+  // Validate combination
+  if (!validateCombination(integration, cardType)) {
     console.warn(`[simon42-dashboard] Invalid public transport card/integration combination: ${cardType} with ${integration}`);
     return null;
   }
 
-  // Build card configuration based on card type
-  // Note: We only check cardType, not integration, since cardType determines which card is rendered
-  let cardConfig = {};
-
-  // Set card type and add card-specific options
-  if (cardType === 'hvv-card') {
-    // HVV card uses entities array
-    cardConfig.entities = publicTransportEntities;
-    // HVV card specific options
-    cardConfig.type = 'custom:hvv-card';
-    cardConfig.max = config.hvv_max !== undefined ? config.hvv_max : 10;
-    cardConfig.show_time = config.hvv_show_time !== undefined ? config.hvv_show_time : false;
-    cardConfig.show_title = config.hvv_show_title !== undefined ? config.hvv_show_title : false;
-    cardConfig.title = config.hvv_title || 'HVV';
-  } else if (cardType === 'ha-departures-card') {
-    // ha-departures-card uses 'departures-card' as the type
-    // Based on ha-departures-card README: type is 'custom:departures-card'
-    cardConfig.type = 'custom:departures-card';
-    
-    // Determine if dark mode is active
-    // Check hass.themes for theme information
-    // hass.themes.darkMode is true if dark mode is active, or check selected theme
-    const isDarkMode = hass?.themes?.darkMode === true || 
-                       (hass?.themes?.themes && hass?.themes?.themes[hass?.themes?.selectedTheme]?.darkMode === true) ||
-                       (hass?.themes?.selectedTheme && hass?.themes?.selectedTheme.toLowerCase().includes('dark'));
-    
-    // Use accent color that adapts to theme, or fallback to a visible color
-    // For dark mode: use a lighter, more visible color (orange-red)
-    // For light mode: use a darker, more visible color (blue)
-    // Default to accent color via CSS variable, or use theme-appropriate fallback
-    const lineColor = isDarkMode 
-      ? '#EB5A3C'  // Lighter orange-red for dark mode (good contrast)
-      : '#03A9F4';   // Blue for light mode (good contrast)
-    
-    // ha-departures-card expects entities as objects with 'entity' property
-    // Apply global settings to each entity (line-specific options can be added later)
-    const timeStyle = config.ha_departures_time_style || 'dynamic';
-    cardConfig.entities = publicTransportEntities.map(entityId => {
-      const entityConfig = {
-        entity: entityId,
-        lineColor: lineColor  // Add lineColor that adapts to dark/light mode
-      };
-      
-      // Apply global timeStyle to each entity
-      if (timeStyle !== 'dynamic') {
-        entityConfig.timeStyle = timeStyle;
-      }
-      
-      return entityConfig;
-    });
-    
-    // Card-level options
-    // departuresToShow (max 5 departures)
-    const maxDepartures = config.ha_departures_max !== undefined ? config.ha_departures_max : 3;
-    cardConfig.departuresToShow = Math.min(maxDepartures, 5);
-    
-    // Icon (always set, default is mdi:bus-multiple)
-    cardConfig.icon = config.ha_departures_icon || 'mdi:bus-multiple';
-    
-    // showCardHeader (default: true)
-    if (config.ha_departures_show_card_header === false) {
-      cardConfig.showCardHeader = false;
-    }
-    
-    // showAnimation (default: true)
-    if (config.ha_departures_show_animation === false) {
-      cardConfig.showAnimation = false;
-    }
-    
-    // showTransportIcon (default: false)
-    if (config.ha_departures_show_transport_icon === true) {
-      cardConfig.showTransportIcon = true;
-    }
-    
-    // hideEmptyDepartures (default: false)
-    if (config.ha_departures_hide_empty_departures === true) {
-      cardConfig.hideEmptyDepartures = true;
-    }
-  } else if (cardType === 'db-info-card') {
-    // db_info integration uses flex-table-card with complex configuration
-    // Based on db_info README: https://homeassistant.phil-lipp.de/hacs/repository/1075370780
-    
-    // Group entities by path (extract path name from friendly_name)
-    // friendly_name format: "Phillipp Jäger → Fürstenberg Institut Verbindung 1"
-    // Extract path name by removing "Verbindung X" or "Connection X" suffix
-    const pathGroups = {};
-    
-    publicTransportEntities.forEach(entityId => {
-      const entity = hass.states[entityId];
-      if (!entity || !entity.attributes) {
-        return;
-      }
-      
-      const friendlyName = entity.attributes.friendly_name || '';
-      // Extract path name by removing "Verbindung X" or "Connection X" pattern
-      // Match both German and English patterns, with optional whitespace
-      const pathName = friendlyName
-        .replace(/\s*(?:Verbindung|Connection)\s+\d+$/, '')
-        .trim();
-      
-      // Use original friendly_name as fallback if pattern doesn't match
-      const groupKey = pathName || friendlyName || entityId;
-      
-      if (!pathGroups[groupKey]) {
-        pathGroups[groupKey] = [];
-      }
-      pathGroups[groupKey].push(entityId);
-    });
-    
-    // Get current language for locale settings
-    const currentLang = getLanguage();
-    const locale = currentLang === 'de' ? 'de-DE' : 'en-US';
-    
-    // Check user's time format preference from Home Assistant
-    // hass.locale.time_format can be 'language' (uses locale default), '12', or '24'
-    // hass.localize is a function that respects user preferences
-    // Default to 24-hour format (hour12: false) if preference is '24' or not specified
-    // Use 12-hour format (hour12: true) only if preference is explicitly '12'
-    let hour12 = false; // Default to 24-hour format
-    if (hass?.locale?.time_format === '12') {
-      hour12 = true;
-    } else if (hass?.locale?.time_format === 'language') {
-      // If set to 'language', check if locale typically uses 12-hour format
-      // Most European locales (de-DE, etc.) use 24-hour, US uses 12-hour
-      hour12 = locale === 'en-US';
-    }
-    // Otherwise default to 24-hour format (hour12: false)
-    
-    // Format modify functions as direct JavaScript expressions
-    // The modify property expects a string that will be evaluated as JavaScript code
-    // x is automatically available and represents the cell value
-    // Based on official examples: https://github.com/custom-cards/flex-table-card/blob/master/docs/example-cfg-advanced-cell-formatting.md
-    // When data contains multiple comma-separated attributes like 'Departure Time,Departure Time Real',
-    // x will be a string with both values joined by space (default multi_delimiter)
-    // db_info uses ISO format: "2025-12-03T22:49:00 2025-12-03T22:49:00" or "2025-12-03T22:51:00 null"
-    // Format time with delay handling - parse ISO datetime strings, handle null values
-    // Use hour12 option to respect user's time format preference (false = 24-hour, true = 12-hour)
-    const formatTimeWithDelayStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return '-'; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr || timeStr === 'null' || timeStr === 'undefined') { return '-'; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return '-'; } var timeFormatted = time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); if (!timeRealStr || timeRealStr === 'null' || timeRealStr === 'undefined') { return timeFormatted; } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return timeFormatted; } if (time >= timeReal) { return '<div style="color:green">' + timeFormatted + '</div>'; } else { var delayMinutes = (timeReal - time) / (1000 * 60); var timeRealFormatted = timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); if (delayMinutes > 4) { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:red">' + timeRealFormatted + '</div>'; } else { return '<s><div style="color:grey">' + timeFormatted + '</div></s><div style="color:green">' + timeRealFormatted + '</div>'; } } } catch(e) { return '-'; } })()`;
-    
-    // Format sort time (use actual time if available, otherwise planned time)
-    const formatSortTimeStr = `(function() { try { var str = (x || '').toString().trim(); if (!str || str === 'undefined' || str === 'null') { return ''; } var parts = str.split(' '); var timeStr = parts[0] || ''; var timeRealStr = parts[1] || ''; if (!timeStr || timeStr === 'null' || timeStr === 'undefined') { return ''; } var time = new Date(timeStr); if (isNaN(time.getTime())) { return ''; } if (!timeRealStr || timeRealStr === 'null' || timeRealStr === 'undefined') { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); } var timeReal = new Date(timeRealStr); if (isNaN(timeReal.getTime())) { return time.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); } return timeReal.toLocaleTimeString('${locale}', {hour: '2-digit', minute: '2-digit', hour12: ${hour12}}); } catch(e) { return ''; } })()`;
-    
-    // Configure columns as per db_info README (following official example)
-    // Use new data syntax: comma-separated attribute names (replaces old multi syntax)
-    // The card will combine multiple values with space (default multi_delimiter)
-    // db_info attributes use spaces in names (e.g., "Departure Time", "Arrival Time")
-    // Attribute names must match exactly as they appear in the entity attributes
-    const tableColumns = [
-      {
-        name: t('publicTransportColumnStart'),
-        data: 'Departure'  // Start station name (e.g., "Kaltenkircher Platz, Hamburg")
-      },
-      {
-        name: t('publicTransportColumnConnection'),
-        data: 'Name'  // Connection/route name (e.g., "Bus 3")
-      },
-      {
-        name: t('publicTransportColumnDeparture'),
-        data: 'Departure Time,Departure Time Real',  // ISO format: "2025-12-03T22:49:00 2025-12-03T22:49:00"
-        modify: formatTimeWithDelayStr
-      },
-      {
-        name: t('publicTransportColumnArrival'),
-        data: 'Arrival Time,Arrival Time Real',  // ISO format: "2025-12-03T22:58:00 2025-12-03T22:58:00"
-        modify: formatTimeWithDelayStr
-      },
-      {
-        name: 'sort_time',
-        data: 'Departure Time,Departure Time Real',
-        modify: formatSortTimeStr,
-        hidden: true
-      }
-    ];
-    
-    // Create cards array with header + table for each path group
-    const pathCards = [];
-    const pathNames = Object.keys(pathGroups);
-    
-    pathNames.forEach((pathName, index) => {
-      const pathEntities = pathGroups[pathName];
-      
-      // Add slim header row for path name
-      pathCards.push({
-        type: 'markdown',
-        content: `**${pathName}**`,
-        card_mod: {
-          style: {
-            '$': '.card-content { padding: 8px 16px 4px 16px; font-size: 14px; }'
-          }
-        }
-      });
-      
-      // Add table card for this path's connections
-      const tableCard = {
-        type: 'custom:flex-table-card',
-        entities: pathEntities,
-        sort_by: 'sort_time',
-        columns: tableColumns,
-        css: {
-          'table+': 'padding: 1px 5px 16px 5px;'
-        },
-        card_mod: {
-          style: {
-            '$': 'h1.card-header { font-size: 20px; padding-top: 3px; padding-bottom: 1px; }'
-          }
-        }
-      };
-      
-      // Only add title if it's the first path group and config has a title
-      if (index === 0 && config.hvv_title) {
-        tableCard.title = config.hvv_title;
-      }
-      
-      pathCards.push(tableCard);
-    });
-    
-    // Use pathCards as cardConfig for db_info
-    cardConfig = pathCards;
-  } else if (cardType === 'kvv-departures-card') {
-    // KVV Departure Monitor card uses simple entity configuration
-    // Based on kvv-departures-card README: type is 'custom:kvv-departures-card'
-    // KVV card uses 'entity' (singular), so we need one card per entity
-    // Create an array of card configs, one for each entity
-    cardConfig = publicTransportEntities.map(entityId => ({
-      type: 'custom:kvv-departures-card',
-      entity: entityId
-    }));
-  }
+  // Filter entities
+  let publicTransportEntities = filterValidEntities(config.public_transport_entities || [], hass);
   
-  // Build cards array - handle db_info and kvv differently since they return arrays
+  // Special filtering for ha-departures-card
+  if (cardType === 'ha-departures-card') {
+    publicTransportEntities = filterHaDeparturesEntities(publicTransportEntities, hass);
+    if (publicTransportEntities.length === 0) {
+      return null;
+    }
+  }
+
+  if (publicTransportEntities.length === 0) {
+    return null;
+  }
+
+  // Get builder function
+  const builder = CARD_BUILDERS[cardType];
+  if (!builder) {
+    console.warn(`[simon42-dashboard] No builder found for card type: ${cardType}`);
+    return null;
+  }
+
+  // Build card configuration
+  const cardConfig = builder(publicTransportEntities, config, hass);
+
+  // Build section with heading
   const cards = [
     {
       type: "heading",
@@ -675,9 +421,9 @@ export function createPublicTransportSection(config, hass) {
       icon: "mdi:bus"
     }
   ];
-  
-  // For db_info and kvv, cardConfig is an array of cards, otherwise it's a single card
-  if ((cardType === 'db-info-card' || cardType === 'kvv-departures-card') && Array.isArray(cardConfig)) {
+
+  // Handle arrays (db-info-card, kvv-departures-card) vs single card
+  if (Array.isArray(cardConfig)) {
     cards.push(...cardConfig);
   } else {
     cards.push(cardConfig);
