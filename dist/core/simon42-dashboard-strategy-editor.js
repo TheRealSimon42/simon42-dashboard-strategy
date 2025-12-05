@@ -129,7 +129,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // 1. Custom Element Registry - prüfe direkt auf Element-Name
     const hasElement = customElements.get(cardElementName) !== undefined;
     if (hasElement) {
-      console.log(`[simon42-dashboard] Found ${card} card via customElements.get('${cardElementName}')`);
       return true;
     }
     
@@ -138,14 +137,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       // Prüfe nach exaktem cardType
       const foundByType = window.customCards.some(c => c.type === cardType);
       if (foundByType) {
-        console.log(`[simon42-dashboard] Found ${card} card via window.customCards (type: ${cardType})`);
         return true;
       }
       
       // Prüfe nach Element-Name
       const foundByName = window.customCards.some(c => c.name === cardElementName || c.name === card);
       if (foundByName) {
-        console.log(`[simon42-dashboard] Found ${card} card via window.customCards (name: ${cardElementName})`);
         return true;
       }
       
@@ -157,25 +154,16 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
           return name.includes('departure') || type.includes('departure');
         });
         if (foundByKeyword) {
-          console.log(`[simon42-dashboard] Found ${card} card via window.customCards (keyword: departure)`);
           return true;
         }
       }
     }
     
     // 3. DOM Query (falls Card bereits im DOM ist)
-    const foundInDOM = document.querySelector(cardElementName);
-    if (foundInDOM) {
-      console.log(`[simon42-dashboard] Found ${card} card via DOM query ('${cardElementName}')`);
+    if (document.querySelector(cardElementName)) {
       return true;
     }
     
-    // Debug: Log available cards if not found
-    if (card === 'ha-departures-card' && window.customCards) {
-      console.log('[simon42-dashboard] Available customCards:', window.customCards.map(c => ({ name: c.name, type: c.type })));
-    }
-    
-    console.log(`[simon42-dashboard] Card ${card} (element: ${cardElementName}, type: ${cardType}) not found`);
     return false;
   }
 

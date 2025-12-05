@@ -137,11 +137,34 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
  */
 function getCardNameForIntegration(integration) {
   const cardNames = {
-    'hvv': t('publicTransportCardHVV'),
-    'ha-departures': t('publicTransportCardHADepartures'),
-    'db_info': t('publicTransportCardDBInfo')
+    'hvv': 'hvv-card',
+    'ha-departures': 'departures-card', // ha-departures-card uses 'departures-card' as element name
+    'db_info': 'flex-table-card'
   };
   return cardNames[integration] || integration;
+}
+
+/**
+ * Gibt die Repository-URLs für Integration und Card zurück
+ * @param {string} integration - Die Integration ('hvv', 'ha-departures', 'db_info')
+ * @returns {Object} Objekt mit integrationUrl und cardUrl
+ */
+function getPublicTransportUrls(integration) {
+  const urls = {
+    'ha-departures': {
+      integrationUrl: 'https://github.com/alex-jung/ha-departures',
+      cardUrl: 'https://github.com/alex-jung/ha-departures-card'
+    },
+    'hvv': {
+      integrationUrl: null, // Available in Home Assistant Core by default
+      cardUrl: 'https://github.com/nilstgmd/hvv-card'
+    },
+    'db_info': {
+      integrationUrl: 'https://github.com/EiS94/db_info',
+      cardUrl: 'https://github.com/custom-cards/flex-table-card'
+    }
+  };
+  return urls[integration] || { integrationUrl: null, cardUrl: null };
 }
 
 function renderPublicTransportList(publicTransportEntities, allEntities) {
@@ -415,7 +438,25 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <div class="description" style="margin-top: 8px;">
             ${hasPublicTransportDeps 
               ? t('publicTransportCardAvailable')
-              : `⚠️ ${t('publicTransportCardMissingDeps', { card: getCardNameForIntegration(publicTransportIntegration) })}`}
+              : (() => {
+                  const cardName = getCardNameForIntegration(publicTransportIntegration);
+                  const urls = getPublicTransportUrls(publicTransportIntegration);
+                  let message = `⚠️ ${t('publicTransportCardMissingDeps', { card: cardName })}`;
+                  
+                  if (urls.integrationUrl || urls.cardUrl) {
+                    message += '<br><br>';
+                    if (urls.integrationUrl) {
+                      message += `${t('publicTransportIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
+                    } else if (publicTransportIntegration === 'hvv') {
+                      message += `${t('publicTransportIntegrationLink')}: ${t('publicTransportIntegrationAvailableInCore')}<br>`;
+                    }
+                    if (urls.cardUrl) {
+                      message += `${t('publicTransportCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+                    }
+                  }
+                  
+                  return message;
+                })()}
           </div>
           ` : ''}
           ${publicTransportIntegration && hasPublicTransportDeps ? `
