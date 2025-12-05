@@ -5,6 +5,7 @@ import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
 import { initLanguage } from '../utils/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
+import { checkDependency, checkPublicTransportDependencies } from '../utils/simon42-dependency-checker.js';
 import { 
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
@@ -50,127 +51,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     }
   }
 
-  _checkSearchCardDependencies() {
-    // Prüfe ob custom:search-card und card-tools verfügbar sind
-    const hasSearchCard = customElements.get('search-card') !== undefined;
-    const hasCardTools = window.customCards && window.customCards.some(card => 
-      card.type === 'custom:search-card'
-    );
-    
-    // Alternative Prüfung: Versuche zu erkennen ob die Komponenten geladen wurden
-    const searchCardExists = hasSearchCard || document.querySelector('search-card') !== null;
-    const cardToolsExists = typeof window.customCards !== 'undefined' || typeof window.cardTools !== 'undefined';
-    
-    // Beide müssen verfügbar sein
-    return searchCardExists && cardToolsExists;
-  }
-
-  _checkBetterThermostatDependencies() {
-    // Prüfe ob better_thermostat Integration vorhanden ist
-    // Better Thermostat entities haben platform: "better_thermostat" in der Entity Registry
-    const entities = Object.values(this._hass?.entities || {});
-    const hasBetterThermostatEntities = entities.some(entity => {
-      // Prüfe ob es eine climate entity mit better_thermostat platform ist
-      if (entity.entity_id?.startsWith('climate.')) {
-        // In Home Assistant wird die Platform in der Entity Registry gespeichert
-        // Prüfe über die platform property oder über den device_id
-        const platform = entity.platform;
-        if (platform === 'better_thermostat') {
-          return true;
-        }
-      }
-      return false;
-    });
-    
-    // Prüfe ob better-thermostat-ui-card verfügbar ist
-    // Die Card sollte als custom element registriert sein
-    const hasUICard = customElements.get('better-thermostat-ui-card') !== undefined ||
-                      window.customCards?.some(card => card.type === 'custom:better-thermostat-ui-card') ||
-                      document.querySelector('better-thermostat-ui-card') !== null;
-    
-    return hasBetterThermostatEntities && hasUICard;
-  }
-
-  _checkHorizonCardDependencies() {
-    // Prüfe ob horizon-card verfügbar ist
-    const hasHorizonCard = customElements.get('horizon-card') !== undefined ||
-                           window.customCards?.some(card => card.type === 'custom:horizon-card') ||
-                           document.querySelector('horizon-card') !== null ||
-                           (window.customCards && window.customCards.some(card => 
-                             card.type === 'custom:horizon-card' || 
-                             card.name?.toLowerCase().includes('horizon')
-                           ));
-    
-    return hasHorizonCard;
-  }
-
-  _checkPublicTransportDependencies(integration, card) {
-    // Prüfe ob die entsprechende Card verfügbar ist
-    // Note: The card parameter is the internal card identifier (e.g., 'ha-departures-card')
-    // but the actual card element name may differ (e.g., 'departures-card' for ha-departures-card)
-    const cardElementNames = {
-      'hvv-card': 'hvv-card',
-      'ha-departures-card': 'departures-card', // ha-departures-card uses 'departures-card' as element name
-      'db-info-card': 'flex-table-card', // db_info uses flex-table-card
-      'kvv-departures-card': 'kvv-departures-card'
-    };
-    
-    const cardElementName = cardElementNames[card];
-    if (!cardElementName) {
-      return false;
-    }
-    
-    // Prüfe ob die Card als custom element registriert ist
-    // For ha-departures-card, check for 'departures-card' element or 'custom:departures-card' type
-    const cardTypeMap = {
-      'ha-departures-card': 'custom:departures-card',
-      'hvv-card': 'custom:hvv-card',
-      'db-info-card': 'custom:flex-table-card', // db_info uses flex-table-card
-      'kvv-departures-card': 'custom:kvv-departures-card'
-    };
-    const cardType = cardTypeMap[card] || `custom:${card}`;
-    
-    // Prüfe auf verschiedene Arten, ob die Card verfügbar ist (ähnlich wie horizon-card check)
-    // 1. Custom Element Registry - prüfe direkt auf Element-Name
-    const hasElement = customElements.get(cardElementName) !== undefined;
-    if (hasElement) {
-      return true;
-    }
-    
-    // 2. window.customCards Array (für HACS Cards) - prüfe nach type
-    if (window.customCards && Array.isArray(window.customCards)) {
-      // Prüfe nach exaktem cardType
-      const foundByType = window.customCards.some(c => c.type === cardType);
-      if (foundByType) {
-        return true;
-      }
-      
-      // Prüfe nach Element-Name
-      const foundByName = window.customCards.some(c => c.name === cardElementName || c.name === card);
-      if (foundByName) {
-        return true;
-      }
-      
-      // Für departures-card: auch nach 'departures' im Namen oder Type suchen (flexibler)
-      if (card === 'ha-departures-card') {
-        const foundByKeyword = window.customCards.some(c => {
-          const name = (c.name || '').toLowerCase();
-          const type = (c.type || '').toLowerCase();
-          return name.includes('departure') || type.includes('departure');
-        });
-        if (foundByKeyword) {
-          return true;
-        }
-      }
-    }
-    
-    // 3. DOM Query (falls Card bereits im DOM ist)
-    if (document.querySelector(cardElementName)) {
-      return true;
-    }
-    
-    return false;
-  }
+  // Dependency checks now use centralized dependency checker utility
+  // See dist/utils/simon42-dependency-checker.js
 
   _render() {
     if (!this._hass || !this._config) {
@@ -207,12 +89,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const cardToCheck = publicTransportCard || (publicTransportIntegration ? cardMapping[publicTransportIntegration] : null);
     
     if (publicTransportIntegration && cardToCheck) {
-      try {
-        hasPublicTransportDeps = this._checkPublicTransportDependencies(publicTransportIntegration, cardToCheck);
-      } catch (e) {
-        console.warn('Error checking Public Transport dependencies:', e);
-        hasPublicTransportDeps = false;
-      }
+      hasPublicTransportDeps = checkPublicTransportDependencies(publicTransportIntegration, cardToCheck, this._hass);
     }
     const hvvMax = this._config.hvv_max !== undefined ? this._config.hvv_max : 10;
     const hvvShowTime = this._config.hvv_show_time === true;
@@ -230,21 +107,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
     const roomPinEntities = this._config.room_pin_entities || [];
-    const hasSearchCardDeps = this._checkSearchCardDependencies();
-    let hasBetterThermostatDeps = false;
-    try {
-      hasBetterThermostatDeps = this._checkBetterThermostatDependencies();
-    } catch (e) {
-      console.warn('Error checking Better Thermostat dependencies:', e);
-      hasBetterThermostatDeps = false;
-    }
-    let hasHorizonCardDeps = false;
-    try {
-      hasHorizonCardDeps = this._checkHorizonCardDependencies();
-    } catch (e) {
-      console.warn('Error checking Horizon Card dependencies:', e);
-      hasHorizonCardDeps = false;
-    }
+    // Check dependencies using centralized dependency checker
+    const hasSearchCardDeps = checkDependency('search-card', this._hass);
+    const hasBetterThermostatDeps = checkDependency('better-thermostat', this._hass);
+    const hasHorizonCardDeps = checkDependency('horizon-card', this._hass);
     
     // Sammle alle Alarm-Control-Panel-Entitäten
     const alarmEntities = Object.keys(this._hass.states)
