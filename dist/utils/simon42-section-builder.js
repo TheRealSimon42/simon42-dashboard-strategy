@@ -71,7 +71,8 @@ export function createOverviewSection(data) {
     {
       type: "custom:simon42-summary-card",
       summary_type: "lights",
-      areas_options: config.areas_options || {}
+      areas_options: config.areas_options || {},
+      language: config.language
     }
   ];
 
@@ -80,7 +81,8 @@ export function createOverviewSection(data) {
     summaryCards.push({
       type: "custom:simon42-summary-card",
       summary_type: "covers",
-      areas_options: config.areas_options || {}
+      areas_options: config.areas_options || {},
+      language: config.language
     });
   }
 
@@ -88,12 +90,14 @@ export function createOverviewSection(data) {
     {
       type: "custom:simon42-summary-card",
       summary_type: "security",
-      areas_options: config.areas_options || {}
+      areas_options: config.areas_options || {},
+      language: config.language
     },
     {
       type: "custom:simon42-summary-card",
       summary_type: "batteries",
-      areas_options: config.areas_options || {}
+      areas_options: config.areas_options || {},
+      language: config.language
     }
   );
 

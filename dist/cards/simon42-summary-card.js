@@ -6,6 +6,8 @@
 // KEIN redundantes Caching von Registry-Daten mehr!
 // ====================================================================
 
+import { t, initLanguage } from '../utils/simon42-i18n.js';
+
 class Simon42SummaryCard extends HTMLElement {
   constructor() {
     super();
@@ -28,6 +30,13 @@ class Simon42SummaryCard extends HTMLElement {
   set hass(hass) {
     const oldHass = this._hass;
     this._hass = hass;
+    
+    // Initialisiere Sprache aus hass-Einstellungen (falls noch nicht geschehen)
+    if (hass && this.config) {
+      // Versuche Sprache aus config zu lesen, sonst aus hass
+      const languageConfig = { language: this.config.language || hass.language };
+      initLanguage(languageConfig, hass);
+    }
     
     // Beim ersten Mal oder wenn sich Entities geändert haben: Lade excluded Labels
     if (!oldHass || oldHass.entities !== hass.entities) {
@@ -299,25 +308,25 @@ class Simon42SummaryCard extends HTMLElement {
     const configs = {
       lights: {
         icon: 'mdi:lamps',
-        name: hasItems ? `${count} ${count === 1 ? 'Licht an' : 'Lichter an'}` : 'Alle Lichter aus',
+        name: hasItems ? `${count} ${count === 1 ? t('summaryLightOn') : t('summaryLightsOn')}` : t('summaryAllLightsOff'),
         color: hasItems ? 'orange' : 'grey',
         path: 'lights'
       },
       covers: {
         icon: 'mdi:blinds-horizontal',
-        name: hasItems ? `${count} ${count === 1 ? 'Rollo offen' : 'Rollos offen'}` : 'Alle Rollos geschlossen',
+        name: hasItems ? `${count} ${count === 1 ? t('summaryCoverOpen') : t('summaryCoversOpen')}` : t('summaryAllCoversClosed'),
         color: hasItems ? 'purple' : 'grey',
         path: 'covers'
       },
       security: {
         icon: 'mdi:security',
-        name: hasItems ? `${count} unsicher` : 'Alles gesichert',
+        name: hasItems ? `${count} ${t('summaryInsecure')}` : t('summaryAllSecure'),
         color: hasItems ? 'yellow' : 'grey',
         path: 'security'
       },
       batteries: {
         icon: hasItems ? 'mdi:battery-alert' : 'mdi:battery-charging',
-        name: hasItems ? `${count} ${count === 1 ? 'Batterie' : 'Batterien'} kritisch` : 'Alle Batterien OK',
+        name: hasItems ? `${count} ${count === 1 ? t('battery') : t('batteriesPlural')} ${t('summaryBatteryCritical')}` : t('summaryAllBatteriesOK'),
         color: hasItems ? 'red' : 'grey',
         path: 'batteries'
       }

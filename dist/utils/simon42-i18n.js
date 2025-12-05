@@ -46,6 +46,18 @@ const translations = {
     battery: "Batterie",
     batteriesPlural: "Batterien",
     
+    // Summary Card
+    summaryLightOn: "Licht an",
+    summaryLightsOn: "Lichter an",
+    summaryAllLightsOff: "Alle Lichter aus",
+    summaryCoverOpen: "Rollo offen",
+    summaryCoversOpen: "Rollos offen",
+    summaryAllCoversClosed: "Alle Rollos geschlossen",
+    summaryInsecure: "unsicher",
+    summaryAllSecure: "Alles gesichert",
+    summaryBatteryCritical: "kritisch",
+    summaryAllBatteriesOK: "Alle Batterien OK",
+    
     // Raum-View
     lighting: "Beleuchtung",
     climate: "Klima",
@@ -192,6 +204,18 @@ const translations = {
     batteriesGood: "Good (> 50%)",
     battery: "Battery",
     batteriesPlural: "Batteries",
+    
+    // Summary Card
+    summaryLightOn: "Light on",
+    summaryLightsOn: "Lights on",
+    summaryAllLightsOff: "All lights off",
+    summaryCoverOpen: "Blind open",
+    summaryCoversOpen: "Blinds open",
+    summaryAllCoversClosed: "All blinds closed",
+    summaryInsecure: "insecure",
+    summaryAllSecure: "All secure",
+    summaryBatteryCritical: "critical",
+    summaryAllBatteriesOK: "All batteries OK",
     
     // Room View
     lighting: "Lighting",
