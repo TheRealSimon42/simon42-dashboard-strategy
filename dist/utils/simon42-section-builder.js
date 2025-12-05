@@ -430,18 +430,33 @@ export function createPublicTransportSection(config, hass) {
   } else if (cardType === 'db-info-card') {
     // db_info integration uses flex-table-card with complex configuration
     // Based on db_info README: https://homeassistant.phil-lipp.de/hacs/repository/1075370780
-    cardConfig.type = 'custom:flex-table-card';
     
-    if (config.hvv_title) {
-      cardConfig.title = config.hvv_title;
-    }
+    // Group entities by path (extract path name from friendly_name)
+    // friendly_name format: "Phillipp Jäger → Fürstenberg Institut Verbindung 1"
+    // Extract path name by removing "Verbindung X" or "Connection X" suffix
+    const pathGroups = {};
     
-    // Use direct entity list - only show entities selected in the editor
-    // This allows flexible display of 1 to n connections based on user selection
-    cardConfig.entities = publicTransportEntities;
-    
-    // Add sorting by departure time
-    cardConfig.sort_by = 'sort_time';
+    publicTransportEntities.forEach(entityId => {
+      const entity = hass.states[entityId];
+      if (!entity || !entity.attributes) {
+        return;
+      }
+      
+      const friendlyName = entity.attributes.friendly_name || '';
+      // Extract path name by removing "Verbindung X" or "Connection X" pattern
+      // Match both German and English patterns, with optional whitespace
+      const pathName = friendlyName
+        .replace(/\s*(?:Verbindung|Connection)\s+\d+$/, '')
+        .trim();
+      
+      // Use original friendly_name as fallback if pattern doesn't match
+      const groupKey = pathName || friendlyName || entityId;
+      
+      if (!pathGroups[groupKey]) {
+        pathGroups[groupKey] = [];
+      }
+      pathGroups[groupKey].push(entityId);
+    });
     
     // Get current language for locale settings
     const currentLang = getLanguage();
@@ -465,7 +480,7 @@ export function createPublicTransportSection(config, hass) {
     // The card will combine multiple values with space (default multi_delimiter)
     // db_info attributes use spaces in names (e.g., "Departure Time", "Arrival Time")
     // Attribute names must match exactly as they appear in the entity attributes
-    cardConfig.columns = [
+    const tableColumns = [
       {
         name: t('publicTransportColumnStart'),
         data: 'Departure'  // Start station name (e.g., "Kaltenkircher Platz, Hamburg")
@@ -492,28 +507,68 @@ export function createPublicTransportSection(config, hass) {
       }
     ];
     
-    // Add CSS styling (as per README: css: table+: "padding: 1px 5px 16px 5px;")
-    cardConfig.css = {
-      'table+': 'padding: 1px 5px 16px 5px;'
-    };
+    // Create cards array with header + table for each path group
+    const pathCards = [];
+    const pathNames = Object.keys(pathGroups);
     
-    // Add card_mod styling for header (as per README)
-    cardConfig.card_mod = {
-      style: {
-        '$': 'h1.card-header { font-size: 20px; padding-top: 3px; padding-bottom: 1px; }'
+    pathNames.forEach((pathName, index) => {
+      const pathEntities = pathGroups[pathName];
+      
+      // Add slim header row for path name
+      pathCards.push({
+        type: 'markdown',
+        content: `**${pathName}**`,
+        card_mod: {
+          style: {
+            '$': '.card-content { padding: 8px 16px 4px 16px; font-size: 14px; }'
+          }
+        }
+      });
+      
+      // Add table card for this path's connections
+      const tableCard = {
+        type: 'custom:flex-table-card',
+        entities: pathEntities,
+        sort_by: 'sort_time',
+        columns: tableColumns,
+        css: {
+          'table+': 'padding: 1px 5px 16px 5px;'
+        },
+        card_mod: {
+          style: {
+            '$': 'h1.card-header { font-size: 20px; padding-top: 3px; padding-bottom: 1px; }'
+          }
+        }
+      };
+      
+      // Only add title if it's the first path group and config has a title
+      if (index === 0 && config.hvv_title) {
+        tableCard.title = config.hvv_title;
       }
-    };
+      
+      pathCards.push(tableCard);
+    });
+    
+    // Use pathCards as cardConfig for db_info
+    cardConfig = pathCards;
   }
   
+  // Build cards array - handle db_info differently since it returns an array
   const cards = [
     {
       type: "heading",
       heading: t('publicTransport'),
       heading_style: "title",
       icon: "mdi:bus"
-    },
-    cardConfig
+    }
   ];
+  
+  // For db_info, cardConfig is an array of cards, otherwise it's a single card
+  if (cardType === 'db-info-card' && Array.isArray(cardConfig)) {
+    cards.push(...cardConfig);
+  } else {
+    cards.push(cardConfig);
+  }
 
   return {
     type: "grid",
