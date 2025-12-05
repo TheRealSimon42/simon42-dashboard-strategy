@@ -323,6 +323,52 @@ export function attachDragAndDropListeners(element, onOrderChange) {
 
 // Helper-Funktionen
 
+/**
+ * Domain categorization configuration for entity grouping.
+ * Maps domains to group keys, with optional device class filtering.
+ */
+const DOMAIN_GROUP_MAPPING = {
+  'light': 'lights',
+  'scene': 'scenes',
+  'climate': 'climate',
+  'media_player': 'media_player',
+  'vacuum': 'vacuum',
+  'fan': 'fan',
+  'switch': 'switches',
+  'cover': {
+    group: (deviceClass) => {
+      // Special handling for covers: curtain/blind go to covers_curtain, others to covers
+      return (deviceClass === 'curtain' || deviceClass === 'blind') ? 'covers_curtain' : 'covers';
+    }
+  }
+};
+
+/**
+ * Gets the group key for an entity based on its domain and device class.
+ * @param {string} domain - Entity domain (e.g., 'light', 'cover')
+ * @param {string} deviceClass - Device class (optional, for covers)
+ * @returns {string|null} Group key or null if not mapped
+ */
+function getGroupKeyForEntity(domain, deviceClass) {
+  const mapping = DOMAIN_GROUP_MAPPING[domain];
+  if (!mapping) {
+    return null;
+  }
+  
+  // Handle function-based mapping (for covers with device class logic)
+  if (typeof mapping === 'function') {
+    return mapping(deviceClass);
+  }
+  
+  // Handle object with group function (for covers)
+  if (typeof mapping === 'object' && mapping.group) {
+    return mapping.group(deviceClass);
+  }
+  
+  // Simple string mapping
+  return mapping;
+}
+
 async function getAreaGroupedEntities(areaId, hass) {
   // NEUES CACHING: Nutze hass.devices und hass.entities (Standard Home Assistant Objects)
   // Keine WebSocket-Calls mehr nötig!
@@ -339,7 +385,7 @@ async function getAreaGroupedEntities(areaId, hass) {
     }
   }
   
-  // Gruppiere Entitäten
+  // Initialize grouped entities structure
   const roomEntities = {
     lights: [],
     covers: [],
@@ -352,13 +398,16 @@ async function getAreaGroupedEntities(areaId, hass) {
     switches: []
   };
   
-  // Labels für Filterung
-  const excludeLabels = entities
-    .filter(e => e.labels?.includes("no_dboard"))
-    .map(e => e.entity_id);
+  // Build exclude labels set for O(1) lookup
+  const excludeLabels = new Set(
+    entities
+      .filter(e => e.labels?.includes("no_dboard"))
+      .map(e => e.entity_id)
+  );
   
+  // Filter and categorize entities
   for (const entity of entities) {
-    // Prüfe ob Entität zum Raum gehört
+    // Check if entity belongs to area
     let belongsToArea = false;
     
     if (entity.area_id) {
@@ -368,45 +417,21 @@ async function getAreaGroupedEntities(areaId, hass) {
     }
     
     if (!belongsToArea) continue;
-    if (excludeLabels.includes(entity.entity_id)) continue;
+    if (excludeLabels.has(entity.entity_id)) continue;
     if (!hass.states[entity.entity_id]) continue;
     if (entity.hidden_by || entity.disabled_by) continue;
     
     const entityRegistry = hass.entities?.[entity.entity_id];
     if (entityRegistry && (entityRegistry.hidden_by || entityRegistry.disabled_by)) continue;
     
+    // Categorize by domain
     const domain = entity.entity_id.split('.')[0];
     const state = hass.states[entity.entity_id];
     const deviceClass = state.attributes?.device_class;
     
-    // Kategorisiere nach Domain
-    if (domain === 'light') {
-      roomEntities.lights.push(entity.entity_id);
-    } 
-    else if (domain === 'cover') {
-      if (deviceClass === 'curtain' || deviceClass === 'blind') {
-        roomEntities.covers_curtain.push(entity.entity_id);
-      } else {
-        roomEntities.covers.push(entity.entity_id);
-      }
-    }
-    else if (domain === 'scene') {
-      roomEntities.scenes.push(entity.entity_id);
-    }
-    else if (domain === 'climate') {
-      roomEntities.climate.push(entity.entity_id);
-    }
-    else if (domain === 'media_player') {
-      roomEntities.media_player.push(entity.entity_id);
-    }
-    else if (domain === 'vacuum') {
-      roomEntities.vacuum.push(entity.entity_id);
-    }
-    else if (domain === 'fan') {
-      roomEntities.fan.push(entity.entity_id);
-    }
-    else if (domain === 'switch') {
-      roomEntities.switches.push(entity.entity_id);
+    const groupKey = getGroupKeyForEntity(domain, deviceClass);
+    if (groupKey && roomEntities[groupKey]) {
+      roomEntities[groupKey].push(entity.entity_id);
     }
   }
   
