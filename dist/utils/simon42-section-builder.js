@@ -454,12 +454,28 @@ export function createPublicTransportSection(config, hass) {
     // Based on ha-departures-card README: type is 'custom:departures-card'
     cardConfig.type = 'custom:departures-card';
     
+    // Determine if dark mode is active
+    // Check hass.themes for theme information
+    // hass.themes.darkMode is true if dark mode is active, or check selected theme
+    const isDarkMode = hass?.themes?.darkMode === true || 
+                       (hass?.themes?.themes && hass?.themes?.themes[hass?.themes?.selectedTheme]?.darkMode === true) ||
+                       (hass?.themes?.selectedTheme && hass?.themes?.selectedTheme.toLowerCase().includes('dark'));
+    
+    // Use accent color that adapts to theme, or fallback to a visible color
+    // For dark mode: use a lighter, more visible color (orange-red)
+    // For light mode: use a darker, more visible color (blue)
+    // Default to accent color via CSS variable, or use theme-appropriate fallback
+    const lineColor = isDarkMode 
+      ? '#EB5A3C'  // Lighter orange-red for dark mode (good contrast)
+      : '#03A9F4';   // Blue for light mode (good contrast)
+    
     // ha-departures-card expects entities as objects with 'entity' property
     // Apply global settings to each entity (line-specific options can be added later)
     const timeStyle = config.ha_departures_time_style || 'dynamic';
     cardConfig.entities = publicTransportEntities.map(entityId => {
       const entityConfig = {
-        entity: entityId
+        entity: entityId,
+        lineColor: lineColor  // Add lineColor that adapts to dark/light mode
       };
       
       // Apply global timeStyle to each entity
