@@ -564,10 +564,8 @@ class Simon42ViewRoomStrategy {
           const isBT = isBetterThermostatEntity(entityId, hass);
           if (isBT) {
             betterThermostatEntities.push(entityId);
-            console.log(`[Better Thermostat] Detected BT entity: ${entityId}`);
           } else {
             standardThermostatEntities.push(entityId);
-            console.log(`[Better Thermostat] Standard entity: ${entityId}`);
           }
         });
         

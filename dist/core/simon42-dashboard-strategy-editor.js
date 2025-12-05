@@ -4,6 +4,7 @@
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
 import { initLanguage } from '../utils/simon42-i18n.js';
+import { ConfigManager } from './editor/simon42-config-manager.js';
 import { 
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
@@ -29,6 +30,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._expandedAreas = new Set();
     this._expandedGroups = new Map(); // Map<areaId, Set<groupKey>>
     this._isRendering = false;
+    // Config Manager für zentrale Config-Verwaltung
+    this._configManager = new ConfigManager(this);
   }
 
   setConfig(config) {
@@ -385,8 +388,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         e.stopPropagation();
         this._favoriteEntitiesChanged(e.detail.value);
       });
-      
-      console.log('Favorites picker created:', picker);
     });
   }
 
@@ -412,22 +413,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _summariesColumnsChanged(columns) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      summaries_columns: columns
-    };
-
-    // Wenn der Standardwert (2) gesetzt ist, entfernen wir die Property
-    if (columns === 2) {
-      delete newConfig.summaries_columns;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('summaries_columns', columns, 2);
   }
 
   _attachAlarmEntityListener() {
@@ -440,22 +426,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _alarmEntityChanged(entityId) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      alarm_entity: entityId
-    };
-
-    // Wenn leer, entfernen wir die Property
-    if (!entityId || entityId === '') {
-      delete newConfig.alarm_entity;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updatePropertyCustom('alarm_entity', entityId, (val) => !val || val === '');
   }
 
   _attachFavoritesListeners() {
@@ -753,13 +724,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  // Kann weg?
   _favoriteEntitiesChanged(entities) {
     if (!this._config || !this._hass) {
       return;
     }
-
-    console.log('Favorites changed:', entities);
 
     const newConfig = {
       ...this._config,
@@ -820,98 +788,23 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _showWeatherChanged(showWeather) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_weather: showWeather
-    };
-
-    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
-    if (showWeather === true) {
-      delete newConfig.show_weather;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_weather', showWeather, true);
   }
 
   _showEnergyChanged(showEnergy) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_energy: showEnergy
-    };
-
-    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
-    if (showEnergy === true) {
-      delete newConfig.show_energy;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_energy', showEnergy, true);
   }
 
   _showSearchCardChanged(showSearchCard) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_search_card: showSearchCard
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showSearchCard === false) {
-      delete newConfig.show_search_card;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_search_card', showSearchCard, false);
   }
 
   _showSummaryViewsChanged(showSummaryViews) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_summary_views: showSummaryViews
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showSummaryViews === false) {
-      delete newConfig.show_summary_views;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_summary_views', showSummaryViews, false);
   }
 
   _showRoomViewsChanged(showRoomViews) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_room_views: showRoomViews
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showRoomViews === false) {
-      delete newConfig.show_room_views;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_room_views', showRoomViews, false);
   }
 
   _areaVisibilityChanged(areaId, isVisible) {
@@ -1058,118 +951,28 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   // Für Bereiche nach Etage anzeigen
   _groupByFloorsChanged(groupByFloors) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      group_by_floors: groupByFloors
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (groupByFloors === false) {
-      delete newConfig.group_by_floors;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('group_by_floors', groupByFloors, false);
   }
 
   _showCoversSummaryChanged(showCoversSummary) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_covers_summary: showCoversSummary
-    };
-
-    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
-    if (showCoversSummary === true) {
-      delete newConfig.show_covers_summary;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_covers_summary', showCoversSummary, true);
   }
 
   _showBetterThermostatChanged(showBetterThermostat) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_better_thermostat: showBetterThermostat
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showBetterThermostat === false) {
-      delete newConfig.show_better_thermostat;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_better_thermostat', showBetterThermostat, false);
   }
 
   _showHorizonCardChanged(showHorizonCard) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_horizon_card: showHorizonCard
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showHorizonCard === false) {
-      delete newConfig.show_horizon_card;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_horizon_card', showHorizonCard, false);
     this._render();
   }
 
   _horizonCardExtendedChanged(horizonCardExtended) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      horizon_card_extended: horizonCardExtended
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (horizonCardExtended === false) {
-      delete newConfig.horizon_card_extended;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('horizon_card_extended', horizonCardExtended, false);
   }
 
   _showPublicTransportChanged(showPublicTransport) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_public_transport: showPublicTransport
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showPublicTransport === false) {
-      delete newConfig.show_public_transport;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_public_transport', showPublicTransport, false);
     // Re-render to show/hide integration selection
     this._render();
   }
@@ -1276,22 +1079,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _publicTransportCardChanged(card) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config
-    };
-
-    if (card) {
-      newConfig.public_transport_card = card;
-    } else {
-      delete newConfig.public_transport_card;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updatePropertyCustom('public_transport_card', card, (val) => !val || val === '');
   }
 
   _attachPublicTransportListeners() {
@@ -1611,79 +1399,19 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _hvvMaxChanged(max) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      hvv_max: max
-    };
-
-    // Wenn Standardwert (10), entfernen wir die Property
-    if (max === 10) {
-      delete newConfig.hvv_max;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('hvv_max', max, 10);
   }
 
   _hvvShowTimeChanged(showTime) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      hvv_show_time: showTime
-    };
-
-    // Wenn Standardwert (true), entfernen wir die Property
-    if (showTime === true) {
-      delete newConfig.hvv_show_time;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('hvv_show_time', showTime, false);
   }
 
   _hvvShowTitleChanged(showTitle) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      hvv_show_title: showTitle
-    };
-
-    // Wenn Standardwert (true), entfernen wir die Property
-    if (showTitle === true) {
-      delete newConfig.hvv_show_title;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('hvv_show_title', showTitle, false);
   }
 
   _hvvTitleChanged(title) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      hvv_title: title
-    };
-
-    // Wenn Standardwert ('HVV'), entfernen wir die Property
-    if (!title || title === 'HVV') {
-      delete newConfig.hvv_title;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updatePropertyCustom('hvv_title', title, (val) => !val || val === 'HVV');
   }
 
   _attachHaDeparturesCardListeners() {
@@ -1748,136 +1476,31 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _haDeparturesMaxChanged(max) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      ha_departures_max: max
-    };
-
-    // Wenn Standardwert (3), entfernen wir die Property
-    if (max === 3) {
-      delete newConfig.ha_departures_max;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('ha_departures_max', max, 3);
   }
 
   _haDeparturesIconChanged(icon) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      ha_departures_icon: icon
-    };
-
-    // Wenn Standardwert, entfernen wir die Property
-    if (!icon || icon.trim() === '' || icon === 'mdi:bus-multiple') {
-      delete newConfig.ha_departures_icon;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updatePropertyCustom('ha_departures_icon', icon, (val) => !val || val.trim() === '' || val === 'mdi:bus-multiple');
   }
 
   _haDeparturesShowCardHeaderChanged(showCardHeader) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      ha_departures_show_card_header: showCardHeader
-    };
-
-    // Wenn Standardwert (true), entfernen wir die Property
-    if (showCardHeader === true) {
-      delete newConfig.ha_departures_show_card_header;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('ha_departures_show_card_header', showCardHeader, true);
   }
 
   _haDeparturesShowAnimationChanged(showAnimation) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      ha_departures_show_animation: showAnimation
-    };
-
-    // Wenn Standardwert (true), entfernen wir die Property
-    if (showAnimation === true) {
-      delete newConfig.ha_departures_show_animation;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('ha_departures_show_animation', showAnimation, true);
   }
 
   _haDeparturesShowTransportIconChanged(showTransportIcon) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      ha_departures_show_transport_icon: showTransportIcon
-    };
-
-    // Wenn Standardwert (false), entfernen wir die Property
-    if (showTransportIcon === false) {
-      delete newConfig.ha_departures_show_transport_icon;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('ha_departures_show_transport_icon', showTransportIcon, false);
   }
 
   _haDeparturesHideEmptyDeparturesChanged(hideEmptyDepartures) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      ha_departures_hide_empty_departures: hideEmptyDepartures
-    };
-
-    // Wenn Standardwert (false), entfernen wir die Property
-    if (hideEmptyDepartures === false) {
-      delete newConfig.ha_departures_hide_empty_departures;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('ha_departures_hide_empty_departures', hideEmptyDepartures, false);
   }
 
   _haDeparturesTimeStyleChanged(timeStyle) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      ha_departures_time_style: timeStyle
-    };
-
-    // Wenn Standardwert (dynamic), entfernen wir die Property
-    if (timeStyle === 'dynamic') {
-      delete newConfig.ha_departures_time_style;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('ha_departures_time_style', timeStyle, 'dynamic');
   }
 
   _fireConfigChanged(config) {

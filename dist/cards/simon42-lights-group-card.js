@@ -241,4 +241,3 @@ class Simon42LightsGroupCard extends HTMLElement {
 // Registriere Custom Element
 customElements.define("simon42-lights-group-card", Simon42LightsGroupCard);
 
-console.log('✅ Simon42 Lights Group Card loaded');
