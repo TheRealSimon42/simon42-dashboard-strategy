@@ -343,16 +343,26 @@ strategy:
 | `group_by_floors` | boolean | `false` | Gruppiert Bereiche nach Etagen/Floors |
 | `show_public_transport` | boolean | `false` | Zeigt Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht |
 | `public_transport_entities` | array | `[]` | Array von Entity-IDs für Abfahrtszeiten (z.B. `['sensor.hvv_departures']`) |
-| `public_transport_integration` | string | `'db_info'` | Integration: `'hvv'`, `'ha-departures'` oder `'db_info'` |
-| `public_transport_card` | string | `'flex-table-card'` | Card-Typ: `'hvv-card'`, `'ha-departures-card'` oder `'flex-table-card'` (für `db_info`) |
-| `hvv_max` | number | `10` | Maximale Anzahl der angezeigten Abfahrten |
+| `public_transport_integration` | string | `''` | Integration: `'hvv'`, `'ha-departures'`, `'kvv'` oder `'db_info'` |
+| `public_transport_card` | string | `''` | Card-Typ: `'hvv-card'`, `'ha-departures-card'`, `'kvv-departures-card'` oder `'flex-table-card'` (für `db_info`) |
+| `hvv_max` | number | `10` | Maximale Anzahl der angezeigten Abfahrten (nur für hvv-card) |
 | `hvv_show_time` | boolean | `false` | Zeigt die Zeit der Abfahrten an (nur für hvv-card) |
 | `hvv_show_title` | boolean | `false` | Zeigt den Titel der Card an (nur für hvv-card) |
-| `hvv_title` | string | `'HVV'` | Titel der Public Transport Card |
+| `hvv_title` | string | `'HVV'` | Titel der Public Transport Card (nur für hvv-card) |
+| `ha_departures_max` | number | `3` | Maximale Anzahl der angezeigten Abfahrten für ha-departures-card (max. 5) |
+| `ha_departures_icon` | string | `'mdi:bus-multiple'` | Icon für ha-departures-card |
+| `ha_departures_show_card_header` | boolean | `true` | Zeigt den Card-Header an (nur für ha-departures-card) |
+| `ha_departures_show_animation` | boolean | `true` | Zeigt Animationen an (nur für ha-departures-card) |
+| `ha_departures_show_transport_icon` | boolean | `false` | Zeigt Transport-Icons an (nur für ha-departures-card) |
+| `ha_departures_hide_empty_departures` | boolean | `false` | Versteckt leere Abfahrten (nur für ha-departures-card) |
+| `ha_departures_time_style` | string | `'dynamic'` | Zeitformat: `'dynamic'`, `'absolute'` oder `'relative'` (nur für ha-departures-card) |
 | `entity_name_patterns` | array | `[]` | Array von Regex-Patterns zum Transformieren von Entity-Namen (siehe unten) |
 | `show_better_thermostat` | boolean | `false` | Aktiviert Better Thermostat UI Cards in den Räumen |
 | `show_horizon_card` | boolean | `false` | Zeigt die Horizon Card in der Wetter-Sektion an |
 | `horizon_card_extended` | boolean | `false` | Zeigt erweiterte Informationen in der Horizon Card an (Azimut, Elevation, etc.) |
+| `alarm_entity` | string | `''` | Entity-ID des Alarm-Panels für die Security-View |
+| `favorite_entities` | array | `[]` | Array von Entity-IDs, die als Favoriten in der Übersicht angezeigt werden |
+| `room_pin_entities` | array | `[]` | Array von Entity-IDs, die als Raum-Pins angezeigt werden (siehe Raum-Pins) |
 
 #### `areas_display` - Bereich-Verwaltung
 
@@ -650,6 +660,31 @@ Alle Batterie-Entities, gruppiert nach Status:
 
 ## 🎯 Erweiterte Features
 
+### Favoriten-System
+
+Markiere wichtige Entitäten, die in der Übersicht als separate Sektion angezeigt werden:
+
+**Verwendung:**
+1. Öffne den Dashboard-Editor
+2. Scrolle zur Sektion "Favoriten"
+3. Wähle eine Entität aus dem Dropdown
+4. Klicke auf "+ Hinzufügen"
+
+**Features:**
+- Favoriten werden als separate Sektion in der Übersicht angezeigt
+- Jede Favoriten-Entity wird als Tile-Card mit Bild und Last-Changed-Anzeige dargestellt
+- Schneller Zugriff auf häufig genutzte Entitäten
+
+**Config:**
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  favorite_entities:
+    - sensor.temperatur_wohnzimmer
+    - light.hauptbeleuchtung
+    - cover.rollo_wohnzimmer
+```
+
 ### Raum-Pins
 
 Pinne spezielle Entitäten, die nur in ihren zugeordneten Räumen angezeigt werden sollen:
@@ -754,10 +789,19 @@ strategy:
 
 #### Alarm Panel
 
-Falls ein `alarm_control_panel` existiert:
-- Automatische Integration in Security-View
-- Badge in der Übersicht
+Konfiguriere ein Alarm-Panel für die Security-View:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  alarm_entity: alarm_control_panel.haus
+```
+
+**Features:**
+- Integration in Security-View
+- Badge in der Übersicht mit aktuellem Status
 - Steuerung direkt aus dem Dashboard
+- Automatische Erkennung verfügbarer Alarm-Panels im Editor
 
 #### Reolink Kameras
 
@@ -835,15 +879,20 @@ strategy:
   public_transport_entities:
     - sensor.nurnberg_frankenstr_bus_45_ziegelstein_u_mogeldorf
     - sensor.nurnberg_frankenstr_bus_51_k_schwarzenlohe_nord
-  hvv_max: 3  # Maximal 5 Abfahrten (wird automatisch begrenzt)
-  hvv_show_title: true
-  hvv_title: 'Abfahrten'
+  ha_departures_max: 3  # Maximal 5 Abfahrten (wird automatisch begrenzt)
+  ha_departures_icon: 'mdi:bus-multiple'
+  ha_departures_show_card_header: true
+  ha_departures_show_animation: true
+  ha_departures_show_transport_icon: false
+  ha_departures_hide_empty_departures: false
+  ha_departures_time_style: 'dynamic'  # 'dynamic', 'absolute' oder 'relative'
 ```
 
 **Hinweise für ha-departures:**
 - Der Editor erkennt automatisch ha-departures Entities anhand ihrer Attribute (`line_name`, `transport`, `planned_departure_time`, `direction`)
 - Die ha-departures-card unterstützt maximal 5 Abfahrten pro Entity (wird automatisch begrenzt)
 - Entities werden auch erkannt, wenn sie keine "departure" oder "abfahrt" Keywords im Namen haben
+- `ha_departures_time_style`: `'dynamic'` zeigt relative Zeit (z.B. "in 5 Min"), `'absolute'` zeigt Uhrzeit, `'relative'` zeigt immer relative Zeit
 
 **KVV (Karlsruher Verkehrsverbund):**
 ```yaml
@@ -1007,7 +1056,7 @@ Dieses Projekt sucht aktiv nach Maintainern, die bei der Weiterentwicklung helfe
 ## 🐛 Bekannte Probleme & Limitationen
 
 - Editor kann bei sehr vielen Entities (>500) langsam werden
-- Drag & Drop funktioniert nicht auf Touch-Geräten optimal
+- Drag & Drop funktioniert auf Touch-Geräten nicht optimal
 - Einige Custom Cards werden möglicherweise nicht korrekt gerendert
 - Performance bei floor-basierten Layouts kann bei >20 Bereichen leiden
 
@@ -1049,4 +1098,4 @@ Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenz
 
 **Entwickelt mit ❤️ für die Home Assistant Community**
 
-*Letzte Aktualisierung: Gelegentlich und zu unregelmäßig* 😅
+*Letzte Aktualisierung: 05.12.2025* 😅
