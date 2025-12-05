@@ -800,9 +800,28 @@ Das Dashboard ist für maximale Performance optimiert:
 
 ### Optionale Integrationen
 
+Das Dashboard unterstützt verschiedene optionale Integrationen, die alle über den Editor konfiguriert werden können:
+
+- **Search Card** - Zeigt eine Suchfunktion in der Übersicht
+- **Alarm Panel** - Integration von Alarmanlagen in die Security-View
+- **Reolink Kameras** - Erweiterte Unterstützung für Reolink-Kameras
+- **Better Thermostat** - Ersetzt Standard-Thermostat-Karten durch Better Thermostat UI-Karten
+- **Horizon Card** - Zeigt Sonnen- und Mondposition über dem Horizont
+- **Öffentlicher Nahverkehr** - Unterstützt HVV, ha-departures, KVV und db_info Integrationen
+
+<details>
+<summary><strong>🔌 Details zu optionalen Integrationen</strong></summary>
+
 #### Search Card
 
-Aktiviere eine Search Card in der Übersicht:
+Aktiviere eine Search Card in der Übersicht. Die Option ist im Editor verfügbar.
+
+**Voraussetzung:**
+- Custom Search Card muss installiert sein
+- Wird automatisch erkannt und eingebunden
+
+<details>
+<summary>YAML-Konfiguration</summary>
 
 ```yaml
 strategy:
@@ -810,13 +829,20 @@ strategy:
   show_search_card: true
 ```
 
-**Voraussetzung:**
-- Custom Search Card muss installiert sein
-- Wird automatisch erkannt und eingebunden
+</details>
 
 #### Alarm Panel
 
-Konfiguriere ein Alarm-Panel für die Security-View:
+Konfiguriere ein Alarm-Panel für die Security-View. Verfügbar im Editor unter "Alarm Control Panel".
+
+**Features:**
+- Integration in Security-View
+- Badge in der Übersicht mit aktuellem Status
+- Steuerung direkt aus dem Dashboard
+- Automatische Erkennung verfügbarer Alarm-Panels im Editor
+
+<details>
+<summary>YAML-Konfiguration</summary>
 
 ```yaml
 strategy:
@@ -824,11 +850,7 @@ strategy:
   alarm_entity: alarm_control_panel.haus
 ```
 
-**Features:**
-- Integration in Security-View
-- Badge in der Übersicht mit aktuellem Status
-- Steuerung direkt aus dem Dashboard
-- Automatische Erkennung verfügbarer Alarm-Panels im Editor
+</details>
 
 #### Reolink Kameras
 
@@ -839,13 +861,7 @@ Erweiterte Unterstützung für Reolink-Kameras:
 
 #### Better Thermostat UI Card
 
-Ersetzt Standard-Thermostat-Karten durch Better Thermostat UI-Karten in den Räumen:
-
-```yaml
-strategy:
-  type: custom:simon42-dashboard
-  show_better_thermostat: true
-```
+Ersetzt Standard-Thermostat-Karten durch Better Thermostat UI-Karten in den Räumen. Aktivierbar im Editor.
 
 **Features:**
 - Automatische Erkennung von Better Thermostat Entities über die Platform in der Entity Registry
@@ -857,16 +873,20 @@ strategy:
 - Better Thermostat UI Card muss als Custom Card installiert sein
 - Der Editor prüft automatisch, ob beide Komponenten verfügbar sind
 
-#### Horizon Card
-
-Zeigt die Position der Sonne über dem Horizont in der Wetter-Sektion:
+<details>
+<summary>YAML-Konfiguration</summary>
 
 ```yaml
 strategy:
   type: custom:simon42-dashboard
-  show_horizon_card: true
-  horizon_card_extended: true  # Optional: Erweiterte Informationen
+  show_better_thermostat: true
 ```
+
+</details>
+
+#### Horizon Card
+
+Zeigt die Position der Sonne über dem Horizont in der Wetter-Sektion. Konfigurierbar im Editor.
 
 **Features:**
 - Basis-Modus: Sonnenaufgang, Sonnenuntergang, Mondaufgang, Monduntergang
@@ -877,9 +897,32 @@ strategy:
 - `lovelace-horizon-card` muss über HACS installiert sein
 - Der Editor prüft automatisch, ob die Card verfügbar ist
 
+<details>
+<summary>YAML-Konfiguration</summary>
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_horizon_card: true
+  horizon_card_extended: true  # Optional: Erweiterte Informationen
+```
+
+</details>
+
 #### Öffentlicher Nahverkehr
 
-Zeige Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht. Unterstützt mehrere Integrationen:
+Zeige Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht. Unterstützt mehrere Integrationen: HVV (Hamburg), ha-departures (EFA-basiert), KVV (Karlsruhe) und db_info (Deutsche Bahn).
+
+Alle Einstellungen können im Editor unter "Öffentlicher Nahverkehr" konfiguriert werden. Der Editor erkennt automatisch verfügbare Entities und prüft die benötigten Cards.
+
+**Voraussetzungen:**
+- Die entsprechende Card muss installiert sein (`hvv-card`, `ha-departures-card`, `kvv-departures-card` oder `flex-table-card` für `db_info`)
+- Die entsprechende Integration muss installiert und konfiguriert sein
+- Der Editor prüft automatisch, ob die benötigte Card verfügbar ist
+- Entities müssen Abfahrtszeiten bereitstellen
+
+<details>
+<summary>YAML-Konfiguration</summary>
 
 **HVV (Hamburg):**
 ```yaml
@@ -950,14 +993,14 @@ strategy:
   hvv_title: 'Bahn'
 ```
 
-**Voraussetzungen:**
-- Die entsprechende Card muss installiert sein (`hvv-card`, `ha-departures-card`, `kvv-departures-card` oder `flex-table-card` für `db_info`)
-- Die entsprechende Integration muss installiert und konfiguriert sein
-- Der Editor prüft automatisch, ob die benötigte Card verfügbar ist
-- Entities müssen Abfahrtszeiten bereitstellen
+**Weitere Hinweise:**
 - **ha-departures:** Der Editor erkennt Entities automatisch anhand ihrer Attribute (`line_name`, `transport`, `planned_departure_time`, `direction`) - Keywords im Namen sind nicht erforderlich
 - **kvv:** Der Editor erkennt Entities automatisch anhand ihrer Attribute (`abfahrten` Array mit `line`, `direction`, `countdown`, `realtime`, `dateTime`)
 - **hvv/db_info:** Der Editor filtert automatisch relevante Entities (sensor/button mit Transport-Keywords)
+
+</details>
+
+</details>
 
 ### Batch-Aktionen
 
