@@ -34,6 +34,24 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
         // - 'attribution' mit "hvv.de"
         // - 'device_class: timestamp'
         // - Top-level: 'line', 'origin', 'direction', 'type', 'id'
+        
+        // Exclude KVV entities - check friendly_name for "KVV"
+        if (hass && hass.states && hass.states[entity.entity_id]) {
+          const state = hass.states[entity.entity_id];
+          const attrs = state.attributes || {};
+          const friendlyName = (attrs.friendly_name || name || '').toUpperCase();
+          
+          // Exclude if friendly_name contains "KVV"
+          if (friendlyName.includes('KVV')) {
+            return false;
+          }
+        } else {
+          // Also check name/entityId for KVV exclusion
+          if (name.toUpperCase().includes('KVV') || entityId.toUpperCase().includes('KVV')) {
+            return false;
+          }
+        }
+        
         if (hass && hass.states && hass.states[entity.entity_id]) {
           const state = hass.states[entity.entity_id];
           const attrs = state.attributes || {};
@@ -62,7 +80,11 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
           }
         }
         
-        // Fallback: Keyword-basierte Erkennung
+        // Fallback: Keyword-basierte Erkennung (aber nicht KVV)
+        if (name.toUpperCase().includes('KVV') || entityId.toUpperCase().includes('KVV')) {
+          return false;
+        }
+        
         return entityId.includes('hvv') || 
                name.includes('hvv') ||
                entityId.includes('departure') || 
