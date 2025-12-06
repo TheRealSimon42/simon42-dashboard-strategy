@@ -59,6 +59,9 @@ export function filterEntities(entities, options = {}) {
   const domains = domain ? (Array.isArray(domain) ? domain : [domain]) : null;
   const states = state ? (Array.isArray(state) ? state : [state]) : null;
 
+  // Track entities hidden by visibility for logging
+  const hiddenByVisibility = [];
+
   const result = entities
     .filter(entity => {
       const entityId = entity.entity_id;
@@ -71,7 +74,10 @@ export function filterEntities(entities, options = {}) {
 
       // 2. Registry-Checks (if enabled)
       if (checkRegistry) {
-        if (entity.hidden === true) return false;
+        if (entity.hidden === true) {
+          hiddenByVisibility.push(entityId);
+          return false;
+        }
         if (entity.hidden_by) return false;
         if (entity.disabled_by) return false;
         if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') {
@@ -112,6 +118,9 @@ export function filterEntities(entities, options = {}) {
     .map(entity => entity.entity_id);
   
   getLogDebug()('[Entity Filter] Filtered', entities.length, 'entities to', result.length);
+  if (hiddenByVisibility.length > 0) {
+    getLogDebug()('[Entity Filter] hiddenByVisibility:', hiddenByVisibility);
+  }
   return result;
 }
 
