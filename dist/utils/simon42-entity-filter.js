@@ -5,7 +5,8 @@
 // Eliminates duplication and ensures consistent behavior
 // ====================================================================
 
-import { logDebug } from './simon42-logger.js';
+// Logger import removed temporarily to fix loading order issues
+// Will be re-added once loading order is confirmed stable
 
 /**
  * Filter options for entity filtering
@@ -28,11 +29,7 @@ import { logDebug } from './simon42-logger.js';
  * @returns {Array} Filtered entity IDs
  */
 export function filterEntities(entities, options = {}) {
-  logDebug('[Entity Filter] Filtering', entities.length, 'entities with options:', {
-    domain: options.domain || options.domains,
-    excludeLabels: options.excludeLabels?.size || 0,
-    hiddenFromConfig: options.hiddenFromConfig?.size || 0
-  });
+  // Debug logging temporarily disabled - will be re-enabled after fixing loading order
   const {
     domain,
     state,
@@ -104,7 +101,7 @@ export function filterEntities(entities, options = {}) {
     })
     .map(entity => entity.entity_id);
   
-  logDebug('[Entity Filter] Filtered', entities.length, 'entities to', result.length);
+  // Debug logging temporarily disabled - will be re-enabled after fixing loading order
   return result;
 }
 

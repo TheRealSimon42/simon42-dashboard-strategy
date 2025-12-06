@@ -4,8 +4,9 @@
 // Nutzt zentrale Entity-Filter-Logik für Konsistenz und Wartbarkeit
 // ====================================================================
 
-import { filterStates } from './simon42-entity-filter.js';
+// Import logger FIRST to ensure it's available for entity-filter
 import { logDebug } from './simon42-logger.js';
+import { filterStates } from './simon42-entity-filter.js';
 
 /**
  * Erstellt eine Liste aller versteckten Entity-IDs aus areas_options
