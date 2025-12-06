@@ -877,43 +877,16 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div id="entity-name-patterns-list" style="margin-bottom: 12px;">
           ${renderEntityNamePatternsList(entityNamePatterns || [])}
         </div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; gap: 8px; align-items: flex-start;">
-            <input 
-              type="text" 
-              id="entity-name-pattern-input" 
-              placeholder="${t('patternPlaceholder')}"
-              style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace;"
-            />
-            <button id="add-pattern-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-              + ${t('addPattern')}
-            </button>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <label for="pattern-domain-select" style="font-size: 12px; color: var(--secondary-text-color); white-space: nowrap;">${t('patternDomainLabel')}</label>
-            <select 
-              id="pattern-domain-select" 
-              style="flex: 1; max-width: 300px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-            >
-              <option value="">${t('patternDomainAll')}</option>
-              <option value="light">Light</option>
-              <option value="switch">Switch</option>
-              <option value="cover">Cover</option>
-              <option value="climate">Climate</option>
-              <option value="sensor">Sensor</option>
-              <option value="binary_sensor">Binary Sensor</option>
-              <option value="media_player">Media Player</option>
-              <option value="scene">Scene</option>
-              <option value="vacuum">Vacuum</option>
-              <option value="fan">Fan</option>
-              <option value="camera">Camera</option>
-              <option value="lock">Lock</option>
-              <option value="input_boolean">Input Boolean</option>
-              <option value="input_number">Input Number</option>
-              <option value="input_select">Input Select</option>
-              <option value="input_text">Input Text</option>
-            </select>
-          </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <input 
+            type="text" 
+            id="entity-name-pattern-input" 
+            placeholder="${t('patternPlaceholder')}"
+            style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace;"
+          />
+          <button id="add-pattern-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + ${t('addPattern')}
+          </button>
         </div>
         <div class="description">
           ${t('entityNamePatternsDescription')}

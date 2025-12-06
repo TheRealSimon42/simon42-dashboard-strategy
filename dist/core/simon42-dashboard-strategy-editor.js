@@ -1058,20 +1058,15 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       // Add on button click
       addBtn.addEventListener('click', () => {
         const pattern = input.value.trim(); // Trim leading/trailing whitespace
-        const domainSelect = this.querySelector('#pattern-domain-select');
-        const selectedDomain = domainSelect ? domainSelect.value : '';
         
         if (pattern) { // Prüfe ob nicht leer
           // Validate regex pattern
           try {
             new RegExp(pattern);
-            // Wenn Domain ausgewählt, speichere als Objekt, sonst als String
-            const patternToAdd = selectedDomain 
-              ? { pattern: pattern, domain: selectedDomain }
-              : pattern;
-            this._addEntityNamePattern(patternToAdd);
+            // Neue Patterns werden immer als String hinzugefügt (ohne Domain-Restriktion)
+            // Domain kann später über den Selector in der Liste gesetzt werden
+            this._addEntityNamePattern(pattern);
             input.value = ''; // Clear input
-            if (domainSelect) domainSelect.value = ''; // Reset domain selector
           } catch (error) {
             alert(`Ungültiges Regex-Pattern: ${error.message}`);
           }
