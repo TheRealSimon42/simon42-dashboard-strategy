@@ -325,16 +325,13 @@ export function attachDragAndDropListeners(element, onOrderChange) {
 
 /**
  * Domain categorization configuration for entity grouping.
- * Maps domains to group keys, with optional device class filtering.
+ * Only defines exceptions where domain name differs from group name or special logic is needed.
+ * Domains not listed here default to using the domain name as the group key.
  */
 const DOMAIN_GROUP_MAPPING = {
-  'light': 'lights',
-  'scene': 'scenes',
-  'climate': 'climate',
-  'media_player': 'media_player',
-  'vacuum': 'vacuum',
-  'fan': 'fan',
-  'switch': 'switches',
+  'light': 'lights',      // Exception: plural form
+  'switch': 'switches',   // Exception: plural form
+  'scene': 'scenes',      // Exception: plural form
   'cover': {
     group: (deviceClass) => {
       // Special handling for covers: curtain/blind go to covers_curtain, others to covers
@@ -345,28 +342,25 @@ const DOMAIN_GROUP_MAPPING = {
 
 /**
  * Gets the group key for an entity based on its domain and device class.
- * @param {string} domain - Entity domain (e.g., 'light', 'cover')
+ * @param {string} domain - Entity domain (e.g., 'light', 'cover', 'climate')
  * @param {string} deviceClass - Device class (optional, for covers)
- * @returns {string|null} Group key or null if not mapped
+ * @returns {string|null} Group key or null if domain is not supported
  */
 function getGroupKeyForEntity(domain, deviceClass) {
   const mapping = DOMAIN_GROUP_MAPPING[domain];
-  if (!mapping) {
-    return null;
-  }
   
-  // Handle function-based mapping (for covers with device class logic)
-  if (typeof mapping === 'function') {
-    return mapping(deviceClass);
-  }
-  
-  // Handle object with group function (for covers)
-  if (typeof mapping === 'object' && mapping.group) {
+  // Handle object with group function (for covers with device class logic)
+  if (mapping && typeof mapping === 'object' && mapping.group) {
     return mapping.group(deviceClass);
   }
   
-  // Simple string mapping
-  return mapping;
+  // Handle explicit string mapping (exceptions like 'light' -> 'lights')
+  if (mapping && typeof mapping === 'string') {
+    return mapping;
+  }
+  
+  // Default: use domain name as group key (for climate, media_player, vacuum, fan, etc.)
+  return mapping === undefined ? domain : null;
 }
 
 async function getAreaGroupedEntities(areaId, hass) {
