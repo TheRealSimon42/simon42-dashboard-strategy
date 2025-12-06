@@ -81,6 +81,7 @@ export const en = {
   infoCards: "Info Cards",
   showWeatherCard: "Show Weather Card",
   showEnergyDashboard: "Show Energy Dashboard",
+  showPersonBadges: "Show Person Badges",
   alarmControlPanel: "Alarm Control Panel",
   alarmEntity: "Alarm Entity:",
   none: "None",
@@ -122,6 +123,7 @@ export const en = {
   // Editor Descriptions
   weatherCardDescription: "Shows the weather forecast card in the overview when a weather entity is available.",
   energyCardDescription: "Shows the energy distribution card in the overview when energy data is available.",
+  personBadgesDescription: "Shows the person badges in the overview to display the status of persons (home/away).",
   alarmEntityDescription: "Select an Alarm Control Panel entity to display it next to the clock. Select \"None\" to show only the clock at full width.",
   favoritesDescription: "Select entities to display as favorites under the summaries. The entities will be displayed as tiles.",
   roomPinsDescription: "Select entities to display first in their assigned rooms. Ideal for entities that are not automatically detected (e.g., weather stations, special sensors). Only entities with room assignment can be selected. These pins appear only in the respective room, not in the overview.",

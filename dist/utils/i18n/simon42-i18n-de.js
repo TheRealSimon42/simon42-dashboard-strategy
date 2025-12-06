@@ -81,6 +81,7 @@ export const de = {
   infoCards: "Info-Karten",
   showWeatherCard: "Wetter-Karte anzeigen",
   showEnergyDashboard: "Energie-Dashboard anzeigen",
+  showPersonBadges: "Person Badges anzeigen",
   alarmControlPanel: "Alarm-Control-Panel",
   alarmEntity: "Alarm-Entität:",
   none: "Keine",
@@ -122,6 +123,7 @@ export const de = {
   // Editor Beschreibungen
   weatherCardDescription: "Zeigt die Wettervorhersage-Karte in der Übersicht an, wenn eine Wetter-Entität verfügbar ist.",
   energyCardDescription: "Zeigt die Energie-Verteilungskarte in der Übersicht an, wenn Energiedaten verfügbar sind.",
+  personBadgesDescription: "Zeigt die Person Badges in der Übersicht an, um den Status der Personen (zuhause/nicht zuhause) anzuzeigen.",
   alarmEntityDescription: "Wähle eine Alarm-Control-Panel-Entität aus, um sie neben der Uhr anzuzeigen. \"Keine\" auswählen, um nur die Uhr in voller Breite anzuzeigen.",
   favoritesDescription: "Wähle Entitäten aus, die als Favoriten unter den Zusammenfassungen angezeigt werden sollen. Die Entitäten werden als Kacheln angezeigt.",
   roomPinsDescription: "Wähle Entitäten aus, die in ihren zugeordneten Räumen als erstes angezeigt werden sollen. Ideal für Entitäten die normalerweise nicht automatisch erfasst werden (z.B. Wetterstationen, spezielle Sensoren). Nur Entitäten mit Raum-Zuordnung können ausgewählt werden. Diese Pins erscheinen nur im jeweiligen Raum, nicht in der Übersicht.",

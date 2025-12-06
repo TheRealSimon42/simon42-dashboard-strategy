@@ -16,6 +16,7 @@ import {
 import { 
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
+  attachPersonBadgesCheckboxListener,
   attachSearchCardCheckboxListener,
   attachSummaryViewsCheckboxListener,
   attachRoomViewsCheckboxListener,
@@ -74,6 +75,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
+    const showPersonBadges = this._config.show_person_badges !== false;
     const showSearchCard = this._config.show_search_card === true;
     const showSummaryViews = this._config.show_summary_views === true; // Standard: false
     const showRoomViews = this._config.show_room_views === true; // Standard: false
@@ -152,7 +154,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         hiddenAreas, 
         areaOrder, 
         showWeather,
-        showEnergy, 
+        showEnergy,
+        showPersonBadges,
         showSummaryViews, 
         showRoomViews,
         showSearchCard,
@@ -195,6 +198,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Binde Event-Listener
     attachWeatherCheckboxListener(this, (showWeather) => this._showWeatherChanged(showWeather));
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
+    attachPersonBadgesCheckboxListener(this, (showPersonBadges) => this._showPersonBadgesChanged(showPersonBadges));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
@@ -677,6 +681,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _showEnergyChanged(showEnergy) {
     this._configManager.updateProperty('show_energy', showEnergy, true);
+  }
+
+  _showPersonBadgesChanged(showPersonBadges) {
+    this._configManager.updateProperty('show_person_badges', showPersonBadges, true);
   }
 
   _showSearchCardChanged(showSearchCard) {

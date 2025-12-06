@@ -5,9 +5,16 @@
 /**
  * Erstellt Badges für Personen (zuhause/nicht zuhause)
  * WICHTIG: Nutzt hass.states um nur sichtbare Badges zu erstellen
+ * @param {Array} persons - Array von Person-Entitäten
+ * @param {Object} hass - Home Assistant Objekt
+ * @param {boolean} showPersonBadges - Ob Person-Badges angezeigt werden sollen (Standard: true)
  */
-export function createPersonBadges(persons, hass) {
+export function createPersonBadges(persons, hass, showPersonBadges = true) {
   const badges = [];
+  
+  if (!showPersonBadges) {
+    return badges; // Leeres Array zurückgeben wenn deaktiviert
+  }
   
   persons.forEach(person => {
     const state = hass.states[person.entity_id];
