@@ -28,7 +28,6 @@ export function getEditorStyles() {
       flex-wrap: nowrap !important;
       overflow-x: auto;
       overflow-y: hidden;
-      width: auto !important;
       box-sizing: border-box;
       min-height: 44px;
     }
@@ -438,9 +437,11 @@ export function getEditorStyles() {
       
       .nav-item {
         flex-direction: row !important;
+        flex: 1 1 0;
         padding: 6px 8px;
         font-size: 12px;
-        width: auto !important;
+        justify-content: center;
+        min-width: 0;
       }
       
       .nav-item-label {
@@ -461,8 +462,10 @@ export function getEditorStyles() {
       
       .nav-item {
         flex-direction: row !important;
+        flex: 1 1 0;
         padding: 6px 8px;
-        width: auto !important;
+        justify-content: center;
+        min-width: 0;
       }
       
       .nav-item-label {
