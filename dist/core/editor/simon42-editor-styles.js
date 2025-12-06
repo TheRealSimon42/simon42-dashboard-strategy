@@ -5,11 +5,12 @@
 
 export function getEditorStyles() {
   return `
-    .card-config {
-      padding: 16px;
+    /* Navigation Bar - positioned on the custom element */
+    simon42-dashboard-strategy-editor {
+      display: block;
+      position: relative;
     }
     
-    /* Navigation Bar */
     .editor-navigation-bar {
       position: sticky;
       top: 0;
@@ -17,11 +18,15 @@ export function getEditorStyles() {
       display: flex;
       gap: 8px;
       padding: 12px 16px;
-      margin: -16px -16px 16px -16px;
+      margin: 0 0 16px 0;
       background: var(--card-background-color);
       border-bottom: 1px solid var(--divider-color);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       flex-wrap: wrap;
+    }
+    
+    .card-config {
+      padding: 16px;
     }
     
     .section {
@@ -293,21 +298,6 @@ export function getEditorStyles() {
       text-align: center;
       color: var(--secondary-text-color);
       font-style: italic;
-    }
-    
-    /* Navigation Bar */
-    .editor-navigation-bar {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      display: flex;
-      gap: 8px;
-      padding: 12px 16px;
-      margin: -16px -16px 16px -16px;
-      background: var(--card-background-color);
-      border-bottom: 1px solid var(--divider-color);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      flex-wrap: wrap;
     }
     
     .nav-item {

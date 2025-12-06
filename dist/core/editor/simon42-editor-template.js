@@ -1018,8 +1018,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
   `;
 
   return `
+    ${renderNavigationBar()}
     <div class="card-config">
-      ${renderNavigationBar()}
       ${renderSectionGroup('dashboard-cards', t('navGroupDashboardCards'), dashboardCardsContent, false)}
       ${renderSectionGroup('views-summaries', t('navGroupViewsSummaries'), viewsSummariesContent, false)}
       ${renderSectionGroup('entity-management', t('navGroupEntityManagement'), entityManagementContent, true)}
