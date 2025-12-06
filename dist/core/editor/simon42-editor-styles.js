@@ -5,13 +5,21 @@
 
 export function getEditorStyles() {
   return `
+    simon42-dashboard-strategy-editor {
+      display: block;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    
     .card-config {
       padding: 0;
       position: relative;
+      margin: 0;
     }
     
     .card-config > .editor-navigation-bar {
       margin-top: 0 !important;
+      margin-bottom: 16px;
     }
     
     /* Hide dashboard title/header when editor is active */
