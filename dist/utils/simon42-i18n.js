@@ -8,6 +8,8 @@
 // 3. Import it below and add it to the translations object
 // ====================================================================
 
+import { logWarn } from './simon42-logger.js';
+
 // Import language files
 import { de } from './i18n/simon42-i18n-de.js';
 import { en } from './i18n/simon42-i18n-en.js';
@@ -37,7 +39,7 @@ export function setLanguage(lang) {
   if (translations[lang]) {
     currentLanguage = lang;
   } else {
-    console.warn(`[i18n] Language '${lang}' not found, using default '${DEFAULT_LANGUAGE}'`);
+    logWarn('[i18n] Language not found:', lang, '- using default:', DEFAULT_LANGUAGE);
     currentLanguage = DEFAULT_LANGUAGE;
   }
 }
@@ -96,7 +98,7 @@ export function initLanguage(config, hass = null) {
       setLanguage(lang);
       return;
     } else {
-      console.warn(`[i18n] Language '${lang}' from hass.language not supported, using default`);
+      logWarn('[i18n] Language from hass.language not supported:', lang, '- using default');
     }
   }
   

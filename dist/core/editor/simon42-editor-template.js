@@ -418,7 +418,7 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], hass = null }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], logLevel = 'warn', hass = null }) {
   return `
     <div class="card-config">
       <div class="section">
@@ -858,6 +858,25 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           ${t('entityNamePatternsDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('debugSettings')}</div>
+        <div class="form-row">
+          <label for="log-level" style="display: block; margin-bottom: 8px;">${t('logLevel')}</label>
+          <select 
+            id="log-level" 
+            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+          >
+            <option value="error" ${logLevel === 'error' ? 'selected' : ''}>${t('logLevelError')}</option>
+            <option value="warn" ${logLevel === 'warn' ? 'selected' : ''}>${t('logLevelWarn')}</option>
+            <option value="info" ${logLevel === 'info' ? 'selected' : ''}>${t('logLevelInfo')}</option>
+            <option value="debug" ${logLevel === 'debug' ? 'selected' : ''}>${t('logLevelDebug')}</option>
+          </select>
+        </div>
+        <div class="description">
+          ${t('logLevelDescription')}
         </div>
       </div>
 

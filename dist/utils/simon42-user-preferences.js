@@ -27,14 +27,14 @@ export function getUserPreferences(hass, config = {}) {
     return getDefaultPreferences();
   }
 
-  // Language: config override > hass.language > default
-  const language = (config.language || config.lang || hass.language || 'de').toLowerCase();
+  // Language: dashboard_language override > config.language > hass.language > default
+  const language = (config.dashboard_language || config.language || config.lang || hass.language || 'de').toLowerCase();
   
   // Locale: derive from language
   const locale = getLocaleFromLanguage(language);
   
-  // Time format: config override > hass.locale.time_format > default
-  const timeFormat = config.time_format || hass?.locale?.time_format || 'language';
+  // Time format: dashboard_time_format override > config.time_format > hass.locale.time_format > default
+  const timeFormat = config.dashboard_time_format || config.time_format || hass?.locale?.time_format || 'language';
   const hour12 = getHour12Preference(timeFormat, locale);
   
   // Theme: check multiple sources for dark mode

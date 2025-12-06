@@ -5,6 +5,8 @@
 // Makes it easy to add new dependency checks
 // ====================================================================
 
+import { logWarn } from './simon42-logger.js';
+
 /**
  * Dependency check configuration
  * @typedef {Object} DependencyConfig
@@ -158,7 +160,7 @@ export function checkDependency(dependencyId, hass = null) {
   const config = DEPENDENCY_DEFINITIONS[dependencyId];
   
   if (!config) {
-    console.warn(`[DependencyChecker] Unknown dependency: ${dependencyId}`);
+    logWarn('[DependencyChecker] Unknown dependency:', dependencyId);
     return false;
   }
   
@@ -223,7 +225,7 @@ export function checkDependency(dependencyId, hass = null) {
       return cardCheckPassed || customCheckPassed;
     }
   } catch (error) {
-    console.warn(`[DependencyChecker] Error checking dependency '${dependencyId}':`, error);
+    logWarn('[DependencyChecker] Error checking dependency:', dependencyId, error);
     return false;
   }
 }

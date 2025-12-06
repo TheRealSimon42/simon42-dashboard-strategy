@@ -29,9 +29,13 @@ import {
   createAreaViews 
 } from '../utils/simon42-view-builder.js';
 import { initLanguage, t } from '../utils/simon42-i18n.js';
+import { initLogger } from '../utils/simon42-logger.js';
 
 class Simon42DashboardStrategy {
   static async generate(config, hass) {
+    // Initialisiere Logger basierend auf Config
+    initLogger(config);
+    
     // Initialisiere Sprache basierend auf Config und hass-Einstellungen
     // Wichtig: Muss VOR allen t()-Aufrufen passieren!
     initLanguage(config, hass);

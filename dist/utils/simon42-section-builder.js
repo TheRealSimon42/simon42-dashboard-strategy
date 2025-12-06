@@ -10,6 +10,7 @@ import {
   validateCombination,
   CARD_BUILDERS
 } from './simon42-public-transport-builders.js';
+import { logWarn } from './simon42-logger.js';
 
 /**
  * Erstellt die Übersichts-Section mit Zusammenfassungen
@@ -383,7 +384,7 @@ export function createPublicTransportSection(config, hass) {
 
   // Validate combination
   if (!validateCombination(integration, cardType)) {
-    console.warn(`[simon42-dashboard] Invalid public transport card/integration combination: ${cardType} with ${integration}`);
+    logWarn('Invalid public transport card/integration combination:', cardType, 'with', integration);
     return null;
   }
 
@@ -405,7 +406,7 @@ export function createPublicTransportSection(config, hass) {
   // Get builder function
   const builder = CARD_BUILDERS[cardType];
   if (!builder) {
-    console.warn(`[simon42-dashboard] No builder found for card type: ${cardType}`);
+    logWarn('No builder found for card type:', cardType);
     return null;
   }
 

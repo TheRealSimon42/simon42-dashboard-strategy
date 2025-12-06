@@ -175,6 +175,25 @@ export const de = {
   addPattern: "Pattern hinzufügen",
   patternPlaceholder: "Regex-Pattern (z.B. '^.*? - .*? - ')",
   noPatternsAdded: "Keine Patterns hinzugefügt",
-  areasDescription: "Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten."
+  areasDescription: "Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten.",
+  
+  // Debug-Einstellungen
+  debugSettings: "Debug-Einstellungen",
+  logLevel: "Log-Level:",
+  logLevelDescription: "Wähle das Log-Level für die Konsole. 'error' zeigt nur Fehler, 'warn' zeigt Warnungen und Fehler, 'info' zeigt zusätzlich Informationsmeldungen, 'debug' zeigt alle Logs inklusive Debug-Informationen.",
+  logLevelError: "Error (nur Fehler)",
+  logLevelWarn: "Warn (Warnungen & Fehler)",
+  logLevelInfo: "Info (Info, Warnungen & Fehler)",
+  logLevelDebug: "Debug (alle Logs)",
+  
+  // Dashboard-Präferenzen
+  dashboardPreferences: "Dashboard-Einstellungen",
+  languageToggle: "Sprache",
+  timeFormatToggle: "Zeitformat",
+  languageDE: "DE",
+  languageEN: "EN",
+  timeFormat12h: "12h",
+  timeFormat24h: "24h",
+  resetPreferences: "Zurücksetzen"
 };
 

@@ -175,6 +175,25 @@ export const en = {
   addPattern: "Add Pattern",
   patternPlaceholder: "Regex pattern (e.g., '^.*? - .*? - ')",
   noPatternsAdded: "No patterns added",
-  areasDescription: "Choose which areas should be displayed in the dashboard and in what order. Expand areas to manage individual entities."
+  areasDescription: "Choose which areas should be displayed in the dashboard and in what order. Expand areas to manage individual entities.",
+  
+  // Debug Settings
+  debugSettings: "Debug Settings",
+  logLevel: "Log Level:",
+  logLevelDescription: "Choose the log level for the console. 'error' shows only errors, 'warn' shows warnings and errors, 'info' shows additional information messages, 'debug' shows all logs including debug information.",
+  logLevelError: "Error (errors only)",
+  logLevelWarn: "Warn (warnings & errors)",
+  logLevelInfo: "Info (info, warnings & errors)",
+  logLevelDebug: "Debug (all logs)",
+  
+  // Dashboard Preferences
+  dashboardPreferences: "Dashboard Settings",
+  languageToggle: "Language",
+  timeFormatToggle: "Time Format",
+  languageDE: "DE",
+  languageEN: "EN",
+  timeFormat12h: "12h",
+  timeFormat24h: "24h",
+  resetPreferences: "Reset"
 };
 

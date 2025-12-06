@@ -5,6 +5,7 @@ import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
 import { initLanguage } from '../utils/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
+import { logWarn, initLogger } from '../utils/simon42-logger.js';
 import { checkDependency, checkPublicTransportDependencies } from '../utils/simon42-dependency-checker.js';
 import { PUBLIC_TRANSPORT_MAPPING } from '../utils/simon42-public-transport-builders.js';
 import { 
@@ -65,6 +66,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return;
     }
 
+    // Initialisiere Logger für Editor
+    initLogger(this._config);
+    
     // Initialisiere Sprache für Editor
     initLanguage(this._config, this._hass);
 
@@ -183,6 +187,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         haDeparturesTimeStyle,
         haDeparturesIcon,
         entityNamePatterns: this._config.entity_name_patterns || [],
+        logLevel: this._config.log_level || 'warn',
         hass: this._hass
       })}
     `;
@@ -208,6 +213,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._attachRoomPinsListeners();
     this._attachPublicTransportListeners();
     this._attachEntityNamePatternsListeners();
+    this._attachLogLevelListener();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
     // Sortiere die Area-Items nach displayOrder
@@ -234,7 +240,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   _createFavoritesPicker(favoriteEntities) {
     const container = this.querySelector('#favorites-picker-container');
     if (!container) {
-      console.warn('[Simon42 Editor] Favorites picker container not found');
+      logWarn('[Editor] Favorites picker container not found');
       return;
     }
 
@@ -393,7 +399,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       this._attachFavoritesListeners();
     }).catch((error) => {
       // Fallback falls Import fehlschlägt
-      console.warn('[Simon42 Editor] Failed to load favorites list component, using fallback:', error);
+      logWarn('[Editor] Failed to load favorites list component, using fallback:', error);
       container.innerHTML = this._renderFavoritesListFallback(favoriteEntities, allEntities);
       this._attachFavoritesListeners();
     });
@@ -522,7 +528,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       this._attachRoomPinsListeners();
     }).catch((error) => {
       // Fallback falls Import fehlschlägt
-      console.warn('[Simon42 Editor] Failed to load room pins list component, using fallback:', error);
+      logWarn('[Editor] Failed to load room pins list component, using fallback:', error);
       container.innerHTML = this._renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas);
       this._attachRoomPinsListeners();
     });
@@ -986,7 +992,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       this._attachPublicTransportListeners();
     }).catch((error) => {
       // Fallback falls Import fehlschlägt
-      console.warn('[Simon42 Editor] Failed to load public transport list component, using fallback:', error);
+      logWarn('[Editor] Failed to load public transport list component, using fallback:', error);
       container.innerHTML = this._renderPublicTransportListFallback(publicTransportEntities, allEntities);
       this._attachPublicTransportListeners();
     });
@@ -1018,6 +1024,21 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         }).join('')}
       </div>
     `;
+  }
+
+  _attachLogLevelListener() {
+    const logLevelSelect = this.querySelector('#log-level');
+    if (logLevelSelect) {
+      logLevelSelect.addEventListener('change', (e) => {
+        this._logLevelChanged(e.target.value);
+      });
+    }
+  }
+
+  _logLevelChanged(level) {
+    this._configManager.updateProperty('log_level', level, 'warn');
+    // Re-initialize logger with new level
+    initLogger(this._config);
   }
 
   _attachEntityNamePatternsListeners() {
@@ -1129,7 +1150,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       this._attachEntityNamePatternsListeners();
     }).catch((error) => {
       // Fallback falls Import fehlschlägt
-      console.warn('[Simon42 Editor] Failed to load entity name patterns list component, using fallback:', error);
+      logWarn('[Editor] Failed to load entity name patterns list component, using fallback:', error);
       container.innerHTML = this._renderEntityNamePatternsListFallback(patterns);
       this._attachEntityNamePatternsListeners();
     });

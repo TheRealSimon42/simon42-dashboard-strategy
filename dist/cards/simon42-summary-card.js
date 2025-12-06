@@ -8,6 +8,7 @@
 
 import { t, initLanguage } from '../utils/simon42-i18n.js';
 import { filterEntities } from '../utils/simon42-entity-filter.js';
+import { logWarn } from '../utils/simon42-logger.js';
 
 /**
  * Configuration for summary types
@@ -123,7 +124,7 @@ class Simon42SummaryCard extends HTMLElement {
     this._excludeLabelsSet = new Set();
     
     if (!this._hass.entities) {
-      console.warn('[Simon42 Summary Card] hass.entities not available');
+      logWarn('[Summary Card] hass.entities not available');
       return;
     }
 

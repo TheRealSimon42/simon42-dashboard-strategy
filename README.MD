@@ -263,6 +263,7 @@ In der aufgeklappten Entity-Liste:
 - **Checkboxen** für alle Optionen (Wetter, Energie, etc.)
 - **Dropdown-Menüs** für Auswahlmöglichkeiten (Sprache, Integrationen, etc.)
 - **Entity-Auswahl** mit visueller Hierarchie
+- **Debug-Einstellungen** - Log-Level konfigurierbar (error, warn, info, debug)
 
 <details>
 <summary><strong>📝 Manuelle YAML-Konfiguration (für Fortgeschrittene)</strong></summary>
@@ -282,6 +283,7 @@ strategy:
   show_covers_summary: true      # Rollo-Zusammenfassung anzeigen
   summaries_columns: 2           # Layout: 2 (2x2) oder 4 (1x4)
   group_by_floors: false         # Bereiche nach Etagen gruppieren
+  log_level: warn                # Log-Level: 'error', 'warn', 'info', 'debug' (Standard: 'warn')
 ```
 
 ### Sprachauswahl
@@ -295,8 +297,14 @@ strategy:
 ```
 
 **Sprachpriorität:**
-1. Explizite `language`-Einstellung in der Config (höchste Priorität)
-2. Spracheinstellung des Benutzers in Home Assistant (`hass.language`)
+1. `dashboard_language` Override in der Config (höchste Priorität)
+2. Explizite `language`-Einstellung in der Config
+3. Spracheinstellung des Benutzers in Home Assistant (`hass.language`)
+
+**Zeitformat-Priorität:**
+1. `dashboard_time_format` Override in der Config (höchste Priorität) - Werte: `'12'`, `'24'`, oder `null` (für User-Präferenz)
+2. Explizite `time_format`-Einstellung in der Config
+3. Zeitformat-Einstellung des Benutzers in Home Assistant (`hass.locale.time_format`)
 3. Deutsch als Standard-Sprache (Fallback)
 
 **Verfügbare Sprachen:**
@@ -1142,6 +1150,8 @@ Dieses Projekt sucht aktiv nach Maintainern, die bei der Weiterentwicklung helfe
 - [ ] Themes & Custom Styling
 - [ ] Export/Import von Konfigurationen
 - [x] Mehrsprachigkeit (i18n) - Deutsch und Englisch
+- [x] Logging-System mit konfigurierbaren Log-Leveln
+- [x] Debug-Einstellungen im Editor
 
 ## 🐛 Bekannte Probleme & Limitationen
 
@@ -1188,4 +1198,4 @@ Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenz
 
 **Entwickelt mit ❤️ für die Home Assistant Community**
 
-*Letzte Aktualisierung: 05.12.2025*
+*Letzte Aktualisierung: 06.12.2025*

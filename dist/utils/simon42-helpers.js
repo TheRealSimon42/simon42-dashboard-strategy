@@ -5,6 +5,8 @@
 // KEIN redundantes Caching oder doppelte Registry-Lookups mehr!
 // ====================================================================
 
+import { logWarn } from './simon42-logger.js';
+
 /**
  * Filtert und sortiert Bereiche basierend auf der Konfiguration
  * @param {Array} areas - Alle verfügbaren Bereiche
@@ -67,7 +69,7 @@ function applyNamePatterns(name, patterns) {
       transformedName = transformedName.replace(regex, '');
     } catch (error) {
       // Bei ungültigem Regex-Pattern, ignoriere es und logge Warnung
-      console.warn(`[Simon42] Ungültiges Entity-Name-Pattern: ${pattern}`, error);
+      logWarn('Ungültiges Entity-Name-Pattern:', pattern, error);
     }
   });
   
