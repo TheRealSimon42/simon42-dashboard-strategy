@@ -10,6 +10,16 @@ export function getEditorStyles() {
       position: relative;
     }
     
+    /* Hide dashboard title/header when editor is active */
+    simon42-dashboard-strategy-editor ~ .view-header,
+    simon42-dashboard-strategy-editor ~ ha-card .view-header,
+    .view-header:has(~ simon42-dashboard-strategy-editor),
+    ha-card-editor .view-header,
+    ha-card-editor ha-card .card-header,
+    ha-card-editor .card-header {
+      display: none !important;
+    }
+    
     .editor-navigation-bar {
       position: fixed;
       top: 0;
@@ -369,10 +379,10 @@ export function getEditorStyles() {
     /* Section Groups */
     .section-group {
       margin-bottom: 16px;
-      border: 1px solid var(--divider-color);
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--card-background-color);
+      border: none;
+      border-radius: 0;
+      overflow: visible;
+      background: transparent;
     }
     
     .section-group-header {
