@@ -34,16 +34,6 @@ export function getEditorStyles() {
       top: 0 !important;
     }
     
-    /* Hide dashboard title/header when editor is active */
-    simon42-dashboard-strategy-editor ~ .view-header,
-    simon42-dashboard-strategy-editor ~ ha-card .view-header,
-    .view-header:has(~ simon42-dashboard-strategy-editor),
-    ha-card-editor .view-header,
-    ha-card-editor ha-card .card-header,
-    ha-card-editor .card-header {
-      display: none !important;
-    }
-    
     .editor-navigation-bar {
       position: relative;
       z-index: 100;
