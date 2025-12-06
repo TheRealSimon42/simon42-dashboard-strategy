@@ -30,6 +30,8 @@ export function getEditorStyles() {
       margin-bottom: 16px;
       padding-top: 12px;
       padding-bottom: 12px;
+      position: relative !important;
+      top: 0 !important;
     }
     
     /* Hide dashboard title/header when editor is active */
@@ -43,8 +45,7 @@ export function getEditorStyles() {
     }
     
     .editor-navigation-bar {
-      position: sticky;
-      top: 0;
+      position: relative;
       z-index: 100;
       display: flex !important;
       flex-direction: row !important;
