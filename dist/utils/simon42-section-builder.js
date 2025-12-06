@@ -25,11 +25,6 @@ export function createOverviewSection(data) {
       heading: t('overview'),
       heading_style: "title",
       icon: "mdi:overscan"
-    },
-    // Füge Toolbar Preferences hinzu (wird in die Toolbar injiziert)
-    {
-      type: "custom:simon42-toolbar-preferences",
-      config: config
     }
   ];
 
