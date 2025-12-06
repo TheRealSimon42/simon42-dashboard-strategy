@@ -422,8 +422,8 @@ export function getEditorStyles() {
     
     .section-group-content {
       padding: 16px;
-      border-top: 1px solid var(--divider-color);
-      background: var(--card-background-color);
+      border-top: none;
+      background: transparent;
       overflow: hidden;
       transition: max-height 0.3s ease-out, padding 0.3s ease-out;
     }

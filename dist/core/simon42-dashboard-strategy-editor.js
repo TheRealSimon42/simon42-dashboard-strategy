@@ -263,6 +263,66 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Restore section group visibility state
     this._restoreSectionGroupState();
+    
+    // Hide dashboard title/header
+    this._hideDashboardTitle();
+    
+    // Remove borders from section groups
+    this._removeSectionGroupBorders();
+  }
+  
+  _hideDashboardTitle() {
+    // Try to find and hide the dashboard title/header
+    // Look for common Home Assistant header elements
+    const possibleSelectors = [
+      '.view-header',
+      'ha-card .card-header',
+      '.card-header',
+      'h1',
+      '[class*="header"]',
+      '[class*="title"]'
+    ];
+    
+    // Check parent elements
+    let parent = this.parentElement;
+    while (parent && parent !== document.body) {
+      for (const selector of possibleSelectors) {
+        const elements = parent.querySelectorAll(selector);
+        elements.forEach(el => {
+          // Only hide if it's above our editor (not inside it)
+          if (!this.contains(el) && el.offsetTop < this.offsetTop) {
+            el.style.display = 'none';
+          }
+        });
+      }
+      parent = parent.parentElement;
+    }
+    
+    // Also check siblings
+    if (this.parentElement) {
+      const siblings = Array.from(this.parentElement.children);
+      const ourIndex = siblings.indexOf(this);
+      siblings.slice(0, ourIndex).forEach(sibling => {
+        if (sibling.matches && (
+          sibling.matches('.view-header') ||
+          sibling.matches('ha-card') ||
+          sibling.querySelector('.view-header') ||
+          sibling.querySelector('.card-header')
+        )) {
+          sibling.style.display = 'none';
+        }
+      });
+    }
+  }
+  
+  _removeSectionGroupBorders() {
+    // Remove any remaining borders from section groups
+    const sectionGroups = this.querySelectorAll('.section-group');
+    sectionGroups.forEach(group => {
+      group.style.border = 'none';
+      group.style.borderRadius = '0';
+      group.style.boxShadow = 'none';
+    });
   }
 
   _attachNavigationBarListeners() {
