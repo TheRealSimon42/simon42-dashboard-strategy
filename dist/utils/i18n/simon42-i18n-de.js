@@ -224,6 +224,12 @@ export const de = {
   languageEN: "EN",
   timeFormat12h: "12h",
   timeFormat24h: "24h",
-  resetPreferences: "Zurücksetzen"
+  resetPreferences: "Zurücksetzen",
+  
+  // Navigation Bar
+  navGroupDashboardCards: "Dashboard-Karten",
+  navGroupViewsSummaries: "Ansichten & Zusammenfassungen",
+  navGroupEntityManagement: "Entitäts-Verwaltung",
+  navGroupAdvanced: "Erweitert"
 };
 

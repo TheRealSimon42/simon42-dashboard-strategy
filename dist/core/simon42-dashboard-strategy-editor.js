@@ -45,6 +45,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._isRendering = false;
     // Config Manager für zentrale Config-Verwaltung
     this._configManager = new ConfigManager(this);
+    // State für Editor-Section-Groups (collapsible)
+    this._expandedSectionGroups = new Set(['entity-management']); // Default: nur Entity Management expanded
+    this._activeNavItem = 'entity-management'; // Default active nav item
   }
 
   setConfig(config) {
@@ -255,6 +258,151 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Restore expanded state
     this._restoreExpandedState();
+    
+    // Attach navigation bar listeners
+    this._attachNavigationBarListeners();
+    
+    // Attach section group expand/collapse listeners
+    this._attachSectionGroupListeners();
+    
+    // Restore section group expanded state
+    this._restoreSectionGroupState();
+    
+    // Update active nav item based on scroll position
+    this._updateActiveNavItem();
+  }
+
+  _attachNavigationBarListeners() {
+    const navItems = this.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        const groupId = e.currentTarget.dataset.group;
+        this._navigateToGroup(groupId);
+      });
+    });
+  }
+
+  _navigateToGroup(groupId) {
+    const groupElement = this.querySelector(`#${groupId}`);
+    if (!groupElement) return;
+
+    // Expand the group if collapsed
+    if (!this._expandedSectionGroups.has(groupId)) {
+      this._toggleSectionGroup(groupId);
+    }
+
+    // Scroll to group with smooth animation
+    groupElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Update active nav item
+    this._setActiveNavItem(groupId);
+  }
+
+  _setActiveNavItem(groupId) {
+    this._activeNavItem = groupId;
+    const navItems = this.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      if (item.dataset.group === groupId) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
+  _attachSectionGroupListeners() {
+    const groupHeaders = this.querySelectorAll('.section-group-header');
+    groupHeaders.forEach(header => {
+      header.addEventListener('click', (e) => {
+        const groupId = e.currentTarget.dataset.groupId;
+        this._toggleSectionGroup(groupId);
+      });
+    });
+  }
+
+  _toggleSectionGroup(groupId) {
+    const header = this.querySelector(`.section-group-header[data-group-id="${groupId}"]`);
+    const content = this.querySelector(`.section-group-content[data-group-id="${groupId}"]`);
+    
+    if (!header || !content) return;
+
+    const isExpanded = this._expandedSectionGroups.has(groupId);
+    
+    if (isExpanded) {
+      // Collapse
+      this._expandedSectionGroups.delete(groupId);
+      header.classList.remove('expanded');
+      content.classList.remove('expanded');
+      content.style.display = 'none';
+      
+      // Update chevron
+      const chevron = header.querySelector('.section-group-chevron');
+      if (chevron) {
+        chevron.textContent = '▶';
+      }
+    } else {
+      // Expand
+      this._expandedSectionGroups.add(groupId);
+      header.classList.add('expanded');
+      content.classList.add('expanded');
+      content.style.display = 'block';
+      
+      // Update chevron
+      const chevron = header.querySelector('.section-group-chevron');
+      if (chevron) {
+        chevron.textContent = '▼';
+      }
+    }
+  }
+
+  _restoreSectionGroupState() {
+    this._expandedSectionGroups.forEach(groupId => {
+      const header = this.querySelector(`.section-group-header[data-group-id="${groupId}"]`);
+      const content = this.querySelector(`.section-group-content[data-group-id="${groupId}"]`);
+      
+      if (header && content) {
+        header.classList.add('expanded');
+        content.classList.add('expanded');
+        content.style.display = 'block';
+        
+        // Update chevron
+        const chevron = header.querySelector('.section-group-chevron');
+        if (chevron) {
+          chevron.textContent = '▼';
+        }
+      }
+    });
+    
+    // Set active nav item
+    this._setActiveNavItem(this._activeNavItem);
+  }
+
+  _updateActiveNavItem() {
+    // Use Intersection Observer to track which section is visible
+    const groups = ['dashboard-cards', 'views-summaries', 'entity-management', 'advanced'];
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -60% 0px',
+      threshold: 0
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const groupId = entry.target.id;
+          if (groups.includes(groupId)) {
+            this._setActiveNavItem(groupId);
+          }
+        }
+      });
+    }, observerOptions);
+
+    groups.forEach(groupId => {
+      const groupElement = this.querySelector(`#${groupId}`);
+      if (groupElement) {
+        observer.observe(groupElement);
+      }
+    });
   }
 
   _createFavoritesPicker(favoriteEntities) {

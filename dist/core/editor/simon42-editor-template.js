@@ -450,11 +450,592 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], logLevel = 'warn', hass = null }) {
+/**
+ * Renders the navigation bar for quick access to section groups
+ * @returns {string} HTML for navigation bar
+ */
+export function renderNavigationBar() {
   return `
-    <div class="card-config">
+    <div class="editor-navigation-bar">
+      <button class="nav-item" data-group="dashboard-cards" type="button">
+        <ha-icon icon="mdi:view-dashboard"></ha-icon>
+        <span>${t('navGroupDashboardCards')}</span>
+      </button>
+      <button class="nav-item" data-group="views-summaries" type="button">
+        <ha-icon icon="mdi:view-list"></ha-icon>
+        <span>${t('navGroupViewsSummaries')}</span>
+      </button>
+      <button class="nav-item" data-group="entity-management" type="button">
+        <ha-icon icon="mdi:home"></ha-icon>
+        <span>${t('navGroupEntityManagement')}</span>
+      </button>
+      <button class="nav-item" data-group="advanced" type="button">
+        <ha-icon icon="mdi:cog"></ha-icon>
+        <span>${t('navGroupAdvanced')}</span>
+      </button>
+    </div>
+  `;
+}
+
+/**
+ * Renders a collapsible section group
+ * @param {string} groupId - Unique ID for the group
+ * @param {string} title - Group title
+ * @param {string} content - HTML content for the group
+ * @param {boolean} isExpanded - Whether the group is expanded by default
+ * @returns {string} HTML for section group
+ */
+export function renderSectionGroup(groupId, title, content, isExpanded = false) {
+  const expandedClass = isExpanded ? 'expanded' : '';
+  const chevronIcon = isExpanded ? '▼' : '▶';
+  
+  return `
+    <div class="section-group" id="${groupId}" data-group-id="${groupId}">
+      <div class="section-group-header ${expandedClass}" data-group-id="${groupId}">
+        <span class="section-group-chevron">${chevronIcon}</span>
+        <span class="section-group-title">${title}</span>
+      </div>
+      <div class="section-group-content ${expandedClass}" data-group-id="${groupId}" style="display: ${isExpanded ? 'block' : 'none'};">
+        ${content}
+      </div>
+    </div>
+  `;
+}
+
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], logLevel = 'warn', hass = null }) {
+  // Build content for each group
+  // Group 1: Dashboard Cards
+  const dashboardCardsContent = `
       <div class="section">
         <div class="section-title">${t('infoCards')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-weather" 
+            ${showWeather !== false ? 'checked' : ''}
+          />
+          <label for="show-weather">${t('showWeatherCard')}</label>
+        </div>
+        <div class="description">
+          ${t('weatherCardDescription')}
+        </div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-energy" 
+            ${showEnergy ? 'checked' : ''}
+          />
+          <label for="show-energy">${t('showEnergyDashboard')}</label>
+        </div>
+        <div class="description">
+          ${t('energyCardDescription')}
+        </div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-person-badges" 
+            ${showPersonBadges !== false ? 'checked' : ''}
+          />
+          <label for="show-person-badges">${t('showPersonBadges')}</label>
+        </div>
+        <div class="description">
+          ${t('personBadgesDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('searchCard')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-search-card" 
+            ${showSearchCard ? 'checked' : ''}
+            ${!hasSearchCardDeps ? 'disabled' : ''}
+          />
+          <label for="show-search-card" ${!hasSearchCardDeps ? 'class="disabled-label"' : ''}>
+            ${t('showSearchCard')}
+          </label>
+        </div>
+        <div class="description">
+          ${hasSearchCardDeps 
+            ? t('searchCardDescription')
+            : `⚠️ ${t('searchCardMissingDeps')}`}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('clockCard')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-clock-card" 
+            ${showClockCard ? 'checked' : ''}
+          />
+          <label for="show-clock-card">${t('showClockCard')}</label>
+        </div>
+        <div class="description">
+          ${t('clockCardDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('betterThermostat')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-better-thermostat" 
+            ${showBetterThermostat ? 'checked' : ''}
+            ${!hasBetterThermostatDeps ? 'disabled' : ''}
+          />
+          <label for="show-better-thermostat" ${!hasBetterThermostatDeps ? 'class="disabled-label"' : ''}>
+            ${t('useBetterThermostatUI')}
+          </label>
+        </div>
+        <div class="description">
+          ${hasBetterThermostatDeps 
+            ? t('betterThermostatDescription')
+            : `⚠️ ${t('betterThermostatMissingDeps')}`}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('horizonCard')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-horizon-card" 
+            ${showHorizonCard ? 'checked' : ''}
+            ${!hasHorizonCardDeps ? 'disabled' : ''}
+          />
+          <label for="show-horizon-card" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
+            ${t('showHorizonCard')}
+          </label>
+        </div>
+        <div class="description">
+          ${hasHorizonCardDeps 
+            ? t('horizonCardDescription')
+            : `⚠️ ${t('horizonCardMissingDeps')}`}
+        </div>
+        ${hasHorizonCardDeps && showHorizonCard ? `
+        <div style="margin-top: 12px;">
+          <div class="form-row">
+            <input 
+              type="checkbox" 
+              id="horizon-card-extended" 
+              ${horizonCardExtended ? 'checked' : ''}
+            />
+            <label for="horizon-card-extended">
+              ${t('showExtendedInfo')}
+            </label>
+          </div>
+          <div class="description">
+            ${t('horizonCardExtendedDescription')}
+          </div>
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('publicTransport')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-public-transport" 
+            ${showPublicTransport ? 'checked' : ''}
+          />
+          <label for="show-public-transport">${t('showPublicTransport')}</label>
+        </div>
+        <div class="description">
+          ${t('publicTransportDescription')}
+        </div>
+        ${showPublicTransport ? `
+        <div style="margin-top: 16px;">
+          <div class="form-row">
+            <label for="public-transport-integration" style="margin-right: 8px; min-width: 120px;">${t('publicTransportIntegration')}</label>
+            <select 
+              id="public-transport-integration" 
+              style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            >
+              <option value="">${t('selectIntegration')}</option>
+              <option value="hvv" ${publicTransportIntegration === 'hvv' ? 'selected' : ''}>${t('publicTransportIntegrationHVV')}</option>
+              <option value="ha-departures" ${publicTransportIntegration === 'ha-departures' ? 'selected' : ''}>${t('publicTransportIntegrationHADepartures')}</option>
+              <option value="db_info" ${publicTransportIntegration === 'db_info' ? 'selected' : ''}>${t('publicTransportIntegrationDBInfo')}</option>
+              <option value="kvv" ${publicTransportIntegration === 'kvv' ? 'selected' : ''}>${t('publicTransportIntegrationKVV')}</option>
+            </select>
+          </div>
+          ${publicTransportIntegration && !hasPublicTransportDeps ? `
+          <div class="description" style="margin-top: 8px;">
+            ${(() => {
+                const cardName = getCardNameForIntegration(publicTransportIntegration);
+                const urls = getPublicTransportUrls(publicTransportIntegration);
+                let message = `⚠️ ${t('publicTransportCardMissingDeps', { card: cardName })}`;
+                
+                if (urls.integrationUrl || urls.cardUrl) {
+                  message += '<br><br>';
+                  if (urls.integrationUrl) {
+                    message += `${t('publicTransportIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
+                  } else if (publicTransportIntegration === 'hvv') {
+                    message += `${t('publicTransportIntegrationLink')}: ${t('publicTransportIntegrationAvailableInCore')}<br>`;
+                  }
+                  if (urls.cardUrl) {
+                    message += `${t('publicTransportCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+                  }
+                }
+                
+                return message;
+              })()}
+          </div>
+          ` : ''}
+          ${publicTransportIntegration && hasPublicTransportDeps ? `
+          <div id="public-transport-list" style="margin-top: 12px; margin-bottom: 12px;">
+            ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <select id="public-transport-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+              <option value="">${t('selectEntity')}</option>
+              ${filterEntitiesByIntegration(allEntities || [], publicTransportIntegration, hass)
+                .map(entity => `
+                  <option value="${entity.entity_id}">${entity.name}</option>
+                `).join('')}
+            </select>
+            <button id="add-public-transport-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+              + ${t('add')}
+            </button>
+          </div>
+          <div class="description">
+            ${t('publicTransportEntitiesDescription')}
+          </div>
+          ` : ''}
+          ${publicTransportIntegration === 'hvv' && hasPublicTransportDeps ? `
+          <div style="margin-top: 16px;">
+            <div class="form-row">
+              <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
+              <input 
+                type="number" 
+                id="hvv-max" 
+                value="${hvvMax !== undefined ? hvvMax : 10}" 
+                min="1" 
+                max="50"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="hvv-show-time" 
+                ${hvvShowTime === true ? 'checked' : ''}
+              />
+              <label for="hvv-show-time">${t('showTime')}</label>
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="hvv-show-title" 
+                ${hvvShowTitle === true ? 'checked' : ''}
+              />
+              <label for="hvv-show-title">${t('showTitle')}</label>
+            </div>
+            <div class="form-row">
+              <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">${t('title')}</label>
+              <input 
+                type="text" 
+                id="hvv-title" 
+                value="${hvvTitle || 'HVV'}" 
+                placeholder="HVV"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
+          </div>
+          ` : ''}
+          ${publicTransportIntegration === 'ha-departures' && hasPublicTransportDeps ? `
+          <div style="margin-top: 16px;">
+            <div class="form-row">
+              <label for="ha-departures-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
+              <input 
+                type="number" 
+                id="ha-departures-max" 
+                value="${haDeparturesMax !== undefined ? haDeparturesMax : 3}" 
+                min="1" 
+                max="5"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
+            <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--secondary-text-color);">
+              ${t('haDeparturesMaxNote')}
+            </div>
+            <div class="form-row">
+              <label for="ha-departures-icon" style="margin-right: 8px; min-width: 120px;">${t('icon')}</label>
+              <input 
+                type="text" 
+                id="ha-departures-icon" 
+                value="${haDeparturesIcon || 'mdi:bus-multiple'}" 
+                placeholder="mdi:bus-multiple"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="ha-departures-show-card-header" 
+                ${haDeparturesShowCardHeader !== false ? 'checked' : ''}
+              />
+              <label for="ha-departures-show-card-header">${t('showCardHeader')}</label>
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="ha-departures-show-animation" 
+                ${haDeparturesShowAnimation !== false ? 'checked' : ''}
+              />
+              <label for="ha-departures-show-animation">${t('showAnimation')}</label>
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="ha-departures-show-transport-icon" 
+                ${haDeparturesShowTransportIcon === true ? 'checked' : ''}
+              />
+              <label for="ha-departures-show-transport-icon">${t('showTransportIcon')}</label>
+            </div>
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="ha-departures-hide-empty-departures" 
+                ${haDeparturesHideEmptyDepartures === true ? 'checked' : ''}
+              />
+              <label for="ha-departures-hide-empty-departures">${t('hideEmptyDepartures')}</label>
+            </div>
+            <div class="form-row">
+              <label for="ha-departures-time-style" style="margin-right: 8px; min-width: 120px;">${t('timeStyle')}</label>
+              <select 
+                id="ha-departures-time-style" 
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              >
+                <option value="dynamic" ${haDeparturesTimeStyle === 'dynamic' ? 'selected' : ''}>${t('timeStyleDynamic')}</option>
+                <option value="timestamp" ${haDeparturesTimeStyle === 'timestamp' ? 'selected' : ''}>${t('timeStyleTimestamp')}</option>
+              </select>
+            </div>
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('alarmControlPanel')}</div>
+        <div class="form-row">
+          <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${t('alarmEntity')}</label>
+          <select id="alarm-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">${t('noneFullWidth')}</option>
+            ${alarmEntities.map(entity => `
+              <option value="${entity.entity_id}" ${entity.entity_id === alarmEntity ? 'selected' : ''}>
+                ${entity.name}
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="description">
+          ${t('alarmEntityDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('areasView')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="group-by-floors" 
+            ${groupByFloors ? 'checked' : ''}
+          />
+          <label for="group-by-floors">${t('groupByFloors')}</label>
+        </div>
+        <div class="description">
+          ${t('groupByFloorsDescription')}
+        </div>
+      </div>
+  `;
+
+  // Group 2: Views & Summaries
+  const viewsSummariesContent = `
+      <div class="section">
+        <div class="section-title">${t('views')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-summary-views" 
+            ${showSummaryViews ? 'checked' : ''}
+          />
+          <label for="show-summary-views">${t('showSummaryViews')}</label>
+        </div>
+        <div class="description">
+          ${t('summaryViewsDescription')}
+        </div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-room-views" 
+            ${showRoomViews ? 'checked' : ''}
+          />
+          <label for="show-room-views">${t('showRoomViews')}</label>
+        </div>
+        <div class="description">
+          ${t('roomViewsDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('summaries')}</div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="show-covers-summary" 
+            ${showCoversSummary !== false ? 'checked' : ''}
+          />
+          <label for="show-covers-summary">${t('showCoversSummary')}</label>
+        </div>
+        <div class="description">
+          ${t('coversSummaryDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('summariesLayout')}</div>
+        <div class="form-row">
+          <input 
+            type="radio" 
+            id="summaries-2-columns" 
+            name="summaries-columns"
+            value="2"
+            ${summariesColumns === 2 ? 'checked' : ''}
+          />
+          <label for="summaries-2-columns">${t('twoColumns')}</label>
+        </div>
+        <div class="form-row">
+          <input 
+            type="radio" 
+            id="summaries-4-columns" 
+            name="summaries-columns"
+            value="4"
+            ${summariesColumns === 4 ? 'checked' : ''}
+          />
+          <label for="summaries-4-columns">${t('fourColumns')}</label>
+        </div>
+        <div class="description">
+          ${t('summariesLayoutDescription')}
+        </div>
+      </div>
+  `;
+
+  // Group 3: Entity Management
+  const entityManagementContent = `
+      <div class="section">
+        <div class="section-title">${t('areas')}</div>
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('areasDescription')}
+        </div>
+        <div class="area-list" id="area-list">
+          ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('favorites')}</div>
+        <div id="favorites-list" style="margin-bottom: 12px;">
+          ${renderFavoritesList(favoriteEntities, allEntities)}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <select id="favorite-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">${t('selectEntity')}</option>
+            ${allEntities.map(entity => `
+              <option value="${entity.entity_id}">${entity.name}</option>
+            `).join('')}
+          </select>
+          <button id="add-favorite-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + ${t('add')}
+          </button>
+        </div>
+        <div class="description">
+          ${t('favoritesDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('roomPins')}</div>
+        <div id="room-pins-list" style="margin-bottom: 12px;">
+          ${renderRoomPinsList(roomPinEntities, allEntities, allAreas)}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <select id="room-pin-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">${t('selectEntity')}</option>
+            ${allEntities
+              .filter(entity => entity.area_id || entity.device_area_id)
+              .map(entity => `
+                <option value="${entity.entity_id}">${entity.name}</option>
+              `).join('')}
+          </select>
+          <button id="add-room-pin-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + ${t('add')}
+          </button>
+        </div>
+        <div class="description">
+          ${t('roomPinsDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('entityNamePatterns')}</div>
+        <div id="entity-name-patterns-list" style="margin-bottom: 12px;">
+          ${renderEntityNamePatternsList(entityNamePatterns || [])}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <input 
+            type="text" 
+            id="entity-name-pattern-input" 
+            placeholder="${t('patternPlaceholder')}"
+            style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace;"
+          />
+          <button id="add-pattern-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + ${t('addPattern')}
+          </button>
+        </div>
+        <div class="description">
+          ${t('entityNamePatternsDescription')}
+        </div>
+      </div>
+  `;
+
+  // Group 4: Advanced Settings
+  const advancedContent = `
+      <div class="section">
+        <div class="section-title">${t('debugSettings')}</div>
+        <div class="form-row">
+          <label for="log-level" style="display: block; margin-bottom: 8px;">${t('logLevel')}</label>
+          <select 
+            id="log-level" 
+            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+          >
+            <option value="error" ${logLevel === 'error' ? 'selected' : ''}>${t('logLevelError')}</option>
+            <option value="warn" ${logLevel === 'warn' ? 'selected' : ''}>${t('logLevelWarn')}</option>
+            <option value="info" ${logLevel === 'info' ? 'selected' : ''}>${t('logLevelInfo')}</option>
+            <option value="debug" ${logLevel === 'debug' ? 'selected' : ''}>${t('logLevelDebug')}</option>
+          </select>
+        </div>
+        <div class="description">
+          ${t('logLevelDescription')}
+        </div>
+      </div>
+  `;
+
+  return `
+    <div class="card-config">
+      ${renderNavigationBar()}
+      ${renderSectionGroup('dashboard-cards', t('navGroupDashboardCards'), dashboardCardsContent, false)}
+      ${renderSectionGroup('views-summaries', t('navGroupViewsSummaries'), viewsSummariesContent, false)}
+      ${renderSectionGroup('entity-management', t('navGroupEntityManagement'), entityManagementContent, true)}
+      ${renderSectionGroup('advanced', t('navGroupAdvanced'), advancedContent, false)}
+    </div>
+  `;
+}
         <div class="form-row">
           <input 
             type="checkbox" 
