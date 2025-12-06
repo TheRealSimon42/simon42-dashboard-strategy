@@ -3,7 +3,7 @@
 // ====================================================================
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
-import { initLanguage } from '../utils/simon42-i18n.js';
+import { initLanguage, t } from '../utils/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
 import { logWarn, initLogger } from '../utils/simon42-logger.js';
 import { checkDependency, checkPublicTransportDependencies } from '../utils/simon42-dependency-checker.js';
@@ -1087,6 +1087,16 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         this._removeEntityNamePattern(index);
       });
     });
+
+    // Domain Selectors for existing patterns
+    const domainSelectors = this.querySelectorAll('.pattern-domain-select');
+    domainSelectors.forEach(select => {
+      select.addEventListener('change', (e) => {
+        const index = parseInt(e.target.dataset.patternIndex, 10);
+        const selectedDomain = e.target.value;
+        this._updatePatternDomain(index, selectedDomain);
+      });
+    });
   }
 
   _addEntityNamePattern(pattern) {
@@ -1153,6 +1163,56 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._updateEntityNamePatternsList();
   }
 
+  _updatePatternDomain(index, domain) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentPatterns = this._config.entity_name_patterns || [];
+    if (index < 0 || index >= currentPatterns.length) {
+      return;
+    }
+
+    const pattern = currentPatterns[index];
+    let updatedPattern;
+
+    if (domain === '') {
+      // Domain entfernen: Wenn Pattern ein Objekt ist, konvertiere zu String
+      if (typeof pattern === 'object' && pattern.pattern) {
+        updatedPattern = pattern.pattern;
+      } else {
+        // Bereits ein String oder kein pattern property
+        updatedPattern = pattern;
+      }
+    } else {
+      // Domain setzen: Wenn Pattern ein String ist, konvertiere zu Objekt
+      if (typeof pattern === 'string') {
+        updatedPattern = { pattern: pattern, domain: domain };
+      } else if (typeof pattern === 'object') {
+        // Aktualisiere bestehendes Objekt
+        updatedPattern = { ...pattern, domain: domain };
+        // Entferne domains property falls vorhanden (wir verwenden nur domain)
+        delete updatedPattern.domains;
+      } else {
+        updatedPattern = pattern;
+      }
+    }
+
+    const newPatterns = [...currentPatterns];
+    newPatterns[index] = updatedPattern;
+
+    const newConfig = {
+      ...this._config,
+      entity_name_patterns: newPatterns
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Patterns-Liste
+    this._updateEntityNamePatternsList();
+  }
+
   _updateEntityNamePatternsList() {
     const container = this.querySelector('#entity-name-patterns-list');
     if (!container) return;
@@ -1197,20 +1257,49 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return escaped.replace(/ /g, '&middot;');
     };
 
+    const getDomainSelectorOptions = (selectedDomain = '') => {
+      const domains = [
+        { value: '', label: t('patternDomainAll') },
+        { value: 'light', label: t('domainLight') },
+        { value: 'switch', label: t('domainSwitch') },
+        { value: 'cover', label: t('domainCover') },
+        { value: 'climate', label: t('domainClimate') },
+        { value: 'sensor', label: t('domainSensor') },
+        { value: 'binary_sensor', label: t('domainBinarySensor') },
+        { value: 'media_player', label: t('domainMediaPlayer') },
+        { value: 'scene', label: t('domainScene') },
+        { value: 'vacuum', label: t('domainVacuum') },
+        { value: 'fan', label: t('domainFan') },
+        { value: 'camera', label: t('domainCamera') },
+        { value: 'lock', label: t('domainLock') },
+        { value: 'input_boolean', label: t('domainInputBoolean') },
+        { value: 'input_number', label: t('domainInputNumber') },
+        { value: 'input_select', label: t('domainInputSelect') },
+        { value: 'input_text', label: t('domainInputText') }
+      ];
+      
+      return domains.map(domain => 
+        `<option value="${domain.value}" ${domain.value === selectedDomain ? 'selected' : ''}>${domain.label}</option>`
+      ).join('');
+    };
+
     return `
       <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
         ${patterns.map((pattern, index) => {
           const patternText = typeof pattern === 'string' ? pattern : pattern.pattern || '';
           const displayText = makeSpacesVisible(patternText);
-          const domain = typeof pattern === 'object' ? (pattern.domain || (pattern.domains && pattern.domains.length > 0 ? pattern.domains.join(', ') : null)) : null;
-          const domainDisplay = domain ? `<span style="font-size: 11px; color: var(--secondary-text-color); margin-left: 8px; font-style: italic;">Nur für: ${domain}</span>` : '';
+          const currentDomain = typeof pattern === 'object' ? pattern.domain : '';
           return `
-            <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <div style="flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                <span style="font-size: 14px; font-family: monospace; word-break: break-all; white-space: pre-wrap;" title="${patternText.replace(/"/g, '&quot;')}">${displayText}</span>
-                ${domainDisplay}
-              </div>
-              <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; margin-left: 8px; flex-shrink: 0;">
+            <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all; white-space: pre-wrap;" title="${patternText.replace(/"/g, '&quot;')}">${displayText}</span>
+              <select 
+                class="pattern-domain-select" 
+                data-pattern-index="${index}"
+                style="min-width: 150px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+              >
+                ${getDomainSelectorOptions(currentDomain)}
+              </select>
+              <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0;">
                 ✕
               </button>
             </div>
