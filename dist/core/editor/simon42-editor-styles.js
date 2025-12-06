@@ -7,6 +7,7 @@ export function getEditorStyles() {
   return `
     .card-config {
       padding: 16px;
+      padding-top: 70px;
     }
     
     .section {
@@ -282,17 +283,22 @@ export function getEditorStyles() {
     
     /* Navigation Bar */
     .editor-navigation-bar {
-      position: sticky;
+      position: fixed;
       top: 0;
-      z-index: 10;
+      left: 0;
+      right: 0;
+      z-index: 1000;
       display: flex;
       gap: 8px;
       padding: 12px 16px;
-      margin: -16px -16px 16px -16px;
       background: var(--card-background-color);
       border-bottom: 1px solid var(--divider-color);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       flex-wrap: wrap;
+    }
+    
+    .card-config {
+      padding-top: 60px;
     }
     
     .nav-item {
