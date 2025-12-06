@@ -28,17 +28,21 @@ import {
   createUtilityViews, 
   createAreaViews 
 } from '../utils/simon42-view-builder.js';
-import { initLanguage, t } from '../utils/simon42-i18n.js';
-import { initLogger } from '../utils/simon42-logger.js';
+import { initLanguage, t, getLanguage } from '../utils/simon42-i18n.js';
+import { initLogger, logDebug, logInfo } from '../utils/simon42-logger.js';
 
 class Simon42DashboardStrategy {
   static async generate(config, hass) {
     // Initialisiere Logger basierend auf Config
     initLogger(config);
+    logInfo('[Strategy] Starting dashboard generation');
+    logDebug('[Strategy] Config:', config);
     
     // Initialisiere Sprache basierend auf Config und hass-Einstellungen
     // Wichtig: Muss VOR allen t()-Aufrufen passieren!
     initLanguage(config, hass);
+    logDebug('[Strategy] Language initialized:', getLanguage());
+    
     // Nutze die bereits im hass-Objekt verfügbaren Registry-Daten
     // Diese sind als Objects verfügbar mit ID als Key
     // Konvertiere sie zu Arrays für die weitere Verarbeitung
@@ -46,16 +50,26 @@ class Simon42DashboardStrategy {
     const devices = Object.values(hass.devices || {});
     const entities = Object.values(hass.entities || {});
     const floors = Object.values(hass.floors || {});
+    
+    logDebug('[Strategy] Loaded data:', {
+      areas: areas.length,
+      devices: devices.length,
+      entities: entities.length,
+      floors: floors.length
+    });
 
     // Labels für Filterung von Entitäten
     const excludeLabels = entities
       .filter(e => e.labels?.includes("no_dboard"))
       .map(e => e.entity_id);
+    logDebug('[Strategy] Excluded labels:', excludeLabels.length, 'entities');
 
     // Filtere und sortiere Areale basierend auf Config
     const visibleAreas = getVisibleAreas(areas, config.areas_display);
+    logDebug('[Strategy] Visible areas:', visibleAreas.length, 'of', areas.length);
 
     // Sammle alle benötigten Daten (übergebe config für areas_options Filterung)
+    logDebug('[Strategy] Collecting entities...');
     const persons = collectPersons(hass, excludeLabels, config);
     const lightsOn = collectLights(hass, excludeLabels, config);
     const coversOpen = collectCovers(hass, excludeLabels, config);
@@ -63,6 +77,16 @@ class Simon42DashboardStrategy {
     const batteriesCritical = collectBatteriesCritical(hass, excludeLabels, config);
     const weatherEntity = findWeatherEntity(hass, excludeLabels, config);
     const someSensorId = findDummySensor(hass, excludeLabels, config);
+    
+    logDebug('[Strategy] Collected entities:', {
+      persons: persons.length,
+      lightsOn: lightsOn.length,
+      coversOpen: coversOpen.length,
+      securityUnsafe: securityUnsafe.length,
+      batteriesCritical: batteriesCritical.length,
+      weatherEntity: weatherEntity || 'none',
+      someSensorId: someSensorId || 'none'
+    });
 
     // Erstelle Person-Badges (KORRIGIERT: mit hass Parameter)
     const personBadges = createPersonBadges(persons, hass);
@@ -86,14 +110,17 @@ class Simon42DashboardStrategy {
     const groupByFloors = config.group_by_floors === true;
 
     // Erstelle Bereiche-Section(s)
+    logDebug('[Strategy] Creating areas section...');
     const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
 
     // Erstelle separate Sections: Weather, Public Transport, Energy
+    logDebug('[Strategy] Creating additional sections...');
     const weatherSection = createWeatherSection(weatherEntity, showWeather, config);
     const publicTransportSection = createPublicTransportSection(config, hass);
     const energySection = createEnergySection(showEnergy);
     
     // Erstelle Sections für den Haupt-View
+    logDebug('[Strategy] Creating overview section...');
     const overviewSections = [
       createOverviewSection({
         lightsOn,
@@ -112,13 +139,22 @@ class Simon42DashboardStrategy {
       ...(publicTransportSection ? [publicTransportSection] : []),
       ...(energySection ? [energySection] : [])
     ];
+    logDebug('[Strategy] Created', overviewSections.length, 'overview sections');
 
     // Erstelle alle Views mit areas_options und config
+    logDebug('[Strategy] Creating views...');
+    const utilityViews = createUtilityViews(entities, showSummaryViews, config);
+    const areaViews = createAreaViews(visibleAreas, devices, entities, showRoomViews, config.areas_options || {}, config);
     const views = [
       createOverviewView(overviewSections, personBadges),
-      ...createUtilityViews(entities, showSummaryViews, config),
-      ...createAreaViews(visibleAreas, devices, entities, showRoomViews, config.areas_options || {}, config)
+      ...utilityViews,
+      ...areaViews
     ];
+    logInfo('[Strategy] Generated', views.length, 'views:', {
+      overview: 1,
+      utility: utilityViews.length,
+      area: areaViews.length
+    });
 
     return {
       title: t('dashboardTitle'),

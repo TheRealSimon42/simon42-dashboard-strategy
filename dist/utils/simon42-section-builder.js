@@ -16,6 +16,7 @@ import { logWarn } from './simon42-logger.js';
  * Erstellt die Übersichts-Section mit Zusammenfassungen
  */
 export function createOverviewSection(data) {
+  logDebug('[Section Builder] Creating overview section...');
   const { someSensorId, showSearchCard, config, hass } = data;
   
   const cards = [
@@ -53,6 +54,12 @@ export function createOverviewSection(data) {
       }
     });
   }
+
+  // Füge Preferences-Card hinzu (immer angezeigt)
+  cards.push({
+    type: "custom:simon42-preferences-card",
+    config: config
+  });
 
   // Füge Search-Card hinzu wenn aktiviert
   if (showSearchCard) {

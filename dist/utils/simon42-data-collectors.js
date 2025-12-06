@@ -5,6 +5,7 @@
 // ====================================================================
 
 import { filterStates } from './simon42-entity-filter.js';
+import { logDebug } from './simon42-logger.js';
 
 /**
  * Erstellt eine Liste aller versteckten Entity-IDs aus areas_options
@@ -37,9 +38,10 @@ function getHiddenEntitiesFromConfig(config) {
  * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function collectPersons(hass, excludeLabels, config = {}) {
+  logDebug('[Data Collector] Collecting persons...');
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   
-  return filterStates(hass, {
+  const persons = filterStates(hass, {
     domain: 'person',
     excludeLabels: new Set(excludeLabels),
     hiddenFromConfig,
@@ -50,6 +52,8 @@ export function collectPersons(hass, excludeLabels, config = {}) {
     state: state.state,
     isHome: state.state === 'home'
   }));
+  logDebug('[Data Collector] Found', persons.length, 'persons');
+  return persons;
 }
 
 /**
@@ -57,14 +61,17 @@ export function collectPersons(hass, excludeLabels, config = {}) {
  * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function collectLights(hass, excludeLabels, config = {}) {
+  logDebug('[Data Collector] Collecting lights...');
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   
-  return filterStates(hass, {
+  const lights = filterStates(hass, {
     domain: 'light',
     state: 'on',
     excludeLabels: new Set(excludeLabels),
     hiddenFromConfig
   });
+  logDebug('[Data Collector] Found', lights.length, 'lights on');
+  return lights;
 }
 
 /**
@@ -72,14 +79,17 @@ export function collectLights(hass, excludeLabels, config = {}) {
  * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function collectCovers(hass, excludeLabels, config = {}) {
+  logDebug('[Data Collector] Collecting covers...');
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   
-  return filterStates(hass, {
+  const covers = filterStates(hass, {
     domain: 'cover',
     state: ['open', 'opening'],
     excludeLabels: new Set(excludeLabels),
     hiddenFromConfig
   });
+  logDebug('[Data Collector] Found', covers.length, 'covers open');
+  return covers;
 }
 
 /**
@@ -87,6 +97,7 @@ export function collectCovers(hass, excludeLabels, config = {}) {
  * REFACTORED: Nutzt zentrale filterStates Funktion mit customFilter
  */
 export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
+  logDebug('[Data Collector] Collecting security entities...');
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   const excludeSet = new Set(excludeLabels);
   
@@ -97,8 +108,9 @@ export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
     hiddenFromConfig,
     checkCategory: false // Security entities need special handling
   });
+  logDebug('[Data Collector] Found', allSecurityStates.length, 'security entities, filtering unsafe...');
   
-  return allSecurityStates
+  const unsafe = allSecurityStates
     .filter(stateObj => {
       const entityId = stateObj.entity_id;
       const state = stateObj.state;
@@ -127,6 +139,8 @@ export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
       return false;
     })
     .map(stateObj => stateObj.entity_id);
+  logDebug('[Data Collector] Found', unsafe.length, 'unsafe security entities');
+  return unsafe;
 }
 
 /**
@@ -135,13 +149,15 @@ export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
  * Ignoriert hidden_by (Integration), respektiert aber manuelles hidden
  */
 export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
+  logDebug('[Data Collector] Collecting critical batteries...');
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   const excludeSet = new Set(excludeLabels);
   
   // Get all states and filter for batteries
   const allStates = Object.values(hass.states || {});
+  logDebug('[Data Collector] Checking', allStates.length, 'states for batteries...');
   
-  return allStates
+  const critical = allStates
     .filter(stateObj => {
       const entityId = stateObj.entity_id;
       if (!entityId) return false;
@@ -164,6 +180,8 @@ export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
       return !isNaN(value) && value < 20;
     })
     .map(stateObj => stateObj.entity_id);
+  logDebug('[Data Collector] Found', critical.length, 'critical batteries');
+  return critical;
 }
 
 /**
@@ -171,6 +189,7 @@ export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
  * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function findWeatherEntity(hass, excludeLabels, config = {}) {
+  logDebug('[Data Collector] Finding weather entity...');
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   
   const weatherStates = filterStates(hass, {
@@ -181,7 +200,9 @@ export function findWeatherEntity(hass, excludeLabels, config = {}) {
   });
   
   // Return first weather entity found
-  return weatherStates.length > 0 ? weatherStates[0].entity_id : undefined;
+  const weatherEntity = weatherStates.length > 0 ? weatherStates[0].entity_id : undefined;
+  logDebug('[Data Collector] Weather entity:', weatherEntity || 'none found');
+  return weatherEntity;
 }
 
 /**
@@ -189,6 +210,7 @@ export function findWeatherEntity(hass, excludeLabels, config = {}) {
  * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function findDummySensor(hass, excludeLabels, config = {}) {
+  logDebug('[Data Collector] Finding dummy sensor...');
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   const excludeSet = new Set(excludeLabels);
   
@@ -200,6 +222,7 @@ export function findDummySensor(hass, excludeLabels, config = {}) {
   }).filter(stateObj => 
     stateObj.state !== 'unavailable' && stateObj.state !== 'unknown'
   );
+  logDebug('[Data Collector] Found', sensorStates.length, 'available sensors');
   
   if (sensorStates.length > 0) {
     return sensorStates[0].entity_id;

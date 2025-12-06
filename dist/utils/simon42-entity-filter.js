@@ -26,6 +26,11 @@
  * @returns {Array} Filtered entity IDs
  */
 export function filterEntities(entities, options = {}) {
+  logDebug('[Entity Filter] Filtering', entities.length, 'entities with options:', {
+    domain: options.domain || options.domains,
+    excludeLabels: options.excludeLabels?.size || 0,
+    hiddenFromConfig: options.hiddenFromConfig?.size || 0
+  });
   const {
     domain,
     state,
@@ -45,7 +50,7 @@ export function filterEntities(entities, options = {}) {
   const domains = domain ? (Array.isArray(domain) ? domain : [domain]) : null;
   const states = state ? (Array.isArray(state) ? state : [state]) : null;
 
-  return entities
+  const result = entities
     .filter(entity => {
       const entityId = entity.entity_id;
       if (!entityId) return false;
@@ -96,6 +101,9 @@ export function filterEntities(entities, options = {}) {
       return true;
     })
     .map(entity => entity.entity_id);
+  
+  logDebug('[Entity Filter] Filtered', entities.length, 'entities to', result.length);
+  return result;
 }
 
 /**

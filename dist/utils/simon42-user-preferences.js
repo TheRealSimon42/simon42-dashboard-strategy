@@ -27,14 +27,23 @@ export function getUserPreferences(hass, config = {}) {
     return getDefaultPreferences();
   }
 
-  // Language: dashboard_language override > config.language > hass.language > default
-  const language = (config.dashboard_language || config.language || config.lang || hass.language || 'de').toLowerCase();
+  // Check localStorage for dashboard preferences (set by preferences card)
+  const storageKey = 'simon42_dashboard_preferences';
+  let storedPrefs = {};
+  try {
+    storedPrefs = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  } catch (e) {
+    // Ignore localStorage errors
+  }
+
+  // Language: localStorage > dashboard_language override > config.language > hass.language > default
+  const language = (storedPrefs.dashboard_language || config.dashboard_language || config.language || config.lang || hass.language || 'de').toLowerCase();
   
   // Locale: derive from language
   const locale = getLocaleFromLanguage(language);
   
-  // Time format: dashboard_time_format override > config.time_format > hass.locale.time_format > default
-  const timeFormat = config.dashboard_time_format || config.time_format || hass?.locale?.time_format || 'language';
+  // Time format: localStorage > dashboard_time_format override > config.time_format > hass.locale.time_format > default
+  const timeFormat = storedPrefs.dashboard_time_format || config.dashboard_time_format || config.time_format || hass?.locale?.time_format || 'language';
   const hour12 = getHour12Preference(timeFormat, locale);
   
   // Theme: check multiple sources for dark mode
