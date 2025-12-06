@@ -405,9 +405,7 @@ export function renderEntityNamePatternsList(patterns) {
         const displayText = makeSpacesVisible(patternText);
         return `
           <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all; white-space: pre-wrap;" title="${patternText.replace(/"/g, '&quot;')}">
-              ${displayText}
-            </span>
+            <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all; white-space: pre-wrap;" title="${patternText.replace(/"/g, '&quot;')}">${displayText}</span>
             <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; margin-left: 8px; flex-shrink: 0;">
               ✕
             </button>
