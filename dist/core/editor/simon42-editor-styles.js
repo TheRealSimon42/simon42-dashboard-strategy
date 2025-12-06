@@ -17,6 +17,8 @@ export function getEditorStyles() {
       right: 0;
       z-index: 1000;
       display: flex;
+      flex-direction: row;
+      align-items: center;
       gap: 6px;
       padding: 8px 12px;
       margin: 0;
@@ -26,6 +28,8 @@ export function getEditorStyles() {
       flex-wrap: nowrap;
       overflow-x: auto;
       overflow-y: hidden;
+      width: 100%;
+      box-sizing: border-box;
     }
     
     .editor-navigation-bar::-webkit-scrollbar {
@@ -322,8 +326,9 @@ export function getEditorStyles() {
     }
     
     .nav-item {
-      display: flex;
+      display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       padding: 6px 12px;
       border: 1px solid var(--divider-color);
@@ -335,10 +340,13 @@ export function getEditorStyles() {
       font-size: 13px;
       white-space: nowrap;
       flex-shrink: 0;
+      min-width: fit-content;
+      height: auto;
     }
     
     .nav-item-label {
       display: inline-block;
+      white-space: nowrap;
     }
     
     .nav-item:hover {
@@ -420,12 +428,22 @@ export function getEditorStyles() {
     
     @media (max-width: 600px) {
       .editor-navigation-bar {
-        flex-direction: column;
+        flex-direction: row;
+        padding: 6px 8px;
+        gap: 4px;
       }
       
       .nav-item {
-        width: 100%;
-        justify-content: center;
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+      
+      .nav-item-label {
+        display: none;
+      }
+      
+      .nav-item ha-icon {
+        --mdc-icon-size: 20px;
       }
     }
   `;
