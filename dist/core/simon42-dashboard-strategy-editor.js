@@ -18,10 +18,14 @@ import {
   attachEnergyCheckboxListener,
   attachPersonBadgesCheckboxListener,
   attachSearchCardCheckboxListener,
+  attachClockCardCheckboxListener,
   attachSummaryViewsCheckboxListener,
   attachRoomViewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
   attachCoversSummaryCheckboxListener,
+  attachSecuritySummaryCheckboxListener,
+  attachLightSummaryCheckboxListener,
+  attachBatterySummaryCheckboxListener,
   attachBetterThermostatCheckboxListener,
   attachHorizonCardCheckboxListener,
   attachHorizonCardExtendedCheckboxListener,
@@ -77,10 +81,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showEnergy = this._config.show_energy !== false;
     const showPersonBadges = this._config.show_person_badges !== false;
     const showSearchCard = this._config.show_search_card === true;
+    const showClockCard = this._config.show_clock_card === true;
     const showSummaryViews = this._config.show_summary_views === true; // Standard: false
     const showRoomViews = this._config.show_room_views === true; // Standard: false
     const groupByFloors = this._config.group_by_floors === true; // NEU
     const showCoversSummary = this._config.show_covers_summary !== false;
+    const showSecuritySummary = this._config.show_security_summary !== false;
+    const showLightSummary = this._config.show_light_summary !== false;
+    const showBatterySummary = this._config.show_battery_summary !== false;
     const showBetterThermostat = this._config.show_better_thermostat === true;
     const showHorizonCard = this._config.show_horizon_card === true;
     const horizonCardExtended = this._config.horizon_card_extended === true;
@@ -159,6 +167,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showSummaryViews, 
         showRoomViews,
         showSearchCard,
+        showClockCard,
         hasSearchCardDeps,
         summariesColumns,
         alarmEntity,
@@ -168,6 +177,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         allEntities,
         groupByFloors, // NEU
         showCoversSummary,
+        showSecuritySummary,
+        showLightSummary,
+        showBatterySummary,
         showBetterThermostat,
         hasBetterThermostatDeps,
         showHorizonCard,
@@ -200,10 +212,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachPersonBadgesCheckboxListener(this, (showPersonBadges) => this._showPersonBadgesChanged(showPersonBadges));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
+    attachClockCardCheckboxListener(this, (showClockCard) => this._showClockCardChanged(showClockCard));
     attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
     attachCoversSummaryCheckboxListener(this, (showCoversSummary) => this._showCoversSummaryChanged(showCoversSummary));
+    attachSecuritySummaryCheckboxListener(this, (showSecuritySummary) => this._showSecuritySummaryChanged(showSecuritySummary));
+    attachLightSummaryCheckboxListener(this, (showLightSummary) => this._showLightSummaryChanged(showLightSummary));
+    attachBatterySummaryCheckboxListener(this, (showBatterySummary) => this._showBatterySummaryChanged(showBatterySummary));
     attachBetterThermostatCheckboxListener(this, (showBetterThermostat) => this._showBetterThermostatChanged(showBetterThermostat));
     attachHorizonCardCheckboxListener(this, (showHorizonCard) => this._showHorizonCardChanged(showHorizonCard));
     attachHorizonCardExtendedCheckboxListener(this, (horizonCardExtended) => this._horizonCardExtendedChanged(horizonCardExtended));
@@ -789,8 +805,24 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._configManager.updateProperty('group_by_floors', groupByFloors, false);
   }
 
+  _showClockCardChanged(showClockCard) {
+    this._configManager.updateProperty('show_clock_card', showClockCard, false);
+  }
+
   _showCoversSummaryChanged(showCoversSummary) {
     this._configManager.updateProperty('show_covers_summary', showCoversSummary, true);
+  }
+
+  _showSecuritySummaryChanged(showSecuritySummary) {
+    this._configManager.updateProperty('show_security_summary', showSecuritySummary, true);
+  }
+
+  _showLightSummaryChanged(showLightSummary) {
+    this._configManager.updateProperty('show_light_summary', showLightSummary, true);
+  }
+
+  _showBatterySummaryChanged(showBatterySummary) {
+    this._configManager.updateProperty('show_battery_summary', showBatterySummary, true);
   }
 
   _showBetterThermostatChanged(showBetterThermostat) {

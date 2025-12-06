@@ -17,7 +17,7 @@ import { logWarn, logDebug, logInfo } from './simon42-logger.js';
  */
 export function createOverviewSection(data) {
   logDebug('[Section Builder] Creating overview section...');
-  const { someSensorId, showSearchCard, config, hass } = data;
+  const { someSensorId, showSearchCard, showClockCard, config, hass } = data;
   
   const cards = [
     {
@@ -28,31 +28,47 @@ export function createOverviewSection(data) {
     }
   ];
 
-  // Prüfe ob Alarm-Entity konfiguriert ist
-  const alarmEntity = config.alarm_entity;
+  // Prüfe ob Uhr-Karte angezeigt werden soll
+  if (showClockCard) {
+    // Prüfe ob Alarm-Entity konfiguriert ist
+    const alarmEntity = config.alarm_entity;
 
-  if (alarmEntity) {
-    // Uhr und Alarm-Panel nebeneinander
-    cards.push({
-      type: "clock",
-      clock_size: "small",
-      show_seconds: false
-    });
-    cards.push({
-      type: "tile",
-      entity: alarmEntity,
-      vertical: false
-    });
+    if (alarmEntity) {
+      // Uhr und Alarm-Panel nebeneinander
+      cards.push({
+        type: "clock",
+        clock_size: "small",
+        show_seconds: false
+      });
+      cards.push({
+        type: "tile",
+        entity: alarmEntity,
+        vertical: false
+      });
+    } else {
+      // Nur Uhr in voller Breite
+      cards.push({
+        type: "clock",
+        clock_size: "small",
+        show_seconds: false,
+        grid_options: {
+          columns: "full",
+        }
+      });
+    }
   } else {
-    // Nur Uhr in voller Breite
-    cards.push({
-      type: "clock",
-      clock_size: "small",
-      show_seconds: false,
-      grid_options: {
-        columns: "full",
-      }
-    });
+    // Wenn keine Uhr, aber Alarm-Entity vorhanden, zeige nur Alarm-Panel
+    const alarmEntity = config.alarm_entity;
+    if (alarmEntity) {
+      cards.push({
+        type: "tile",
+        entity: alarmEntity,
+        vertical: false,
+        grid_options: {
+          columns: "full",
+        }
+      });
+    }
   }
 
   // Füge Search-Card hinzu wenn aktiviert
@@ -68,22 +84,22 @@ export function createOverviewSection(data) {
   // Prüfe ob summaries_columns konfiguriert ist (Standard: 2)
   const summariesColumns = config.summaries_columns || 2;
   const showCoversSummary = config.show_covers_summary !== false;
-
-  // Füge Zusammenfassungen hinzu
-  cards.push({
-    type: "heading",
-    heading: t('summaries')
-  });
+  const showSecuritySummary = config.show_security_summary !== false;
+  const showLightSummary = config.show_light_summary !== false;
+  const showBatterySummary = config.show_battery_summary !== false;
 
   // Erstelle die Summary-Cards basierend auf Konfiguration
-  const summaryCards = [
-    {
+  const summaryCards = [];
+
+  // Lights optional hinzufügen
+  if (showLightSummary) {
+    summaryCards.push({
       type: "custom:simon42-summary-card",
       summary_type: "lights",
       areas_options: config.areas_options || {},
       language: config.language
-    }
-  ];
+    });
+  }
 
   // Covers optional hinzufügen
   if (showCoversSummary) {
@@ -95,20 +111,33 @@ export function createOverviewSection(data) {
     });
   }
 
-  summaryCards.push(
-    {
+  // Security optional hinzufügen
+  if (showSecuritySummary) {
+    summaryCards.push({
       type: "custom:simon42-summary-card",
       summary_type: "security",
       areas_options: config.areas_options || {},
       language: config.language
-    },
-    {
+    });
+  }
+
+  // Batteries optional hinzufügen
+  if (showBatterySummary) {
+    summaryCards.push({
       type: "custom:simon42-summary-card",
       summary_type: "batteries",
       areas_options: config.areas_options || {},
       language: config.language
-    }
-  );
+    });
+  }
+
+  // Füge Zusammenfassungen hinzu nur wenn mindestens eine Card vorhanden ist
+  if (summaryCards.length > 0) {
+    cards.push({
+      type: "heading",
+      heading: t('summaries')
+    });
+  }
 
   // Layout-Logik: Dynamisch an Anzahl der Cards anpassen
   if (summariesColumns === 4) {

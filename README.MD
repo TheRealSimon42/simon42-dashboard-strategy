@@ -281,7 +281,11 @@ strategy:
   show_energy: true              # Energie-Dashboard anzeigen
   show_subviews: false           # Utility Views als Subviews
   show_search_card: false        # Optional: Search Card in Overview
+  show_clock_card: false         # Optional: Clock Card in Overview
   show_covers_summary: true      # Rollo-Zusammenfassung anzeigen
+  show_security_summary: true    # Alarm-Zusammenfassung anzeigen
+  show_light_summary: true       # Licht-Zusammenfassung anzeigen
+  show_battery_summary: true     # Batterie-Zusammenfassung anzeigen
   summaries_columns: 2           # Layout: 2 (2x2) oder 4 (1x4)
   group_by_floors: false         # Bereiche nach Etagen gruppieren
   log_level: warn                # Log-Level: 'error', 'warn', 'info', 'debug' (Standard: 'warn')
@@ -381,7 +385,11 @@ strategy:
 | `show_energy` | boolean | `true` | Zeigt das Energie-Dashboard in der Übersicht |
 | `show_subviews` | boolean | `false` | Zeigt Utility-Views in der Navigation |
 | `show_search_card` | boolean | `false` | Zeigt optional eine Search Card in der Übersicht |
+| `show_clock_card` | boolean | `false` | Zeigt optional eine Uhr in der Übersicht an |
 | `show_covers_summary` | boolean | `true` | Zeigt die Rollo-Zusammenfassungskarte in der Übersicht |
+| `show_security_summary` | boolean | `true` | Zeigt die Alarm-Zusammenfassungskarte in der Übersicht |
+| `show_light_summary` | boolean | `true` | Zeigt die Licht-Zusammenfassungskarte in der Übersicht |
+| `show_battery_summary` | boolean | `true` | Zeigt die Batterie-Zusammenfassungskarte in der Übersicht |
 | `summaries_columns` | number | `2` | Layout der Zusammenfassungskarten: `2` (2x2 Grid) oder `4` (1x4 Reihe) |
 | `group_by_floors` | boolean | `false` | Gruppiert Bereiche nach Etagen/Floors |
 | `show_public_transport` | boolean | `false` | Zeigt Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht |
