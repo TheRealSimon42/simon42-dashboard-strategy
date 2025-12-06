@@ -28,6 +28,7 @@ export function getEditorStyles() {
       flex-wrap: nowrap !important;
       overflow-x: auto;
       overflow-y: hidden;
+      width: 25% !important;
       box-sizing: border-box;
       min-height: 44px;
     }
