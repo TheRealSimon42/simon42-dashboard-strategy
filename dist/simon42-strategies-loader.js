@@ -32,8 +32,9 @@ import './utils/simon42-view-builder.js';
 import './cards/simon42-summary-card.js';
 import './cards/simon42-lights-group-card.js'; // NEU: Reaktive Lights Group Card
 import './cards/simon42-covers-group-card.js'; // NEU: Reaktive Covers Group Card
-import './cards/simon42-preferences-card.js'; // NEU: Preferences Toggle Card
-import './cards/simon42-header-preferences-card.js'; // NEU: Header Preferences Card
+import './cards/simon42-header-preferences-card.js'; // Header Preferences Card (als Fallback)
+import './cards/simon42-toolbar-preferences.js'; // NEU: Toolbar Preferences (injiziert in Toolbar)
+// simon42-preferences-card.js wird nicht mehr automatisch geladen, da Toolbar-Präferenzen verwendet werden
 
 // Lade Core-Module
 import './core/simon42-dashboard-strategy.js';

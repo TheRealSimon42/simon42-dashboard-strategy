@@ -26,13 +26,10 @@ export function createOverviewSection(data) {
       heading_style: "title",
       icon: "mdi:overscan"
     },
-    // Füge Header Preferences Card hinzu (kompakt, erscheint nach der Überschrift)
+    // Füge Toolbar Preferences hinzu (wird in die Toolbar injiziert)
     {
-      type: "custom:simon42-header-preferences-card",
-      config: config,
-      grid_options: {
-        columns: "full"
-      }
+      type: "custom:simon42-toolbar-preferences",
+      config: config
     }
   ];
 
@@ -62,12 +59,6 @@ export function createOverviewSection(data) {
       }
     });
   }
-
-  // Füge Preferences-Card hinzu (immer angezeigt)
-  cards.push({
-    type: "custom:simon42-preferences-card",
-    config: config
-  });
 
   // Füge Search-Card hinzu wenn aktiviert
   if (showSearchCard) {
