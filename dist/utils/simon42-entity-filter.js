@@ -51,16 +51,16 @@ export function filterEntities(entities, options = {}) {
     return [];
   }
 
-  // Count entities hidden by visibility upfront for logging
-  const hiddenByVisibilityCount = checkRegistry 
-    ? entities.filter(e => e.hidden === true).length 
-    : 0;
+  // Collect entities hidden by visibility upfront for logging
+  const hiddenByVisibility = checkRegistry 
+    ? entities.filter(e => e.hidden === true).map(e => e.entity_id)
+    : [];
 
   getLogDebug()('[Entity Filter] Filtering', entities.length, 'entities with options:', {
     domain: options.domain || options.domains,
     excludeLabels: options.excludeLabels?.size || 0,
     hiddenFromConfig: options.hiddenFromConfig?.size || 0,
-    hiddenByVisibility: hiddenByVisibilityCount
+    hiddenByVisibility: hiddenByVisibility
   });
 
   const domains = domain ? (Array.isArray(domain) ? domain : [domain]) : null;
