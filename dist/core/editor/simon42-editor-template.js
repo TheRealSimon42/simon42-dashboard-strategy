@@ -478,26 +478,17 @@ export function renderNavigationBar() {
 }
 
 /**
- * Renders a collapsible section group
+ * Renders a section group (non-collapsible, visibility controlled by navigation)
  * @param {string} groupId - Unique ID for the group
- * @param {string} title - Group title
+ * @param {string} title - Group title (unused, kept for API compatibility)
  * @param {string} content - HTML content for the group
- * @param {boolean} isExpanded - Whether the group is expanded by default
+ * @param {boolean} isExpanded - Whether the group is visible by default (unused, kept for API compatibility)
  * @returns {string} HTML for section group
  */
 export function renderSectionGroup(groupId, title, content, isExpanded = false) {
-  const expandedClass = isExpanded ? 'expanded' : '';
-  const chevronIcon = isExpanded ? '▼' : '▶';
-  
   return `
     <div class="section-group" id="${groupId}" data-group-id="${groupId}">
-      <div class="section-group-header ${expandedClass}" data-group-id="${groupId}">
-        <span class="section-group-chevron">${chevronIcon}</span>
-        <span class="section-group-title">${title}</span>
-      </div>
-      <div class="section-group-content ${expandedClass}" data-group-id="${groupId}" style="display: ${isExpanded ? 'block' : 'none'};">
-        ${content}
-      </div>
+      ${content}
     </div>
   `;
 }

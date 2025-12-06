@@ -45,8 +45,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._isRendering = false;
     // Config Manager für zentrale Config-Verwaltung
     this._configManager = new ConfigManager(this);
-    // State für Editor-Section-Groups (collapsible)
-    this._expandedSectionGroups = new Set(['entity-management']); // Default: nur Entity Management expanded
+    // State für Editor-Section-Groups (visibility controlled by navigation)
     this._activeNavItem = 'entity-management'; // Default active nav item
   }
 
@@ -262,14 +261,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Attach navigation bar listeners
     this._attachNavigationBarListeners();
     
-    // Attach section group expand/collapse listeners
-    this._attachSectionGroupListeners();
-    
-    // Restore section group expanded state
+    // Restore section group visibility state
     this._restoreSectionGroupState();
-    
-    // Update active nav item based on scroll position
-    this._updateActiveNavItem();
   }
 
   _attachNavigationBarListeners() {
@@ -286,13 +279,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const groupElement = this.querySelector(`#${groupId}`);
     if (!groupElement) return;
 
-    // Expand the group if collapsed
-    if (!this._expandedSectionGroups.has(groupId)) {
-      this._toggleSectionGroup(groupId);
-    }
+    // Hide all section groups first
+    const allGroups = ['dashboard-cards', 'views-summaries', 'entity-management', 'advanced'];
+    allGroups.forEach(id => {
+      const group = this.querySelector(`#${id}`);
+      if (group) {
+        group.style.display = 'none';
+      }
+    });
 
-    // Scroll to group with smooth animation
-    groupElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Show the selected group
+    groupElement.style.display = 'block';
+
+    // Scroll to top of editor (since we're showing only one section)
+    this.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
     // Update active nav item
     this._setActiveNavItem(groupId);
@@ -310,100 +310,26 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     });
   }
 
-  _attachSectionGroupListeners() {
-    const groupHeaders = this.querySelectorAll('.section-group-header');
-    groupHeaders.forEach(header => {
-      header.addEventListener('click', (e) => {
-        const groupId = e.currentTarget.dataset.groupId;
-        this._toggleSectionGroup(groupId);
-      });
-    });
-  }
-
-  _toggleSectionGroup(groupId) {
-    const header = this.querySelector(`.section-group-header[data-group-id="${groupId}"]`);
-    const content = this.querySelector(`.section-group-content[data-group-id="${groupId}"]`);
-    
-    if (!header || !content) return;
-
-    const isExpanded = this._expandedSectionGroups.has(groupId);
-    
-    if (isExpanded) {
-      // Collapse
-      this._expandedSectionGroups.delete(groupId);
-      header.classList.remove('expanded');
-      content.classList.remove('expanded');
-      content.style.display = 'none';
-      
-      // Update chevron
-      const chevron = header.querySelector('.section-group-chevron');
-      if (chevron) {
-        chevron.textContent = '▶';
-      }
-    } else {
-      // Expand
-      this._expandedSectionGroups.add(groupId);
-      header.classList.add('expanded');
-      content.classList.add('expanded');
-      content.style.display = 'block';
-      
-      // Update chevron
-      const chevron = header.querySelector('.section-group-chevron');
-      if (chevron) {
-        chevron.textContent = '▼';
-      }
-    }
-  }
-
   _restoreSectionGroupState() {
-    this._expandedSectionGroups.forEach(groupId => {
-      const header = this.querySelector(`.section-group-header[data-group-id="${groupId}"]`);
-      const content = this.querySelector(`.section-group-content[data-group-id="${groupId}"]`);
-      
-      if (header && content) {
-        header.classList.add('expanded');
-        content.classList.add('expanded');
-        content.style.display = 'block';
-        
-        // Update chevron
-        const chevron = header.querySelector('.section-group-chevron');
-        if (chevron) {
-          chevron.textContent = '▼';
-        }
+    // Hide all groups first
+    const allGroups = ['dashboard-cards', 'views-summaries', 'entity-management', 'advanced'];
+    allGroups.forEach(id => {
+      const group = this.querySelector(`#${id}`);
+      if (group) {
+        group.style.display = 'none';
       }
     });
+
+    // Show only the active group
+    const activeGroup = this.querySelector(`#${this._activeNavItem}`);
+    if (activeGroup) {
+      activeGroup.style.display = 'block';
+    }
     
     // Set active nav item
     this._setActiveNavItem(this._activeNavItem);
   }
 
-  _updateActiveNavItem() {
-    // Use Intersection Observer to track which section is visible
-    const groups = ['dashboard-cards', 'views-summaries', 'entity-management', 'advanced'];
-    const observerOptions = {
-      root: null,
-      rootMargin: '-20% 0px -60% 0px',
-      threshold: 0
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const groupId = entry.target.id;
-          if (groups.includes(groupId)) {
-            this._setActiveNavItem(groupId);
-          }
-        }
-      });
-    }, observerOptions);
-
-    groups.forEach(groupId => {
-      const groupElement = this.querySelector(`#${groupId}`);
-      if (groupElement) {
-        observer.observe(groupElement);
-      }
-    });
-  }
 
   _createFavoritesPicker(favoriteEntities) {
     const container = this.querySelector('#favorites-picker-container');
