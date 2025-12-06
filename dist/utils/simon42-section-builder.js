@@ -25,6 +25,14 @@ export function createOverviewSection(data) {
       heading: t('overview'),
       heading_style: "title",
       icon: "mdi:overscan"
+    },
+    // Füge Header Preferences Card hinzu (kompakt, erscheint nach der Überschrift)
+    {
+      type: "custom:simon42-header-preferences-card",
+      config: config,
+      grid_options: {
+        columns: "full"
+      }
     }
   ];
 

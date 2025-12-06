@@ -33,6 +33,7 @@ import './cards/simon42-summary-card.js';
 import './cards/simon42-lights-group-card.js'; // NEU: Reaktive Lights Group Card
 import './cards/simon42-covers-group-card.js'; // NEU: Reaktive Covers Group Card
 import './cards/simon42-preferences-card.js'; // NEU: Preferences Toggle Card
+import './cards/simon42-header-preferences-card.js'; // NEU: Header Preferences Card
 
 // Lade Core-Module
 import './core/simon42-dashboard-strategy.js';

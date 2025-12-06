@@ -146,7 +146,7 @@ class Simon42DashboardStrategy {
     const utilityViews = createUtilityViews(entities, showSummaryViews, config);
     const areaViews = createAreaViews(visibleAreas, devices, entities, showRoomViews, config.areas_options || {}, config);
     const views = [
-      createOverviewView(overviewSections, personBadges),
+      createOverviewView(overviewSections, personBadges, config, hass),
       ...utilityViews,
       ...areaViews
     ];

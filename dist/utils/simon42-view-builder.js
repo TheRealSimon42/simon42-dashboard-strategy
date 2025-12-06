@@ -7,7 +7,7 @@ import { t } from './simon42-i18n.js';
 /**
  * Erstellt den Haupt-Übersichts-View
  */
-export function createOverviewView(sections, personBadges) {
+export function createOverviewView(sections, personBadges, config = {}, hass = null) {
   return {
     title: t('overview'),
     path: "home",
