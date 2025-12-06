@@ -5,6 +5,8 @@
 // und aktualisiert sich automatisch bei State-Änderungen
 // ====================================================================
 
+import { t, initLanguage } from '../utils/simon42-i18n.js';
+
 class Simon42CoversGroupCard extends HTMLElement {
   constructor() {
     super();
@@ -33,6 +35,11 @@ class Simon42CoversGroupCard extends HTMLElement {
   set hass(hass) {
     const oldHass = this._hass;
     this._hass = hass;
+    
+    // Initialisiere Sprache aus hass-Einstellungen (falls noch nicht geschehen)
+    if (hass && this._config?.config) {
+      initLanguage(this._config.config, hass);
+    }
     
     // Beim ersten Mal: Entity Registry hat sich möglicherweise geändert
     if (!oldHass || oldHass.entities !== hass.entities) {
@@ -188,7 +195,7 @@ class Simon42CoversGroupCard extends HTMLElement {
     this.style.display = 'block';
     
     const icon = isOpen ? '🪟' : '🔒';
-    const title = isOpen ? 'Offene Rollos & Vorhänge' : 'Geschlossene Rollos & Vorhänge';
+    const title = isOpen ? t('coversOpen') : t('coversClosed');
     const headingStyle = isOpen ? 'title' : 'subtitle';
     const actionIcon = isOpen ? 'mdi:arrow-down' : 'mdi:arrow-up';
     const actionService = isOpen ? 'close_cover' : 'open_cover';
@@ -247,7 +254,7 @@ class Simon42CoversGroupCard extends HTMLElement {
           </h${isOpen ? '2' : '3'}>
           <button class="batch-button" id="batch-action">
             <ha-icon icon="${actionIcon}"></ha-icon>
-            Alle ${isOpen ? 'schließen' : 'öffnen'}
+            ${isOpen ? t('closeAll') : t('openAll')}
           </button>
         </div>
         <div class="cover-grid" id="cover-grid"></div>
@@ -291,4 +298,3 @@ class Simon42CoversGroupCard extends HTMLElement {
 // Registriere Custom Element
 customElements.define("simon42-covers-group-card", Simon42CoversGroupCard);
 
-console.log('✅ Simon42 Covers Group Card loaded');

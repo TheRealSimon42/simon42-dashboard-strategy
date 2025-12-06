@@ -3,6 +3,15 @@
 // ====================================================================
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML } from './editor/simon42-editor-template.js';
+import { initLanguage } from '../utils/simon42-i18n.js';
+import { ConfigManager } from './editor/simon42-config-manager.js';
+import { checkDependency, checkPublicTransportDependencies } from '../utils/simon42-dependency-checker.js';
+import { PUBLIC_TRANSPORT_MAPPING } from '../utils/simon42-public-transport-builders.js';
+import { 
+  getAllIntegrationProperties,
+  updateNestedConfig,
+  getEntitiesFromDOM
+} from './editor/simon42-editor-config-helpers.js';
 import { 
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
@@ -11,6 +20,10 @@ import {
   attachRoomViewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
   attachCoversSummaryCheckboxListener,
+  attachBetterThermostatCheckboxListener,
+  attachHorizonCardCheckboxListener,
+  attachHorizonCardExtendedCheckboxListener,
+  attachPublicTransportCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
   attachExpandButtonListeners,
@@ -24,6 +37,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._expandedAreas = new Set();
     this._expandedGroups = new Map(); // Map<areaId, Set<groupKey>>
     this._isRendering = false;
+    // Config Manager für zentrale Config-Verwaltung
+    this._configManager = new ConfigManager(this);
   }
 
   setConfig(config) {
@@ -42,25 +57,16 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     }
   }
 
-  _checkSearchCardDependencies() {
-    // Prüfe ob custom:search-card und card-tools verfügbar sind
-    const hasSearchCard = customElements.get('search-card') !== undefined;
-    const hasCardTools = window.customCards && window.customCards.some(card => 
-      card.type === 'custom:search-card'
-    );
-    
-    // Alternative Prüfung: Versuche zu erkennen ob die Komponenten geladen wurden
-    const searchCardExists = hasSearchCard || document.querySelector('search-card') !== null;
-    const cardToolsExists = typeof window.customCards !== 'undefined' || typeof window.cardTools !== 'undefined';
-    
-    // Beide müssen verfügbar sein
-    return searchCardExists && cardToolsExists;
-  }
+  // Dependency checks now use centralized dependency checker utility
+  // See dist/utils/simon42-dependency-checker.js
 
   _render() {
     if (!this._hass || !this._config) {
       return;
     }
+
+    // Initialisiere Sprache für Editor
+    initLanguage(this._config, this._hass);
 
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
@@ -69,11 +75,48 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showRoomViews = this._config.show_room_views === true; // Standard: false
     const groupByFloors = this._config.group_by_floors === true; // NEU
     const showCoversSummary = this._config.show_covers_summary !== false;
+    const showBetterThermostat = this._config.show_better_thermostat === true;
+    const showHorizonCard = this._config.show_horizon_card === true;
+    const horizonCardExtended = this._config.horizon_card_extended === true;
+    const showPublicTransport = this._config.show_public_transport === true;
+    const publicTransportEntities = this._config.public_transport_entities || [];
+    const publicTransportIntegration = this._config.public_transport_integration || '';
+    const publicTransportCard = this._config.public_transport_card || '';
+    
+    // Prüfe ob die gewählte Integration/Card verfügbar ist
+    let hasPublicTransportDeps = false;
+    // Auto-determine card based on integration if not set (for dependency check)
+    const cardMapping = {
+      'hvv': 'hvv-card',
+      'ha-departures': 'ha-departures-card',
+      'db_info': 'db-info-card',
+      'kvv': 'kvv-departures-card'
+    };
+    const cardToCheck = publicTransportCard || (publicTransportIntegration ? cardMapping[publicTransportIntegration] : null);
+    
+    if (publicTransportIntegration && cardToCheck) {
+      hasPublicTransportDeps = checkPublicTransportDependencies(publicTransportIntegration, cardToCheck, this._hass);
+    }
+    const hvvMax = this._config.hvv_max !== undefined ? this._config.hvv_max : 10;
+    const hvvShowTime = this._config.hvv_show_time === true;
+    const hvvShowTitle = this._config.hvv_show_title === true;
+    const hvvTitle = this._config.hvv_title || 'HVV';
+    // ha-departures specific config
+    const haDeparturesMax = this._config.ha_departures_max !== undefined ? this._config.ha_departures_max : 3;
+    const haDeparturesShowCardHeader = this._config.ha_departures_show_card_header !== false; // Default true
+    const haDeparturesShowAnimation = this._config.ha_departures_show_animation !== false; // Default true
+    const haDeparturesShowTransportIcon = this._config.ha_departures_show_transport_icon === true; // Default false
+    const haDeparturesHideEmptyDepartures = this._config.ha_departures_hide_empty_departures === true; // Default false
+    const haDeparturesTimeStyle = this._config.ha_departures_time_style || 'dynamic'; // Default dynamic
+    const haDeparturesIcon = this._config.ha_departures_icon || 'mdi:bus-multiple';
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
     const roomPinEntities = this._config.room_pin_entities || [];
-    const hasSearchCardDeps = this._checkSearchCardDependencies();
+    // Check dependencies using centralized dependency checker
+    const hasSearchCardDeps = checkDependency('search-card', this._hass);
+    const hasBetterThermostatDeps = checkDependency('better-thermostat', this._hass);
+    const hasHorizonCardDeps = checkDependency('horizon-card', this._hass);
     
     // Sammle alle Alarm-Control-Panel-Entitäten
     const alarmEntities = Object.keys(this._hass.states)
@@ -117,7 +160,30 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         roomPinEntities,
         allEntities,
         groupByFloors, // NEU
-        showCoversSummary
+        showCoversSummary,
+        showBetterThermostat,
+        hasBetterThermostatDeps,
+        showHorizonCard,
+        hasHorizonCardDeps,
+        horizonCardExtended,
+        showPublicTransport,
+        publicTransportEntities,
+        publicTransportIntegration,
+        publicTransportCard,
+        hasPublicTransportDeps,
+        hvvMax,
+        hvvShowTime,
+        hvvShowTitle,
+        hvvTitle,
+        haDeparturesMax,
+        haDeparturesShowCardHeader,
+        haDeparturesShowAnimation,
+        haDeparturesShowTransportIcon,
+        haDeparturesHideEmptyDepartures,
+        haDeparturesTimeStyle,
+        haDeparturesIcon,
+        entityNamePatterns: this._config.entity_name_patterns || [],
+        hass: this._hass
       })}
     `;
 
@@ -129,10 +195,19 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
     attachCoversSummaryCheckboxListener(this, (showCoversSummary) => this._showCoversSummaryChanged(showCoversSummary));
+    attachBetterThermostatCheckboxListener(this, (showBetterThermostat) => this._showBetterThermostatChanged(showBetterThermostat));
+    attachHorizonCardCheckboxListener(this, (showHorizonCard) => this._showHorizonCardChanged(showHorizonCard));
+    attachHorizonCardExtendedCheckboxListener(this, (horizonCardExtended) => this._horizonCardExtendedChanged(horizonCardExtended));
+    attachPublicTransportCheckboxListener(this, (showPublicTransport) => this._showPublicTransportChanged(showPublicTransport));
+    this._attachPublicTransportIntegrationListeners();
+    this._attachHvvCardListeners();
+    this._attachHaDeparturesCardListeners();
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
     this._attachRoomPinsListeners();
+    this._attachPublicTransportListeners();
+    this._attachEntityNamePatternsListeners();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
     // Sortiere die Area-Items nach displayOrder
@@ -159,7 +234,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   _createFavoritesPicker(favoriteEntities) {
     const container = this.querySelector('#favorites-picker-container');
     if (!container) {
-      console.warn('Favorites picker container not found');
+      console.warn('[Simon42 Editor] Favorites picker container not found');
       return;
     }
 
@@ -185,8 +260,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         e.stopPropagation();
         this._favoriteEntitiesChanged(e.detail.value);
       });
-      
-      console.log('Favorites picker created:', picker);
     });
   }
 
@@ -212,22 +285,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _summariesColumnsChanged(columns) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      summaries_columns: columns
-    };
-
-    // Wenn der Standardwert (2) gesetzt ist, entfernen wir die Property
-    if (columns === 2) {
-      delete newConfig.summaries_columns;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('summaries_columns', columns, 2);
   }
 
   _attachAlarmEntityListener() {
@@ -240,22 +298,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _alarmEntityChanged(entityId) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      alarm_entity: entityId
-    };
-
-    // Wenn leer, entfernen wir die Property
-    if (!entityId || entityId === '') {
-      delete newConfig.alarm_entity;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updatePropertyCustom('alarm_entity', entityId, (val) => !val || val === '');
   }
 
   _attachFavoritesListeners() {
@@ -348,8 +391,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       
       // Reattach listeners
       this._attachFavoritesListeners();
-    }).catch(() => {
+    }).catch((error) => {
       // Fallback falls Import fehlschlägt
+      console.warn('[Simon42 Editor] Failed to load favorites list component, using fallback:', error);
       container.innerHTML = this._renderFavoritesListFallback(favoriteEntities, allEntities);
       this._attachFavoritesListeners();
     });
@@ -476,8 +520,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       
       // Reattach listeners
       this._attachRoomPinsListeners();
-    }).catch(() => {
+    }).catch((error) => {
       // Fallback falls Import fehlschlägt
+      console.warn('[Simon42 Editor] Failed to load room pins list component, using fallback:', error);
       container.innerHTML = this._renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas);
       this._attachRoomPinsListeners();
     });
@@ -553,13 +598,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  // Kann weg?
+  /**
+   * Handles changes to favorite entities list
+   * @param {Array} entities - Array of favorite entity IDs
+   */
   _favoriteEntitiesChanged(entities) {
     if (!this._config || !this._hass) {
       return;
     }
-
-    console.log('Favorites changed:', entities);
 
     const newConfig = {
       ...this._config,
@@ -620,98 +666,23 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _showWeatherChanged(showWeather) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_weather: showWeather
-    };
-
-    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
-    if (showWeather === true) {
-      delete newConfig.show_weather;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_weather', showWeather, true);
   }
 
   _showEnergyChanged(showEnergy) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_energy: showEnergy
-    };
-
-    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
-    if (showEnergy === true) {
-      delete newConfig.show_energy;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_energy', showEnergy, true);
   }
 
   _showSearchCardChanged(showSearchCard) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_search_card: showSearchCard
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showSearchCard === false) {
-      delete newConfig.show_search_card;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_search_card', showSearchCard, false);
   }
 
   _showSummaryViewsChanged(showSummaryViews) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_summary_views: showSummaryViews
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showSummaryViews === false) {
-      delete newConfig.show_summary_views;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_summary_views', showSummaryViews, false);
   }
 
   _showRoomViewsChanged(showRoomViews) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      show_room_views: showRoomViews
-    };
-
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (showRoomViews === false) {
-      delete newConfig.show_room_views;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._configManager.updateProperty('show_room_views', showRoomViews, false);
   }
 
   _areaVisibilityChanged(areaId, isVisible) {
@@ -758,99 +729,42 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return;
     }
 
-    // Hole aktuelle groups_options für dieses Areal
+    // Get current hidden entities for this group
     const currentAreaOptions = this._config.areas_options?.[areaId] || {};
     const currentGroupsOptions = currentAreaOptions.groups_options || {};
     const currentGroupOptions = currentGroupsOptions[group] || {};
-    
     let hiddenEntities = [...(currentGroupOptions.hidden || [])];
     
     if (entityId === null) {
-      // Alle Entities in der Gruppe
-      // Wenn isVisible = false, alle Entities zur Hidden-Liste hinzufügen
-      // Wenn isVisible = true, alle Entities aus Hidden-Liste entfernen
+      // All entities in the group - get from DOM
+      const allEntities = getEntitiesFromDOM(this, areaId, group);
       
       if (!isVisible) {
-        // Hole alle Entities in dieser Gruppe und füge sie zu hidden hinzu
-        // Dies erfordert Zugriff auf die Entity-Liste, die wir aus dem DOM lesen können
-        const entityList = this.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-        if (entityList) {
-          const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
-          const allEntities = Array.from(entityCheckboxes).map(cb => cb.dataset.entityId);
-          hiddenEntities = [...new Set([...hiddenEntities, ...allEntities])];
-        }
+        // Add all entities to hidden list
+        hiddenEntities = [...new Set([...hiddenEntities, ...allEntities])];
       } else {
-        // Entferne alle Entities dieser Gruppe aus hidden
-        const entityList = this.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-        if (entityList) {
-          const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
-          const allEntities = Array.from(entityCheckboxes).map(cb => cb.dataset.entityId);
-          hiddenEntities = hiddenEntities.filter(e => !allEntities.includes(e));
-        }
+        // Remove all entities from hidden list
+        hiddenEntities = hiddenEntities.filter(e => !allEntities.includes(e));
       }
     } else {
-      // Einzelne Entity
+      // Single entity
       if (isVisible) {
-        // Entferne aus hidden
+        // Remove from hidden
         hiddenEntities = hiddenEntities.filter(e => e !== entityId);
       } else {
-        // Füge zu hidden hinzu
+        // Add to hidden (avoid duplicates)
         if (!hiddenEntities.includes(entityId)) {
           hiddenEntities.push(entityId);
         }
       }
     }
 
-    // Baue neue Config
-    const newGroupOptions = {
-      ...currentGroupOptions,
-      hidden: hiddenEntities
-    };
-
-    // Entferne hidden wenn leer
-    if (newGroupOptions.hidden.length === 0) {
-      delete newGroupOptions.hidden;
-    }
-
-    const newGroupsOptions = {
-      ...currentGroupsOptions,
-      [group]: newGroupOptions
-    };
-
-    // Entferne group wenn leer
-    if (Object.keys(newGroupsOptions[group]).length === 0) {
-      delete newGroupsOptions[group];
-    }
-
-    const newAreaOptions = {
-      ...currentAreaOptions,
-      groups_options: newGroupsOptions
-    };
-
-    // Entferne groups_options wenn leer
-    if (Object.keys(newAreaOptions.groups_options).length === 0) {
-      delete newAreaOptions.groups_options;
-    }
-
-    const newAreasOptions = {
-      ...this._config.areas_options,
-      [areaId]: newAreaOptions
-    };
-
-    // Entferne area wenn leer
-    if (Object.keys(newAreasOptions[areaId]).length === 0) {
-      delete newAreasOptions[areaId];
-    }
-
-    const newConfig = {
-      ...this._config,
-      areas_options: newAreasOptions
-    };
-
-    // Entferne areas_options wenn leer
-    if (Object.keys(newConfig.areas_options).length === 0) {
-      delete newConfig.areas_options;
-    }
+    // Update nested config structure with automatic cleanup
+    const newConfig = updateNestedConfig(
+      this._config,
+      ['areas_options', areaId, 'groups_options', group, 'hidden'],
+      hiddenEntities.length > 0 ? hiddenEntities : undefined
+    );
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
@@ -858,41 +772,549 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   // Für Bereiche nach Etage anzeigen
   _groupByFloorsChanged(groupByFloors) {
+    this._configManager.updateProperty('group_by_floors', groupByFloors, false);
+  }
+
+  _showCoversSummaryChanged(showCoversSummary) {
+    this._configManager.updateProperty('show_covers_summary', showCoversSummary, true);
+  }
+
+  _showBetterThermostatChanged(showBetterThermostat) {
+    this._configManager.updateProperty('show_better_thermostat', showBetterThermostat, false);
+  }
+
+  _showHorizonCardChanged(showHorizonCard) {
+    this._configManager.updateProperty('show_horizon_card', showHorizonCard, false);
+    this._render();
+  }
+
+  _horizonCardExtendedChanged(horizonCardExtended) {
+    this._configManager.updateProperty('horizon_card_extended', horizonCardExtended, false);
+  }
+
+  _showPublicTransportChanged(showPublicTransport) {
+    this._configManager.updateProperty('show_public_transport', showPublicTransport, false);
+    // Re-render to show/hide integration selection
+    this._render();
+  }
+
+  _attachPublicTransportIntegrationListeners() {
+    // Integration dropdown
+    const integrationSelect = this.querySelector('#public-transport-integration');
+    if (integrationSelect) {
+      integrationSelect.addEventListener('change', (e) => {
+        const integration = e.target.value;
+        this._publicTransportIntegrationChanged(integration);
+        // Re-render to update dependency check and entity selection
+        this._render();
+      });
+    }
+  }
+
+  _getAvailableCardsForIntegration(integration) {
+    // Map integration to available cards
+    // This structure allows for multiple cards per integration in the future
+    const integrationCards = {
+      'hvv': ['hvv-card'],
+      'ha-departures': ['ha-departures-card'],
+      'db_info': ['db-info-card'],
+      'kvv': ['kvv-departures-card']
+    };
+    
+    return integrationCards[integration] || [];
+  }
+
+  _updateCardBasedOnIntegration(integration) {
+    const cardSelect = this.querySelector('#public-transport-card');
+    if (!cardSelect) return;
+
+    const availableCards = this._getAvailableCardsForIntegration(integration);
+    
+    if (availableCards.length > 0) {
+      cardSelect.disabled = false;
+      
+      // Check if current card is valid for this integration
+      const currentCard = this._config.public_transport_card || '';
+      const isValidCard = availableCards.includes(currentCard);
+      
+      // Use current card if valid, otherwise use first available card
+      const cardToSelect = isValidCard ? currentCard : availableCards[0];
+      cardSelect.value = cardToSelect;
+      this._publicTransportCardChanged(cardToSelect);
+    } else {
+      // No cards available for this integration
+      cardSelect.disabled = true;
+      cardSelect.value = '';
+      this._publicTransportCardChanged('');
+    }
+  }
+
+  _publicTransportIntegrationChanged(integration) {
     if (!this._config || !this._hass) {
       return;
     }
 
-    const newConfig = {
-      ...this._config,
-      group_by_floors: groupByFloors
-    };
+    const currentIntegration = this._config.public_transport_integration;
+    const isChanging = currentIntegration !== integration;
+    
+    const newConfig = { ...this._config };
 
-    // Wenn der Standardwert (false) gesetzt ist, entfernen wir die Property
-    if (groupByFloors === false) {
-      delete newConfig.group_by_floors;
+    if (integration) {
+      // Set new integration
+      newConfig.public_transport_integration = integration;
+      
+      // Auto-set card based on integration using centralized mapping
+      newConfig.public_transport_card = PUBLIC_TRANSPORT_MAPPING[integration];
+      
+      // Clear all integration-specific settings when changing integration
+      if (isChanging) {
+        // Clear properties from all integrations (they'll be set fresh for the new one)
+        const allProps = getAllIntegrationProperties();
+        allProps.forEach(prop => {
+          delete newConfig[prop];
+        });
+      }
+    } else {
+      // Remove integration and card if integration is cleared
+      delete newConfig.public_transport_integration;
+      delete newConfig.public_transport_card;
+      
+      // Clear all integration-specific properties
+      const allProps = getAllIntegrationProperties();
+      allProps.forEach(prop => {
+        delete newConfig[prop];
+      });
     }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
   }
 
-  _showCoversSummaryChanged(showCoversSummary) {
+  _publicTransportCardChanged(card) {
+    this._configManager.updatePropertyCustom('public_transport_card', card, (val) => !val || val === '');
+  }
+
+  _attachPublicTransportListeners() {
+    // Add Button
+    const addBtn = this.querySelector('#add-public-transport-btn');
+    const select = this.querySelector('#public-transport-entity-select');
+    
+    if (addBtn && select) {
+      addBtn.addEventListener('click', () => {
+        const entityId = select.value;
+        if (entityId && entityId !== '') {
+          this._addPublicTransportEntity(entityId);
+          select.value = ''; // Reset selection
+        }
+      });
+    }
+
+    // Remove Buttons
+    const removeButtons = this.querySelectorAll('.remove-public-transport-btn');
+    removeButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const entityId = e.target.dataset.entityId;
+        this._removePublicTransportEntity(entityId);
+      });
+    });
+  }
+
+  _addPublicTransportEntity(entityId) {
     if (!this._config || !this._hass) {
       return;
     }
 
+    const currentEntities = this._config.public_transport_entities || [];
+    
+    // Prüfe ob bereits vorhanden
+    if (currentEntities.includes(entityId)) {
+      return;
+    }
+
+    const newEntities = [...currentEntities, entityId];
+
     const newConfig = {
       ...this._config,
-      show_covers_summary: showCoversSummary
+      public_transport_entities: newEntities
     };
 
-    // Wenn der Standardwert (true) gesetzt ist, entfernen wir die Property
-    if (showCoversSummary === true) {
-      delete newConfig.show_covers_summary;
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Public Transport-Liste
+    this._updatePublicTransportList();
+  }
+
+  _removePublicTransportEntity(entityId) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentEntities = this._config.public_transport_entities || [];
+    const newEntities = currentEntities.filter(id => id !== entityId);
+
+    const newConfig = {
+      ...this._config,
+      public_transport_entities: newEntities.length > 0 ? newEntities : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newEntities.length === 0) {
+      delete newConfig.public_transport_entities;
     }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Public Transport-Liste
+    this._updatePublicTransportList();
+  }
+
+  _updatePublicTransportList() {
+    const container = this.querySelector('#public-transport-list');
+    if (!container) return;
+
+    const publicTransportEntities = this._config.public_transport_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      // Die renderPublicTransportList Funktion ist nicht exportiert, verwende Fallback
+      container.innerHTML = this._renderPublicTransportListFallback(publicTransportEntities, allEntities);
+      
+      // Reattach listeners
+      this._attachPublicTransportListeners();
+    }).catch((error) => {
+      // Fallback falls Import fehlschlägt
+      console.warn('[Simon42 Editor] Failed to load public transport list component, using fallback:', error);
+      container.innerHTML = this._renderPublicTransportListFallback(publicTransportEntities, allEntities);
+      this._attachPublicTransportListeners();
+    });
+  }
+
+  _renderPublicTransportListFallback(publicTransportEntities, allEntities) {
+    if (!publicTransportEntities || publicTransportEntities.length === 0) {
+      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Entitäten hinzugefügt</div>';
+    }
+
+    const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
+
+    return `
+      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+        ${publicTransportEntities.map((entityId) => {
+          const name = entityMap.get(entityId) || entityId;
+          return `
+            <div class="public-transport-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
+              <span style="flex: 1; font-size: 14px;">
+                <strong>${name}</strong>
+                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+              </span>
+              <button class="remove-public-transport-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+                ✕
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  _attachEntityNamePatternsListeners() {
+    // Add Button
+    const addBtn = this.querySelector('#add-pattern-btn');
+    const input = this.querySelector('#entity-name-pattern-input');
+    
+    if (addBtn && input) {
+      // Add on Enter key press
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addBtn.click();
+        }
+      });
+
+      // Add on button click
+      addBtn.addEventListener('click', () => {
+        const pattern = input.value; // Nicht trimmen, da Leerzeichen Teil des Patterns sein können
+        if (pattern && pattern.trim()) { // Prüfe nur ob nicht komplett leer
+          // Validate regex pattern
+          try {
+            new RegExp(pattern);
+            this._addEntityNamePattern(pattern);
+            input.value = ''; // Clear input
+          } catch (error) {
+            alert(`Ungültiges Regex-Pattern: ${error.message}`);
+          }
+        }
+      });
+    }
+
+    // Remove Buttons
+    const removeButtons = this.querySelectorAll('.remove-pattern-btn');
+    removeButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.patternIndex, 10);
+        this._removeEntityNamePattern(index);
+      });
+    });
+  }
+
+  _addEntityNamePattern(pattern) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentPatterns = this._config.entity_name_patterns || [];
+    
+    // Prüfe ob bereits vorhanden
+    if (currentPatterns.includes(pattern)) {
+      return;
+    }
+
+    const newPatterns = [...currentPatterns, pattern];
+
+    const newConfig = {
+      ...this._config,
+      entity_name_patterns: newPatterns
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Patterns-Liste
+    this._updateEntityNamePatternsList();
+  }
+
+  _removeEntityNamePattern(index) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentPatterns = this._config.entity_name_patterns || [];
+    const newPatterns = currentPatterns.filter((_, i) => i !== index);
+
+    const newConfig = {
+      ...this._config,
+      entity_name_patterns: newPatterns.length > 0 ? newPatterns : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newPatterns.length === 0) {
+      delete newConfig.entity_name_patterns;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Patterns-Liste
+    this._updateEntityNamePatternsList();
+  }
+
+  _updateEntityNamePatternsList() {
+    const container = this.querySelector('#entity-name-patterns-list');
+    if (!container) return;
+
+    const patterns = this._config.entity_name_patterns || [];
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      if (module.renderEntityNamePatternsList) {
+        container.innerHTML = module.renderEntityNamePatternsList(patterns);
+      } else {
+        container.innerHTML = this._renderEntityNamePatternsListFallback(patterns);
+      }
+      
+      // Reattach listeners
+      this._attachEntityNamePatternsListeners();
+    }).catch((error) => {
+      // Fallback falls Import fehlschlägt
+      console.warn('[Simon42 Editor] Failed to load entity name patterns list component, using fallback:', error);
+      container.innerHTML = this._renderEntityNamePatternsListFallback(patterns);
+      this._attachEntityNamePatternsListeners();
+    });
+  }
+
+  _renderEntityNamePatternsListFallback(patterns) {
+    if (!patterns || patterns.length === 0) {
+      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Patterns hinzugefügt</div>';
+    }
+
+    // Hilfsfunktion: Escaped HTML-Sonderzeichen und ersetzt Leerzeichen durch sichtbare Zeichen
+    const makeSpacesVisible = (text) => {
+      // Escaped zuerst HTML-Sonderzeichen
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+      
+      // Ersetze dann normale Leerzeichen durch · (middle dot) für bessere Sichtbarkeit
+      // Verwende HTML-Entity für zuverlässige Darstellung
+      return escaped.replace(/ /g, '&middot;');
+    };
+
+    return `
+      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+        ${patterns.map((pattern, index) => {
+          const patternText = typeof pattern === 'string' ? pattern : pattern.pattern || '';
+          const displayText = makeSpacesVisible(patternText);
+          return `
+            <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all; white-space: pre-wrap;" title="${patternText.replace(/"/g, '&quot;')}">
+                ${displayText}
+              </span>
+              <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; margin-left: 8px; flex-shrink: 0;">
+                ✕
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  _attachHvvCardListeners() {
+    // Max input
+    const maxInput = this.querySelector('#hvv-max');
+    if (maxInput) {
+      maxInput.addEventListener('change', (e) => {
+        const value = parseInt(e.target.value, 10);
+        if (!isNaN(value) && value >= 1 && value <= 50) {
+          this._hvvMaxChanged(value);
+        }
+      });
+    }
+
+    // Show time checkbox
+    const showTimeCheckbox = this.querySelector('#hvv-show-time');
+    if (showTimeCheckbox) {
+      showTimeCheckbox.addEventListener('change', (e) => {
+        this._hvvShowTimeChanged(e.target.checked);
+      });
+    }
+
+    // Show title checkbox
+    const showTitleCheckbox = this.querySelector('#hvv-show-title');
+    if (showTitleCheckbox) {
+      showTitleCheckbox.addEventListener('change', (e) => {
+        this._hvvShowTitleChanged(e.target.checked);
+      });
+    }
+
+    // Title input
+    const titleInput = this.querySelector('#hvv-title');
+    if (titleInput) {
+      titleInput.addEventListener('change', (e) => {
+        this._hvvTitleChanged(e.target.value);
+      });
+    }
+  }
+
+  _hvvMaxChanged(max) {
+    this._configManager.updateProperty('hvv_max', max, 10);
+  }
+
+  _hvvShowTimeChanged(showTime) {
+    this._configManager.updateProperty('hvv_show_time', showTime, false);
+  }
+
+  _hvvShowTitleChanged(showTitle) {
+    this._configManager.updateProperty('hvv_show_title', showTitle, false);
+  }
+
+  _hvvTitleChanged(title) {
+    this._configManager.updatePropertyCustom('hvv_title', title, (val) => !val || val === 'HVV');
+  }
+
+  _attachHaDeparturesCardListeners() {
+    // Max input
+    const maxInput = this.querySelector('#ha-departures-max');
+    if (maxInput) {
+      maxInput.addEventListener('change', (e) => {
+        const value = parseInt(e.target.value, 10);
+        if (!isNaN(value) && value >= 1 && value <= 5) {
+          this._haDeparturesMaxChanged(value);
+        }
+      });
+    }
+
+    // Icon input
+    const iconInput = this.querySelector('#ha-departures-icon');
+    if (iconInput) {
+      iconInput.addEventListener('change', (e) => {
+        this._haDeparturesIconChanged(e.target.value);
+      });
+    }
+
+    // Show card header checkbox
+    const showCardHeaderCheckbox = this.querySelector('#ha-departures-show-card-header');
+    if (showCardHeaderCheckbox) {
+      showCardHeaderCheckbox.addEventListener('change', (e) => {
+        this._haDeparturesShowCardHeaderChanged(e.target.checked);
+      });
+    }
+
+    // Show animation checkbox
+    const showAnimationCheckbox = this.querySelector('#ha-departures-show-animation');
+    if (showAnimationCheckbox) {
+      showAnimationCheckbox.addEventListener('change', (e) => {
+        this._haDeparturesShowAnimationChanged(e.target.checked);
+      });
+    }
+
+    // Show transport icon checkbox
+    const showTransportIconCheckbox = this.querySelector('#ha-departures-show-transport-icon');
+    if (showTransportIconCheckbox) {
+      showTransportIconCheckbox.addEventListener('change', (e) => {
+        this._haDeparturesShowTransportIconChanged(e.target.checked);
+      });
+    }
+
+    // Hide empty departures checkbox
+    const hideEmptyDeparturesCheckbox = this.querySelector('#ha-departures-hide-empty-departures');
+    if (hideEmptyDeparturesCheckbox) {
+      hideEmptyDeparturesCheckbox.addEventListener('change', (e) => {
+        this._haDeparturesHideEmptyDeparturesChanged(e.target.checked);
+      });
+    }
+
+    // Time style select
+    const timeStyleSelect = this.querySelector('#ha-departures-time-style');
+    if (timeStyleSelect) {
+      timeStyleSelect.addEventListener('change', (e) => {
+        this._haDeparturesTimeStyleChanged(e.target.value);
+      });
+    }
+  }
+
+  _haDeparturesMaxChanged(max) {
+    this._configManager.updateProperty('ha_departures_max', max, 3);
+  }
+
+  _haDeparturesIconChanged(icon) {
+    this._configManager.updatePropertyCustom('ha_departures_icon', icon, (val) => !val || val.trim() === '' || val === 'mdi:bus-multiple');
+  }
+
+  _haDeparturesShowCardHeaderChanged(showCardHeader) {
+    this._configManager.updateProperty('ha_departures_show_card_header', showCardHeader, true);
+  }
+
+  _haDeparturesShowAnimationChanged(showAnimation) {
+    this._configManager.updateProperty('ha_departures_show_animation', showAnimation, true);
+  }
+
+  _haDeparturesShowTransportIconChanged(showTransportIcon) {
+    this._configManager.updateProperty('ha_departures_show_transport_icon', showTransportIcon, false);
+  }
+
+  _haDeparturesHideEmptyDeparturesChanged(hideEmptyDepartures) {
+    this._configManager.updateProperty('ha_departures_hide_empty_departures', hideEmptyDepartures, false);
+  }
+
+  _haDeparturesTimeStyleChanged(timeStyle) {
+    this._configManager.updateProperty('ha_departures_time_style', timeStyle, 'dynamic');
   }
 
   _fireConfigChanged(config) {

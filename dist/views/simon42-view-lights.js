@@ -39,4 +39,3 @@ class Simon42ViewLightsStrategy {
 // Registriere Custom Element
 customElements.define("ll-strategy-simon42-view-lights", Simon42ViewLightsStrategy);
 
-console.log('✅ Simon42 View Lights Strategy (with reactive group cards) loaded');

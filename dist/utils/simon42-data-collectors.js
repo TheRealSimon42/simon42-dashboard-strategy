@@ -1,6 +1,10 @@
 // ====================================================================
-// DATA COLLECTORS - Sammelt und bereitet Daten auf (OPTIMIERT)
+// DATA COLLECTORS - Sammelt und bereitet Daten auf (REFACTORED)
 // ====================================================================
+// Nutzt zentrale Entity-Filter-Logik für Konsistenz und Wartbarkeit
+// ====================================================================
+
+import { filterStates } from './simon42-entity-filter.js';
 
 /**
  * Erstellt eine Liste aller versteckten Entity-IDs aus areas_options
@@ -30,153 +34,121 @@ function getHiddenEntitiesFromConfig(config) {
 
 /**
  * Sammelt alle Personen-Entitäten
- * OPTIMIERT: Domain-Filter zuerst, dann Exclude-Checks
+ * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function collectPersons(hass, excludeLabels, config = {}) {
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
-  const excludeSet = new Set(excludeLabels);
   
-  return Object.values(hass.states)
-    .filter(state => {
-      const id = state.entity_id;
-      
-      // 1. Domain-Check zuerst
-      if (!id.startsWith('person.')) return false;
-      
-      // 2. Exclude-Checks (Set-Lookup = O(1))
-      if (excludeSet.has(id)) return false;
-      if (hiddenFromConfig.has(id)) return false;
-      
-      return true;
-    })
-    .map(state => ({
-      entity_id: state.entity_id,
-      name: state.attributes?.friendly_name || state.entity_id.split('.')[1],
-      state: state.state,
-      isHome: state.state === 'home'
-    }));
+  return filterStates(hass, {
+    domain: 'person',
+    excludeLabels: new Set(excludeLabels),
+    hiddenFromConfig,
+    checkCategory: false // Persons don't have category restrictions
+  }).map(state => ({
+    entity_id: state.entity_id,
+    name: state.attributes?.friendly_name || state.entity_id.split('.')[1],
+    state: state.state,
+    isHome: state.state === 'home'
+  }));
 }
 
 /**
  * Zählt eingeschaltete Lichter
- * OPTIMIERT: Domain + State-Check kombiniert, dann Exclude-Checks
+ * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function collectLights(hass, excludeLabels, config = {}) {
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
-  const excludeSet = new Set(excludeLabels);
   
-  return Object.values(hass.states)
-    .filter(state => {
-      const id = state.entity_id;
-      
-      // 1. Domain + State-Check kombiniert (reduziert massiv)
-      if (!id.startsWith('light.')) return false;
-      if (state.state !== 'on') return false;
-      
-      // 2. Exclude-Checks
-      if (excludeSet.has(id)) return false;
-      if (hiddenFromConfig.has(id)) return false;
-      
-      // 3. Category-Checks am Ende
-      if (state.attributes?.entity_category === 'config') return false;
-      if (state.attributes?.entity_category === 'diagnostic') return false;
-      
-      return true;
-    });
+  return filterStates(hass, {
+    domain: 'light',
+    state: 'on',
+    excludeLabels: new Set(excludeLabels),
+    hiddenFromConfig
+  });
 }
 
 /**
  * Zählt offene Covers
- * OPTIMIERT: Domain + State-Check kombiniert
+ * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function collectCovers(hass, excludeLabels, config = {}) {
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
-  const excludeSet = new Set(excludeLabels);
   
-  return Object.values(hass.states)
-    .filter(state => {
-      const id = state.entity_id;
-      
-      // 1. Domain-Check zuerst
-      if (!id.startsWith('cover.')) return false;
-      
-      // 2. State-Check früh (filtert viele raus)
-      if (!['open', 'opening'].includes(state.state)) return false;
-      
-      // 3. Exclude-Checks
-      if (excludeSet.has(id)) return false;
-      if (hiddenFromConfig.has(id)) return false;
-      
-      // 4. Category-Checks am Ende
-      if (state.attributes?.entity_category === 'config') return false;
-      if (state.attributes?.entity_category === 'diagnostic') return false;
-      
-      return true;
-    });
+  return filterStates(hass, {
+    domain: 'cover',
+    state: ['open', 'opening'],
+    excludeLabels: new Set(excludeLabels),
+    hiddenFromConfig
+  });
 }
 
 /**
  * Zählt unsichere Security-Entitäten
- * OPTIMIERT: Domain-Checks zuerst, dann State-Validierung
+ * REFACTORED: Nutzt zentrale filterStates Funktion mit customFilter
  */
 export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   const excludeSet = new Set(excludeLabels);
   
-  return Object.keys(hass.states)
-    .filter(entityId => {
-      const state = hass.states[entityId];
-      if (!state) return false;
+  // Filter by domain first, then apply security-specific logic
+  const allSecurityStates = filterStates(hass, {
+    domain: ['lock', 'cover', 'binary_sensor'],
+    excludeLabels: excludeSet,
+    hiddenFromConfig,
+    checkCategory: false // Security entities need special handling
+  });
+  
+  return allSecurityStates
+    .filter(stateObj => {
+      const entityId = stateObj.entity_id;
+      const state = stateObj.state;
       
-      // 1. Domain-Pre-Filter (nur relevante Domains)
-      const isLock = entityId.startsWith('lock.');
-      const isCover = entityId.startsWith('cover.');
-      const isBinarySensor = entityId.startsWith('binary_sensor.');
+      // Locks: unlocked = unsafe
+      if (entityId.startsWith('lock.') && state === 'unlocked') {
+        return true;
+      }
       
-      if (!isLock && !isCover && !isBinarySensor) return false;
-      
-      // 2. Exclude-Checks
-      if (excludeSet.has(entityId)) return false;
-      if (hiddenFromConfig.has(entityId)) return false;
-      
-      // 3. State + Device-Class-Checks (nur für relevante Domains)
-      if (isLock && state.state === 'unlocked') return true;
-      
-      if (isCover) {
-        const deviceClass = state.attributes?.device_class;
-        if (['door', 'garage', 'gate'].includes(deviceClass) && state.state === 'open') {
+      // Covers: open doors/garages/gates = unsafe
+      if (entityId.startsWith('cover.')) {
+        const deviceClass = stateObj.attributes?.device_class;
+        if (['door', 'garage', 'gate'].includes(deviceClass) && state === 'open') {
           return true;
         }
       }
       
-      if (isBinarySensor) {
-        const deviceClass = state.attributes?.device_class;
-        if (['door', 'window', 'garage_door', 'opening'].includes(deviceClass) && state.state === 'on') {
+      // Binary sensors: on = unsafe (doors/windows open)
+      if (entityId.startsWith('binary_sensor.')) {
+        const deviceClass = stateObj.attributes?.device_class;
+        if (['door', 'window', 'garage_door', 'opening'].includes(deviceClass) && state === 'on') {
           return true;
         }
       }
       
       return false;
-    });
+    })
+    .map(stateObj => stateObj.entity_id);
 }
 
 /**
  * Zählt kritische Batterien (unter 20%)
- * OPTIMIERT: Battery-ID-Check zuerst, dann Exclude-Checks
+ * REFACTORED: Nutzt zentrale filterStates Funktion mit customFilter
  * Ignoriert hidden_by (Integration), respektiert aber manuelles hidden
  */
 export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   const excludeSet = new Set(excludeLabels);
   
-  return Object.keys(hass.states)
-    .filter(entityId => {
-      const state = hass.states[entityId];
-      if (!state) return false;
+  // Get all states and filter for batteries
+  const allStates = Object.values(hass.states || {});
+  
+  return allStates
+    .filter(stateObj => {
+      const entityId = stateObj.entity_id;
+      if (!entityId) return false;
       
-      // 1. Battery-Check zuerst (String-includes ist schnell)
+      // 1. Battery-Check (String-includes ist schnell)
       const isBattery = entityId.includes('battery') || 
-                       state.attributes?.device_class === 'battery';
+                       stateObj.attributes?.device_class === 'battery';
       if (!isBattery) return false;
       
       // 2. Registry-Check: Nur manuell versteckte ausschließen (hidden_by wird ignoriert)
@@ -188,81 +160,57 @@ export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
       if (hiddenFromConfig.has(entityId)) return false;
       
       // 4. Value-Check am Ende
-      const value = parseFloat(state.state);
+      const value = parseFloat(stateObj.state);
       return !isNaN(value) && value < 20;
-    });
+    })
+    .map(stateObj => stateObj.entity_id);
 }
 
 /**
  * Findet eine Weather-Entität
- * OPTIMIERT: Domain-Check zuerst, dann Validierung
+ * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function findWeatherEntity(hass, excludeLabels, config = {}) {
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
-  const excludeSet = new Set(excludeLabels);
   
-  return Object.keys(hass.states).find(entityId => {
-    // 1. Domain-Check zuerst
-    if (!entityId.startsWith('weather.')) return false;
-    
-    // 2. Exclude-Checks
-    if (excludeSet.has(entityId)) return false;
-    if (hiddenFromConfig.has(entityId)) return false;
-    
-    const state = hass.states[entityId];
-    if (!state) return false;
-    
-    // 3. Category-Check am Ende
-    if (state.attributes?.entity_category) return false;
-    
-    return true;
+  const weatherStates = filterStates(hass, {
+    domain: 'weather',
+    excludeLabels: new Set(excludeLabels),
+    hiddenFromConfig,
+    checkCategory: false // Weather entities don't have category restrictions typically
   });
+  
+  // Return first weather entity found
+  return weatherStates.length > 0 ? weatherStates[0].entity_id : undefined;
 }
 
 /**
  * Findet eine Dummy-Sensor-Entität für Tile-Cards
- * OPTIMIERT: Domain-Checks zuerst, dann Validierung
+ * REFACTORED: Nutzt zentrale filterStates Funktion
  */
 export function findDummySensor(hass, excludeLabels, config = {}) {
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   const excludeSet = new Set(excludeLabels);
   
-  const someLight = Object.values(hass.states)
-    .find(state => {
-      const id = state.entity_id;
-      
-      // Domain-Check zuerst
-      if (!id.startsWith('light.')) return false;
-      
-      // Exclude-Checks
-      if (excludeSet.has(id)) return false;
-      if (hiddenFromConfig.has(id)) return false;
-      
-      // Category-Checks
-      if (state.attributes?.entity_category === 'config') return false;
-      if (state.attributes?.entity_category === 'diagnostic') return false;
-      
-      return true;
-    });
+  // Try to find a sensor first (filter out unavailable/unknown states)
+  const sensorStates = filterStates(hass, {
+    domain: 'sensor',
+    excludeLabels: excludeSet,
+    hiddenFromConfig
+  }).filter(stateObj => 
+    stateObj.state !== 'unavailable' && stateObj.state !== 'unknown'
+  );
   
-  const someSensorState = Object.values(hass.states)
-    .find(state => {
-      const id = state.entity_id;
-      
-      // Domain + State-Check kombiniert
-      if (!id.startsWith('sensor.')) return false;
-      if (state.state === 'unavailable') return false;
-      
-      // Exclude-Checks
-      if (excludeSet.has(id)) return false;
-      if (hiddenFromConfig.has(id)) return false;
-      
-      // Category-Checks
-      if (state.attributes?.entity_category === 'config') return false;
-      if (state.attributes?.entity_category === 'diagnostic') return false;
-      
-      return true;
-    });
-
-  return someSensorState ? someSensorState.entity_id : (someLight ? someLight.entity_id : 'sun.sun');
+  if (sensorStates.length > 0) {
+    return sensorStates[0].entity_id;
+  }
+  
+  // Fallback to light
+  const lightStates = filterStates(hass, {
+    domain: 'light',
+    excludeLabels: excludeSet,
+    hiddenFromConfig
+  });
+  
+  return lightStates.length > 0 ? lightStates[0].entity_id : 'sun.sun';
 }

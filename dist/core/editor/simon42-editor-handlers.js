@@ -5,68 +5,34 @@
 
 import { renderAreaEntitiesHTML } from './simon42-editor-template.js';
 
-export function attachWeatherCheckboxListener(element, callback) {
-  const weatherCheckbox = element.querySelector('#show-weather');
-  if (weatherCheckbox) {
-    weatherCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
+/**
+ * Creates a checkbox listener attachment function
+ * @param {string} selector - CSS selector for the checkbox
+ * @returns {Function} Function that attaches listener to element
+ */
+function createCheckboxListener(selector) {
+  return function attachCheckboxListener(element, callback) {
+    const checkbox = element.querySelector(selector);
+    if (checkbox) {
+      checkbox.addEventListener('change', (e) => {
+        callback(e.target.checked);
+      });
+    }
+  };
 }
 
-export function attachEnergyCheckboxListener(element, callback) {
-  const energyCheckbox = element.querySelector('#show-energy');
-  if (energyCheckbox) {
-    energyCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachSearchCardCheckboxListener(element, callback) {
-  const searchCardCheckbox = element.querySelector('#show-search-card');
-  if (searchCardCheckbox) {
-    searchCardCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachSummaryViewsCheckboxListener(element, callback) {
-  const summaryViewsCheckbox = element.querySelector('#show-summary-views');
-  if (summaryViewsCheckbox) {
-    summaryViewsCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachRoomViewsCheckboxListener(element, callback) {
-  const roomViewsCheckbox = element.querySelector('#show-room-views');
-  if (roomViewsCheckbox) {
-    roomViewsCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachGroupByFloorsCheckboxListener(element, callback) {
-  const groupByFloorsCheckbox = element.querySelector('#group-by-floors');
-  if (groupByFloorsCheckbox) {
-    groupByFloorsCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachCoversSummaryCheckboxListener(element, callback) {
-  const coversSummaryCheckbox = element.querySelector('#show-covers-summary');
-  if (coversSummaryCheckbox) {
-    coversSummaryCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
+// Create all checkbox listeners using factory
+export const attachWeatherCheckboxListener = createCheckboxListener('#show-weather');
+export const attachEnergyCheckboxListener = createCheckboxListener('#show-energy');
+export const attachSearchCardCheckboxListener = createCheckboxListener('#show-search-card');
+export const attachSummaryViewsCheckboxListener = createCheckboxListener('#show-summary-views');
+export const attachRoomViewsCheckboxListener = createCheckboxListener('#show-room-views');
+export const attachGroupByFloorsCheckboxListener = createCheckboxListener('#group-by-floors');
+export const attachCoversSummaryCheckboxListener = createCheckboxListener('#show-covers-summary');
+export const attachBetterThermostatCheckboxListener = createCheckboxListener('#show-better-thermostat');
+export const attachHorizonCardCheckboxListener = createCheckboxListener('#show-horizon-card');
+export const attachHorizonCardExtendedCheckboxListener = createCheckboxListener('#horizon-card-extended');
+export const attachPublicTransportCheckboxListener = createCheckboxListener('#show-public-transport');
 
 export function attachAreaCheckboxListeners(element, callback) {
   const areaCheckboxes = element.querySelectorAll('.area-checkbox');
@@ -357,6 +323,52 @@ export function attachDragAndDropListeners(element, onOrderChange) {
 
 // Helper-Funktionen
 
+/**
+ * Domain categorization configuration for entity grouping.
+ * Maps domains to group keys, with optional device class filtering.
+ */
+const DOMAIN_GROUP_MAPPING = {
+  'light': 'lights',
+  'scene': 'scenes',
+  'climate': 'climate',
+  'media_player': 'media_player',
+  'vacuum': 'vacuum',
+  'fan': 'fan',
+  'switch': 'switches',
+  'cover': {
+    group: (deviceClass) => {
+      // Special handling for covers: curtain/blind go to covers_curtain, others to covers
+      return (deviceClass === 'curtain' || deviceClass === 'blind') ? 'covers_curtain' : 'covers';
+    }
+  }
+};
+
+/**
+ * Gets the group key for an entity based on its domain and device class.
+ * @param {string} domain - Entity domain (e.g., 'light', 'cover')
+ * @param {string} deviceClass - Device class (optional, for covers)
+ * @returns {string|null} Group key or null if not mapped
+ */
+function getGroupKeyForEntity(domain, deviceClass) {
+  const mapping = DOMAIN_GROUP_MAPPING[domain];
+  if (!mapping) {
+    return null;
+  }
+  
+  // Handle function-based mapping (for covers with device class logic)
+  if (typeof mapping === 'function') {
+    return mapping(deviceClass);
+  }
+  
+  // Handle object with group function (for covers)
+  if (typeof mapping === 'object' && mapping.group) {
+    return mapping.group(deviceClass);
+  }
+  
+  // Simple string mapping
+  return mapping;
+}
+
 async function getAreaGroupedEntities(areaId, hass) {
   // NEUES CACHING: Nutze hass.devices und hass.entities (Standard Home Assistant Objects)
   // Keine WebSocket-Calls mehr nötig!
@@ -373,7 +385,7 @@ async function getAreaGroupedEntities(areaId, hass) {
     }
   }
   
-  // Gruppiere Entitäten
+  // Initialize grouped entities structure
   const roomEntities = {
     lights: [],
     covers: [],
@@ -386,13 +398,16 @@ async function getAreaGroupedEntities(areaId, hass) {
     switches: []
   };
   
-  // Labels für Filterung
-  const excludeLabels = entities
-    .filter(e => e.labels?.includes("no_dboard"))
-    .map(e => e.entity_id);
+  // Build exclude labels set for O(1) lookup
+  const excludeLabels = new Set(
+    entities
+      .filter(e => e.labels?.includes("no_dboard"))
+      .map(e => e.entity_id)
+  );
   
+  // Filter and categorize entities
   for (const entity of entities) {
-    // Prüfe ob Entität zum Raum gehört
+    // Check if entity belongs to area
     let belongsToArea = false;
     
     if (entity.area_id) {
@@ -402,45 +417,21 @@ async function getAreaGroupedEntities(areaId, hass) {
     }
     
     if (!belongsToArea) continue;
-    if (excludeLabels.includes(entity.entity_id)) continue;
+    if (excludeLabels.has(entity.entity_id)) continue;
     if (!hass.states[entity.entity_id]) continue;
     if (entity.hidden_by || entity.disabled_by) continue;
     
     const entityRegistry = hass.entities?.[entity.entity_id];
     if (entityRegistry && (entityRegistry.hidden_by || entityRegistry.disabled_by)) continue;
     
+    // Categorize by domain
     const domain = entity.entity_id.split('.')[0];
     const state = hass.states[entity.entity_id];
     const deviceClass = state.attributes?.device_class;
     
-    // Kategorisiere nach Domain
-    if (domain === 'light') {
-      roomEntities.lights.push(entity.entity_id);
-    } 
-    else if (domain === 'cover') {
-      if (deviceClass === 'curtain' || deviceClass === 'blind') {
-        roomEntities.covers_curtain.push(entity.entity_id);
-      } else {
-        roomEntities.covers.push(entity.entity_id);
-      }
-    }
-    else if (domain === 'scene') {
-      roomEntities.scenes.push(entity.entity_id);
-    }
-    else if (domain === 'climate') {
-      roomEntities.climate.push(entity.entity_id);
-    }
-    else if (domain === 'media_player') {
-      roomEntities.media_player.push(entity.entity_id);
-    }
-    else if (domain === 'vacuum') {
-      roomEntities.vacuum.push(entity.entity_id);
-    }
-    else if (domain === 'fan') {
-      roomEntities.fan.push(entity.entity_id);
-    }
-    else if (domain === 'switch') {
-      roomEntities.switches.push(entity.entity_id);
+    const groupKey = getGroupKeyForEntity(domain, deviceClass);
+    if (groupKey && roomEntities[groupKey]) {
+      roomEntities[groupKey].push(entity.entity_id);
     }
   }
   

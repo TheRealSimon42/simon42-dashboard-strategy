@@ -41,4 +41,3 @@ class Simon42ViewCoversStrategy {
 // Registriere Custom Element
 customElements.define("ll-strategy-simon42-view-covers", Simon42ViewCoversStrategy);
 
-console.log('✅ Simon42 View Covers Strategy (with reactive group cards) loaded');

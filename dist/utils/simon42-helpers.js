@@ -44,19 +44,61 @@ export function getVisibleAreas(areas, displayConfig) {
 }
 
 /**
- * Entfernt den Raumnamen aus dem Entity-Namen
+ * Transformiert Entity-Namen basierend auf konfigurierten Regex-Mustern
+ * @param {string} name - Der zu transformierende Name
+ * @param {Array} patterns - Array von Regex-Mustern (Strings) die entfernt werden sollen
+ * @returns {string} Transformierter Name
+ */
+function applyNamePatterns(name, patterns) {
+  if (!patterns || !Array.isArray(patterns) || patterns.length === 0) {
+    return name;
+  }
+  
+  let transformedName = name;
+  
+  // Wende jedes Pattern an
+  patterns.forEach(pattern => {
+    try {
+      // Pattern kann ein String (Regex) oder ein Objekt mit pattern-Eigenschaft sein
+      const regexPattern = typeof pattern === 'string' ? pattern : pattern.pattern;
+      if (!regexPattern) return;
+      
+      const regex = new RegExp(regexPattern, 'gi');
+      transformedName = transformedName.replace(regex, '');
+    } catch (error) {
+      // Bei ungültigem Regex-Pattern, ignoriere es und logge Warnung
+      console.warn(`[Simon42] Ungültiges Entity-Name-Pattern: ${pattern}`, error);
+    }
+  });
+  
+  // Bereinige mehrfache Leerzeichen und trimme
+  transformedName = transformedName.replace(/\s+/g, ' ').trim();
+  
+  // Nur verwenden wenn noch ein sinnvoller Name übrig ist
+  if (transformedName && transformedName.length > 0) {
+    return transformedName;
+  }
+  
+  // Fallback zum Original-Namen
+  return name;
+}
+
+/**
+ * Entfernt den Raumnamen aus dem Entity-Namen und wendet optional konfigurierte Patterns an
  * @param {string} entityId - Entity ID
  * @param {Object} area - Bereich-Objekt
  * @param {Object} hass - Home Assistant Objekt
+ * @param {Object} config - Optional: Dashboard-Config mit entity_name_patterns
  * @returns {string} Bereinigter Name
  */
-export function stripAreaName(entityId, area, hass) {
+export function stripAreaName(entityId, area, hass, config = {}) {
   const state = hass.states[entityId];
   if (!state) return null;
   
   let name = state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
-  const areaName = area.name;
+  const areaName = area?.name;
   
+  // 1. Entferne Raumnamen (falls vorhanden)
   if (areaName && name) {
     // Entferne Raumnamen am Anfang, Ende oder in der Mitte
     const cleanName = name
@@ -67,8 +109,14 @@ export function stripAreaName(entityId, area, hass) {
     
     // Nur verwenden wenn noch ein sinnvoller Name übrig ist
     if (cleanName && cleanName.length > 0 && cleanName.toLowerCase() !== areaName.toLowerCase()) {
-      return cleanName;
+      name = cleanName;
     }
+  }
+  
+  // 2. Wende konfigurierte Name-Patterns an (falls vorhanden)
+  const namePatterns = config.entity_name_patterns;
+  if (namePatterns) {
+    name = applyNamePatterns(name, namePatterns);
   }
   
   return name;
@@ -177,4 +225,39 @@ export function getExcludedLabels(entities) {
   return entities
     .filter(e => e.labels?.includes("no_dboard"))
     .map(e => e.entity_id);
+}
+
+/**
+ * Prüft ob ein Kamera-Stream verfügbar ist
+ * @param {string} cameraId - Entity ID der Kamera
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {boolean} True wenn der Stream verfügbar ist
+ */
+export function isCameraStreamAvailable(cameraId, hass) {
+  const cameraState = hass.states?.[cameraId];
+  if (!cameraState) {
+    return false;
+  }
+  
+  // Prüfe ob die Kamera verfügbar ist (nicht "unavailable")
+  if (cameraState.state === 'unavailable') {
+    return false;
+  }
+  
+  // Prüfe ob ein Stream-Source vorhanden ist
+  // Wenn privacy mode aktiv ist, fehlt oft der stream_source oder access_token
+  const streamSource = cameraState.attributes?.stream_source;
+  const accessToken = cameraState.attributes?.access_token;
+  
+  // Wenn kein stream_source vorhanden oder leer ist, ist der Stream nicht verfügbar
+  if (!streamSource || (typeof streamSource === 'string' && streamSource.trim() === '')) {
+    return false;
+  }
+  
+  // Wenn kein access_token vorhanden oder leer ist, kann der Stream nicht abgerufen werden
+  if (!accessToken || (typeof accessToken === 'string' && accessToken.trim() === '')) {
+    return false;
+  }
+  
+  return true;
 }
