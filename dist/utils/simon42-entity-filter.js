@@ -5,6 +5,8 @@
 // Eliminates duplication and ensures consistent behavior
 // ====================================================================
 
+import { logDebug } from './simon42-logger.js';
+
 /**
  * Filter options for entity filtering
  * @typedef {Object} EntityFilterOptions

@@ -10,7 +10,7 @@ import {
   validateCombination,
   CARD_BUILDERS
 } from './simon42-public-transport-builders.js';
-import { logWarn } from './simon42-logger.js';
+import { logWarn, logDebug, logInfo } from './simon42-logger.js';
 
 /**
  * Erstellt die Übersichts-Section mit Zusammenfassungen
@@ -157,6 +157,7 @@ export function createOverviewSection(data) {
     });
   }
 
+  logDebug('[Section Builder] Overview section created with', cards.length, 'cards');
   return {
     type: "grid",
     cards: cards
