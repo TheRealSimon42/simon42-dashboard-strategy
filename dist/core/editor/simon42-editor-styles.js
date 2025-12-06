@@ -10,14 +10,22 @@ export function getEditorStyles() {
       position: relative;
     }
     
+    /* Force horizontal navigation on all screen sizes */
+    simon42-dashboard-strategy-editor .editor-navigation-bar,
+    .editor-navigation-bar {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+    }
+    
     .editor-navigation-bar {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 1000;
-      display: flex;
-      flex-direction: row;
+      display: flex !important;
+      flex-direction: row !important;
       align-items: center;
       gap: 6px;
       padding: 8px 12px;
@@ -25,11 +33,12 @@ export function getEditorStyles() {
       background: var(--card-background-color);
       border-bottom: 1px solid var(--divider-color);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      flex-wrap: nowrap;
+      flex-wrap: nowrap !important;
       overflow-x: auto;
       overflow-y: hidden;
       width: 100%;
       box-sizing: border-box;
+      min-height: 44px;
     }
     
     .editor-navigation-bar::-webkit-scrollbar {
@@ -326,7 +335,8 @@ export function getEditorStyles() {
     }
     
     .nav-item {
-      display: inline-flex;
+      display: inline-flex !important;
+      flex-direction: row !important;
       align-items: center;
       justify-content: center;
       gap: 6px;
@@ -338,10 +348,11 @@ export function getEditorStyles() {
       cursor: pointer;
       transition: all 0.2s;
       font-size: 13px;
-      white-space: nowrap;
+      white-space: nowrap !important;
       flex-shrink: 0;
       min-width: fit-content;
       height: auto;
+      width: auto !important;
     }
     
     .nav-item-label {
@@ -428,14 +439,16 @@ export function getEditorStyles() {
     
     @media (max-width: 600px) {
       .editor-navigation-bar {
-        flex-direction: row;
+        flex-direction: row !important;
         padding: 6px 8px;
         gap: 4px;
       }
       
       .nav-item {
+        flex-direction: row !important;
         padding: 6px 8px;
         font-size: 12px;
+        width: auto !important;
       }
       
       .nav-item-label {
@@ -444,6 +457,24 @@ export function getEditorStyles() {
       
       .nav-item ha-icon {
         --mdc-icon-size: 20px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .editor-navigation-bar {
+        flex-direction: row !important;
+        padding: 6px 4px;
+        gap: 4px;
+      }
+      
+      .nav-item {
+        flex-direction: row !important;
+        padding: 6px 8px;
+        width: auto !important;
+      }
+      
+      .nav-item-label {
+        display: none;
       }
     }
   `;
