@@ -471,24 +471,57 @@ entity_name_patterns:
 - Mehrere Patterns können angegeben werden und werden nacheinander angewendet
 - Patterns werden nach dem Entfernen des Raumnamens angewendet
 - Bei ungültigen Patterns wird eine Warnung geloggt und das Pattern ignoriert
+- Patterns können als String (für alle Entities) oder als Objekt mit Domain-Restriktion angegeben werden
+
+**Domain-spezifische Patterns:**
+Du kannst Patterns auf bestimmte Entity-Typen beschränken, indem du ein Objekt mit `pattern` und `domain` verwendest:
+
+```yaml
+entity_name_patterns:
+  - "^.*? - .*? - "  # Gilt für alle Entities
+  - pattern: "^.*?·-·.*?"
+    domain: "switch"  # Gilt nur für Switch-Entities
+  - pattern: "^Light - "
+    domain: "light"  # Gilt nur für Light-Entities
+```
 
 **Häufige Pattern-Beispiele:**
 
 ```yaml
-# Entfernt Präfixe wie "Socket - ", "Light - ", etc.
+# Entfernt Präfixe wie "Socket - ", "Light - ", etc. (für alle Entities)
 entity_name_patterns:
   - "^[^-]+ - "  # Entfernt alles bis zum ersten " - "
 
-# Entfernt mehrere Segmente getrennt durch " - "
+# Entfernt mehrere Segmente getrennt durch " - " (für alle Entities)
 entity_name_patterns:
   - "^.*? - .*? - "  # Entfernt die ersten beiden Segmente
 
-# Entfernt spezifische Begriffe am Anfang
+# Entfernt spezifische Begriffe am Anfang (für alle Entities)
 entity_name_patterns:
   - "^Socket - "
   - "^Light - "
   - "^Switch - "
+
+# Domain-spezifische Patterns: Nur für Schalter
+entity_name_patterns:
+  - pattern: "^.*?·-·.*?"
+    domain: "switch"  # Nur für switch-Entities (z.B. socket.something)
 ```
+
+**Verfügbare Domains:**
+- `light` - Beleuchtung
+- `switch` - Schalter (inkl. Steckdosen)
+- `cover` - Rollos, Vorhänge, Jalousien
+- `climate` - Klimageräte, Thermostate
+- `sensor` - Sensoren
+- `binary_sensor` - Binäre Sensoren
+- `media_player` - Media Player
+- `scene` - Szenen
+- `vacuum` - Saugroboter
+- `fan` - Ventilatoren
+- `camera` - Kameras
+- `lock` - Schlösser
+- `input_boolean`, `input_number`, `input_select`, `input_text` - Input-Entities
 
 **Hinweis:** Die Transformation wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant.
 

@@ -171,9 +171,12 @@ export const de = {
   roomViewsDescription: "Zeigt die einzelnen Raum-Views in der oberen Navigation an.",
   groupByFloorsDescription: "Gruppiert die Bereiche in der Übersicht nach Etagen. Wenn aktiviert, wird für jede Etage eine separate Section erstellt.",
   entityNamePatterns: "Entity-Namen Transformation",
-  entityNamePatternsDescription: "Definiere Regex-Patterns, um Präfixe oder Suffixe aus Entity-Namen zu entfernen. Dies ist nützlich, wenn Entities strukturierte Namen haben (z.B. 'Socket - Raum - Name'). Patterns werden nacheinander angewendet.",
+  entityNamePatternsDescription: "Definiere Regex-Patterns, um Präfixe oder Suffixe aus Entity-Namen zu entfernen. Dies ist nützlich, wenn Entities strukturierte Namen haben (z.B. 'Socket - Raum - Name'). Patterns werden nacheinander angewendet. Optional kannst du Patterns auf bestimmte Entity-Typen beschränken (z.B. nur für Schalter).",
   addPattern: "Pattern hinzufügen",
   patternPlaceholder: "Regex-Pattern (z.B. '^.*? - .*? - ')",
+  patternDomainLabel: "Entity-Typ (optional):",
+  patternDomainAll: "Alle Entity-Typen",
+  patternDomainRestriction: "Nur für:",
   noPatternsAdded: "Keine Patterns hinzugefügt",
   areasDescription: "Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten.",
   

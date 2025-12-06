@@ -48,13 +48,17 @@ export function getVisibleAreas(areas, displayConfig) {
 /**
  * Transformiert Entity-Namen basierend auf konfigurierten Regex-Mustern
  * @param {string} name - Der zu transformierende Name
- * @param {Array} patterns - Array von Regex-Mustern (Strings) die entfernt werden sollen
+ * @param {Array} patterns - Array von Regex-Mustern (Strings oder Objekte mit pattern/domain)
+ * @param {string} entityId - Optional: Entity ID für Domain-Filterung
  * @returns {string} Transformierter Name
  */
-function applyNamePatterns(name, patterns) {
+function applyNamePatterns(name, patterns, entityId = null) {
   if (!patterns || !Array.isArray(patterns) || patterns.length === 0) {
     return name;
   }
+  
+  // Extrahiere Domain aus entityId falls vorhanden
+  const entityDomain = entityId ? entityId.split('.')[0] : null;
   
   let transformedName = name;
   
@@ -64,6 +68,20 @@ function applyNamePatterns(name, patterns) {
       // Pattern kann ein String (Regex) oder ein Objekt mit pattern-Eigenschaft sein
       const regexPattern = typeof pattern === 'string' ? pattern : pattern.pattern;
       if (!regexPattern) return;
+      
+      // Domain-Filterung: Wenn Pattern eine Domain-Restriktion hat, prüfe ob sie zutrifft
+      if (typeof pattern === 'object' && pattern.domain) {
+        // Pattern hat eine einzelne Domain-Restriktion
+        if (entityDomain !== pattern.domain) {
+          return; // Pattern nicht anwenden, Domain stimmt nicht überein
+        }
+      } else if (typeof pattern === 'object' && pattern.domains && Array.isArray(pattern.domains)) {
+        // Pattern hat mehrere Domain-Restriktionen
+        if (!pattern.domains.includes(entityDomain)) {
+          return; // Pattern nicht anwenden, Domain nicht in Liste
+        }
+      }
+      // Wenn Pattern ein String ist oder keine Domain-Restriktion hat, wende es auf alle Entities an
       
       const regex = new RegExp(regexPattern, 'gi');
       transformedName = transformedName.replace(regex, '');
@@ -118,7 +136,7 @@ export function stripAreaName(entityId, area, hass, config = {}) {
   // 2. Wende konfigurierte Name-Patterns an (falls vorhanden)
   const namePatterns = config.entity_name_patterns;
   if (namePatterns) {
-    name = applyNamePatterns(name, namePatterns);
+    name = applyNamePatterns(name, namePatterns, entityId);
   }
   
   return name;

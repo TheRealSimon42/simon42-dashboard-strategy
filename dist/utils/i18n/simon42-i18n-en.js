@@ -171,9 +171,12 @@ export const en = {
   roomViewsDescription: "Shows the individual room views in the top navigation.",
   groupByFloorsDescription: "Groups areas in the overview by floors. When enabled, a separate section is created for each floor.",
   entityNamePatterns: "Entity Name Transformation",
-  entityNamePatternsDescription: "Define regex patterns to remove prefixes or suffixes from entity names. Useful when entities have structured names (e.g., 'Socket - Room - Name'). Patterns are applied sequentially.",
+  entityNamePatternsDescription: "Define regex patterns to remove prefixes or suffixes from entity names. Useful when entities have structured names (e.g., 'Socket - Room - Name'). Patterns are applied sequentially. Optionally, you can restrict patterns to specific entity types (e.g., only for switches).",
   addPattern: "Add Pattern",
   patternPlaceholder: "Regex pattern (e.g., '^.*? - .*? - ')",
+  patternDomainLabel: "Entity Type (optional):",
+  patternDomainAll: "All Entity Types",
+  patternDomainRestriction: "Only for:",
   noPatternsAdded: "No patterns added",
   areasDescription: "Choose which areas should be displayed in the dashboard and in what order. Expand areas to manage individual entities.",
   
