@@ -21,17 +21,15 @@ export function getEditorStyles() {
     }
     
     .editor-navigation-bar {
-      position: fixed;
+      position: sticky;
       top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
+      z-index: 100;
       display: flex !important;
       flex-direction: row !important;
       align-items: center;
       gap: 6px;
-      padding: 15px 12px;
-      margin: 0;
+      padding: 12px 16px;
+      margin: 16px 0;
       background: var(--card-background-color);
       border-bottom: 1px solid var(--divider-color);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -39,7 +37,7 @@ export function getEditorStyles() {
       overflow-x: auto;
       overflow-y: hidden;
       box-sizing: border-box;
-      min-height: 59px;
+      min-height: 44px;
     }
     
     .editor-navigation-bar::-webkit-scrollbar {
@@ -61,7 +59,7 @@ export function getEditorStyles() {
     }
     
     .card-config > .section-group:first-of-type {
-      margin-top: 65px;
+      margin-top: 0;
     }
     
     .section {
