@@ -18,6 +18,9 @@
 //   type: custom:simon42-dashboard
 // ====================================================================
 
+// Lade Logger ZUERST (wird von vielen Modulen benötigt)
+import './utils/simon42-logger.js';
+
 // Lade Helper-Funktionen
 import './utils/simon42-helpers.js';
 import './utils/simon42-data-collectors.js';

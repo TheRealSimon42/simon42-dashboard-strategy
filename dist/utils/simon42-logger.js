@@ -141,7 +141,10 @@ export function logDebug(...args) {
 export function initLogger(config) {
   if (config?.log_level) {
     setLogLevel(config.log_level);
-    logDebug('Logger initialized with level:', getLogLevelName());
+    // Use console.debug directly here to avoid circular dependency issues during initialization
+    if (shouldLog(LOG_LEVELS.DEBUG)) {
+      console.debug(...formatLog('debug', 'Logger initialized with level:', getLogLevelName()));
+    }
   } else {
     // Default to WARN if not specified
     setLogLevel(LOG_LEVELS.WARN);
