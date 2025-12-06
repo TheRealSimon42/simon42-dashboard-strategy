@@ -269,6 +269,45 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Remove borders from section groups
     this._removeSectionGroupBorders();
+    
+    // Remove spacing above navigation bar
+    this._removeSpacingAboveNavigation();
+  }
+  
+  _removeSpacingAboveNavigation() {
+    // Remove padding/margin from parent elements
+    let parent = this.parentElement;
+    while (parent && parent !== document.body) {
+      // Check if it's a card editor or similar container
+      if (parent.matches && (
+        parent.matches('ha-card-editor') ||
+        parent.matches('ha-card') ||
+        parent.matches('[class*="card"]') ||
+        parent.matches('[class*="editor"]')
+      )) {
+        const computedStyle = window.getComputedStyle(parent);
+        if (parseFloat(computedStyle.paddingTop) > 0) {
+          parent.style.paddingTop = '0';
+        }
+        if (parseFloat(computedStyle.marginTop) > 0) {
+          parent.style.marginTop = '0';
+        }
+      }
+      parent = parent.parentElement;
+    }
+    
+    // Also ensure the card-config has no top padding/margin
+    const cardConfig = this.querySelector('.card-config');
+    if (cardConfig) {
+      cardConfig.style.paddingTop = '0';
+      cardConfig.style.marginTop = '0';
+    }
+    
+    // Ensure navigation bar has no top margin
+    const navBar = this.querySelector('.editor-navigation-bar');
+    if (navBar) {
+      navBar.style.marginTop = '0';
+    }
   }
   
   _hideDashboardTitle() {

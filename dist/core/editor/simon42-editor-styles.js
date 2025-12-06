@@ -11,15 +11,25 @@ export function getEditorStyles() {
       margin: 0 !important;
     }
     
+    /* Remove spacing from parent containers */
+    ha-card-editor,
+    ha-card-editor > *,
+    ha-card-editor ha-card {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    
     .card-config {
-      padding: 0;
+      padding: 0 !important;
       position: relative;
-      margin: 0;
+      margin: 0 !important;
     }
     
     .card-config > .editor-navigation-bar {
       margin-top: 0 !important;
       margin-bottom: 16px;
+      padding-top: 12px;
+      padding-bottom: 12px;
     }
     
     /* Hide dashboard title/header when editor is active */
