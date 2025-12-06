@@ -13,15 +13,32 @@ export function getEditorStyles() {
     .editor-navigation-bar {
       position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
       z-index: 1000;
       display: flex;
-      gap: 8px;
-      padding: 12px 16px;
+      gap: 6px;
+      padding: 8px 12px;
       margin: 0;
       background: var(--card-background-color);
       border-bottom: 1px solid var(--divider-color);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    
+    .editor-navigation-bar::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    .editor-navigation-bar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .editor-navigation-bar::-webkit-scrollbar-thumb {
+      background: var(--divider-color);
+      border-radius: 2px;
     }
     
     .card-config > .section-group {
@@ -30,7 +47,7 @@ export function getEditorStyles() {
     }
     
     .card-config > .section-group:first-of-type {
-      margin-top: 16px;
+      margin-top: 50px;
     }
     
     .section {
@@ -307,16 +324,21 @@ export function getEditorStyles() {
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
+      gap: 6px;
+      padding: 6px 12px;
       border: 1px solid var(--divider-color);
       border-radius: 4px;
       background: var(--card-background-color);
       color: var(--primary-text-color);
       cursor: pointer;
       transition: all 0.2s;
-      font-size: 14px;
+      font-size: 13px;
       white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
+    .nav-item-label {
+      display: inline-block;
     }
     
     .nav-item:hover {

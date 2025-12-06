@@ -457,21 +457,21 @@ export function renderEntityNamePatternsList(patterns) {
 export function renderNavigationBar() {
   return `
     <div class="editor-navigation-bar">
-      <button class="nav-item" data-group="dashboard-cards" type="button">
+      <button class="nav-item" data-group="dashboard-cards" type="button" title="${t('navGroupDashboardCards')}">
         <ha-icon icon="mdi:view-dashboard"></ha-icon>
-        <span>${t('navGroupDashboardCards')}</span>
+        <span class="nav-item-label">${t('navGroupDashboardCardsShort')}</span>
       </button>
-      <button class="nav-item" data-group="views-summaries" type="button">
+      <button class="nav-item" data-group="views-summaries" type="button" title="${t('navGroupViewsSummaries')}">
         <ha-icon icon="mdi:view-list"></ha-icon>
-        <span>${t('navGroupViewsSummaries')}</span>
+        <span class="nav-item-label">${t('navGroupViewsSummariesShort')}</span>
       </button>
-      <button class="nav-item" data-group="entity-management" type="button">
+      <button class="nav-item" data-group="entity-management" type="button" title="${t('navGroupEntityManagement')}">
         <ha-icon icon="mdi:home"></ha-icon>
-        <span>${t('navGroupEntityManagement')}</span>
+        <span class="nav-item-label">${t('navGroupEntityManagementShort')}</span>
       </button>
-      <button class="nav-item" data-group="advanced" type="button">
+      <button class="nav-item" data-group="advanced" type="button" title="${t('navGroupAdvanced')}">
         <ha-icon icon="mdi:cog"></ha-icon>
-        <span>${t('navGroupAdvanced')}</span>
+        <span class="nav-item-label">${t('navGroupAdvancedShort')}</span>
       </button>
     </div>
   `;

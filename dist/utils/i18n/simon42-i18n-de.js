@@ -230,6 +230,10 @@ export const de = {
   navGroupDashboardCards: "Dashboard-Karten",
   navGroupViewsSummaries: "Ansichten & Zusammenfassungen",
   navGroupEntityManagement: "Entitäts-Verwaltung",
-  navGroupAdvanced: "Erweitert"
+  navGroupAdvanced: "Erweitert",
+  navGroupDashboardCardsShort: "Karten",
+  navGroupViewsSummariesShort: "Ansichten",
+  navGroupEntityManagementShort: "Entitäten",
+  navGroupAdvancedShort: "Erweitert"
 };
 
