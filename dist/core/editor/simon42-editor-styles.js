@@ -10,14 +10,6 @@ export function getEditorStyles() {
       position: relative;
     }
     
-    /* Force horizontal navigation on all screen sizes */
-    simon42-dashboard-strategy-editor .editor-navigation-bar,
-    .editor-navigation-bar {
-      display: flex !important;
-      flex-direction: row !important;
-      flex-wrap: nowrap !important;
-    }
-    
     .editor-navigation-bar {
       position: fixed;
       top: 0;
@@ -36,7 +28,6 @@ export function getEditorStyles() {
       flex-wrap: nowrap !important;
       overflow-x: auto;
       overflow-y: hidden;
-      width: 100%;
       box-sizing: border-box;
       min-height: 44px;
     }
