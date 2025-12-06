@@ -10,6 +10,22 @@ export function getEditorStyles() {
       padding-top: 70px;
     }
     
+    /* Navigation Bar */
+    .editor-navigation-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--card-background-color);
+      border-bottom: 1px solid var(--divider-color);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      flex-wrap: wrap;
+    }
+    
     .section {
       margin-bottom: 24px;
     }
@@ -295,10 +311,6 @@ export function getEditorStyles() {
       border-bottom: 1px solid var(--divider-color);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       flex-wrap: wrap;
-    }
-    
-    .card-config {
-      padding-top: 60px;
     }
     
     .nav-item {
