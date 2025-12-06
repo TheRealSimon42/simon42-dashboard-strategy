@@ -91,7 +91,7 @@ function shouldLog(level) {
  * @returns {Array} Formatted arguments
  */
 function formatLog(level, ...args) {
-  return [`[Simon42 ${level.toUpperCase()}]`, ...args];
+  return [`[${level.toUpperCase()}]`, ...args];
 }
 
 /**
