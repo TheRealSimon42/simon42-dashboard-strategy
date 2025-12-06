@@ -5,9 +5,8 @@
 
 export function getEditorStyles() {
   return `
-    /* Navigation Bar - positioned on the custom element */
-    simon42-dashboard-strategy-editor {
-      display: block;
+    .card-config {
+      padding: 0;
       position: relative;
     }
     
@@ -18,15 +17,20 @@ export function getEditorStyles() {
       display: flex;
       gap: 8px;
       padding: 12px 16px;
-      margin: 0 0 16px 0;
+      margin: 0;
       background: var(--card-background-color);
       border-bottom: 1px solid var(--divider-color);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       flex-wrap: wrap;
     }
     
-    .card-config {
-      padding: 16px;
+    .card-config > .section-group {
+      margin: 16px;
+      margin-top: 0;
+    }
+    
+    .card-config > .section-group:first-of-type {
+      margin-top: 16px;
     }
     
     .section {
