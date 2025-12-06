@@ -30,7 +30,7 @@ export function getEditorStyles() {
       flex-direction: row !important;
       align-items: center;
       gap: 6px;
-      padding: 8px 12px;
+      padding: 15px 12px;
       margin: 0;
       background: var(--card-background-color);
       border-bottom: 1px solid var(--divider-color);
@@ -39,7 +39,7 @@ export function getEditorStyles() {
       overflow-x: auto;
       overflow-y: hidden;
       box-sizing: border-box;
-      min-height: 44px;
+      min-height: 59px;
     }
     
     .editor-navigation-bar::-webkit-scrollbar {
@@ -61,7 +61,7 @@ export function getEditorStyles() {
     }
     
     .card-config > .section-group:first-of-type {
-      margin-top: 50px;
+      margin-top: 65px;
     }
     
     .section {
