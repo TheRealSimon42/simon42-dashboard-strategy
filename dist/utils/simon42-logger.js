@@ -159,3 +159,17 @@ export function getAvailableLogLevels() {
   return Object.keys(LOG_LEVEL_NAMES);
 }
 
+// Make logger available globally for lazy loading scenarios
+if (typeof window !== 'undefined') {
+  window.Simon42Logger = {
+    logDebug,
+    logInfo,
+    logWarn,
+    logError,
+    setLogLevel,
+    getLogLevel,
+    getLogLevelName,
+    initLogger
+  };
+}
+

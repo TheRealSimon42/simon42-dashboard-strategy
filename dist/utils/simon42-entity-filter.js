@@ -5,8 +5,14 @@
 // Eliminates duplication and ensures consistent behavior
 // ====================================================================
 
-// Logger import removed temporarily to fix loading order issues
-// Will be re-added once loading order is confirmed stable
+// Lazy access to logger to avoid loading order issues
+// Logger is made available via window.Simon42Logger in simon42-logger.js
+function getLogDebug() {
+  if (typeof window !== 'undefined' && window.Simon42Logger?.logDebug) {
+    return window.Simon42Logger.logDebug;
+  }
+  return () => {}; // No-op fallback if logger not available
+}
 
 /**
  * Filter options for entity filtering
@@ -29,7 +35,11 @@
  * @returns {Array} Filtered entity IDs
  */
 export function filterEntities(entities, options = {}) {
-  // Debug logging temporarily disabled - will be re-enabled after fixing loading order
+  getLogDebug()('[Entity Filter] Filtering', entities.length, 'entities with options:', {
+    domain: options.domain || options.domains,
+    excludeLabels: options.excludeLabels?.size || 0,
+    hiddenFromConfig: options.hiddenFromConfig?.size || 0
+  });
   const {
     domain,
     state,
@@ -101,7 +111,7 @@ export function filterEntities(entities, options = {}) {
     })
     .map(entity => entity.entity_id);
   
-  // Debug logging temporarily disabled - will be re-enabled after fixing loading order
+  getLogDebug()('[Entity Filter] Filtered', entities.length, 'entities to', result.length);
   return result;
 }
 
