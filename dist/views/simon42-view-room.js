@@ -3,6 +3,7 @@
 // ====================================================================
 import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged, isCameraStreamAvailable } from '../utils/simon42-helpers.js';
 import { t, initLanguage } from '../utils/simon42-i18n.js';
+import { filterByArea, filterEntities } from '../utils/simon42-entity-filter.js';
 
 /**
  * Prüft ob eine Entity eine Better Thermostat Entity ist
@@ -97,42 +98,73 @@ class Simon42ViewRoomStrategy {
       }
     }
 
-    // OPTIMIERT: Hauptfilter-Loop
-    for (const entity of entities) {
-      const entityId = entity.entity_id;
+    // REFACTORED: Use centralized filtering utilities
+    // Helper function to get hidden entities from config (similar to data-collectors)
+    const getHiddenEntitiesFromConfig = (config) => {
+      const hiddenEntities = new Set();
+      if (!config.areas_options) return hiddenEntities;
       
-      // 1. Prüfe ob Entität zum Raum gehört (früh ausschließen)
-      let belongsToArea = false;
+      const areaOptions = config.areas_options[area.area_id];
+      if (!areaOptions?.groups_options) return hiddenEntities;
       
-      if (entity.area_id) {
-        belongsToArea = entity.area_id === area.area_id;
-      } else if (entity.device_id && areaDevices.has(entity.device_id)) {
-        belongsToArea = true;
+      for (const groupOptions of Object.values(areaOptions.groups_options)) {
+        if (groupOptions.hidden && Array.isArray(groupOptions.hidden)) {
+          groupOptions.hidden.forEach(entityId => hiddenEntities.add(entityId));
+        }
       }
       
-      if (!belongsToArea) continue;
-      
-      // 2. Exclude-Check (Set-Lookup = O(1))
-      if (excludeLabels.has(entityId)) continue;
+      return hiddenEntities;
+    };
 
-      // 3. State-Existence-Check
+    // Step 1: Filter by area using centralized utility
+    const areaFilteredEntities = filterByArea(entities, area.area_id, areaDevices);
+    
+    // Step 2: Get hidden entities from config for this area
+    const hiddenFromConfig = getHiddenEntitiesFromConfig(dashboardConfig);
+    
+    // Step 3: Apply centralized filtering with custom filter for battery sensor handling
+    // Note: We use checkRegistry: false and handle registry checks in customFilter
+    // because battery sensors need special handling (ignore hidden_by)
+    const filteredEntityIds = filterEntities(areaFilteredEntities, {
+      excludeLabels,
+      hiddenFromConfig,
+      hass,
+      checkRegistry: false, // Handle manually in customFilter for battery sensor special case
+      checkState: true,
+      customFilter: (entity, hass) => {
+        const entityId = entity.entity_id;
+        const state = hass.states[entityId];
+        const isBatterySensor = entityId.includes('battery') || 
+                               state?.attributes?.device_class === 'battery';
+        
+        if (isBatterySensor) {
+          // Battery sensor special handling: Only check manual hidden, ignore hidden_by
+          // (consistent with Battery-View and Summary)
+          if (entity.hidden === true) return false;
+          if (entity.disabled_by) return false;
+          if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') return false;
+          // Check state attributes entity_category too
+          if (state?.attributes?.entity_category === 'config' || 
+              state?.attributes?.entity_category === 'diagnostic') return false;
+          return true;
+        } else {
+          // For all others: Use full hidden/disabled check
+          return !isEntityHiddenOrDisabled(entity, hass);
+        }
+      }
+    });
+
+    // Step 4: Create entity map for quick lookup
+    const entityMap = new Map(entities.map(e => [e.entity_id, e]));
+
+    // Step 5: Categorize filtered entities by domain
+    for (const entityId of filteredEntityIds) {
+      const entity = entityMap.get(entityId);
+      if (!entity) continue;
+      
       const state = hass.states[entityId];
       if (!state) continue;
 
-      // 4. Hidden/Disabled-Check
-      // Batterie-Sensoren: Ignoriere 'hidden_by' (oft von Integrations gesetzt), aber respektiere manuelles 'hidden'
-      const isBatterySensor = entityId.includes('battery') || state.attributes?.device_class === 'battery';
-      
-      if (isBatterySensor) {
-        // Für Batterie-Sensoren: Nur prüfen auf manuelles Hidden (konsistent mit Battery-View und Summary)
-        if (entity.hidden === true) continue;
-        // hidden_by wird ignoriert für kritische Batterien (wichtige Info!)
-      } else {
-        // Für alle anderen: Vollständige Hidden-Prüfung
-        if (isEntityHiddenOrDisabled(entity, hass)) continue;
-      }
-
-      // 5. Domain-basierte Kategorisierung
       const domain = entityId.split('.')[0];
       const deviceClass = state.attributes?.device_class;
       const unit = state.attributes?.unit_of_measurement;
