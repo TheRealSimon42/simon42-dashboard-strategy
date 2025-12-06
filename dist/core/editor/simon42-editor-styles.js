@@ -10,6 +10,10 @@ export function getEditorStyles() {
       position: relative;
     }
     
+    .card-config > .editor-navigation-bar {
+      margin-top: 0 !important;
+    }
+    
     /* Hide dashboard title/header when editor is active */
     simon42-dashboard-strategy-editor ~ .view-header,
     simon42-dashboard-strategy-editor ~ ha-card .view-header,
@@ -29,7 +33,7 @@ export function getEditorStyles() {
       align-items: center;
       gap: 6px;
       padding: 12px 16px;
-      margin: 16px 0;
+      margin: 0 0 16px 0;
       background: var(--card-background-color);
       border-bottom: 1px solid var(--divider-color);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
