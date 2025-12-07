@@ -76,6 +76,7 @@ export function createOverviewSection(data) {
   if (showSearchCard) {
     cards.push({
       type: "custom:search-card",
+      search_text: t('searchCardPlaceholder'),
       grid_options: {
         columns: "full",
       }

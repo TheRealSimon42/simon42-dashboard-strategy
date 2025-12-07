@@ -96,6 +96,7 @@ export const de = {
   noRoom: "Kein Raum",
   searchCard: "Such-Karte",
   showSearchCard: "Such-Karte in Übersicht anzeigen",
+  searchCardPlaceholder: "Tippe zum Suchen...",
   clockCard: "Uhr-Karte",
   showClockCard: "Uhr in Übersicht anzeigen",
   betterThermostat: "Better Thermostat",
