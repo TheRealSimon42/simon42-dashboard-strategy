@@ -1052,6 +1052,35 @@ strategy:
 
 </details>
 
+#### Clock Weather Card
+
+Ersetzt die Standard-Wetter-Karte durch die Clock Weather Card, die Uhrzeit, Datum und Wettervorhersage kombiniert. Konfigurierbar im Editor.
+
+**Features:**
+- Kombiniert Uhr, Datum und Wettervorhersage in einer Card
+- iOS-inspirierte Wetter-Icons mit Animationen
+- Unterstützt tägliche und stündliche Vorhersagen
+- Automatische Anpassung an Benutzer-Präferenzen (Sprache, Zeitformat, Locale)
+- Kann mit Horizon Card kombiniert werden
+
+**Voraussetzung:**
+- `clock-weather-card` muss über HACS installiert sein
+- Der Editor prüft automatisch, ob die Card verfügbar ist
+- Eine Weather-Entity muss vorhanden sein
+
+<details>
+<summary>YAML-Konfiguration</summary>
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  use_clock_weather_card: true
+```
+
+Die Card verwendet automatisch die Benutzer-Präferenzen für Sprache, Zeitformat und Locale. Weitere Optionen können direkt in der Card-Konfiguration gesetzt werden (siehe [Clock Weather Card Dokumentation](https://github.com/pkissling/clock-weather-card)).
+
+</details>
+
 #### Öffentlicher Nahverkehr
 
 Zeige Abfahrtszeiten des öffentlichen Nahverkehrs in der Übersicht. Unterstützt mehrere Integrationen: HVV (Hamburg), ha-departures (EFA-basiert), KVV (Karlsruhe) und db_info (Deutsche Bahn).

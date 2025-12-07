@@ -124,7 +124,7 @@ class Simon42DashboardStrategy {
 
     // Erstelle separate Sections: Weather, Public Transport, Energy
     logDebug('[Strategy] Creating additional sections...');
-    const weatherSection = createWeatherSection(weatherEntity, showWeather, config);
+    const weatherSection = createWeatherSection(weatherEntity, showWeather, config, hass);
     const publicTransportSection = createPublicTransportSection(config, hass);
     const energySection = createEnergySection(showEnergy);
     

@@ -10,6 +10,7 @@ import {
   validateCombination,
   CARD_BUILDERS
 } from './simon42-public-transport-builders.js';
+import { WEATHER_CARD_BUILDERS } from './simon42-weather-card-builders.js';
 import { logWarn, logDebug, logInfo } from './simon42-logger.js';
 import { translateAreaName } from './simon42-helpers.js';
 
@@ -340,12 +341,14 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
  * Erstellt die Wetter-Section
  * @param {string} weatherEntity - Weather Entity ID
  * @param {boolean} showWeather - Ob Wetter-Karte angezeigt werden soll
- * @param {Object} config - Konfigurationsobjekt (für Horizon Card)
+ * @param {Object} config - Konfigurationsobjekt (für Horizon Card und Clock Weather Card)
+ * @param {Object} hass - Home Assistant Objekt (für Clock Weather Card)
  * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
  */
-export function createWeatherSection(weatherEntity, showWeather, config = {}) {
+export function createWeatherSection(weatherEntity, showWeather, config = {}, hass = null) {
   const showHorizonCard = config.show_horizon_card === true;
   const horizonCardExtended = config.horizon_card_extended === true;
+  const useClockWeatherCard = config.use_clock_weather_card === true;
   
   // Erstelle Horizon Card Konfiguration
   const createHorizonCardConfig = () => {
@@ -381,8 +384,36 @@ export function createWeatherSection(weatherEntity, showWeather, config = {}) {
   
   const cards = [];
   
-  // Füge Weather Forecast hinzu, wenn eine Weather-Entität gefunden wurde UND aktiviert
-  if (weatherEntity && showWeather) {
+  // Wenn Clock Weather Card verwendet werden soll
+  if (weatherEntity && showWeather && useClockWeatherCard) {
+    cards.push({
+      type: "heading",
+      heading: t('weather'),
+      heading_style: "title",
+      icon: "mdi:weather-partly-cloudy"
+    });
+    
+    // Build clock-weather-card configuration
+    const builder = WEATHER_CARD_BUILDERS['clock-weather-card'];
+    if (builder) {
+      const clockWeatherCardConfig = builder(weatherEntity, config, hass);
+      cards.push(clockWeatherCardConfig);
+    } else {
+      logWarn('[Section Builder] Clock weather card builder not found');
+      // Fallback to standard weather card
+      cards.push({
+        type: "weather-forecast",
+        entity: weatherEntity,
+        forecast_type: "daily"
+      });
+    }
+    
+    // Füge Horizon Card hinzu wenn aktiviert
+    if (showHorizonCard) {
+      cards.push(createHorizonCardConfig());
+    }
+  } else if (weatherEntity && showWeather) {
+    // Standard Weather Forecast Card
     cards.push({
       type: "heading",
       heading: t('weather'),

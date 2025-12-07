@@ -38,6 +38,7 @@ export const attachBatterySummaryCheckboxListener = createCheckboxListener('#sho
 export const attachBetterThermostatCheckboxListener = createCheckboxListener('#show-better-thermostat');
 export const attachHorizonCardCheckboxListener = createCheckboxListener('#show-horizon-card');
 export const attachHorizonCardExtendedCheckboxListener = createCheckboxListener('#horizon-card-extended');
+export const attachClockWeatherCardCheckboxListener = createCheckboxListener('#use-clock-weather-card');
 export const attachPublicTransportCheckboxListener = createCheckboxListener('#show-public-transport');
 
 export function attachAreaCheckboxListeners(element, callback) {

@@ -86,6 +86,13 @@ const DEPENDENCY_DEFINITIONS = {
     customElements: ['kvv-departures-card'],
     cardTypes: ['custom:kvv-departures-card'],
     domSelectors: ['kvv-departures-card']
+  },
+  
+  'clock-weather-card': {
+    customElements: ['clock-weather-card'],
+    cardTypes: ['custom:clock-weather-card'],
+    domSelectors: ['clock-weather-card'],
+    keywords: ['clock-weather', 'clock weather']
   }
 };
 

@@ -547,7 +547,7 @@ export function renderSectionGroup(groupId, title, content, isExpanded = false) 
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, searchCardIncludedDomains = [], searchCardExcludedDomains = [], summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', hass = null }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, searchCardIncludedDomains = [], searchCardExcludedDomains = [], summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, useClockWeatherCard = false, hasClockWeatherCardDeps = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', hass = null }) {
   // Build content for each group
   // Group 1: Dashboard Cards
   const dashboardCardsContent = `
@@ -599,6 +599,26 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             </div>
           </div>
           ` : ''}
+        </div>
+        ` : ''}
+        ${hasClockWeatherCardDeps ? `
+        <div style="margin-top: 12px;">
+          <div class="form-row">
+            <input 
+              type="checkbox" 
+              id="use-clock-weather-card" 
+              ${useClockWeatherCard ? 'checked' : ''}
+              ${!hasClockWeatherCardDeps ? 'disabled' : ''}
+            />
+            <label for="use-clock-weather-card" ${!hasClockWeatherCardDeps ? 'class="disabled-label"' : ''}>
+              ${t('useClockWeatherCard')}
+            </label>
+          </div>
+          <div class="description">
+            ${hasClockWeatherCardDeps 
+              ? t('clockWeatherCardDescription')
+              : `⚠️ ${t('clockWeatherCardMissingDeps')}`}
+          </div>
         </div>
         ` : ''}
         <div class="form-row">

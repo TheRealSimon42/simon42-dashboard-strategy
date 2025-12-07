@@ -30,6 +30,7 @@ import {
   attachBetterThermostatCheckboxListener,
   attachHorizonCardCheckboxListener,
   attachHorizonCardExtendedCheckboxListener,
+  attachClockWeatherCardCheckboxListener,
   attachPublicTransportCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
@@ -137,6 +138,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const hasSearchCardDeps = checkDependency('search-card', this._hass);
     const hasBetterThermostatDeps = checkDependency('better-thermostat', this._hass);
     const hasHorizonCardDeps = checkDependency('horizon-card', this._hass);
+    const hasClockWeatherCardDeps = checkDependency('clock-weather-card', this._hass);
+    const useClockWeatherCard = this._config.use_clock_weather_card === true;
     
     // Sammle alle Alarm-Control-Panel-Entitäten
     const alarmEntities = Object.keys(this._hass.states)
@@ -194,6 +197,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showHorizonCard,
         hasHorizonCardDeps,
         horizonCardExtended,
+        useClockWeatherCard,
+        hasClockWeatherCardDeps,
         showPublicTransport,
         publicTransportEntities,
         publicTransportIntegration,
@@ -235,6 +240,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachBetterThermostatCheckboxListener(this, (showBetterThermostat) => this._showBetterThermostatChanged(showBetterThermostat));
     attachHorizonCardCheckboxListener(this, (showHorizonCard) => this._showHorizonCardChanged(showHorizonCard));
     attachHorizonCardExtendedCheckboxListener(this, (horizonCardExtended) => this._horizonCardExtendedChanged(horizonCardExtended));
+    attachClockWeatherCardCheckboxListener(this, (useClockWeatherCard) => this._useClockWeatherCardChanged(useClockWeatherCard));
     attachPublicTransportCheckboxListener(this, (showPublicTransport) => this._showPublicTransportChanged(showPublicTransport));
     this._attachPublicTransportIntegrationListeners();
     this._attachHvvCardListeners();
@@ -1065,6 +1071,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _horizonCardExtendedChanged(horizonCardExtended) {
     this._configManager.updateProperty('horizon_card_extended', horizonCardExtended, false);
+  }
+
+  _useClockWeatherCardChanged(useClockWeatherCard) {
+    this._configManager.updateProperty('use_clock_weather_card', useClockWeatherCard, false);
+    this._render();
   }
 
   _showPublicTransportChanged(showPublicTransport) {
