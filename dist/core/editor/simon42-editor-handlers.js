@@ -94,7 +94,10 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
         return; // Don't expand hidden areas
       }
       
-      const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+      const areaList = item.closest('ha-md-list');
+      if (!areaList) return;
+      
+      let content = areaList.querySelector(`.area-content[data-area-id="${areaId}"]`);
       
       if (!content) {
         // Create content container if it doesn't exist
@@ -103,10 +106,22 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
         contentDiv.className = 'area-content';
         contentDiv.setAttribute('data-area-id', areaId);
         contentDiv.innerHTML = `<div class="loading-placeholder">${t('loadingEntities')}</div>`;
-        item.parentNode.insertBefore(contentDiv, item.nextSibling);
+        // Insert right after the item within the list
+        areaList.insertBefore(contentDiv, item.nextSibling);
+        content = contentDiv;
+      } else {
+        // Ensure content is positioned right after the item
+        if (content.parentNode !== areaList || content.previousSibling !== item) {
+          // Remove from current position
+          if (content.parentNode) {
+            content.parentNode.removeChild(content);
+          }
+          // Insert right after the item
+          areaList.insertBefore(content, item.nextSibling);
+        }
       }
       
-      const finalContent = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+      const finalContent = content;
       
       // Toggle visibility
       if (finalContent.style.display === 'none' || !finalContent.style.display) {
@@ -347,15 +362,19 @@ export function sortAreaItems(element) {
 
   items.forEach(item => {
     const areaId = item.dataset.areaId;
-    const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+    const content = areaList.querySelector(`.area-content[data-area-id="${areaId}"]`);
     
     // Move the item
     areaList.appendChild(item);
     
-    // Move the associated content div right after the item
-    if (content && content.parentNode) {
-      content.parentNode.removeChild(content);
-      areaList.parentNode.insertBefore(content, item.nextSibling);
+    // Move the associated content div right after the item within the list
+    if (content) {
+      // Remove from current position if it exists
+      if (content.parentNode) {
+        content.parentNode.removeChild(content);
+      }
+      // Insert right after the item within the list
+      areaList.insertBefore(content, item.nextSibling);
     }
   });
 }
@@ -367,6 +386,41 @@ export function attachDragAndDropListeners(element, onOrderChange) {
   
   // Listen for item-moved event from ha-sortable
   sortable.addEventListener('item-moved', () => {
+    // After items are moved, ensure all area-content divs are positioned correctly
+    // This ensures content stays with its item even if ha-sortable only moves the items
+    const areaList = element.querySelector('ha-md-list');
+    if (!areaList) {
+      onOrderChange();
+      return;
+    }
+    
+    // Get all items in their current order
+    const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
+    
+    // For each item, ensure its content div is positioned right after it
+    items.forEach(item => {
+      const areaId = item.dataset.areaId;
+      if (!areaId) return;
+      
+      const content = areaList.querySelector(`.area-content[data-area-id="${areaId}"]`);
+      if (!content) return;
+      
+      // Check if content is already in the right position
+      if (content.previousSibling === item && content.parentNode === areaList) {
+        // Already in correct position
+        return;
+      }
+      
+      // Remove content from current position
+      if (content.parentNode) {
+        content.parentNode.removeChild(content);
+      }
+      
+      // Insert content right after the item
+      const nextSibling = item.nextSibling;
+      areaList.insertBefore(content, nextSibling);
+    });
+    
     // Update order when items are moved
     onOrderChange();
   });

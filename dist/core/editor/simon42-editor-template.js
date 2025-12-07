@@ -971,7 +971,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
   // Group 2: Views & Summaries
   const viewsSummariesContent = `
       <div class="section">
-        <div class="section-title">${t('arrangeAreas')}</div>
+        <div class="section-title">${t('areas')}</div>
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('areasDescription')}
         </div>
@@ -984,7 +984,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <ha-expansion-panel outlined expanded>
           <ha-svg-icon slot="leading-icon" path="M20 2H4C2.9 2 2 2.9 2 4V20C2 21.11 2.9 22 4 22H20C21.11 22 22 21.11 22 20V4C22 2.9 21.11 2 20 2M4 6L6 4H10.9L4 10.9V6M4 13.7L13.7 4H18.6L4 18.6V13.7M20 18L18 20H13.1L20 13.1V18M20 10.3L10.3 20H5.4L20 5.4V10.3Z"></ha-svg-icon>
-          <span slot="header">${t('areas')}</span>
+          <span slot="header">${t('arrangeAreas')}</span>
           <ha-items-display-editor>
             <ha-sortable draggable-selector="ha-md-list-item.draggable" handle-selector=".handle">
               <ha-md-list>
