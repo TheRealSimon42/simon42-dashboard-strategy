@@ -905,41 +905,246 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _attachSearchCardDomainListeners() {
-    // Included domains input
-    const includedDomainsInput = this.querySelector('#search-card-included-domains');
-    if (includedDomainsInput) {
-      includedDomainsInput.addEventListener('change', (e) => {
-        this._searchCardIncludedDomainsChanged(e.target.value);
+    // Add included domain button
+    const addIncludedBtn = this.querySelector('#add-included-domain-btn');
+    if (addIncludedBtn) {
+      addIncludedBtn.addEventListener('click', () => {
+        const select = this.querySelector('#search-card-included-domain-select');
+        if (select && select.value) {
+          this._addSearchCardIncludedDomain(select.value);
+          select.value = ''; // Reset selector
+        }
       });
     }
 
-    // Excluded domains input
-    const excludedDomainsInput = this.querySelector('#search-card-excluded-domains');
-    if (excludedDomainsInput) {
-      excludedDomainsInput.addEventListener('change', (e) => {
-        this._searchCardExcludedDomainsChanged(e.target.value);
+    // Add excluded domain button
+    const addExcludedBtn = this.querySelector('#add-excluded-domain-btn');
+    if (addExcludedBtn) {
+      addExcludedBtn.addEventListener('click', () => {
+        const select = this.querySelector('#search-card-excluded-domain-select');
+        if (select && select.value) {
+          this._addSearchCardExcludedDomain(select.value);
+          select.value = ''; // Reset selector
+        }
+      });
+    }
+
+    // Remove included domain buttons
+    const includedList = this.querySelector('#search-card-included-domains-list');
+    if (includedList) {
+      const removeIncludedBtns = includedList.querySelectorAll('.remove-domain-btn[data-domain]');
+      removeIncludedBtns.forEach(btn => {
+        const domain = btn.dataset.domain;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this._removeSearchCardIncludedDomain(domain);
+        });
+      });
+    }
+
+    // Remove excluded domain buttons
+    const excludedList = this.querySelector('#search-card-excluded-domains-list');
+    if (excludedList) {
+      const removeExcludedBtns = excludedList.querySelectorAll('.remove-domain-btn[data-domain]');
+      removeExcludedBtns.forEach(btn => {
+        const domain = btn.dataset.domain;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this._removeSearchCardExcludedDomain(domain);
+        });
       });
     }
   }
 
-  _searchCardIncludedDomainsChanged(value) {
-    const domains = this._parseDomainString(value);
-    this._configManager.updatePropertyCustom('search_card_included_domains', domains, (val) => !val || val.length === 0);
-  }
-
-  _searchCardExcludedDomainsChanged(value) {
-    const domains = this._parseDomainString(value);
-    this._configManager.updatePropertyCustom('search_card_excluded_domains', domains, (val) => !val || val.length === 0);
-  }
-
-  _parseDomainString(value) {
-    if (!value || typeof value !== 'string') {
-      return [];
+  _addSearchCardIncludedDomain(domain) {
+    if (!this._config || !domain) {
+      return;
     }
-    return value
-      .split(',')
-      .map(domain => domain.trim())
-      .filter(domain => domain.length > 0);
+
+    const currentDomains = this._config.search_card_included_domains || [];
+    
+    // Prüfe ob bereits vorhanden
+    if (currentDomains.includes(domain)) {
+      return;
+    }
+
+    const newDomains = [...currentDomains, domain];
+
+    const newConfig = {
+      ...this._config,
+      search_card_included_domains: newDomains
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Domain-Liste
+    this._updateSearchCardIncludedDomainsList();
+  }
+
+  _removeSearchCardIncludedDomain(domain) {
+    if (!this._config || !domain) {
+      return;
+    }
+
+    const currentDomains = this._config.search_card_included_domains || [];
+    const newDomains = currentDomains.filter(d => d !== domain);
+
+    const newConfig = {
+      ...this._config,
+      search_card_included_domains: newDomains.length > 0 ? newDomains : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newDomains.length === 0) {
+      delete newConfig.search_card_included_domains;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Domain-Liste
+    this._updateSearchCardIncludedDomainsList();
+  }
+
+  _addSearchCardExcludedDomain(domain) {
+    if (!this._config || !domain) {
+      return;
+    }
+
+    const currentDomains = this._config.search_card_excluded_domains || [];
+    
+    // Prüfe ob bereits vorhanden
+    if (currentDomains.includes(domain)) {
+      return;
+    }
+
+    const newDomains = [...currentDomains, domain];
+
+    const newConfig = {
+      ...this._config,
+      search_card_excluded_domains: newDomains
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Domain-Liste
+    this._updateSearchCardExcludedDomainsList();
+  }
+
+  _removeSearchCardExcludedDomain(domain) {
+    if (!this._config || !domain) {
+      return;
+    }
+
+    const currentDomains = this._config.search_card_excluded_domains || [];
+    const newDomains = currentDomains.filter(d => d !== domain);
+
+    const newConfig = {
+      ...this._config,
+      search_card_excluded_domains: newDomains.length > 0 ? newDomains : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newDomains.length === 0) {
+      delete newConfig.search_card_excluded_domains;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Domain-Liste
+    this._updateSearchCardExcludedDomainsList();
+  }
+
+  _updateSearchCardIncludedDomainsList() {
+    const container = this.querySelector('#search-card-included-domains-list');
+    if (!container) return;
+
+    const domains = this._config.search_card_included_domains || [];
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      container.innerHTML = module.renderSearchCardDomainsList?.(domains) || 
+                          this._renderSearchCardDomainsListFallback(domains);
+      
+      // Reattach listeners
+      this._attachSearchCardDomainListeners();
+    }).catch((error) => {
+      // Fallback falls Import fehlschlägt
+      logWarn('[Editor] Failed to load domain list component, using fallback:', error);
+      container.innerHTML = this._renderSearchCardDomainsListFallback(domains);
+      this._attachSearchCardDomainListeners();
+    });
+  }
+
+  _updateSearchCardExcludedDomainsList() {
+    const container = this.querySelector('#search-card-excluded-domains-list');
+    if (!container) return;
+
+    const domains = this._config.search_card_excluded_domains || [];
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      container.innerHTML = module.renderSearchCardDomainsList?.(domains) || 
+                          this._renderSearchCardDomainsListFallback(domains);
+      
+      // Reattach listeners
+      this._attachSearchCardDomainListeners();
+    }).catch((error) => {
+      // Fallback falls Import fehlschlägt
+      logWarn('[Editor] Failed to load domain list component, using fallback:', error);
+      container.innerHTML = this._renderSearchCardDomainsListFallback(domains);
+      this._attachSearchCardDomainListeners();
+    });
+  }
+
+  _renderSearchCardDomainsListFallback(domains) {
+    if (!domains || domains.length === 0) {
+      return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noDomainsAdded')}</div>`;
+    }
+
+    const getDomainLabel = (domain) => {
+      const domainMap = {
+        'light': t('domainLight'),
+        'switch': t('domainSwitch'),
+        'cover': t('domainCover'),
+        'climate': t('domainClimate'),
+        'sensor': t('domainSensor'),
+        'binary_sensor': t('domainBinarySensor'),
+        'media_player': t('domainMediaPlayer'),
+        'scene': t('domainScene'),
+        'vacuum': t('domainVacuum'),
+        'fan': t('domainFan'),
+        'camera': t('domainCamera'),
+        'lock': t('domainLock'),
+        'input_boolean': t('domainInputBoolean'),
+        'input_number': t('domainInputNumber'),
+        'input_select': t('domainInputSelect'),
+        'input_text': t('domainInputText')
+      };
+      return domainMap[domain] || domain;
+    };
+
+    return `
+      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+        ${domains.map((domain) => {
+          const label = getDomainLabel(domain);
+          return `
+            <div class="search-card-domain-item" data-domain="${domain}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span style="flex: 1; font-size: 14px;">
+                <strong>${label}</strong>
+                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${domain}</span>
+              </span>
+              <button class="remove-domain-btn" data-domain="${domain}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+                ✕
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   }
 
   _showSummaryViewsChanged(showSummaryViews) {

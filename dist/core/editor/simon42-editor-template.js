@@ -393,7 +393,7 @@ function makeSpacesVisible(text) {
   return escaped.replace(/ /g, '&middot;');
 }
 
-function getDomainSelectorOptions(selectedDomain = '') {
+function getDomainSelectorOptions(selectedDomain = '', excludeEmpty = false) {
   const domains = [
     { value: '', label: t('patternDomainAll') },
     { value: 'light', label: t('domainLight') },
@@ -414,9 +414,58 @@ function getDomainSelectorOptions(selectedDomain = '') {
     { value: 'input_text', label: t('domainInputText') }
   ];
   
-  return domains.map(domain => 
+  const filteredDomains = excludeEmpty ? domains.filter(d => d.value !== '') : domains;
+  
+  return filteredDomains.map(domain => 
     `<option value="${domain.value}" ${domain.value === selectedDomain ? 'selected' : ''}>${domain.label}</option>`
   ).join('');
+}
+
+function getDomainLabel(domain) {
+  const domainMap = {
+    'light': t('domainLight'),
+    'switch': t('domainSwitch'),
+    'cover': t('domainCover'),
+    'climate': t('domainClimate'),
+    'sensor': t('domainSensor'),
+    'binary_sensor': t('domainBinarySensor'),
+    'media_player': t('domainMediaPlayer'),
+    'scene': t('domainScene'),
+    'vacuum': t('domainVacuum'),
+    'fan': t('domainFan'),
+    'camera': t('domainCamera'),
+    'lock': t('domainLock'),
+    'input_boolean': t('domainInputBoolean'),
+    'input_number': t('domainInputNumber'),
+    'input_select': t('domainInputSelect'),
+    'input_text': t('domainInputText')
+  };
+  return domainMap[domain] || domain;
+}
+
+export function renderSearchCardDomainsList(domains) {
+  if (!domains || domains.length === 0) {
+    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noDomainsAdded')}</div>`;
+  }
+
+  return `
+    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      ${domains.map((domain) => {
+        const label = getDomainLabel(domain);
+        return `
+          <div class="search-card-domain-item" data-domain="${domain}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+            <span style="flex: 1; font-size: 14px;">
+              <strong>${label}</strong>
+              <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${domain}</span>
+            </span>
+            <button class="remove-domain-btn" data-domain="${domain}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
 }
 
 export function renderEntityNamePatternsList(patterns) {
@@ -692,32 +741,35 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         ${showSearchCard && hasSearchCardDeps ? `
         <div style="margin-top: 12px;">
-          <div class="form-row" style="align-items: flex-start; flex-direction: column;">
-            <label for="search-card-included-domains" style="margin-bottom: 4px; font-weight: 500;">
-              ${t('searchCardIncludedDomains')}:
-            </label>
-            <input 
-              type="text" 
-              id="search-card-included-domains" 
-              placeholder="${t('searchCardDomainsPlaceholder')}"
-              value="${(searchCardIncludedDomains || []).join(', ')}"
-              style="width: 100%; padding: 8px; border: 1px solid var(--divider-color); border-radius: 4px; font-family: inherit; font-size: 14px;"
-            />
+          <div class="section-title" style="font-size: 13px; margin-bottom: 8px;">${t('searchCardIncludedDomains')}</div>
+          <div id="search-card-included-domains-list" style="margin-bottom: 12px;">
+            ${renderSearchCardDomainsList(searchCardIncludedDomains || [])}
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <select id="search-card-included-domain-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+              <option value="">${t('selectDomain')}</option>
+              ${getDomainSelectorOptions('', true)}
+            </select>
+            <button id="add-included-domain-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+              + ${t('add')}
+            </button>
           </div>
           <div class="description" style="margin-left: 0;">
             ${t('searchCardIncludedDomainsDescription')}
           </div>
-          <div class="form-row" style="align-items: flex-start; flex-direction: column; margin-top: 12px;">
-            <label for="search-card-excluded-domains" style="margin-bottom: 4px; font-weight: 500;">
-              ${t('searchCardExcludedDomains')}:
-            </label>
-            <input 
-              type="text" 
-              id="search-card-excluded-domains" 
-              placeholder="${t('searchCardDomainsPlaceholder')}"
-              value="${(searchCardExcludedDomains || []).join(', ')}"
-              style="width: 100%; padding: 8px; border: 1px solid var(--divider-color); border-radius: 4px; font-family: inherit; font-size: 14px;"
-            />
+          
+          <div class="section-title" style="font-size: 13px; margin-top: 16px; margin-bottom: 8px;">${t('searchCardExcludedDomains')}</div>
+          <div id="search-card-excluded-domains-list" style="margin-bottom: 12px;">
+            ${renderSearchCardDomainsList(searchCardExcludedDomains || [])}
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <select id="search-card-excluded-domain-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+              <option value="">${t('selectDomain')}</option>
+              ${getDomainSelectorOptions('', true)}
+            </select>
+            <button id="add-excluded-domain-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+              + ${t('add')}
+            </button>
           </div>
           <div class="description" style="margin-left: 0;">
             ${t('searchCardExcludedDomainsDescription')}
