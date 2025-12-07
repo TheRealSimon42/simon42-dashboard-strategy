@@ -140,37 +140,43 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
 }
 
 export function attachGroupCheckboxListeners(element, callback) {
-  // Find MDC switch inputs directly (they have the group-checkbox ID pattern)
-  const groupSwitchInputs = element.querySelectorAll('input.mdc-switch__native-control[id^="group-checkbox-"]:not([id*="-hidden-"])');
+  const groupCheckboxes = element.querySelectorAll('.group-checkbox');
   
-  groupSwitchInputs.forEach(switchInput => {
-    // Extract area and group from ID: group-checkbox-{areaId}-{group}
-    const match = switchInput.id.match(/^group-checkbox-(.+?)-(.+)$/);
-    if (!match) return;
-    
-    const areaId = match[1];
-    const group = match[2];
-    
-    // Find corresponding hidden checkbox for data attributes and indeterminate state
-    const hiddenCheckbox = element.querySelector(`#group-checkbox-hidden-${areaId}-${group}`);
-    
-    // Add data attributes to switch input for easier access
-    switchInput.setAttribute('data-area-id', areaId);
-    switchInput.setAttribute('data-group', group);
-    
-    // Set indeterminate state on hidden checkbox if needed
-    if (hiddenCheckbox && hiddenCheckbox.dataset.indeterminate === 'true') {
-      hiddenCheckbox.indeterminate = true;
+  groupCheckboxes.forEach(checkbox => {
+    // Set indeterminate state
+    if (checkbox.dataset.indeterminate === 'true') {
+      checkbox.indeterminate = true;
     }
     
-    switchInput.addEventListener('change', (e) => {
+    // Sync MDC switch with hidden checkbox
+    const areaId = checkbox.dataset.areaId;
+    const group = checkbox.dataset.group;
+    const mdcSwitchControl = element.querySelector(`#group-checkbox-${areaId}-${group}`)?.closest('.mdc-switch')?.querySelector('.mdc-switch__native-control');
+    if (mdcSwitchControl) {
+      mdcSwitchControl.addEventListener('change', (e) => {
+        checkbox.checked = e.target.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      });
+    }
+    
+    checkbox.addEventListener('change', (e) => {
+      const areaId = e.target.dataset.areaId;
+      const group = e.target.dataset.group;
       const isVisible = e.target.checked;
       
-      // Sync hidden checkbox if it exists
-      if (hiddenCheckbox) {
-        hiddenCheckbox.checked = isVisible;
-        hiddenCheckbox.indeterminate = false;
-        hiddenCheckbox.removeAttribute('data-indeterminate');
+      // Update MDC switch
+      const mdcSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`)?.closest('.mdc-switch');
+      if (mdcSwitch) {
+        const switchInput = mdcSwitch.querySelector('.mdc-switch__native-control');
+        if (switchInput) {
+          switchInput.checked = isVisible;
+        }
+        if (isVisible) {
+          mdcSwitch.classList.add('mdc-switch--checked');
+          mdcSwitch.classList.remove('mdc-switch--indeterminate');
+        } else {
+          mdcSwitch.classList.remove('mdc-switch--checked');
+        }
       }
       
       callback(areaId, group, null, isVisible); // null = alle Entities in der Gruppe
@@ -178,79 +184,111 @@ export function attachGroupCheckboxListeners(element, callback) {
       // Update alle Entity-Checkboxen in dieser Gruppe
       const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
       if (entityList) {
-        const entitySwitchInputs = entityList.querySelectorAll(`input.mdc-switch__native-control[data-area-id="${areaId}"][data-group="${group}"]`);
-        entitySwitchInputs.forEach(cb => {
+        const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
+        entityCheckboxes.forEach(cb => {
           cb.checked = isVisible;
-          // Also sync hidden checkbox
-          const entityId = cb.getAttribute('data-entity-id');
-          if (entityId) {
-            const hiddenEntityCheckbox = element.querySelector(`#entity-checkbox-hidden-${areaId}-${group}-${entityId}`);
-            if (hiddenEntityCheckbox) {
-              hiddenEntityCheckbox.checked = isVisible;
+          // Update corresponding MDC switch
+          const entityId = cb.dataset.entityId;
+          const entityMdcSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`)?.closest('.mdc-switch');
+          if (entityMdcSwitch) {
+            const entitySwitchInput = entityMdcSwitch.querySelector('.mdc-switch__native-control');
+            if (entitySwitchInput) {
+              entitySwitchInput.checked = isVisible;
+            }
+            if (isVisible) {
+              entityMdcSwitch.classList.add('mdc-switch--checked');
+            } else {
+              entityMdcSwitch.classList.remove('mdc-switch--checked');
             }
           }
         });
       }
+      
+      // Entferne indeterminate state
+      e.target.indeterminate = false;
+      e.target.removeAttribute('data-indeterminate');
     });
   });
 }
 
 export function attachEntityCheckboxListeners(element, callback) {
-  // Find MDC switch inputs directly (they have the entity-checkbox ID pattern)
-  const entitySwitchInputs = element.querySelectorAll('input.mdc-switch__native-control[id^="entity-checkbox-"]:not([id*="-hidden-"])');
+  const entityCheckboxes = element.querySelectorAll('.entity-checkbox');
   
-  entitySwitchInputs.forEach(switchInput => {
-    // Extract area, group, and entity from ID: entity-checkbox-{areaId}-{group}-{entityId}
-    // Use regex to match the pattern more reliably
-    const match = switchInput.id.match(/^entity-checkbox-(.+?)-(.+?)-(.+)$/);
-    if (!match) return;
+  entityCheckboxes.forEach(checkbox => {
+    // Sync MDC switch with hidden checkbox
+    const mdcSwitchControl = checkbox.closest('.mdc-switch')?.querySelector('.mdc-switch__native-control');
+    if (mdcSwitchControl && mdcSwitchControl.id === checkbox.id.replace('-hidden-', '-')) {
+      mdcSwitchControl.addEventListener('change', (e) => {
+        checkbox.checked = e.target.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      });
+    }
     
-    const areaId = match[1];
-    const group = match[2];
-    const entityId = match[3];
-    
-    // Find corresponding hidden checkbox for data attributes
-    const hiddenCheckbox = element.querySelector(`#entity-checkbox-hidden-${areaId}-${group}-${entityId}`);
-    
-    // Add data attributes to switch input for easier access
-    switchInput.setAttribute('data-area-id', areaId);
-    switchInput.setAttribute('data-group', group);
-    switchInput.setAttribute('data-entity-id', entityId);
-    
-    switchInput.addEventListener('change', (e) => {
+    checkbox.addEventListener('change', (e) => {
+      const areaId = e.target.dataset.areaId;
+      const group = e.target.dataset.group;
+      const entityId = e.target.dataset.entityId;
       const isVisible = e.target.checked;
       
-      // Sync hidden checkbox if it exists
-      if (hiddenCheckbox) {
-        hiddenCheckbox.checked = isVisible;
+      // Update MDC switch
+      const mdcSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`)?.closest('.mdc-switch');
+      if (mdcSwitch) {
+        const switchInput = mdcSwitch.querySelector('.mdc-switch__native-control');
+        if (switchInput) {
+          switchInput.checked = isVisible;
+        }
+        if (isVisible) {
+          mdcSwitch.classList.add('mdc-switch--checked');
+        } else {
+          mdcSwitch.classList.remove('mdc-switch--checked');
+        }
       }
       
       callback(areaId, group, entityId, isVisible);
       
       // Update Group-Checkbox state (all/some/none checked)
       const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-      const groupSwitchInput = element.querySelector(`input.mdc-switch__native-control[id="group-checkbox-${areaId}-${group}"]`);
       const groupCheckbox = element.querySelector(`.group-checkbox[data-area-id="${areaId}"][data-group="${group}"]`);
       
-      if (entityList && groupSwitchInput && groupCheckbox) {
-        const allSwitchInputs = Array.from(entityList.querySelectorAll('input.mdc-switch__native-control[id^="entity-checkbox-"]:not([id*="-hidden-"])'));
-        const checkedCount = allSwitchInputs.filter(cb => cb.checked).length;
+      if (entityList && groupCheckbox) {
+        const allCheckboxes = Array.from(entityList.querySelectorAll('.entity-checkbox'));
+        const checkedCount = allCheckboxes.filter(cb => cb.checked).length;
+        
+        const groupMdcSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`)?.closest('.mdc-switch');
+        const groupSwitchInput = groupMdcSwitch?.querySelector('.mdc-switch__native-control');
         
         if (checkedCount === 0) {
-          groupSwitchInput.checked = false;
           groupCheckbox.checked = false;
           groupCheckbox.indeterminate = false;
           groupCheckbox.removeAttribute('data-indeterminate');
-        } else if (checkedCount === allSwitchInputs.length) {
-          groupSwitchInput.checked = true;
+          if (groupSwitchInput) {
+            groupSwitchInput.checked = false;
+          }
+          if (groupMdcSwitch) {
+            groupMdcSwitch.classList.remove('mdc-switch--checked', 'mdc-switch--indeterminate');
+          }
+        } else if (checkedCount === allCheckboxes.length) {
           groupCheckbox.checked = true;
           groupCheckbox.indeterminate = false;
           groupCheckbox.removeAttribute('data-indeterminate');
+          if (groupSwitchInput) {
+            groupSwitchInput.checked = true;
+          }
+          if (groupMdcSwitch) {
+            groupMdcSwitch.classList.add('mdc-switch--checked');
+            groupMdcSwitch.classList.remove('mdc-switch--indeterminate');
+          }
         } else {
-          groupSwitchInput.checked = false;
           groupCheckbox.checked = false;
           groupCheckbox.indeterminate = true;
           groupCheckbox.setAttribute('data-indeterminate', 'true');
+          if (groupSwitchInput) {
+            groupSwitchInput.checked = false;
+          }
+          if (groupMdcSwitch) {
+            groupMdcSwitch.classList.remove('mdc-switch--checked');
+            groupMdcSwitch.classList.add('mdc-switch--indeterminate');
+          }
         }
       }
     });

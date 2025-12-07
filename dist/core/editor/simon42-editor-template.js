@@ -15,16 +15,23 @@ import { t } from '../../utils/simon42-i18n.js';
  */
 function renderMDCSwitch(id, checked = false, ariaLabel = '', disabled = false) {
   return `
-    <input 
-      type="checkbox" 
-      id="${id}" 
-      class="mdc-switch__native-control" 
-      role="switch" 
-      aria-label="${ariaLabel}" 
-      aria-checked="${checked ? 'true' : 'false'}"
-      ${checked ? 'checked' : ''}
-      ${disabled ? 'disabled' : ''}
-    />
+    <div class="mdc-switch ${checked ? 'mdc-switch--checked' : ''} ${disabled ? 'mdc-switch--disabled' : ''}">
+      <div class="mdc-switch__track"></div>
+      <div class="mdc-switch__thumb-underlay">
+        <div class="mdc-switch__thumb">
+          <input 
+            type="checkbox" 
+            id="${id}" 
+            class="mdc-switch__native-control" 
+            role="switch" 
+            aria-label="${ariaLabel}" 
+            aria-checked="${checked ? 'true' : 'false'}"
+            ${checked ? 'checked' : ''}
+            ${disabled ? 'disabled' : ''}
+          />
+        </div>
+      </div>
+    </div>
   `;
 }
 

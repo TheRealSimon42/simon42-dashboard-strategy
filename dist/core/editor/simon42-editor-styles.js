@@ -105,7 +105,7 @@ export function getEditorStyles() {
     }
     
     /* MDC Switch styles - Home Assistant uses these by default, but ensure proper spacing */
-    .form-row .mdc-switch__native-control {
+    .form-row .mdc-switch {
       margin-right: 12px;
       flex-shrink: 0;
     }
@@ -310,8 +310,8 @@ export function getEditorStyles() {
     }
     
     /* MDC switches for groups and entities */
-    .entity-group-header .mdc-switch__native-control,
-    .entity-item .mdc-switch__native-control {
+    .entity-group-header .mdc-switch,
+    .entity-item .mdc-switch {
       margin-right: 8px;
       flex-shrink: 0;
     }
