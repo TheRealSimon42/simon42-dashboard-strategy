@@ -450,9 +450,9 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
-function getLanguageSelectorOptions(selectedLang = '') {
+function getLanguageSelectorOptions(selectedLang = '', placeholderKey = 'translationFromLang') {
   const languages = [
-    { value: '', label: `- ${t('translationFromLang')} / ${t('translationToLang')} -` },
+    { value: '', label: `- ${t(placeholderKey)} -` },
     { value: 'en', label: t('langEnglish') },
     { value: 'de', label: t('langGerman') }
   ];
@@ -475,28 +475,30 @@ export function renderEntityNameTranslationsList(translations) {
         const fromLang = translation.from_lang || '';
         const toLang = translation.to_lang || '';
         return `
-          <div class="entity-name-translation-item" data-translation-index="${index}" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <span style="flex: 1; font-size: 14px; word-break: break-word;">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</span>
-            <select 
-              class="translation-from-lang-select" 
-              data-translation-index="${index}"
-              style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
-              title="${t('translationFromLang')}"
-            >
-              ${getLanguageSelectorOptions(fromLang)}
-            </select>
-            <span style="color: var(--secondary-text-color);">→</span>
-            <select 
-              class="translation-to-lang-select" 
-              data-translation-index="${index}"
-              style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
-              title="${t('translationToLang')}"
-            >
-              ${getLanguageSelectorOptions(toLang)}
-            </select>
-            <button class="remove-translation-btn" data-translation-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0;">
-              ✕
-            </button>
+          <div class="entity-name-translation-item" data-translation-index="${index}" style="display: flex; flex-direction: column; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+            <div style="font-size: 14px; word-break: break-word;">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select 
+                class="translation-from-lang-select" 
+                data-translation-index="${index}"
+                style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+                title="${t('translationFromLang')}"
+              >
+                ${getLanguageSelectorOptions(fromLang, 'translationFromLang')}
+              </select>
+              <span style="color: var(--secondary-text-color);">→</span>
+              <select 
+                class="translation-to-lang-select" 
+                data-translation-index="${index}"
+                style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+                title="${t('translationToLang')}"
+              >
+                ${getLanguageSelectorOptions(toLang, 'translationToLang')}
+              </select>
+              <button class="remove-translation-btn" data-translation-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0; margin-left: auto;">
+                ✕
+              </button>
+            </div>
           </div>
         `;
       }).join('')}
@@ -1153,7 +1155,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             style="min-width: 100px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
             title="${t('translationFromLang')}"
           >
-            ${getLanguageSelectorOptions('')}
+            ${getLanguageSelectorOptions('', 'translationFromLang')}
           </select>
           <span style="align-self: center; color: var(--secondary-text-color);">→</span>
           <input 
@@ -1167,7 +1169,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             style="min-width: 100px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
             title="${t('translationToLang')}"
           >
-            ${getLanguageSelectorOptions('')}
+            ${getLanguageSelectorOptions('', 'translationToLang')}
           </select>
           <button id="add-translation-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
             + ${t('addTranslation')}
