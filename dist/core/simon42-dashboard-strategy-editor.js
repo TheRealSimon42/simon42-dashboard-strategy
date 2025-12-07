@@ -17,6 +17,7 @@ import {
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
   attachPersonBadgesCheckboxListener,
+  attachPersonProfilePictureCheckboxListener,
   attachSearchCardCheckboxListener,
   attachClockCardCheckboxListener,
   attachSummaryViewsCheckboxListener,
@@ -82,6 +83,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
     const showPersonBadges = this._config.show_person_badges !== false;
+    const showPersonProfilePicture = this._config.show_person_profile_picture === true;
     const showSearchCard = this._config.show_search_card === true;
     const showClockCard = this._config.show_clock_card === true;
     const showSummaryViews = this._config.show_summary_views === true; // Standard: false
@@ -166,6 +168,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showWeather,
         showEnergy,
         showPersonBadges,
+        showPersonProfilePicture,
         showSummaryViews, 
         showRoomViews,
         showSearchCard,
@@ -213,6 +216,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachWeatherCheckboxListener(this, (showWeather) => this._showWeatherChanged(showWeather));
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachPersonBadgesCheckboxListener(this, (showPersonBadges) => this._showPersonBadgesChanged(showPersonBadges));
+    attachPersonProfilePictureCheckboxListener(this, (showPersonProfilePicture) => this._showPersonProfilePictureChanged(showPersonProfilePicture));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     attachClockCardCheckboxListener(this, (showClockCard) => this._showClockCardChanged(showClockCard));
     attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
@@ -874,6 +878,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _showPersonBadgesChanged(showPersonBadges) {
     this._configManager.updateProperty('show_person_badges', showPersonBadges, true);
+    // Re-render to show/hide profile picture option
+    this._render();
+  }
+
+  _showPersonProfilePictureChanged(showPersonProfilePicture) {
+    this._configManager.updateProperty('show_person_profile_picture', showPersonProfilePicture, false);
   }
 
   _showSearchCardChanged(showSearchCard) {

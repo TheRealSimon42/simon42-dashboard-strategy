@@ -25,6 +25,7 @@ function createCheckboxListener(selector) {
 export const attachWeatherCheckboxListener = createCheckboxListener('#show-weather');
 export const attachEnergyCheckboxListener = createCheckboxListener('#show-energy');
 export const attachPersonBadgesCheckboxListener = createCheckboxListener('#show-person-badges');
+export const attachPersonProfilePictureCheckboxListener = createCheckboxListener('#show-person-profile-picture');
 export const attachSearchCardCheckboxListener = createCheckboxListener('#show-search-card');
 export const attachClockCardCheckboxListener = createCheckboxListener('#show-clock-card');
 export const attachSummaryViewsCheckboxListener = createCheckboxListener('#show-summary-views');

@@ -82,6 +82,8 @@ export const en = {
   showWeatherCard: "Show Weather Card",
   showEnergyDashboard: "Show Energy Dashboard",
   showPersonBadges: "Show Person Badges",
+  showPersonProfilePicture: "Show Profile Pictures",
+  personProfilePictureDescription: "Shows the profile pictures of persons in the badges when available. If no profile picture is available, the default icon is used.",
   alarmControlPanel: "Alarm Control Panel",
   alarmEntity: "Alarm Entity:",
   none: "None",

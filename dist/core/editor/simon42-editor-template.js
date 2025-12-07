@@ -493,7 +493,7 @@ export function renderSectionGroup(groupId, title, content, isExpanded = false) 
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], logLevel = 'warn', hass = null }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], logLevel = 'warn', hass = null }) {
   // Build content for each group
   // Group 1: Dashboard Cards
   const dashboardCardsContent = `
@@ -510,6 +510,43 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${t('weatherCardDescription')}
         </div>
+        ${hasHorizonCardDeps ? `
+        <div style="margin-top: 12px;">
+          <div class="form-row">
+            <input 
+              type="checkbox" 
+              id="show-horizon-card" 
+              ${showHorizonCard ? 'checked' : ''}
+              ${!hasHorizonCardDeps ? 'disabled' : ''}
+            />
+            <label for="show-horizon-card" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
+              ${t('showHorizonCard')}
+            </label>
+          </div>
+          <div class="description">
+            ${hasHorizonCardDeps 
+              ? t('horizonCardDescription')
+              : `⚠️ ${t('horizonCardMissingDeps')}`}
+          </div>
+          ${hasHorizonCardDeps && showHorizonCard ? `
+          <div style="margin-top: 12px;">
+            <div class="form-row">
+              <input 
+                type="checkbox" 
+                id="horizon-card-extended" 
+                ${horizonCardExtended ? 'checked' : ''}
+              />
+              <label for="horizon-card-extended">
+                ${t('showExtendedInfo')}
+              </label>
+            </div>
+            <div class="description">
+              ${t('horizonCardExtendedDescription')}
+            </div>
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
         <div class="form-row">
           <input 
             type="checkbox" 
@@ -532,6 +569,23 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${t('personBadgesDescription')}
         </div>
+        ${showPersonBadges !== false ? `
+        <div style="margin-top: 12px;">
+          <div class="form-row">
+            <input 
+              type="checkbox" 
+              id="show-person-profile-picture" 
+              ${showPersonProfilePicture === true ? 'checked' : ''}
+            />
+            <label for="show-person-profile-picture">
+              ${t('showPersonProfilePicture')}
+            </label>
+          </div>
+          <div class="description">
+            ${t('personProfilePictureDescription')}
+          </div>
+        </div>
+        ` : ''}
       </div>
 
       <div class="section">
@@ -587,43 +641,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             ? t('betterThermostatDescription')
             : `⚠️ ${t('betterThermostatMissingDeps')}`}
         </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">${t('horizonCard')}</div>
-        <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-horizon-card" 
-            ${showHorizonCard ? 'checked' : ''}
-            ${!hasHorizonCardDeps ? 'disabled' : ''}
-          />
-          <label for="show-horizon-card" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
-            ${t('showHorizonCard')}
-          </label>
-        </div>
-        <div class="description">
-          ${hasHorizonCardDeps 
-            ? t('horizonCardDescription')
-            : `⚠️ ${t('horizonCardMissingDeps')}`}
-        </div>
-        ${hasHorizonCardDeps && showHorizonCard ? `
-        <div style="margin-top: 12px;">
-          <div class="form-row">
-            <input 
-              type="checkbox" 
-              id="horizon-card-extended" 
-              ${horizonCardExtended ? 'checked' : ''}
-            />
-            <label for="horizon-card-extended">
-              ${t('showExtendedInfo')}
-            </label>
-          </div>
-          <div class="description">
-            ${t('horizonCardExtendedDescription')}
-          </div>
-        </div>
-        ` : ''}
       </div>
 
       <div class="section">
@@ -829,21 +846,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${t('alarmEntityDescription')}
         </div>
       </div>
-
-      <div class="section">
-        <div class="section-title">${t('areasView')}</div>
-        <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="group-by-floors" 
-            ${groupByFloors ? 'checked' : ''}
-          />
-          <label for="group-by-floors">${t('groupByFloors')}</label>
-        </div>
-        <div class="description">
-          ${t('groupByFloorsDescription')}
-        </div>
-      </div>
   `;
 
   // Group 2: Views & Summaries
@@ -923,6 +925,17 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="section-title">${t('areas')}</div>
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('areasDescription')}
+        </div>
+        <div class="form-row" style="margin-bottom: 12px;">
+          <input 
+            type="checkbox" 
+            id="group-by-floors" 
+            ${groupByFloors ? 'checked' : ''}
+          />
+          <label for="group-by-floors">${t('groupByFloors')}</label>
+        </div>
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('groupByFloorsDescription')}
         </div>
         <div class="area-list" id="area-list">
           ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}

@@ -91,6 +91,9 @@ class Simon42DashboardStrategy {
     // Prüfe ob Personen-Badges angezeigt werden sollen (Standard: true)
     const showPersonBadges = config.show_person_badges !== false;
 
+    // Prüfe ob Profilbilder für Personen angezeigt werden sollen (Standard: false)
+    const showPersonProfilePicture = config.show_person_profile_picture === true;
+
     // Prüfe ob Wetter-Karte angezeigt werden soll (Standard: true)
     const showWeather = config.show_weather !== false;
 
@@ -112,8 +115,8 @@ class Simon42DashboardStrategy {
     // Prüfe ob Bereiche nach Etagen gruppiert werden sollen (Standard: false)
     const groupByFloors = config.group_by_floors === true;
 
-    // Erstelle Person-Badges (mit showPersonBadges Parameter)
-    const personBadges = createPersonBadges(persons, hass, showPersonBadges);
+    // Erstelle Person-Badges (mit showPersonBadges und showPersonProfilePicture Parameter)
+    const personBadges = createPersonBadges(persons, hass, showPersonBadges, showPersonProfilePicture);
 
     // Erstelle Bereiche-Section(s)
     logDebug('[Strategy] Creating areas section...');

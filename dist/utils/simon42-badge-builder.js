@@ -8,8 +8,9 @@
  * @param {Array} persons - Array von Person-Entitäten
  * @param {Object} hass - Home Assistant Objekt
  * @param {boolean} showPersonBadges - Ob Person-Badges angezeigt werden sollen (Standard: true)
+ * @param {boolean} showPersonProfilePicture - Ob Profilbilder angezeigt werden sollen (Standard: false)
  */
-export function createPersonBadges(persons, hass, showPersonBadges = true) {
+export function createPersonBadges(persons, hass, showPersonBadges = true, showPersonProfilePicture = false) {
   const badges = [];
   
   if (!showPersonBadges) {
@@ -26,28 +27,33 @@ export function createPersonBadges(persons, hass, showPersonBadges = true) {
     
     const isHome = state.state === 'home';
     
-    if (isHome) {
-      // Badge wenn Person zuhause ist (grünes Icon)
-      badges.push({
-        type: "entity",
-        show_name: true,
-        show_state: true,
-        show_icon: true,
-        entity: person.entity_id,
-        name: person.name.split(' ')[0] // Nur Vorname
-      });
-    } else {
-      // Badge wenn Person nicht zuhause ist (oranges Icon)
-      badges.push({
-        type: "entity",
-        show_name: true,
-        show_state: true,
-        show_icon: true,
-        entity: person.entity_id,
-        name: person.name.split(' ')[0], // Nur Vorname
-        color: "accent"
-      });
+    // Badge-Konfiguration
+    const badgeConfig = {
+      type: "entity",
+      show_name: true,
+      show_state: true,
+      show_icon: !showPersonProfilePicture, // Icon nur anzeigen wenn kein Profilbild
+      entity: person.entity_id,
+      name: person.name.split(' ')[0] // Nur Vorname
+    };
+    
+    // Profilbild hinzufügen wenn aktiviert
+    if (showPersonProfilePicture) {
+      // Home Assistant Person entities haben ein 'entity_picture' Attribut
+      const entityPicture = state.attributes?.entity_picture;
+      if (entityPicture) {
+        badgeConfig.entity_picture = entityPicture;
+      } else {
+        // Fallback: Icon anzeigen wenn kein Profilbild verfügbar
+        badgeConfig.show_icon = true;
+      }
     }
+    
+    if (!isHome) {
+      badgeConfig.color = "accent";
+    }
+    
+    badges.push(badgeConfig);
   });
   
   return badges;
