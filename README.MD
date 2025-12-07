@@ -535,6 +535,83 @@ entity_name_patterns:
 
 **Hinweis:** Die Transformation wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant.
 
+#### `entity_name_translations` - Entity-Namen Übersetzungen
+
+Mit `entity_name_translations` kannst du Substrings in Entity-Namen übersetzen. Dies ist besonders nützlich, wenn Entities englische Namen haben, die du ins Deutsche übersetzen möchtest, oder umgekehrt.
+
+**Im Editor:** Die Entity-Name-Übersetzungen können im Editor unter "Entity Name Translations" konfiguriert werden.
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  entity_name_translations:
+    - from: "Bedroom"
+      to: "Schlafzimmer"
+    - from: "Kitchen"
+      to: "Küche"
+```
+
+**Beispiel:**
+Wenn deine Entities so benannt sind:
+- `Bedroom Light`
+- `Kitchen Switch`
+- `Bedroom Window`
+
+und du die englischen Begriffe ins Deutsche übersetzen möchtest:
+
+```yaml
+entity_name_translations:
+  - from: "Bedroom"
+    to: "Schlafzimmer"
+  - from: "Kitchen"
+    to: "Küche"
+```
+
+**Ergebnis:**
+- `Schlafzimmer Light`
+- `Küche Switch`
+- `Schlafzimmer Window`
+
+**Übersetzungs-Format:**
+- Übersetzungen werden als Objekte mit `from` und `to` angegeben
+- `from` ist der zu ersetzende Substring (case-insensitive, ganze Wörter)
+- `to` ist der Ersatztext
+- Mehrere Übersetzungen können angegeben werden und werden nacheinander angewendet
+- Übersetzungen werden **vor** den Patterns angewendet (nach dem Entfernen des Raumnamens)
+- Übersetzungen können optional auf bestimmte Entity-Typen beschränkt werden
+
+**Domain-spezifische Übersetzungen:**
+Du kannst Übersetzungen auf bestimmte Entity-Typen beschränken, indem du eine `domain`-Eigenschaft hinzufügst:
+
+```yaml
+entity_name_translations:
+  - from: "Bedroom"
+    to: "Schlafzimmer"  # Gilt für alle Entities
+  - from: "Light"
+    to: "Lampe"
+    domain: "light"  # Gilt nur für Light-Entities
+  - from: "Switch"
+    to: "Schalter"
+    domain: "switch"  # Gilt nur für Switch-Entities
+```
+
+**Verfügbare Domains:**
+- `light` - Beleuchtung
+- `switch` - Schalter (inkl. Steckdosen)
+- `cover` - Rollos, Vorhänge, Jalousien
+- `climate` - Klimageräte, Thermostate
+- `sensor` - Sensoren
+- `binary_sensor` - Binäre Sensoren
+- `media_player` - Media Player
+- `scene` - Szenen
+- `vacuum` - Saugroboter
+- `fan` - Ventilatoren
+- `camera` - Kameras
+- `lock` - Schlösser
+- `input_boolean`, `input_number`, `input_select`, `input_text` - Input-Entities
+
+**Hinweis:** Die Übersetzung wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant. Übersetzungen werden als ganze Wörter behandelt (mit Wortgrenzen), sodass "Bedroom" nicht "BedroomLight" ersetzt.
+
 </details>
 
 ## 🏷️ Label-System
@@ -1241,4 +1318,4 @@ Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenz
 
 **Entwickelt mit ❤️ für die Home Assistant Community**
 
-*Letzte Aktualisierung: 06.12.2025*
+*Letzte Aktualisierung: 07.12.2025*

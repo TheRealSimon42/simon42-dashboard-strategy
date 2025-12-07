@@ -46,6 +46,49 @@ export function getVisibleAreas(areas, displayConfig) {
 }
 
 /**
+ * Wendet Substring-Übersetzungen auf Entity-Namen an
+ * @param {string} name - Der zu transformierende Name
+ * @param {Array} translations - Array von Übersetzungen (Objekte mit from/to, optional domain)
+ * @param {string} entityId - Optional: Entity ID für Domain-Filterung
+ * @returns {string} Transformierter Name
+ */
+function applyNameTranslations(name, translations, entityId = null) {
+  if (!translations || !Array.isArray(translations) || translations.length === 0) {
+    return name;
+  }
+  
+  // Extrahiere Domain aus entityId falls vorhanden
+  const entityDomain = entityId ? entityId.split('.')[0] : null;
+  
+  let translatedName = name;
+  
+  // Wende jede Übersetzung an
+  translations.forEach(translation => {
+    // Übersetzung muss from und to haben
+    if (!translation.from || !translation.to) {
+      return;
+    }
+    
+    // Domain-Filterung: Wenn Übersetzung eine Domain-Restriktion hat, prüfe ob sie zutrifft
+    if (translation.domain) {
+      if (entityDomain !== translation.domain) {
+        return; // Übersetzung nicht anwenden, Domain stimmt nicht überein
+      }
+    }
+    
+    // Ersetze Substring (case-insensitive, ganze Wörter)
+    // Verwende \b für Wortgrenzen, damit "Bedroom" nicht "BedroomLight" ersetzt
+    const regex = new RegExp(`\\b${translation.from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+    translatedName = translatedName.replace(regex, translation.to);
+  });
+  
+  // Bereinige mehrfache Leerzeichen und trimme
+  translatedName = translatedName.replace(/\s+/g, ' ').trim();
+  
+  return translatedName;
+}
+
+/**
  * Transformiert Entity-Namen basierend auf konfigurierten Regex-Mustern
  * @param {string} name - Der zu transformierende Name
  * @param {Array} patterns - Array von Regex-Mustern (Strings oder Objekte mit pattern/domain)
@@ -108,7 +151,7 @@ function applyNamePatterns(name, patterns, entityId = null) {
  * @param {string} entityId - Entity ID
  * @param {Object} area - Bereich-Objekt
  * @param {Object} hass - Home Assistant Objekt
- * @param {Object} config - Optional: Dashboard-Config mit entity_name_patterns
+ * @param {Object} config - Optional: Dashboard-Config mit entity_name_patterns und entity_name_translations
  * @returns {string} Bereinigter Name
  */
 export function stripAreaName(entityId, area, hass, config = {}) {
@@ -133,7 +176,13 @@ export function stripAreaName(entityId, area, hass, config = {}) {
     }
   }
   
-  // 2. Wende konfigurierte Name-Patterns an (falls vorhanden)
+  // 2. Wende konfigurierte Name-Übersetzungen an (falls vorhanden)
+  const nameTranslations = config.entity_name_translations;
+  if (nameTranslations) {
+    name = applyNameTranslations(name, nameTranslations, entityId);
+  }
+  
+  // 3. Wende konfigurierte Name-Patterns an (falls vorhanden)
   const namePatterns = config.entity_name_patterns;
   if (namePatterns) {
     name = applyNamePatterns(name, namePatterns, entityId);

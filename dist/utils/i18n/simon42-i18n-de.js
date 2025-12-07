@@ -207,6 +207,12 @@ export const de = {
   domainInputSelect: "Input Select",
   domainInputText: "Input Text",
   noPatternsAdded: "Keine Patterns hinzugefügt",
+  entityNameTranslations: "Entity-Namen Übersetzungen",
+  entityNameTranslationsDescription: "Definiere Übersetzungen für Substrings in Entity-Namen. Beispiel: Ersetze 'Bedroom' durch 'Schlafzimmer' in allen Entity-Namen. Übersetzungen werden vor den Patterns angewendet. Optional kannst du Übersetzungen auf bestimmte Entity-Typen beschränken.",
+  addTranslation: "Übersetzung hinzufügen",
+  translationFromPlaceholder: "Von (z.B. 'Bedroom')",
+  translationToPlaceholder: "Nach (z.B. 'Schlafzimmer')",
+  noTranslationsAdded: "Keine Übersetzungen hinzugefügt",
   areasDescription: "Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten.",
   
   // Debug-Einstellungen

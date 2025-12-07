@@ -207,6 +207,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         haDeparturesTimeStyle,
         haDeparturesIcon,
         entityNamePatterns: this._config.entity_name_patterns || [],
+        entityNameTranslations: this._config.entity_name_translations || [],
         logLevel: this._config.log_level || 'warn',
         hass: this._hass
       })}
@@ -239,6 +240,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._attachRoomPinsListeners();
     this._attachPublicTransportListeners();
     this._attachEntityNamePatternsListeners();
+    this._attachEntityNameTranslationsListeners();
     this._attachLogLevelListener();
     this._attachCacheReloadListener();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
@@ -1495,6 +1497,237 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       container.innerHTML = this._renderEntityNamePatternsListFallback(patterns);
       this._attachEntityNamePatternsListeners();
     });
+  }
+
+  _attachEntityNameTranslationsListeners() {
+    // Add Button
+    const addBtn = this.querySelector('#add-translation-btn');
+    const fromInput = this.querySelector('#entity-name-translation-from-input');
+    const toInput = this.querySelector('#entity-name-translation-to-input');
+    
+    if (addBtn && fromInput && toInput) {
+      // Add on Enter key press in either input
+      const handleAdd = () => {
+        const from = fromInput.value.trim();
+        const to = toInput.value.trim();
+        
+        if (from && to) {
+          this._addEntityNameTranslation({ from, to });
+          fromInput.value = '';
+          toInput.value = '';
+        }
+      };
+      
+      fromInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAdd();
+        }
+      });
+      
+      toInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAdd();
+        }
+      });
+
+      // Add on button click
+      addBtn.addEventListener('click', handleAdd);
+    }
+
+    // Remove Buttons
+    const removeButtons = this.querySelectorAll('.remove-translation-btn');
+    removeButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.translationIndex, 10);
+        this._removeEntityNameTranslation(index);
+      });
+    });
+
+    // Domain Selectors for existing translations
+    const domainSelectors = this.querySelectorAll('.translation-domain-select');
+    domainSelectors.forEach(select => {
+      select.addEventListener('change', (e) => {
+        const index = parseInt(e.target.dataset.translationIndex, 10);
+        const selectedDomain = e.target.value;
+        this._updateTranslationDomain(index, selectedDomain);
+      });
+    });
+  }
+
+  _addEntityNameTranslation(translation) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentTranslations = this._config.entity_name_translations || [];
+    
+    // Prüfe ob bereits vorhanden (gleiche from/to Kombination)
+    const isDuplicate = currentTranslations.some(existing => {
+      return existing.from === translation.from && 
+             existing.to === translation.to &&
+             (existing.domain || '') === (translation.domain || '');
+    });
+    
+    if (isDuplicate) {
+      return;
+    }
+
+    const newTranslations = [...currentTranslations, translation];
+
+    const newConfig = {
+      ...this._config,
+      entity_name_translations: newTranslations
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Translations-Liste
+    this._updateEntityNameTranslationsList();
+  }
+
+  _removeEntityNameTranslation(index) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentTranslations = this._config.entity_name_translations || [];
+    const newTranslations = currentTranslations.filter((_, i) => i !== index);
+
+    const newConfig = {
+      ...this._config,
+      entity_name_translations: newTranslations.length > 0 ? newTranslations : undefined
+    };
+
+    // Entferne Property wenn leer
+    if (newTranslations.length === 0) {
+      delete newConfig.entity_name_translations;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Translations-Liste
+    this._updateEntityNameTranslationsList();
+  }
+
+  _updateTranslationDomain(index, domain) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentTranslations = this._config.entity_name_translations || [];
+    if (index < 0 || index >= currentTranslations.length) {
+      return;
+    }
+
+    const translation = currentTranslations[index];
+    let updatedTranslation;
+
+    if (domain === '') {
+      // Domain entfernen
+      updatedTranslation = { from: translation.from, to: translation.to };
+    } else {
+      // Domain setzen
+      updatedTranslation = { ...translation, domain: domain };
+    }
+
+    const newTranslations = [...currentTranslations];
+    newTranslations[index] = updatedTranslation;
+
+    const newConfig = {
+      ...this._config,
+      entity_name_translations: newTranslations
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Translations-Liste
+    this._updateEntityNameTranslationsList();
+  }
+
+  _updateEntityNameTranslationsList() {
+    const container = this.querySelector('#entity-name-translations-list');
+    if (!container) return;
+
+    const translations = this._config.entity_name_translations || [];
+    
+    // Importiere die Render-Funktion
+    import('./editor/simon42-editor-template.js').then(module => {
+      if (module.renderEntityNameTranslationsList) {
+        container.innerHTML = module.renderEntityNameTranslationsList(translations);
+      } else {
+        container.innerHTML = this._renderEntityNameTranslationsListFallback(translations);
+      }
+      
+      // Reattach listeners
+      this._attachEntityNameTranslationsListeners();
+    }).catch((error) => {
+      // Fallback falls Import fehlschlägt
+      logWarn('[Editor] Failed to load entity name translations list component, using fallback:', error);
+      container.innerHTML = this._renderEntityNameTranslationsListFallback(translations);
+      this._attachEntityNameTranslationsListeners();
+    });
+  }
+
+  _renderEntityNameTranslationsListFallback(translations) {
+    if (!translations || translations.length === 0) {
+      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Übersetzungen hinzugefügt</div>';
+    }
+
+    const getDomainSelectorOptions = (selectedDomain = '') => {
+      const domains = [
+        { value: '', label: t('patternDomainAll') },
+        { value: 'light', label: t('domainLight') },
+        { value: 'switch', label: t('domainSwitch') },
+        { value: 'cover', label: t('domainCover') },
+        { value: 'climate', label: t('domainClimate') },
+        { value: 'sensor', label: t('domainSensor') },
+        { value: 'binary_sensor', label: t('domainBinarySensor') },
+        { value: 'media_player', label: t('domainMediaPlayer') },
+        { value: 'scene', label: t('domainScene') },
+        { value: 'vacuum', label: t('domainVacuum') },
+        { value: 'fan', label: t('domainFan') },
+        { value: 'camera', label: t('domainCamera') },
+        { value: 'lock', label: t('domainLock') },
+        { value: 'input_boolean', label: t('domainInputBoolean') },
+        { value: 'input_number', label: t('domainInputNumber') },
+        { value: 'input_select', label: t('domainInputSelect') },
+        { value: 'input_text', label: t('domainInputText') }
+      ];
+      
+      return domains.map(domain => 
+        `<option value="${domain.value}" ${domain.value === selectedDomain ? 'selected' : ''}>${domain.label}</option>`
+      ).join('');
+    };
+
+    return `
+      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+        ${translations.map((translation, index) => {
+          const fromText = translation.from || '';
+          const toText = translation.to || '';
+          const currentDomain = translation.domain || '';
+          return `
+            <div class="entity-name-translation-item" data-translation-index="${index}" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+              <span style="flex: 1; font-size: 14px; word-break: break-word;">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</span>
+              <select 
+                class="translation-domain-select" 
+                data-translation-index="${index}"
+                style="min-width: 150px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+              >
+                ${getDomainSelectorOptions(currentDomain)}
+              </select>
+              <button class="remove-translation-btn" data-translation-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0;">
+                ✕
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   }
 
   _renderEntityNamePatternsListFallback(patterns) {

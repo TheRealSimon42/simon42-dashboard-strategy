@@ -450,6 +450,37 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
+export function renderEntityNameTranslationsList(translations) {
+  if (!translations || translations.length === 0) {
+    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noTranslationsAdded')}</div>`;
+  }
+
+  return `
+    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      ${translations.map((translation, index) => {
+        const fromText = translation.from || '';
+        const toText = translation.to || '';
+        const currentDomain = translation.domain || '';
+        return `
+          <div class="entity-name-translation-item" data-translation-index="${index}" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+            <span style="flex: 1; font-size: 14px; word-break: break-word;">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</span>
+            <select 
+              class="translation-domain-select" 
+              data-translation-index="${index}"
+              style="min-width: 150px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+            >
+              ${getDomainSelectorOptions(currentDomain)}
+            </select>
+            <button class="remove-translation-btn" data-translation-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0;">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 /**
  * Renders the navigation bar for quick access to section groups
  * @returns {string} HTML for navigation bar
@@ -493,7 +524,7 @@ export function renderSectionGroup(groupId, title, content, isExpanded = false) 
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], logLevel = 'warn', hass = null }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', hass = null }) {
   // Build content for each group
   // Group 1: Dashboard Cards
   const dashboardCardsContent = `
@@ -1004,6 +1035,34 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <div class="description">
           ${t('entityNamePatternsDescription')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('entityNameTranslations')}</div>
+        <div id="entity-name-translations-list" style="margin-bottom: 12px;">
+          ${renderEntityNameTranslationsList(entityNameTranslations || [])}
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
+          <input 
+            type="text" 
+            id="entity-name-translation-from-input" 
+            placeholder="${t('translationFromPlaceholder')}"
+            style="flex: 1; min-width: 150px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+          />
+          <span style="align-self: center; color: var(--secondary-text-color);">→</span>
+          <input 
+            type="text" 
+            id="entity-name-translation-to-input" 
+            placeholder="${t('translationToPlaceholder')}"
+            style="flex: 1; min-width: 150px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+          />
+          <button id="add-translation-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            + ${t('addTranslation')}
+          </button>
+        </div>
+        <div class="description">
+          ${t('entityNameTranslationsDescription')}
         </div>
       </div>
   `;
