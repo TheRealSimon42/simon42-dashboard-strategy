@@ -7,6 +7,7 @@
 
 import { t, getLanguage } from './simon42-i18n.js';
 import { getUserDarkMode, getUserLocale, getUserHour12 } from './simon42-user-preferences.js';
+import { translateAreaName } from './simon42-helpers.js';
 
 /**
  * Integration/Card mapping
@@ -170,9 +171,12 @@ export function buildDbInfoCard(entityIds, config, hass) {
     
     const friendlyName = entity.attributes.friendly_name || '';
     // Extract path name by removing "Verbindung X" or "Connection X" pattern
-    const pathName = friendlyName
+    let pathName = friendlyName
       .replace(/\s*(?:Verbindung|Connection)\s+\d+$/, '')
       .trim();
+    
+    // Apply translations to path name if configured
+    pathName = translateAreaName(pathName, config);
     
     const groupKey = pathName || friendlyName || entityId;
     
