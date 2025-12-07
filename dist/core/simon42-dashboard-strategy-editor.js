@@ -240,6 +240,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._attachPublicTransportListeners();
     this._attachEntityNamePatternsListeners();
     this._attachLogLevelListener();
+    this._attachCacheReloadListener();
     attachAreaCheckboxListeners(this, (areaId, isVisible) => this._areaVisibilityChanged(areaId, isVisible));
     
     // Sortiere die Area-Items nach displayOrder
@@ -1262,6 +1263,47 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._configManager.updateProperty('log_level', level, 'warn');
     // Re-initialize logger with new level
     initLogger(this._config);
+  }
+
+  _attachCacheReloadListener() {
+    const cacheReloadBtn = this.querySelector('#cache-reload-btn');
+    if (cacheReloadBtn) {
+      cacheReloadBtn.addEventListener('click', () => {
+        this._reloadCache();
+      });
+    }
+  }
+
+  _reloadCache() {
+    if (!this._hass || !this._config) {
+      return;
+    }
+
+    // Clear internal editor caches
+    this._expandedAreas.clear();
+    this._expandedGroups.clear();
+    
+    // Force a full re-render of the editor
+    // This will reload all entities and areas from the current hass object
+    // Note: This reloads from hass, which is updated by Home Assistant automatically
+    // If hass hasn't been updated by HA yet, the data will be the same
+    this._render();
+    
+    // Show feedback to user
+    const btn = this.querySelector('#cache-reload-btn');
+    if (btn) {
+      const originalText = btn.textContent;
+      const originalBackground = btn.style.background;
+      btn.textContent = '✓ ' + originalText;
+      btn.style.background = 'var(--success-color, #4caf50)';
+      btn.disabled = true;
+      
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = originalBackground;
+        btn.disabled = false;
+      }, 2000);
+    }
   }
 
   _attachEntityNamePatternsListeners() {

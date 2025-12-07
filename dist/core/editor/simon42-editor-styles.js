@@ -132,6 +132,20 @@ export function getEditorStyles() {
       outline-offset: 2px;
     }
     
+    .form-row button {
+      cursor: pointer;
+      font-family: inherit;
+    }
+    
+    .form-row button:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    
+    .form-row button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
     .description {
       font-size: 12px;
       color: var(--secondary-text-color);

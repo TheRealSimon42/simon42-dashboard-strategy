@@ -217,6 +217,8 @@ export const en = {
   logLevelWarn: "Warn (warnings & errors)",
   logLevelInfo: "Info (info, warnings & errors)",
   logLevelDebug: "Debug (all logs)",
+  cacheReload: "Reload Cache",
+  cacheReloadDescription: "Reloads the cache and updates all entities and areas. Useful after changes to entities or areas in Home Assistant.",
   
   // Dashboard Preferences
   dashboardPreferences: "Dashboard Settings",

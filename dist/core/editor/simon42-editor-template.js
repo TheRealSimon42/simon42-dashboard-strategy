@@ -1028,6 +1028,20 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${t('logLevelDescription')}
         </div>
       </div>
+      <div class="section">
+        <div class="section-title">${t('cacheReload')}</div>
+        <div class="form-row">
+          <button 
+            id="cache-reload-btn"
+            style="width: 100%; padding: 12px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color, var(--primary-text-color)); cursor: pointer; font-size: 14px; font-weight: 500; transition: background-color 0.2s, opacity 0.2s;"
+          >
+            ${t('cacheReload')}
+          </button>
+        </div>
+        <div class="description">
+          ${t('cacheReloadDescription')}
+        </div>
+      </div>
   `;
 
   return `

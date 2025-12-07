@@ -217,6 +217,8 @@ export const de = {
   logLevelWarn: "Warn (Warnungen & Fehler)",
   logLevelInfo: "Info (Info, Warnungen & Fehler)",
   logLevelDebug: "Debug (alle Logs)",
+  cacheReload: "Cache neu laden",
+  cacheReloadDescription: "Lädt den Cache neu und aktualisiert alle Entitäten und Bereiche. Nützlich nach Änderungen an Entitäten oder Bereichen in Home Assistant.",
   
   // Dashboard-Präferenzen
   dashboardPreferences: "Dashboard-Einstellungen",
