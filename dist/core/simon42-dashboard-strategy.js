@@ -120,7 +120,7 @@ class Simon42DashboardStrategy {
 
     // Erstelle Bereiche-Section(s)
     logDebug('[Strategy] Creating areas section...');
-    const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
+    const areasSections = createAreasSection(visibleAreas, groupByFloors, hass, config);
 
     // Erstelle separate Sections: Weather, Public Transport, Energy
     logDebug('[Strategy] Creating additional sections...');

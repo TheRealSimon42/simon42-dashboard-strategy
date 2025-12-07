@@ -11,6 +11,7 @@ import {
   CARD_BUILDERS
 } from './simon42-public-transport-builders.js';
 import { logWarn, logDebug, logInfo } from './simon42-logger.js';
+import { translateAreaName } from './simon42-helpers.js';
 
 /**
  * Erstellt die Übersichts-Section mit Zusammenfassungen
@@ -192,8 +193,9 @@ export function createOverviewSection(data) {
  * @param {Array} visibleAreas - Sichtbare Bereiche
  * @param {boolean} groupByFloors - Ob nach Etagen gruppiert werden soll
  * @param {Object} hass - Home Assistant Objekt (für Floor-Namen)
+ * @param {Object} config - Dashboard-Config (für Übersetzungen)
  */
-export function createAreasSection(visibleAreas, groupByFloors = false, hass = null) {
+export function createAreasSection(visibleAreas, groupByFloors = false, hass = null, config = {}) {
   // Wenn keine Etagen-Gruppierung gewünscht: alte Logik
   if (!groupByFloors || !hass) {
     return {
@@ -204,17 +206,21 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
           heading_style: "title",
           heading: t('areas')
         },
-        ...visibleAreas.map((area) => ({
-          type: "area",
-          area: area.area_id,
-          display_type: "compact",
-          alert_classes: [ "motion", "moisture", "occupancy" ],
-          sensor_classes: [ "temperature", "humidity", "volatile_organic_compounds_parts" ],
-          features: [{ type: "area-controls" }],
-          features_position: "inline",
-          navigation_path: area.area_id,
-          vertical: false
-        }))
+        ...visibleAreas.map((area) => {
+          const translatedAreaName = translateAreaName(area.name, config);
+          return {
+            type: "area",
+            area: area.area_id,
+            name: translatedAreaName, // Übersetzter Name für die Area-Card
+            display_type: "compact",
+            alert_classes: [ "motion", "moisture", "occupancy" ],
+            sensor_classes: [ "temperature", "humidity", "volatile_organic_compounds_parts" ],
+            features: [{ type: "area-controls" }],
+            features_position: "inline",
+            navigation_path: area.area_id,
+            vertical: false
+          };
+        })
       ]
     };
   }
@@ -261,17 +267,21 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
           heading: floorName,
           icon: floorIcon
         },
-        ...areas.map((area) => ({
-          type: "area",
-          area: area.area_id,
-          display_type: "compact",
-          alert_classes: [ "motion", "moisture", "occupancy" ],
-          sensor_classes: [ "temperature", "humidity", "volatile_organic_compounds_parts" ],
-          features: [{ type: "area-controls" }],
-          features_position: "inline",
-          navigation_path: area.area_id,
-          vertical: false
-        }))
+        ...areas.map((area) => {
+          const translatedAreaName = translateAreaName(area.name, config);
+          return {
+            type: "area",
+            area: area.area_id,
+            name: translatedAreaName, // Übersetzter Name für die Area-Card
+            display_type: "compact",
+            alert_classes: [ "motion", "moisture", "occupancy" ],
+            sensor_classes: [ "temperature", "humidity", "volatile_organic_compounds_parts" ],
+            features: [{ type: "area-controls" }],
+            features_position: "inline",
+            navigation_path: area.area_id,
+            vertical: false
+          };
+        })
       ]
     });
   });
@@ -287,17 +297,21 @@ export function createAreasSection(visibleAreas, groupByFloors = false, hass = n
           heading: t('moreAreas'),
           icon: "mdi:home-outline"
         },
-        ...areasWithoutFloor.map((area) => ({
-          type: "area",
-          area: area.area_id,
-          display_type: "compact",
-          alert_classes: [ "motion", "moisture", "occupancy" ],
-          sensor_classes: [ "temperature", "humidity", "volatile_organic_compounds_parts" ],
-          features: [{ type: "area-controls" }],
-          features_position: "inline",
-          navigation_path: area.area_id,
-          vertical: false
-        }))
+        ...areasWithoutFloor.map((area) => {
+          const translatedAreaName = translateAreaName(area.name, config);
+          return {
+            type: "area",
+            area: area.area_id,
+            name: translatedAreaName, // Übersetzter Name für die Area-Card
+            display_type: "compact",
+            alert_classes: [ "motion", "moisture", "occupancy" ],
+            sensor_classes: [ "temperature", "humidity", "volatile_organic_compounds_parts" ],
+            features: [{ type: "area-controls" }],
+            features_position: "inline",
+            navigation_path: area.area_id,
+            vertical: false
+          };
+        })
       ]
     });
   }
