@@ -208,7 +208,7 @@ export const de = {
   domainInputText: "Input Text",
   noPatternsAdded: "Keine Patterns hinzugefügt",
   entityNameTranslations: "Entity-Namen Übersetzungen",
-  entityNameTranslationsDescription: "Definiere Übersetzungen für Substrings in Entity-Namen. Beispiel: Ersetze 'Bedroom' (Englisch) durch 'Schlafzimmer' (Deutsch). Übersetzungen werden nur angewendet, wenn die Dashboard-Sprache mit der Zielsprache übereinstimmt. Übersetzungen werden vor den Patterns angewendet.",
+  entityNameTranslationsDescription: "Definiere Übersetzungen für Substrings in Entity-Namen. Beispiel: Ersetze 'Bedroom' (Englisch) durch 'Schlafzimmer' (Deutsch). Übersetzungen werden nur angewendet, wenn die Dashboard-Sprache mit der Zielsprache übereinstimmt. Übersetzungen werden nach den Patterns angewendet, damit sie auf die transformierten Namen wirken.",
   addTranslation: "Übersetzung hinzufügen",
   translationFromPlaceholder: "Von (z.B. 'Bedroom')",
   translationToPlaceholder: "Nach (z.B. 'Schlafzimmer')",

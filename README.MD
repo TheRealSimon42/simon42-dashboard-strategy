@@ -543,9 +543,9 @@ entity_name_patterns:
 
 **Hinweis:** Die Transformation wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant.
 
-#### `entity_name_translations` - Entity-Namen Übersetzungen
+#### `entity_name_translations` - Entity-Namen und Area-Namen Übersetzungen
 
-Mit `entity_name_translations` kannst du Substrings in Entity-Namen übersetzen. Dies ist besonders nützlich, wenn Entities englische Namen haben, die du ins Deutsche übersetzen möchtest, oder umgekehrt.
+Mit `entity_name_translations` kannst du Substrings in Entity-Namen und Area-Namen übersetzen. Dies ist besonders nützlich, wenn Entities oder Areas englische Namen haben, die du ins Deutsche übersetzen möchtest, oder umgekehrt.
 
 **Im Editor:** Die Entity-Name-Übersetzungen können im Editor unter "Entity Name Translations" konfiguriert werden.
 
@@ -600,7 +600,7 @@ entity_name_translations:
 - `from_lang` ist die Quellsprache (z.B. `"en"` für Englisch)
 - `to_lang` ist die Zielsprache (z.B. `"de"` für Deutsch)
 - Mehrere Übersetzungen können angegeben werden und werden nacheinander angewendet
-- Übersetzungen werden **vor** den Patterns angewendet (nach dem Entfernen des Raumnamens)
+- Übersetzungen werden **nach** den Patterns angewendet, damit sie auf die transformierten Namen wirken
 - Übersetzungen gelten für **alle** Entities, die im Dashboard angezeigt werden können
 - Übersetzungen werden **nur angewendet**, wenn die Dashboard-Sprache mit `to_lang` übereinstimmt
 
@@ -608,7 +608,7 @@ entity_name_translations:
 - `en` - Englisch
 - `de` - Deutsch
 
-**Hinweis:** Die Übersetzung wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant. Übersetzungen werden als ganze Wörter behandelt (mit Wortgrenzen), sodass "Bedroom" nicht "BedroomLight" ersetzt. Übersetzungen sind sprachabhängig - sie werden nur angewendet, wenn die Dashboard-Sprache mit der Zielsprache (`to_lang`) übereinstimmt.
+**Hinweis:** Die Übersetzung wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen oder Area-Namen in Home Assistant. Übersetzungen werden als ganze Wörter behandelt (mit Wortgrenzen), sodass "Bedroom" nicht "BedroomLight" ersetzt. Übersetzungen sind sprachabhängig - sie werden nur angewendet, wenn die Dashboard-Sprache mit der Zielsprache (`to_lang`) übereinstimmt. Übersetzungen gelten sowohl für Entity-Namen als auch für Area-Namen (z.B. View-Titel).
 
 </details>
 

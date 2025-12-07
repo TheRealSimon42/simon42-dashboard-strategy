@@ -3,6 +3,7 @@
 // ====================================================================
 
 import { t } from './simon42-i18n.js';
+import { translateAreaName } from './simon42-helpers.js';
 
 /**
  * Erstellt den Haupt-Übersichts-View
@@ -84,8 +85,11 @@ export function createAreaViews(visibleAreas, devices, entities, showRoomViews =
   return visibleAreas.map(area => {
     const areaOptions = areasOptions[area.area_id] || {};
     
+    // Übersetze Area-Namen falls Übersetzungen konfiguriert sind
+    const translatedAreaName = translateAreaName(area.name, dashboardConfig);
+    
     return {
-      title: area.name,
+      title: translatedAreaName,
       path: area.area_id,
       icon: area.icon || "mdi:floor-plan",
       subview: !showRoomViews,

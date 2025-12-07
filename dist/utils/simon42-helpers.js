@@ -47,7 +47,7 @@ export function getVisibleAreas(areas, displayConfig) {
 }
 
 /**
- * Wendet Substring-Übersetzungen auf Entity-Namen an
+ * Wendet Substring-Übersetzungen auf Namen an (für Entity-Namen und Area-Namen)
  * @param {string} name - Der zu transformierende Name
  * @param {Array} translations - Array von Übersetzungen (Objekte mit from/to/from_lang/to_lang)
  * @returns {string} Transformierter Name
@@ -85,6 +85,25 @@ function applyNameTranslations(name, translations) {
   translatedName = translatedName.replace(/\s+/g, ' ').trim();
   
   return translatedName;
+}
+
+/**
+ * Übersetzt einen Area-Namen basierend auf konfigurierten Übersetzungen
+ * @param {string} areaName - Der zu übersetzende Area-Name
+ * @param {Object} config - Dashboard-Config mit entity_name_translations
+ * @returns {string} Übersetzter Area-Name
+ */
+export function translateAreaName(areaName, config = {}) {
+  if (!areaName) {
+    return areaName;
+  }
+  
+  const nameTranslations = config.entity_name_translations;
+  if (nameTranslations) {
+    return applyNameTranslations(areaName, nameTranslations);
+  }
+  
+  return areaName;
 }
 
 /**
@@ -182,16 +201,17 @@ export function stripAreaName(entityId, area, hass, config = {}) {
     }
   }
   
-  // 2. Wende konfigurierte Name-Übersetzungen an (falls vorhanden)
-  const nameTranslations = config.entity_name_translations;
-  if (nameTranslations) {
-    name = applyNameTranslations(name, nameTranslations);
-  }
-  
-  // 3. Wende konfigurierte Name-Patterns an (falls vorhanden)
+  // 2. Wende konfigurierte Name-Patterns an (falls vorhanden)
   const namePatterns = config.entity_name_patterns;
   if (namePatterns) {
     name = applyNamePatterns(name, namePatterns, entityId);
+  }
+  
+  // 3. Wende konfigurierte Name-Übersetzungen an (falls vorhanden)
+  // Übersetzungen werden NACH den Patterns angewendet, damit sie auf die transformierten Namen wirken
+  const nameTranslations = config.entity_name_translations;
+  if (nameTranslations) {
+    name = applyNameTranslations(name, nameTranslations);
   }
   
   return name;
