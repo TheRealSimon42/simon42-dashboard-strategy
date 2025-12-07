@@ -10,6 +10,7 @@ export const de = {
   summaries: "Zusammenfassungen",
   favorites: "Favoriten",
   areas: "Bereiche",
+  arrangeAreas: "Bereiche anordnen",
   moreAreas: "Weitere Bereiche",
   
   // Views

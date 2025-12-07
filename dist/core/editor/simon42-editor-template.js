@@ -971,7 +971,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
   // Group 2: Views & Summaries
   const viewsSummariesContent = `
       <div class="section">
-        <div class="section-title">${t('areas')}</div>
+        <div class="section-title">${t('arrangeAreas')}</div>
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('areasDescription')}
         </div>
