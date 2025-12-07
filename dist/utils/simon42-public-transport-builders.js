@@ -9,6 +9,7 @@ import { t, getLanguage } from './simon42-i18n.js';
 import { getUserDarkMode, getUserLocale, getUserHour12 } from './simon42-user-preferences.js';
 import { translateAreaName } from './simon42-helpers.js';
 
+
 /**
  * Integration/Card mapping
  */
@@ -77,10 +78,11 @@ export function filterHaDeparturesEntities(entityIds, hass) {
  * Builds HVV card configuration
  * @param {string[]} entityIds - Entity IDs
  * @param {Object} config - Configuration object
+ * @param {Object} hass - Home Assistant object (for translating entity names)
  * @returns {Object} Card configuration
  */
-export function buildHvvCard(entityIds, config) {
-  return {
+export function buildHvvCard(entityIds, config, hass = null) {
+  const cardConfig = {
     type: 'custom:hvv-card',
     entities: entityIds,
     max: config.hvv_max !== undefined ? config.hvv_max : 10,
@@ -88,6 +90,20 @@ export function buildHvvCard(entityIds, config) {
     show_title: config.hvv_show_title !== undefined ? config.hvv_show_title : false,
     title: config.hvv_title || 'HVV'
   };
+  
+  // Note on translation: The HVV card reads departure information directly from entity attributes
+  // (next[].direction, next[].name, etc.). These nested attribute values cannot be translated
+  // directly from this codebase since the card reads them from hass.states.
+  // 
+  // However, entity friendly_names can be translated using entity_name_translations in the config.
+  // For departure names in attributes, users may need to:
+  // 1. Configure translations at the HVV integration level (if supported)
+  // 2. Use Home Assistant's translation system (if the card supports it)
+  // 3. Use entity_name_translations for common terms that appear in departure names
+  //
+  // The card's title can be translated by setting hvv_title in the config.
+  
+  return cardConfig;
 }
 
 /**

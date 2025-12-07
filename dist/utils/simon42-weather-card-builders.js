@@ -6,6 +6,8 @@
 // ====================================================================
 
 import { getUserLocale, getUserHour12 } from './simon42-user-preferences.js';
+import { t } from './simon42-i18n.js';
+import { translateAreaName } from './simon42-helpers.js';
 
 /**
  * Builds clock-weather-card configuration
@@ -129,6 +131,27 @@ export function buildClockWeatherCard(weatherEntity, config, hass) {
   // Optional: title
   if (config.clock_weather_title) {
     cardConfig.title = config.clock_weather_title;
+  }
+  
+  // Set translated name property
+  // Get entity friendly_name and translate it, or use default translation
+  if (hass && hass.states && hass.states[weatherEntity]) {
+    const entity = hass.states[weatherEntity];
+    const friendlyName = entity.attributes?.friendly_name || '';
+    
+    // Translate the name if available, otherwise use default translation
+    let translatedName = friendlyName;
+    if (translatedName) {
+      translatedName = translateAreaName(translatedName, config);
+    } else {
+      // Fallback to translated "Forecast Home" if no friendly_name
+      translatedName = t('weatherCardName');
+    }
+    
+    cardConfig.name = translatedName;
+  } else {
+    // Fallback to translated "Forecast Home" if entity not available
+    cardConfig.name = t('weatherCardName');
   }
   
   return cardConfig;

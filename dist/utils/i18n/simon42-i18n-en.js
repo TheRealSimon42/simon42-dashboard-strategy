@@ -71,6 +71,7 @@ export const en = {
   
   // Weather & Energy
   weather: "Weather",
+  weatherCardName: "Forecast Home",
   energy: "Energy",
   publicTransport: "Public Transport",
   
