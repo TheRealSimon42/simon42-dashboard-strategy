@@ -845,7 +845,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       const content = this.querySelector(`.area-content[data-area-id="${areaId}"]`);
       
       if (button && content) {
-        content.style.display = 'block';
+        content.classList.add('expanded');
         button.classList.add('expanded');
         
         // Restore expanded groups for this area
@@ -856,7 +856,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
             const entityList = content.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${groupKey}"]`);
             
             if (groupButton && entityList) {
-              entityList.style.display = 'block';
+              entityList.classList.add('expanded');
               groupButton.classList.add('expanded');
             }
           });

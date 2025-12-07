@@ -557,6 +557,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-weather" 
+            class="ios-switch"
             ${showWeather !== false ? 'checked' : ''}
           />
           <label for="show-weather">${t('showWeatherCard')}</label>
@@ -625,6 +626,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-energy" 
+            class="ios-switch"
             ${showEnergy ? 'checked' : ''}
           />
           <label for="show-energy">${t('showEnergyDashboard')}</label>
@@ -636,6 +638,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-person-badges" 
+            class="ios-switch"
             ${showPersonBadges !== false ? 'checked' : ''}
           />
           <label for="show-person-badges">${t('showPersonBadges')}</label>
@@ -967,6 +970,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="group-by-floors" 
+            class="ios-switch"
             ${groupByFloors ? 'checked' : ''}
           />
           <label for="group-by-floors">${t('groupByFloors')}</label>
@@ -985,6 +989,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-summary-views" 
+            class="ios-switch"
             ${showSummaryViews ? 'checked' : ''}
           />
           <label for="show-summary-views">${t('showSummaryViews')}</label>
@@ -996,6 +1001,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-room-views" 
+            class="ios-switch"
             ${showRoomViews ? 'checked' : ''}
           />
           <label for="show-room-views">${t('showRoomViews')}</label>
@@ -1298,7 +1304,7 @@ function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
             <span class="expand-icon">▶</span>
           </button>
         </div>
-        <div class="area-content" data-area-id="${area.area_id}" style="display: none;">
+        <div class="area-content" data-area-id="${area.area_id}">
           <div class="loading-placeholder">${t('loadingEntities')}</div>
         </div>
       </div>
@@ -1347,7 +1353,7 @@ export function renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, 
             <span class="expand-icon-small">▶</span>
           </button>
         </div>
-        <div class="entity-list" data-area-id="${areaId}" data-group="${group.key}" style="display: none;">
+        <div class="entity-list" data-area-id="${areaId}" data-group="${group.key}">
           ${entities.map(entityId => {
             const state = hass.states[entityId];
             const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');

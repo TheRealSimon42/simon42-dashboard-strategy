@@ -106,6 +106,73 @@ export function getEditorStyles() {
       opacity: 0.5;
     }
     
+    /* iOS-style switch for specific checkboxes */
+    .form-row input[type="checkbox"].ios-switch {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      width: 51px;
+      height: 31px;
+      border-radius: 16px;
+      background-color: var(--switch-unchecked-track-color, rgba(0, 0, 0, 0.3));
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-right: 12px;
+      flex-shrink: 0;
+      border: none;
+      outline: none;
+    }
+    
+    .form-row input[type="checkbox"].ios-switch:checked {
+      background-color: var(--primary-color, #03a9f4);
+    }
+    
+    .form-row input[type="checkbox"].ios-switch:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .form-row input[type="checkbox"].ios-switch::before {
+      content: '';
+      position: absolute;
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      background-color: white;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .form-row input[type="checkbox"].ios-switch:checked::before {
+      transform: translateX(20px);
+    }
+    
+    .form-row input[type="checkbox"].ios-switch:active::before {
+      width: 35px;
+    }
+    
+    .form-row input[type="checkbox"].ios-switch:checked:active::before {
+      transform: translateX(12px);
+    }
+    
+    /* Better touch targets for mobile */
+    @media (max-width: 600px) {
+      .form-row input[type="checkbox"].ios-switch {
+        width: 51px;
+        height: 31px;
+        min-width: 51px;
+        min-height: 31px;
+      }
+      
+      .form-row input[type="checkbox"].ios-switch::before {
+        width: 27px;
+        height: 27px;
+      }
+    }
+    
     .form-row label {
       cursor: pointer;
       user-select: none;
@@ -168,18 +235,33 @@ export function getEditorStyles() {
     .area-item {
       border-bottom: 1px solid var(--divider-color);
       background: var(--card-background-color);
+      transition: background-color 0.2s ease, transform 0.2s ease;
     }
     
     .area-item:last-child {
       border-bottom: none;
     }
     
+    .area-item:active {
+      background-color: var(--secondary-background-color);
+    }
+    
     .area-item.dragging {
       opacity: 0.5;
+      transform: scale(0.98);
     }
     
     .area-item.drag-over {
       border-top: 2px solid var(--primary-color);
+      background-color: var(--secondary-background-color);
+    }
+    
+    .area-item.drag-over-top {
+      border-top: 3px solid var(--primary-color);
+    }
+    
+    .area-item.drag-over-bottom {
+      border-bottom: 3px solid var(--primary-color);
     }
     
     .area-header {
@@ -193,11 +275,24 @@ export function getEditorStyles() {
       color: var(--secondary-text-color);
       cursor: grab;
       user-select: none;
-      padding: 4px;
+      padding: 8px;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      transition: color 0.2s ease, transform 0.2s ease;
     }
     
     .drag-handle:active {
       cursor: grabbing;
+      color: var(--primary-color);
+      transform: scale(1.1);
+    }
+    
+    @media (max-width: 600px) {
+      .drag-handle {
+        padding: 12px;
+        font-size: 18px;
+      }
     }
     
     .area-item.dragging {
@@ -245,6 +340,15 @@ export function getEditorStyles() {
     .area-content {
       padding: 0 12px 12px 48px;
       background: var(--secondary-background-color);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    }
+    
+    .area-content.expanded {
+      max-height: 5000px;
+      padding-top: 8px;
+      padding-bottom: 12px;
     }
     
     .loading-placeholder {
@@ -326,6 +430,15 @@ export function getEditorStyles() {
     .entity-list {
       padding: 8px 12px 8px 36px;
       border-top: 1px solid var(--divider-color);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    }
+    
+    .entity-list.expanded {
+      max-height: 2000px;
+      padding-top: 8px;
+      padding-bottom: 8px;
     }
     
     .entity-item {

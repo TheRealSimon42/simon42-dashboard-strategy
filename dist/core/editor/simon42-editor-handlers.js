@@ -70,9 +70,9 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
       const content = areaItem.querySelector(`.area-content[data-area-id="${areaId}"]`);
       const icon = button.querySelector('.expand-icon');
       
-      if (content.style.display === 'none') {
+      if (!content.classList.contains('expanded')) {
         // Expand
-        content.style.display = 'block';
+        content.classList.add('expanded');
         button.classList.add('expanded');
         
         // Track expanded state
@@ -96,7 +96,7 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
         }
       } else {
         // Collapse
-        content.style.display = 'none';
+        content.classList.remove('expanded');
         button.classList.remove('expanded');
         
         // Track collapsed state
@@ -190,29 +190,29 @@ export function attachEntityExpandButtonListeners(element, editorElement) {
       const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
       
       if (entityList) {
-        if (entityList.style.display === 'none') {
-          entityList.style.display = 'block';
-          button.classList.add('expanded');
-          
-          // Track expanded state
-          if (editorElement._expandedGroups) {
-            if (!editorElement._expandedGroups.has(areaId)) {
-              editorElement._expandedGroups.set(areaId, new Set());
-            }
-            editorElement._expandedGroups.get(areaId).add(group);
+      if (!entityList.classList.contains('expanded')) {
+        entityList.classList.add('expanded');
+        button.classList.add('expanded');
+        
+        // Track expanded state
+        if (editorElement._expandedGroups) {
+          if (!editorElement._expandedGroups.has(areaId)) {
+            editorElement._expandedGroups.set(areaId, new Set());
           }
-        } else {
-          entityList.style.display = 'none';
-          button.classList.remove('expanded');
-          
-          // Track collapsed state
-          if (editorElement._expandedGroups) {
-            const areaGroups = editorElement._expandedGroups.get(areaId);
-            if (areaGroups) {
-              areaGroups.delete(group);
-            }
+          editorElement._expandedGroups.get(areaId).add(group);
+        }
+      } else {
+        entityList.classList.remove('expanded');
+        button.classList.remove('expanded');
+        
+        // Track collapsed state
+        if (editorElement._expandedGroups) {
+          const areaGroups = editorElement._expandedGroups.get(areaId);
+          if (areaGroups) {
+            areaGroups.delete(group);
           }
         }
+      }
       }
     });
   });
@@ -239,6 +239,8 @@ export function attachDragAndDropListeners(element, onOrderChange) {
   const areaItems = areaList.querySelectorAll('.area-item');
   
   let draggedElement = null;
+  let dragStartY = 0;
+  let isDragging = false;
 
   const handleDragStart = (ev) => {
     // Nur auf dem Header draggable machen
@@ -258,6 +260,8 @@ export function attachDragAndDropListeners(element, onOrderChange) {
     ev.dataTransfer.effectAllowed = 'move';
     ev.dataTransfer.setData('text/html', areaItem.innerHTML);
     draggedElement = areaItem;
+    dragStartY = ev.clientY || (ev.touches && ev.touches[0]?.clientY) || 0;
+    isDragging = true;
   };
 
   const handleDragEnd = (ev) => {
@@ -268,7 +272,12 @@ export function attachDragAndDropListeners(element, onOrderChange) {
     
     // Entferne alle drag-over Klassen
     const items = areaList.querySelectorAll('.area-item');
-    items.forEach(item => item.classList.remove('drag-over'));
+    items.forEach(item => {
+      item.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+    });
+    
+    isDragging = false;
+    draggedElement = null;
   };
 
   const handleDragOver = (ev) => {
@@ -278,15 +287,28 @@ export function attachDragAndDropListeners(element, onOrderChange) {
     ev.dataTransfer.dropEffect = 'move';
     
     const item = ev.currentTarget;
-    if (item !== draggedElement) {
-      item.classList.add('drag-over');
+    if (item !== draggedElement && draggedElement) {
+      // Determine if we're dragging over the top or bottom half
+      const rect = item.getBoundingClientRect();
+      const y = ev.clientY || (ev.touches && ev.touches[0]?.clientY) || rect.top + rect.height / 2;
+      const midpoint = rect.top + rect.height / 2;
+      
+      // Remove all drag-over classes first
+      item.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+      
+      if (y < midpoint) {
+        item.classList.add('drag-over-top');
+      } else {
+        item.classList.add('drag-over-bottom');
+      }
     }
     
     return false;
   };
 
   const handleDragLeave = (ev) => {
-    ev.currentTarget.classList.remove('drag-over');
+    const item = ev.currentTarget;
+    item.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
   };
 
   const handleDrop = (ev) => {
@@ -298,17 +320,28 @@ export function attachDragAndDropListeners(element, onOrderChange) {
     }
 
     const dropTarget = ev.currentTarget;
-    dropTarget.classList.remove('drag-over');
+    dropTarget.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
 
     if (draggedElement && draggedElement !== dropTarget) {
       const allItems = Array.from(areaList.querySelectorAll('.area-item'));
       const draggedIndex = allItems.indexOf(draggedElement);
       const dropIndex = allItems.indexOf(dropTarget);
-
+      
+      // Determine insertion position based on drag-over class
+      const isTop = dropTarget.classList.contains('drag-over-top');
+      
       if (draggedIndex < dropIndex) {
-        dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
+        if (isTop) {
+          dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+        } else {
+          dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
+        }
       } else {
-        dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+        if (isTop) {
+          dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+        } else {
+          dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
+        }
       }
 
       // Update die Reihenfolge in der Config
@@ -318,6 +351,44 @@ export function attachDragAndDropListeners(element, onOrderChange) {
     return false;
   };
 
+  // Touch event handlers for mobile
+  let touchStartY = 0;
+  let touchStartElement = null;
+
+  const handleTouchStart = (ev) => {
+    const dragHandle = ev.target.closest('.drag-handle');
+    if (!dragHandle) return;
+    
+    const areaItem = ev.target.closest('.area-item');
+    if (!areaItem) return;
+    
+    touchStartElement = areaItem;
+    touchStartY = ev.touches[0].clientY;
+  };
+
+  const handleTouchMove = (ev) => {
+    if (!touchStartElement) return;
+    
+    const touchY = ev.touches[0].clientY;
+    const deltaY = touchY - touchStartY;
+    
+    // Only start dragging if moved more than 10px
+    if (Math.abs(deltaY) > 10 && !isDragging) {
+      // Create a drag event
+      const dragEvent = new DragEvent('dragstart', {
+        bubbles: true,
+        cancelable: true,
+        clientY: touchY
+      });
+      touchStartElement.dispatchEvent(dragEvent);
+    }
+  };
+
+  const handleTouchEnd = (ev) => {
+    touchStartElement = null;
+    touchStartY = 0;
+  };
+
   areaItems.forEach(item => {
     item.setAttribute('draggable', 'true');
     item.addEventListener('dragstart', handleDragStart);
@@ -325,6 +396,14 @@ export function attachDragAndDropListeners(element, onOrderChange) {
     item.addEventListener('dragover', handleDragOver);
     item.addEventListener('drop', handleDrop);
     item.addEventListener('dragleave', handleDragLeave);
+    
+    // Touch support for mobile
+    const dragHandle = item.querySelector('.drag-handle');
+    if (dragHandle) {
+      dragHandle.addEventListener('touchstart', handleTouchStart, { passive: true });
+      dragHandle.addEventListener('touchmove', handleTouchMove, { passive: true });
+      dragHandle.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
   });
 }
 
