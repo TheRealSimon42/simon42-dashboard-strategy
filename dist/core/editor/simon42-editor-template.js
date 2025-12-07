@@ -6,6 +6,29 @@
 import { t } from '../../utils/simon42-i18n.js';
 
 /**
+ * Renders an MDC switch component (Home Assistant official style)
+ * @param {string} id - Element ID
+ * @param {boolean} checked - Whether switch is checked
+ * @param {string} ariaLabel - Aria label for accessibility
+ * @param {boolean} disabled - Whether switch is disabled
+ * @returns {string} HTML string for MDC switch
+ */
+function renderMDCSwitch(id, checked = false, ariaLabel = '', disabled = false) {
+  return `
+    <input 
+      type="checkbox" 
+      id="${id}" 
+      class="mdc-switch__native-control" 
+      role="switch" 
+      aria-label="${ariaLabel}" 
+      aria-checked="${checked ? 'true' : 'false'}"
+      ${checked ? 'checked' : ''}
+      ${disabled ? 'disabled' : ''}
+    />
+  `;
+}
+
+/**
  * Filtert Entities basierend auf der ausgewählten Integration
  * @param {Array} allEntities - Alle verfügbaren Entities
  * @param {string} integration - Die ausgewählte Integration ('hvv', 'ha-departures', 'db_info')
@@ -605,13 +628,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       <div class="section">
         <div class="section-title">${t('infoCards')}</div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-weather" 
-            class="ios-switch"
-            ${showWeather !== false ? 'checked' : ''}
-          />
-          <label for="show-weather">${t('showWeatherCard')}</label>
+          ${renderMDCSwitch('show-weather', showWeather !== false, t('showWeatherCard'))}
+          <label for="show-weather" style="margin-left: 12px; cursor: pointer;">${t('showWeatherCard')}</label>
         </div>
         <div class="description">
           ${t('weatherCardDescription')}
@@ -619,14 +637,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         ${hasHorizonCardDeps ? `
         <div style="margin-top: 12px;">
           <div class="form-row">
-            <input 
-              type="checkbox" 
-              id="show-horizon-card" 
-              class="ios-switch"
-              ${showHorizonCard ? 'checked' : ''}
-              ${!hasHorizonCardDeps ? 'disabled' : ''}
-            />
-            <label for="show-horizon-card" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
+            ${renderMDCSwitch('show-horizon-card', showHorizonCard, t('showHorizonCard'), !hasHorizonCardDeps)}
+            <label for="show-horizon-card" style="margin-left: 12px; cursor: pointer;" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
               ${t('showHorizonCard')}
             </label>
           </div>
@@ -638,13 +650,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${hasHorizonCardDeps && showHorizonCard ? `
           <div style="margin-top: 12px;">
             <div class="form-row">
-              <input 
-                type="checkbox" 
-                id="horizon-card-extended" 
-                class="ios-switch"
-                ${horizonCardExtended ? 'checked' : ''}
-              />
-              <label for="horizon-card-extended">
+              ${renderMDCSwitch('horizon-card-extended', horizonCardExtended, t('showExtendedInfo'))}
+              <label for="horizon-card-extended" style="margin-left: 12px; cursor: pointer;">
                 ${t('showExtendedInfo')}
               </label>
             </div>
@@ -658,14 +665,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         ${hasClockWeatherCardDeps ? `
         <div style="margin-top: 12px;">
           <div class="form-row">
-            <input 
-              type="checkbox" 
-              id="use-clock-weather-card" 
-              class="ios-switch"
-              ${useClockWeatherCard ? 'checked' : ''}
-              ${!hasClockWeatherCardDeps ? 'disabled' : ''}
-            />
-            <label for="use-clock-weather-card" ${!hasClockWeatherCardDeps ? 'class="disabled-label"' : ''}>
+            ${renderMDCSwitch('use-clock-weather-card', useClockWeatherCard, t('useClockWeatherCard'), !hasClockWeatherCardDeps)}
+            <label for="use-clock-weather-card" style="margin-left: 12px; cursor: pointer;" ${!hasClockWeatherCardDeps ? 'class="disabled-label"' : ''}>
               ${t('useClockWeatherCard')}
             </label>
           </div>
@@ -677,25 +678,15 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         ` : ''}
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-energy" 
-            class="ios-switch"
-            ${showEnergy ? 'checked' : ''}
-          />
-          <label for="show-energy">${t('showEnergyDashboard')}</label>
+          ${renderMDCSwitch('show-energy', showEnergy, t('showEnergyDashboard'))}
+          <label for="show-energy" style="margin-left: 12px; cursor: pointer;">${t('showEnergyDashboard')}</label>
         </div>
         <div class="description">
           ${t('energyCardDescription')}
         </div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-person-badges" 
-            class="ios-switch"
-            ${showPersonBadges !== false ? 'checked' : ''}
-          />
-          <label for="show-person-badges">${t('showPersonBadges')}</label>
+          ${renderMDCSwitch('show-person-badges', showPersonBadges !== false, t('showPersonBadges'))}
+          <label for="show-person-badges" style="margin-left: 12px; cursor: pointer;">${t('showPersonBadges')}</label>
         </div>
         <div class="description">
           ${t('personBadgesDescription')}
@@ -703,13 +694,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         ${showPersonBadges !== false ? `
         <div style="margin-top: 12px;">
           <div class="form-row">
-            <input 
-              type="checkbox" 
-              id="show-person-profile-picture" 
-              class="ios-switch"
-              ${showPersonProfilePicture === true ? 'checked' : ''}
-            />
-            <label for="show-person-profile-picture">
+            ${renderMDCSwitch('show-person-profile-picture', showPersonProfilePicture === true, t('showPersonProfilePicture'))}
+            <label for="show-person-profile-picture" style="margin-left: 12px; cursor: pointer;">
               ${t('showPersonProfilePicture')}
             </label>
           </div>
@@ -723,14 +709,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       <div class="section">
         <div class="section-title">${t('searchCard')}</div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-search-card" 
-            class="ios-switch"
-            ${showSearchCard ? 'checked' : ''}
-            ${!hasSearchCardDeps ? 'disabled' : ''}
-          />
-          <label for="show-search-card" ${!hasSearchCardDeps ? 'class="disabled-label"' : ''}>
+          ${renderMDCSwitch('show-search-card', showSearchCard, t('showSearchCard'), !hasSearchCardDeps)}
+          <label for="show-search-card" style="margin-left: 12px; cursor: pointer;" ${!hasSearchCardDeps ? 'class="disabled-label"' : ''}>
             ${t('showSearchCard')}
           </label>
         </div>
@@ -781,13 +761,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       <div class="section">
         <div class="section-title">${t('clockCard')}</div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-clock-card" 
-            class="ios-switch"
-            ${showClockCard ? 'checked' : ''}
-          />
-          <label for="show-clock-card">${t('showClockCard')}</label>
+          ${renderMDCSwitch('show-clock-card', showClockCard, t('showClockCard'))}
+          <label for="show-clock-card" style="margin-left: 12px; cursor: pointer;">${t('showClockCard')}</label>
         </div>
         <div class="description">
           ${t('clockCardDescription')}
@@ -797,14 +772,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       <div class="section">
         <div class="section-title">${t('betterThermostat')}</div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-better-thermostat" 
-            class="ios-switch"
-            ${showBetterThermostat ? 'checked' : ''}
-            ${!hasBetterThermostatDeps ? 'disabled' : ''}
-          />
-          <label for="show-better-thermostat" ${!hasBetterThermostatDeps ? 'class="disabled-label"' : ''}>
+          ${renderMDCSwitch('show-better-thermostat', showBetterThermostat, t('useBetterThermostatUI'), !hasBetterThermostatDeps)}
+          <label for="show-better-thermostat" style="margin-left: 12px; cursor: pointer;" ${!hasBetterThermostatDeps ? 'class="disabled-label"' : ''}>
             ${t('useBetterThermostatUI')}
           </label>
         </div>
@@ -836,13 +805,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       <div class="section">
         <div class="section-title">${t('publicTransport')}</div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-public-transport" 
-            class="ios-switch"
-            ${showPublicTransport ? 'checked' : ''}
-          />
-          <label for="show-public-transport">${t('showPublicTransport')}</label>
+          ${renderMDCSwitch('show-public-transport', showPublicTransport, t('showPublicTransport'))}
+          <label for="show-public-transport" style="margin-left: 12px; cursor: pointer;">${t('showPublicTransport')}</label>
         </div>
         <div class="description">
           ${t('publicTransportDescription')}
@@ -919,22 +883,12 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               />
             </div>
             <div class="form-row">
-              <input 
-                type="checkbox" 
-                id="hvv-show-time" 
-                class="ios-switch"
-                ${hvvShowTime === true ? 'checked' : ''}
-              />
-              <label for="hvv-show-time">${t('showTime')}</label>
+              ${renderMDCSwitch('hvv-show-time', hvvShowTime === true, t('showTime'))}
+              <label for="hvv-show-time" style="margin-left: 12px; cursor: pointer;">${t('showTime')}</label>
             </div>
             <div class="form-row">
-              <input 
-                type="checkbox" 
-                id="hvv-show-title" 
-                class="ios-switch"
-                ${hvvShowTitle === true ? 'checked' : ''}
-              />
-              <label for="hvv-show-title">${t('showTitle')}</label>
+              ${renderMDCSwitch('hvv-show-title', hvvShowTitle === true, t('showTitle'))}
+              <label for="hvv-show-title" style="margin-left: 12px; cursor: pointer;">${t('showTitle')}</label>
             </div>
             <div class="form-row">
               <label for="hvv-title" style="margin-right: 8px; min-width: 120px;">${t('title')}</label>
@@ -975,40 +929,20 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               />
             </div>
             <div class="form-row">
-              <input 
-                type="checkbox" 
-                id="ha-departures-show-card-header" 
-                class="ios-switch"
-                ${haDeparturesShowCardHeader !== false ? 'checked' : ''}
-              />
-              <label for="ha-departures-show-card-header">${t('showCardHeader')}</label>
+              ${renderMDCSwitch('ha-departures-show-card-header', haDeparturesShowCardHeader !== false, t('showCardHeader'))}
+              <label for="ha-departures-show-card-header" style="margin-left: 12px; cursor: pointer;">${t('showCardHeader')}</label>
             </div>
             <div class="form-row">
-              <input 
-                type="checkbox" 
-                id="ha-departures-show-animation" 
-                class="ios-switch"
-                ${haDeparturesShowAnimation !== false ? 'checked' : ''}
-              />
-              <label for="ha-departures-show-animation">${t('showAnimation')}</label>
+              ${renderMDCSwitch('ha-departures-show-animation', haDeparturesShowAnimation !== false, t('showAnimation'))}
+              <label for="ha-departures-show-animation" style="margin-left: 12px; cursor: pointer;">${t('showAnimation')}</label>
             </div>
             <div class="form-row">
-              <input 
-                type="checkbox" 
-                id="ha-departures-show-transport-icon" 
-                class="ios-switch"
-                ${haDeparturesShowTransportIcon === true ? 'checked' : ''}
-              />
-              <label for="ha-departures-show-transport-icon">${t('showTransportIcon')}</label>
+              ${renderMDCSwitch('ha-departures-show-transport-icon', haDeparturesShowTransportIcon === true, t('showTransportIcon'))}
+              <label for="ha-departures-show-transport-icon" style="margin-left: 12px; cursor: pointer;">${t('showTransportIcon')}</label>
             </div>
             <div class="form-row">
-              <input 
-                type="checkbox" 
-                id="ha-departures-hide-empty-departures" 
-                class="ios-switch"
-                ${haDeparturesHideEmptyDepartures === true ? 'checked' : ''}
-              />
-              <label for="ha-departures-hide-empty-departures">${t('hideEmptyDepartures')}</label>
+              ${renderMDCSwitch('ha-departures-hide-empty-departures', haDeparturesHideEmptyDepartures === true, t('hideEmptyDepartures'))}
+              <label for="ha-departures-hide-empty-departures" style="margin-left: 12px; cursor: pointer;">${t('hideEmptyDepartures')}</label>
             </div>
             <div class="form-row">
               <label for="ha-departures-time-style" style="margin-right: 8px; min-width: 120px;">${t('timeStyle')}</label>
@@ -1035,44 +969,37 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${t('areasDescription')}
         </div>
         <div class="form-row" style="margin-bottom: 12px;">
-          <input 
-            type="checkbox" 
-            id="group-by-floors" 
-            class="ios-switch"
-            ${groupByFloors ? 'checked' : ''}
-          />
-          <label for="group-by-floors">${t('groupByFloors')}</label>
+          ${renderMDCSwitch('group-by-floors', groupByFloors, t('groupByFloors'))}
+          <label for="group-by-floors" style="margin-left: 12px; cursor: pointer;">${t('groupByFloors')}</label>
         </div>
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('groupByFloorsDescription')}
         </div>
-        <div class="area-list" id="area-list">
-          ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}
-        </div>
+        <ha-expansion-panel outlined expanded>
+          <ha-svg-icon slot="leading-icon" path="M20 2H4C2.9 2 2 2.9 2 4V20C2 21.11 2.9 22 4 22H20C21.11 22 22 21.11 22 20V4C22 2.9 21.11 2 20 2M4 6L6 4H10.9L4 10.9V6M4 13.7L13.7 4H18.6L4 18.6V13.7M20 18L18 20H13.1L20 13.1V18M20 10.3L10.3 20H5.4L20 5.4V10.3Z"></ha-svg-icon>
+          <span slot="header">${t('areas')}</span>
+          <ha-items-display-editor>
+            <ha-sortable draggable-selector="ha-md-list-item.draggable" handle-selector=".handle">
+              <ha-md-list>
+                ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}
+              </ha-md-list>
+            </ha-sortable>
+          </ha-items-display-editor>
+        </ha-expansion-panel>
       </div>
 
       <div class="section">
         <div class="section-title">${t('views')}</div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-summary-views" 
-            class="ios-switch"
-            ${showSummaryViews ? 'checked' : ''}
-          />
-          <label for="show-summary-views">${t('showSummaryViews')}</label>
+          ${renderMDCSwitch('show-summary-views', showSummaryViews, t('showSummaryViews'))}
+          <label for="show-summary-views" style="margin-left: 12px; cursor: pointer;">${t('showSummaryViews')}</label>
         </div>
         <div class="description">
           ${t('summaryViewsDescription')}
         </div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-room-views" 
-            class="ios-switch"
-            ${showRoomViews ? 'checked' : ''}
-          />
-          <label for="show-room-views">${t('showRoomViews')}</label>
+          ${renderMDCSwitch('show-room-views', showRoomViews, t('showRoomViews'))}
+          <label for="show-room-views" style="margin-left: 12px; cursor: pointer;">${t('showRoomViews')}</label>
         </div>
         <div class="description">
           ${t('roomViewsDescription')}
@@ -1082,13 +1009,8 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       <div class="section">
         <div class="section-title">${t('summaries')}</div>
         <div class="form-row">
-          <input 
-            type="checkbox" 
-            id="show-covers-summary" 
-            class="ios-switch"
-            ${showCoversSummary !== false ? 'checked' : ''}
-          />
-          <label for="show-covers-summary">${t('showCoversSummary')}</label>
+          ${renderMDCSwitch('show-covers-summary', showCoversSummary !== false, t('showCoversSummary'))}
+          <label for="show-covers-summary" style="margin-left: 12px; cursor: pointer;">${t('showCoversSummary')}</label>
         </div>
         <div class="description">
           ${t('coversSummaryDescription')}
@@ -1347,7 +1269,7 @@ export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
 
 function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
   if (allAreas.length === 0) {
-    return `<div class="empty-state">${t('noAreasAvailable')}</div>`;
+    return `<ha-md-list-item disabled><span slot="headline">${t('noAreasAvailable')}</span></ha-md-list-item>`;
   }
 
   return allAreas.map((area, index) => {
@@ -1356,26 +1278,16 @@ function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
     const displayOrder = orderIndex !== -1 ? orderIndex : 9999 + index;
     
     return `
-      <div class="area-item" 
-           data-area-id="${area.area_id}"
-           data-order="${displayOrder}">
-        <div class="area-header">
-          <span class="drag-handle" draggable="true">☰</span>
-          <input 
-            type="checkbox" 
-            class="area-checkbox ios-switch" 
-            data-area-id="${area.area_id}"
-            ${!isHidden ? 'checked' : ''}
-          />
-          <span class="area-name">${area.name}</span>
-          ${area.icon ? `<ha-icon class="area-icon" icon="${area.icon}"></ha-icon>` : ''}
-          <button class="expand-button" data-area-id="${area.area_id}" ${isHidden ? 'disabled' : ''}>
-            <span class="expand-icon">▶</span>
-          </button>
-        </div>
-        <div class="area-content" data-area-id="${area.area_id}">
-          <div class="loading-placeholder">${t('loadingEntities')}</div>
-        </div>
+      <ha-md-list-item type="button" class="draggable" data-area-id="${area.area_id}" data-order="${displayOrder}">
+        <ha-icon class="icon" slot="start" icon="${area.icon || 'mdi:home'}"></ha-icon>
+        <span slot="headline">${area.name}</span>
+        <ha-icon-button slot="end" class="area-visibility-toggle" data-area-id="${area.area_id}" aria-label="${area.name} ${isHidden ? t('show') : t('hide')}">
+          <ha-svg-icon path="${isHidden ? 'M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z' : 'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z'}"></ha-svg-icon>
+        </ha-icon-button>
+        <ha-svg-icon class="handle" slot="end" path="M21 11H3V9H21V11M21 13H3V15H21V13Z"></ha-svg-icon>
+      </ha-md-list-item>
+      <div class="area-content" data-area-id="${area.area_id}" style="display: none;">
+        <div class="loading-placeholder">${t('loadingEntities')}</div>
       </div>
     `;
   }).join('');
@@ -1407,13 +1319,16 @@ export function renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, 
     html += `
       <div class="entity-group" data-group="${group.key}">
         <div class="entity-group-header">
+          ${renderMDCSwitch(`group-checkbox-${areaId}-${group.key}`, !allHidden, group.label)}
           <input 
             type="checkbox" 
-            class="group-checkbox ios-switch" 
+            class="group-checkbox mdc-switch__native-control" 
+            id="group-checkbox-hidden-${areaId}-${group.key}"
             data-area-id="${areaId}"
             data-group="${group.key}"
             ${!allHidden ? 'checked' : ''}
             ${someHidden ? 'data-indeterminate="true"' : ''}
+            style="display: none;"
           />
           <ha-icon icon="${group.icon}"></ha-icon>
           <span class="group-name">${group.label}</span>
@@ -1430,13 +1345,16 @@ export function renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, 
             
             return `
               <div class="entity-item">
+                ${renderMDCSwitch(`entity-checkbox-${areaId}-${group.key}-${entityId}`, !isHidden, name)}
                 <input 
                   type="checkbox" 
-                  class="entity-checkbox ios-switch" 
+                  class="entity-checkbox mdc-switch__native-control" 
+                  id="entity-checkbox-hidden-${areaId}-${group.key}-${entityId}"
                   data-area-id="${areaId}"
                   data-group="${group.key}"
                   data-entity-id="${entityId}"
                   ${!isHidden ? 'checked' : ''}
+                  style="display: none;"
                 />
                 <span class="entity-name">${name}</span>
                 <span class="entity-id">${entityId}</span>

@@ -4,6 +4,7 @@
 // Event-Handler für den Dashboard Strategy Editor
 
 import { renderAreaEntitiesHTML } from './simon42-editor-template.js';
+import { t } from '../../utils/simon42-i18n.js';
 
 /**
  * Creates a checkbox listener attachment function
@@ -42,134 +43,211 @@ export const attachClockWeatherCardCheckboxListener = createCheckboxListener('#u
 export const attachPublicTransportCheckboxListener = createCheckboxListener('#show-public-transport');
 
 export function attachAreaCheckboxListeners(element, callback) {
-  const areaCheckboxes = element.querySelectorAll('.area-checkbox');
-  areaCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', (e) => {
-      const areaId = e.target.dataset.areaId;
-      const isVisible = e.target.checked;
-      callback(areaId, isVisible);
+  // Handle icon-button clicks for hide/show (replaces checkbox functionality)
+  const hideButtons = element.querySelectorAll('ha-icon-button.area-visibility-toggle[data-area-id]');
+  hideButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const areaId = button.dataset.areaId;
+      const listItem = button.closest('ha-md-list-item[data-area-id]');
+      if (!listItem) return;
       
-      // Disable/Enable expand button
-      const areaItem = e.target.closest('.area-item');
-      const expandButton = areaItem.querySelector('.expand-button');
-      if (expandButton) {
-        expandButton.disabled = !isVisible;
+      // Toggle visibility state
+      const isCurrentlyHidden = button.querySelector('ha-svg-icon')?.getAttribute('path')?.includes('M12,9A3,3');
+      const isVisible = !isCurrentlyHidden;
+      
+      // Update icon
+      const icon = button.querySelector('ha-svg-icon');
+      if (icon) {
+        icon.setAttribute('path', isVisible ? 'M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z' : 'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z');
       }
+      
+      // Hide/show area content if expanded
+      const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+      if (content && !isVisible) {
+        content.style.display = 'none';
+      }
+      
+      callback(areaId, isVisible);
     });
   });
 }
 
 export function attachExpandButtonListeners(element, hass, config, onEntitiesLoad) {
-  const expandButtons = element.querySelectorAll('.expand-button');
+  // Handle clicks on ha-md-list-item for expansion
+  const areaItems = element.querySelectorAll('ha-md-list-item[data-area-id]');
   
-  expandButtons.forEach(button => {
-    button.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const areaId = button.dataset.areaId;
-      const areaItem = button.closest('.area-item');
-      const content = areaItem.querySelector(`.area-content[data-area-id="${areaId}"]`);
-      const icon = button.querySelector('.expand-icon');
+  areaItems.forEach(item => {
+    item.addEventListener('click', async (e) => {
+      // Don't expand if clicking on icon-button or handle
+      if (e.target.closest('ha-icon-button') || e.target.closest('.handle')) {
+        return;
+      }
       
-      if (!content.classList.contains('expanded')) {
-        // Expand
-        content.classList.add('expanded');
-        button.classList.add('expanded');
-        
-        // Track expanded state
-        if (element._expandedAreas) {
-          element._expandedAreas.add(areaId);
-        }
-        
-        // Lade Entitäten, falls noch nicht geladen
-        if (content.querySelector('.loading-placeholder')) {
-          const groupedEntities = await getAreaGroupedEntities(areaId, hass);
-          const hiddenEntities = getHiddenEntitiesForArea(areaId, config);
-          const entityOrders = getEntityOrdersForArea(areaId, config);
-          
-          const entitiesHTML = renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, entityOrders, hass);
-          content.innerHTML = entitiesHTML;
-          
-          // Attach listeners für die neuen Entity-Checkboxen
-          attachEntityCheckboxListeners(content, onEntitiesLoad);
-          attachGroupCheckboxListeners(content, onEntitiesLoad);
-          attachEntityExpandButtonListeners(content, element);
-        }
+      e.stopPropagation();
+      const areaId = item.dataset.areaId;
+      
+      // Check if area is hidden
+      const visibilityButton = item.querySelector('ha-icon-button.area-visibility-toggle');
+      const isHidden = visibilityButton?.querySelector('ha-svg-icon')?.getAttribute('path')?.includes('M12,9A3,3');
+      if (isHidden) {
+        return; // Don't expand hidden areas
+      }
+      
+      const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+      
+      if (!content) {
+        // Create content container if it doesn't exist
+        // Place it as sibling after the list item (ha-sortable will ignore it since it's not draggable)
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'area-content';
+        contentDiv.setAttribute('data-area-id', areaId);
+        contentDiv.innerHTML = `<div class="loading-placeholder">${t('loadingEntities')}</div>`;
+        item.parentNode.insertBefore(contentDiv, item.nextSibling);
+      }
+      
+      const finalContent = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+      
+      // Toggle visibility
+      if (finalContent.style.display === 'none' || !finalContent.style.display) {
+        finalContent.style.display = 'block';
       } else {
-        // Collapse
-        content.classList.remove('expanded');
-        button.classList.remove('expanded');
+        finalContent.style.display = 'none';
+        return;
+      }
+      
+      // Track expanded state
+      if (element._expandedAreas) {
+        element._expandedAreas.add(areaId);
+      }
+      
+      // Load entities if not already loaded
+      if (finalContent.querySelector('.loading-placeholder')) {
+        const groupedEntities = await getAreaGroupedEntities(areaId, hass);
+        const hiddenEntities = getHiddenEntitiesForArea(areaId, config);
+        const entityOrders = getEntityOrdersForArea(areaId, config);
         
-        // Track collapsed state
-        if (element._expandedAreas) {
-          element._expandedAreas.delete(areaId);
-          element._expandedGroups?.delete(areaId);
-        }
+        const entitiesHTML = renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, entityOrders, hass);
+        finalContent.innerHTML = entitiesHTML;
+        
+        // Attach listeners for the new entity checkboxes
+        attachEntityCheckboxListeners(finalContent, onEntitiesLoad);
+        attachGroupCheckboxListeners(finalContent, onEntitiesLoad);
+        attachEntityExpandButtonListeners(finalContent, element);
       }
     });
   });
 }
 
 export function attachGroupCheckboxListeners(element, callback) {
-  const groupCheckboxes = element.querySelectorAll('.group-checkbox');
+  // Find MDC switch inputs directly (they have the group-checkbox ID pattern)
+  const groupSwitchInputs = element.querySelectorAll('input.mdc-switch__native-control[id^="group-checkbox-"]:not([id*="-hidden-"])');
   
-  groupCheckboxes.forEach(checkbox => {
-    // Set indeterminate state
-    if (checkbox.dataset.indeterminate === 'true') {
-      checkbox.indeterminate = true;
+  groupSwitchInputs.forEach(switchInput => {
+    // Extract area and group from ID: group-checkbox-{areaId}-{group}
+    const match = switchInput.id.match(/^group-checkbox-(.+?)-(.+)$/);
+    if (!match) return;
+    
+    const areaId = match[1];
+    const group = match[2];
+    
+    // Find corresponding hidden checkbox for data attributes and indeterminate state
+    const hiddenCheckbox = element.querySelector(`#group-checkbox-hidden-${areaId}-${group}`);
+    
+    // Add data attributes to switch input for easier access
+    switchInput.setAttribute('data-area-id', areaId);
+    switchInput.setAttribute('data-group', group);
+    
+    // Set indeterminate state on hidden checkbox if needed
+    if (hiddenCheckbox && hiddenCheckbox.dataset.indeterminate === 'true') {
+      hiddenCheckbox.indeterminate = true;
     }
     
-    checkbox.addEventListener('change', (e) => {
-      const areaId = e.target.dataset.areaId;
-      const group = e.target.dataset.group;
+    switchInput.addEventListener('change', (e) => {
       const isVisible = e.target.checked;
+      
+      // Sync hidden checkbox if it exists
+      if (hiddenCheckbox) {
+        hiddenCheckbox.checked = isVisible;
+        hiddenCheckbox.indeterminate = false;
+        hiddenCheckbox.removeAttribute('data-indeterminate');
+      }
       
       callback(areaId, group, null, isVisible); // null = alle Entities in der Gruppe
       
       // Update alle Entity-Checkboxen in dieser Gruppe
       const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
       if (entityList) {
-        const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
-        entityCheckboxes.forEach(cb => {
+        const entitySwitchInputs = entityList.querySelectorAll(`input.mdc-switch__native-control[data-area-id="${areaId}"][data-group="${group}"]`);
+        entitySwitchInputs.forEach(cb => {
           cb.checked = isVisible;
+          // Also sync hidden checkbox
+          const entityId = cb.getAttribute('data-entity-id');
+          if (entityId) {
+            const hiddenEntityCheckbox = element.querySelector(`#entity-checkbox-hidden-${areaId}-${group}-${entityId}`);
+            if (hiddenEntityCheckbox) {
+              hiddenEntityCheckbox.checked = isVisible;
+            }
+          }
         });
       }
-      
-      // Entferne indeterminate state
-      e.target.indeterminate = false;
-      e.target.removeAttribute('data-indeterminate');
     });
   });
 }
 
 export function attachEntityCheckboxListeners(element, callback) {
-  const entityCheckboxes = element.querySelectorAll('.entity-checkbox');
+  // Find MDC switch inputs directly (they have the entity-checkbox ID pattern)
+  const entitySwitchInputs = element.querySelectorAll('input.mdc-switch__native-control[id^="entity-checkbox-"]:not([id*="-hidden-"])');
   
-  entityCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', (e) => {
-      const areaId = e.target.dataset.areaId;
-      const group = e.target.dataset.group;
-      const entityId = e.target.dataset.entityId;
+  entitySwitchInputs.forEach(switchInput => {
+    // Extract area, group, and entity from ID: entity-checkbox-{areaId}-{group}-{entityId}
+    // Use regex to match the pattern more reliably
+    const match = switchInput.id.match(/^entity-checkbox-(.+?)-(.+?)-(.+)$/);
+    if (!match) return;
+    
+    const areaId = match[1];
+    const group = match[2];
+    const entityId = match[3];
+    
+    // Find corresponding hidden checkbox for data attributes
+    const hiddenCheckbox = element.querySelector(`#entity-checkbox-hidden-${areaId}-${group}-${entityId}`);
+    
+    // Add data attributes to switch input for easier access
+    switchInput.setAttribute('data-area-id', areaId);
+    switchInput.setAttribute('data-group', group);
+    switchInput.setAttribute('data-entity-id', entityId);
+    
+    switchInput.addEventListener('change', (e) => {
       const isVisible = e.target.checked;
+      
+      // Sync hidden checkbox if it exists
+      if (hiddenCheckbox) {
+        hiddenCheckbox.checked = isVisible;
+      }
       
       callback(areaId, group, entityId, isVisible);
       
       // Update Group-Checkbox state (all/some/none checked)
       const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
+      const groupSwitchInput = element.querySelector(`input.mdc-switch__native-control[id="group-checkbox-${areaId}-${group}"]`);
       const groupCheckbox = element.querySelector(`.group-checkbox[data-area-id="${areaId}"][data-group="${group}"]`);
       
-      if (entityList && groupCheckbox) {
-        const allCheckboxes = Array.from(entityList.querySelectorAll('.entity-checkbox'));
-        const checkedCount = allCheckboxes.filter(cb => cb.checked).length;
+      if (entityList && groupSwitchInput && groupCheckbox) {
+        const allSwitchInputs = Array.from(entityList.querySelectorAll('input.mdc-switch__native-control[id^="entity-checkbox-"]:not([id*="-hidden-"])'));
+        const checkedCount = allSwitchInputs.filter(cb => cb.checked).length;
         
         if (checkedCount === 0) {
+          groupSwitchInput.checked = false;
           groupCheckbox.checked = false;
           groupCheckbox.indeterminate = false;
           groupCheckbox.removeAttribute('data-indeterminate');
-        } else if (checkedCount === allCheckboxes.length) {
+        } else if (checkedCount === allSwitchInputs.length) {
+          groupSwitchInput.checked = true;
           groupCheckbox.checked = true;
           groupCheckbox.indeterminate = false;
           groupCheckbox.removeAttribute('data-indeterminate');
         } else {
+          groupSwitchInput.checked = false;
           groupCheckbox.checked = false;
           groupCheckbox.indeterminate = true;
           groupCheckbox.setAttribute('data-indeterminate', 'true');
@@ -219,191 +297,40 @@ export function attachEntityExpandButtonListeners(element, editorElement) {
 }
 
 export function sortAreaItems(element) {
-  const areaList = element.querySelector('#area-list');
+  const areaList = element.querySelector('ha-md-list');
   if (!areaList) return;
 
-  const items = Array.from(areaList.querySelectorAll('.area-item'));
+  const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
   items.sort((a, b) => {
     const orderA = parseInt(a.dataset.order);
     const orderB = parseInt(b.dataset.order);
     return orderA - orderB;
   });
 
-  items.forEach(item => areaList.appendChild(item));
+  items.forEach(item => {
+    const areaId = item.dataset.areaId;
+    const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+    
+    // Move the item
+    areaList.appendChild(item);
+    
+    // Move the associated content div right after the item
+    if (content && content.parentNode) {
+      content.parentNode.removeChild(content);
+      areaList.parentNode.insertBefore(content, item.nextSibling);
+    }
+  });
 }
 
 export function attachDragAndDropListeners(element, onOrderChange) {
-  const areaList = element.querySelector('#area-list');
-  if (!areaList) return;
+  // Use ha-sortable's built-in event system
+  const sortable = element.querySelector('ha-sortable');
+  if (!sortable) return;
   
-  const areaItems = areaList.querySelectorAll('.area-item');
-  
-  let draggedElement = null;
-  let dragStartY = 0;
-  let isDragging = false;
-
-  const handleDragStart = (ev) => {
-    // Nur auf dem Header draggable machen
-    const dragHandle = ev.target.closest('.drag-handle');
-    if (!dragHandle) {
-      ev.preventDefault();
-      return;
-    }
-    
-    const areaItem = ev.target.closest('.area-item');
-    if (!areaItem) {
-      ev.preventDefault();
-      return;
-    }
-    
-    areaItem.classList.add('dragging');
-    ev.dataTransfer.effectAllowed = 'move';
-    ev.dataTransfer.setData('text/html', areaItem.innerHTML);
-    draggedElement = areaItem;
-    dragStartY = ev.clientY || (ev.touches && ev.touches[0]?.clientY) || 0;
-    isDragging = true;
-  };
-
-  const handleDragEnd = (ev) => {
-    const areaItem = ev.target.closest('.area-item');
-    if (areaItem) {
-      areaItem.classList.remove('dragging');
-    }
-    
-    // Entferne alle drag-over Klassen
-    const items = areaList.querySelectorAll('.area-item');
-    items.forEach(item => {
-      item.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-    });
-    
-    isDragging = false;
-    draggedElement = null;
-  };
-
-  const handleDragOver = (ev) => {
-    if (ev.preventDefault) {
-      ev.preventDefault();
-    }
-    ev.dataTransfer.dropEffect = 'move';
-    
-    const item = ev.currentTarget;
-    if (item !== draggedElement && draggedElement) {
-      // Determine if we're dragging over the top or bottom half
-      const rect = item.getBoundingClientRect();
-      const y = ev.clientY || (ev.touches && ev.touches[0]?.clientY) || rect.top + rect.height / 2;
-      const midpoint = rect.top + rect.height / 2;
-      
-      // Remove all drag-over classes first
-      item.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-      
-      if (y < midpoint) {
-        item.classList.add('drag-over-top');
-      } else {
-        item.classList.add('drag-over-bottom');
-      }
-    }
-    
-    return false;
-  };
-
-  const handleDragLeave = (ev) => {
-    const item = ev.currentTarget;
-    item.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-  };
-
-  const handleDrop = (ev) => {
-    if (ev.stopPropagation) {
-      ev.stopPropagation();
-    }
-    if (ev.preventDefault) {
-      ev.preventDefault();
-    }
-
-    const dropTarget = ev.currentTarget;
-    dropTarget.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
-
-    if (draggedElement && draggedElement !== dropTarget) {
-      const allItems = Array.from(areaList.querySelectorAll('.area-item'));
-      const draggedIndex = allItems.indexOf(draggedElement);
-      const dropIndex = allItems.indexOf(dropTarget);
-      
-      // Determine insertion position based on drag-over class
-      const isTop = dropTarget.classList.contains('drag-over-top');
-      
-      if (draggedIndex < dropIndex) {
-        if (isTop) {
-          dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
-        } else {
-          dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
-        }
-      } else {
-        if (isTop) {
-          dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
-        } else {
-          dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
-        }
-      }
-
-      // Update die Reihenfolge in der Config
-      onOrderChange();
-    }
-
-    return false;
-  };
-
-  // Touch event handlers for mobile
-  let touchStartY = 0;
-  let touchStartElement = null;
-
-  const handleTouchStart = (ev) => {
-    const dragHandle = ev.target.closest('.drag-handle');
-    if (!dragHandle) return;
-    
-    const areaItem = ev.target.closest('.area-item');
-    if (!areaItem) return;
-    
-    touchStartElement = areaItem;
-    touchStartY = ev.touches[0].clientY;
-  };
-
-  const handleTouchMove = (ev) => {
-    if (!touchStartElement) return;
-    
-    const touchY = ev.touches[0].clientY;
-    const deltaY = touchY - touchStartY;
-    
-    // Only start dragging if moved more than 10px
-    if (Math.abs(deltaY) > 10 && !isDragging) {
-      // Create a drag event
-      const dragEvent = new DragEvent('dragstart', {
-        bubbles: true,
-        cancelable: true,
-        clientY: touchY
-      });
-      touchStartElement.dispatchEvent(dragEvent);
-    }
-  };
-
-  const handleTouchEnd = (ev) => {
-    touchStartElement = null;
-    touchStartY = 0;
-  };
-
-  areaItems.forEach(item => {
-    item.setAttribute('draggable', 'true');
-    item.addEventListener('dragstart', handleDragStart);
-    item.addEventListener('dragend', handleDragEnd);
-    item.addEventListener('dragover', handleDragOver);
-    item.addEventListener('drop', handleDrop);
-    item.addEventListener('dragleave', handleDragLeave);
-    
-    // Touch support for mobile
-    const dragHandle = item.querySelector('.drag-handle');
-    if (dragHandle) {
-      dragHandle.addEventListener('touchstart', handleTouchStart, { passive: true });
-      dragHandle.addEventListener('touchmove', handleTouchMove, { passive: true });
-      dragHandle.addEventListener('touchend', handleTouchEnd, { passive: true });
-    }
+  // Listen for item-moved event from ha-sortable
+  sortable.addEventListener('item-moved', () => {
+    // Update order when items are moved
+    onOrderChange();
   });
 }
 

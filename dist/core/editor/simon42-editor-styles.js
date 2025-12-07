@@ -92,7 +92,6 @@ export function getEditorStyles() {
       margin-bottom: 8px;
     }
     
-    .form-row input[type="checkbox"],
     .form-row input[type="radio"] {
       margin-right: 8px;
       width: 18px;
@@ -100,77 +99,15 @@ export function getEditorStyles() {
       cursor: pointer;
     }
     
-    .form-row input[type="checkbox"]:disabled,
     .form-row input[type="radio"]:disabled {
       cursor: not-allowed;
       opacity: 0.5;
     }
     
-    /* iOS-style switch for all checkboxes */
-    input[type="checkbox"].ios-switch {
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      width: 51px;
-      height: 26px;
-      border-radius: 13px;
-      background-color: var(--switch-unchecked-track-color, rgba(0, 0, 0, 0.3));
-      position: relative;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
+    /* MDC Switch styles - Home Assistant uses these by default, but ensure proper spacing */
+    .form-row .mdc-switch__native-control {
       margin-right: 12px;
       flex-shrink: 0;
-      border: none;
-      outline: none;
-    }
-    
-    input[type="checkbox"].ios-switch:checked {
-      background-color: var(--primary-color, #03a9f4);
-    }
-    
-    input[type="checkbox"].ios-switch:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    input[type="checkbox"].ios-switch::before {
-      content: '';
-      position: absolute;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background-color: white;
-      top: 2px;
-      left: 2px;
-      transition: transform 0.3s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    
-    input[type="checkbox"].ios-switch:checked::before {
-      transform: translateX(25px);
-    }
-    
-    input[type="checkbox"].ios-switch:active::before {
-      width: 30px;
-    }
-    
-    input[type="checkbox"].ios-switch:checked:active::before {
-      transform: translateX(17px);
-    }
-    
-    /* Better touch targets for mobile */
-    @media (max-width: 600px) {
-      input[type="checkbox"].ios-switch {
-        width: 51px;
-        height: 26px;
-        min-width: 51px;
-        min-height: 26px;
-      }
-      
-      input[type="checkbox"].ios-switch::before {
-        width: 22px;
-        height: 22px;
-      }
     }
     
     .form-row label {
@@ -226,78 +163,45 @@ export function getEditorStyles() {
       color: var(--primary-text-color);
     }
     
-    .area-list {
-      border: 1px solid var(--divider-color);
-      border-radius: 8px;
-      overflow: hidden;
+    /* Styles for Home Assistant's official editor components */
+    ha-expansion-panel {
+      margin-bottom: 16px;
     }
     
-    .area-item {
-      border-bottom: 1px solid var(--divider-color);
-      background: var(--card-background-color);
-      transition: background-color 0.2s ease, transform 0.2s ease;
+    ha-items-display-editor {
+      display: block;
     }
     
-    .area-item:last-child {
-      border-bottom: none;
+    ha-md-list {
+      padding: 0;
     }
     
-    .area-item:active {
-      background-color: var(--secondary-background-color);
+    ha-md-list-item.draggable {
+      cursor: default;
     }
     
-    .area-item.dragging {
-      opacity: 0.5;
-      transform: scale(0.98);
-    }
-    
-    .area-item.drag-over {
-      border-top: 2px solid var(--primary-color);
-      background-color: var(--secondary-background-color);
-    }
-    
-    .area-item.drag-over-top {
-      border-top: 3px solid var(--primary-color);
-    }
-    
-    .area-item.drag-over-bottom {
-      border-bottom: 3px solid var(--primary-color);
-    }
-    
-    .area-header {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-    }
-    
-    .drag-handle {
-      margin-right: 12px;
-      color: var(--secondary-text-color);
+    ha-md-list-item.draggable .handle {
       cursor: grab;
-      user-select: none;
-      padding: 8px;
-      touch-action: none;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      transition: color 0.2s ease, transform 0.2s ease;
+      color: var(--secondary-text-color);
     }
     
-    .drag-handle:active {
+    ha-md-list-item.draggable .handle:active {
       cursor: grabbing;
-      color: var(--primary-color);
-      transform: scale(1.1);
     }
     
-    @media (max-width: 600px) {
-      .drag-handle {
-        padding: 12px;
-        font-size: 18px;
-      }
+    /* Ensure proper spacing for area content */
+    .area-content {
+      padding: 0 16px 12px 48px;
+      background: var(--secondary-background-color);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, padding 0.3s ease-out;
     }
     
-    .area-item.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
+    .area-content[style*="block"] {
+      max-height: 5000px;
+      padding-top: 8px;
+      padding-bottom: 12px;
     }
     
     .area-checkbox {
@@ -374,19 +278,6 @@ export function getEditorStyles() {
       transition: transform 0.2s;
     }
     
-    .area-content {
-      padding: 0 12px 12px 48px;
-      background: var(--secondary-background-color);
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease-out, padding 0.3s ease-out;
-    }
-    
-    .area-content.expanded {
-      max-height: 5000px;
-      padding-top: 8px;
-      padding-bottom: 12px;
-    }
     
     .loading-placeholder {
       padding: 12px;
@@ -418,11 +309,11 @@ export function getEditorStyles() {
       background: var(--secondary-background-color);
     }
     
-    .group-checkbox {
+    /* MDC switches for groups and entities */
+    .entity-group-header .mdc-switch__native-control,
+    .entity-item .mdc-switch__native-control {
       margin-right: 8px;
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
+      flex-shrink: 0;
     }
     
     .group-checkbox[data-indeterminate="true"] {
@@ -484,12 +375,7 @@ export function getEditorStyles() {
       padding: 6px 0;
     }
     
-    .entity-checkbox {
-      margin-right: 8px;
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-    }
+    /* Entity checkboxes are now MDC switches, handled above */
     
     .entity-name {
       flex: 1;

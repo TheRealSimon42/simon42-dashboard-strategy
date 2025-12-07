@@ -866,8 +866,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _updateAreaOrder() {
-    const areaList = this.querySelector('#area-list');
-    const items = Array.from(areaList.querySelectorAll('.area-item'));
+    // Get items from ha-md-list (Home Assistant's official structure)
+    const areaList = this.querySelector('ha-md-list');
+    if (!areaList) return;
+    
+    const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
     const newOrder = items.map(item => item.dataset.areaId);
 
     const newConfig = {
