@@ -732,6 +732,24 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       </div>
 
       <div class="section">
+        <div class="section-title">${t('alarmControlPanel')}</div>
+        <div class="form-row">
+          <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${t('alarmEntity')}</label>
+          <select id="alarm-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">${t('noneFullWidth')}</option>
+            ${alarmEntities.map(entity => `
+              <option value="${entity.entity_id}" ${entity.entity_id === alarmEntity ? 'selected' : ''}>
+                ${entity.name}
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="description">
+          ${t('alarmEntityDescription')}
+        </div>
+      </div>
+
+      <div class="section">
         <div class="section-title">${t('publicTransport')}</div>
         <div class="form-row">
           <input 
@@ -915,24 +933,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ` : ''}
         </div>
         ` : ''}
-      </div>
-
-      <div class="section">
-        <div class="section-title">${t('alarmControlPanel')}</div>
-        <div class="form-row">
-          <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${t('alarmEntity')}</label>
-          <select id="alarm-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">${t('noneFullWidth')}</option>
-            ${alarmEntities.map(entity => `
-              <option value="${entity.entity_id}" ${entity.entity_id === alarmEntity ? 'selected' : ''}>
-                ${entity.name}
-              </option>
-            `).join('')}
-          </select>
-        </div>
-        <div class="description">
-          ${t('alarmEntityDescription')}
-        </div>
       </div>
   `;
 
