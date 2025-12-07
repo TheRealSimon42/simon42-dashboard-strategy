@@ -452,7 +452,7 @@ export function renderEntityNamePatternsList(patterns) {
 
 function getLanguageSelectorOptions(selectedLang = '', placeholderKey = 'translationFromLang') {
   const languages = [
-    { value: '', label: `- ${t(placeholderKey)} -` },
+    { value: '', label: t(placeholderKey) },
     { value: 'en', label: t('langEnglish') },
     { value: 'de', label: t('langGerman') }
   ];
