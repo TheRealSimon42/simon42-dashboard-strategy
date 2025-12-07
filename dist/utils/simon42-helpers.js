@@ -6,6 +6,7 @@
 // ====================================================================
 
 import { logWarn } from './simon42-logger.js';
+import { getLanguage } from './simon42-i18n.js';
 
 /**
  * Filtert und sortiert Bereiche basierend auf der Konfiguration
@@ -48,17 +49,16 @@ export function getVisibleAreas(areas, displayConfig) {
 /**
  * Wendet Substring-Übersetzungen auf Entity-Namen an
  * @param {string} name - Der zu transformierende Name
- * @param {Array} translations - Array von Übersetzungen (Objekte mit from/to, optional domain)
- * @param {string} entityId - Optional: Entity ID für Domain-Filterung
+ * @param {Array} translations - Array von Übersetzungen (Objekte mit from/to/from_lang/to_lang)
  * @returns {string} Transformierter Name
  */
-function applyNameTranslations(name, translations, entityId = null) {
+function applyNameTranslations(name, translations) {
   if (!translations || !Array.isArray(translations) || translations.length === 0) {
     return name;
   }
   
-  // Extrahiere Domain aus entityId falls vorhanden
-  const entityDomain = entityId ? entityId.split('.')[0] : null;
+  // Hole die aktuelle Dashboard-Sprache
+  const currentLanguage = getLanguage();
   
   let translatedName = name;
   
@@ -69,11 +69,10 @@ function applyNameTranslations(name, translations, entityId = null) {
       return;
     }
     
-    // Domain-Filterung: Wenn Übersetzung eine Domain-Restriktion hat, prüfe ob sie zutrifft
-    if (translation.domain) {
-      if (entityDomain !== translation.domain) {
-        return; // Übersetzung nicht anwenden, Domain stimmt nicht überein
-      }
+    // Language-aware: Nur anwenden wenn to_lang mit aktueller Sprache übereinstimmt
+    // Wenn to_lang nicht gesetzt ist, wird die Übersetzung immer angewendet (Rückwärtskompatibilität)
+    if (translation.to_lang && translation.to_lang !== currentLanguage) {
+      return; // Übersetzung nicht anwenden, Sprache stimmt nicht überein
     }
     
     // Ersetze Substring (case-insensitive, ganze Wörter)
@@ -179,7 +178,7 @@ export function stripAreaName(entityId, area, hass, config = {}) {
   // 2. Wende konfigurierte Name-Übersetzungen an (falls vorhanden)
   const nameTranslations = config.entity_name_translations;
   if (nameTranslations) {
-    name = applyNameTranslations(name, nameTranslations, entityId);
+    name = applyNameTranslations(name, nameTranslations);
   }
   
   // 3. Wende konfigurierte Name-Patterns an (falls vorhanden)

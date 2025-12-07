@@ -1504,17 +1504,23 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const addBtn = this.querySelector('#add-translation-btn');
     const fromInput = this.querySelector('#entity-name-translation-from-input');
     const toInput = this.querySelector('#entity-name-translation-to-input');
+    const fromLangSelect = this.querySelector('#entity-name-translation-from-lang-select');
+    const toLangSelect = this.querySelector('#entity-name-translation-to-lang-select');
     
-    if (addBtn && fromInput && toInput) {
+    if (addBtn && fromInput && toInput && fromLangSelect && toLangSelect) {
       // Add on Enter key press in either input
       const handleAdd = () => {
         const from = fromInput.value.trim();
         const to = toInput.value.trim();
+        const fromLang = fromLangSelect.value || '';
+        const toLang = toLangSelect.value || '';
         
-        if (from && to) {
-          this._addEntityNameTranslation({ from, to });
+        if (from && to && fromLang && toLang) {
+          this._addEntityNameTranslation({ from, to, from_lang: fromLang, to_lang: toLang });
           fromInput.value = '';
           toInput.value = '';
+          fromLangSelect.value = '';
+          toLangSelect.value = '';
         }
       };
       
@@ -1545,13 +1551,22 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       });
     });
 
-    // Domain Selectors for existing translations
-    const domainSelectors = this.querySelectorAll('.translation-domain-select');
-    domainSelectors.forEach(select => {
+    // Language Selectors for existing translations
+    const fromLangSelectors = this.querySelectorAll('.translation-from-lang-select');
+    fromLangSelectors.forEach(select => {
       select.addEventListener('change', (e) => {
         const index = parseInt(e.target.dataset.translationIndex, 10);
-        const selectedDomain = e.target.value;
-        this._updateTranslationDomain(index, selectedDomain);
+        const selectedLang = e.target.value;
+        this._updateTranslationFromLang(index, selectedLang);
+      });
+    });
+
+    const toLangSelectors = this.querySelectorAll('.translation-to-lang-select');
+    toLangSelectors.forEach(select => {
+      select.addEventListener('change', (e) => {
+        const index = parseInt(e.target.dataset.translationIndex, 10);
+        const selectedLang = e.target.value;
+        this._updateTranslationToLang(index, selectedLang);
       });
     });
   }
@@ -1563,11 +1578,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     const currentTranslations = this._config.entity_name_translations || [];
     
-    // Prüfe ob bereits vorhanden (gleiche from/to Kombination)
+    // Prüfe ob bereits vorhanden (gleiche from/to/from_lang/to_lang Kombination)
     const isDuplicate = currentTranslations.some(existing => {
       return existing.from === translation.from && 
              existing.to === translation.to &&
-             (existing.domain || '') === (translation.domain || '');
+             (existing.from_lang || '') === (translation.from_lang || '') &&
+             (existing.to_lang || '') === (translation.to_lang || '');
     });
     
     if (isDuplicate) {
@@ -1575,6 +1591,74 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     }
 
     const newTranslations = [...currentTranslations, translation];
+
+    const newConfig = {
+      ...this._config,
+      entity_name_translations: newTranslations
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Translations-Liste
+    this._updateEntityNameTranslationsList();
+  }
+
+  _updateTranslationFromLang(index, fromLang) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentTranslations = this._config.entity_name_translations || [];
+    if (index < 0 || index >= currentTranslations.length) {
+      return;
+    }
+
+    const translation = currentTranslations[index];
+    const updatedTranslation = { ...translation };
+    
+    if (fromLang === '') {
+      delete updatedTranslation.from_lang;
+    } else {
+      updatedTranslation.from_lang = fromLang;
+    }
+
+    const newTranslations = [...currentTranslations];
+    newTranslations[index] = updatedTranslation;
+
+    const newConfig = {
+      ...this._config,
+      entity_name_translations: newTranslations
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+    
+    // Re-render nur die Translations-Liste
+    this._updateEntityNameTranslationsList();
+  }
+
+  _updateTranslationToLang(index, toLang) {
+    if (!this._config || !this._hass) {
+      return;
+    }
+
+    const currentTranslations = this._config.entity_name_translations || [];
+    if (index < 0 || index >= currentTranslations.length) {
+      return;
+    }
+
+    const translation = currentTranslations[index];
+    const updatedTranslation = { ...translation };
+    
+    if (toLang === '') {
+      delete updatedTranslation.to_lang;
+    } else {
+      updatedTranslation.to_lang = toLang;
+    }
+
+    const newTranslations = [...currentTranslations];
+    newTranslations[index] = updatedTranslation;
 
     const newConfig = {
       ...this._config,
@@ -1613,41 +1697,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._updateEntityNameTranslationsList();
   }
 
-  _updateTranslationDomain(index, domain) {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
-    const currentTranslations = this._config.entity_name_translations || [];
-    if (index < 0 || index >= currentTranslations.length) {
-      return;
-    }
-
-    const translation = currentTranslations[index];
-    let updatedTranslation;
-
-    if (domain === '') {
-      // Domain entfernen
-      updatedTranslation = { from: translation.from, to: translation.to };
-    } else {
-      // Domain setzen
-      updatedTranslation = { ...translation, domain: domain };
-    }
-
-    const newTranslations = [...currentTranslations];
-    newTranslations[index] = updatedTranslation;
-
-    const newConfig = {
-      ...this._config,
-      entity_name_translations: newTranslations
-    };
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-    
-    // Re-render nur die Translations-Liste
-    this._updateEntityNameTranslationsList();
-  }
 
   _updateEntityNameTranslationsList() {
     const container = this.querySelector('#entity-name-translations-list');
@@ -1678,29 +1727,15 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Übersetzungen hinzugefügt</div>';
     }
 
-    const getDomainSelectorOptions = (selectedDomain = '') => {
-      const domains = [
-        { value: '', label: t('patternDomainAll') },
-        { value: 'light', label: t('domainLight') },
-        { value: 'switch', label: t('domainSwitch') },
-        { value: 'cover', label: t('domainCover') },
-        { value: 'climate', label: t('domainClimate') },
-        { value: 'sensor', label: t('domainSensor') },
-        { value: 'binary_sensor', label: t('domainBinarySensor') },
-        { value: 'media_player', label: t('domainMediaPlayer') },
-        { value: 'scene', label: t('domainScene') },
-        { value: 'vacuum', label: t('domainVacuum') },
-        { value: 'fan', label: t('domainFan') },
-        { value: 'camera', label: t('domainCamera') },
-        { value: 'lock', label: t('domainLock') },
-        { value: 'input_boolean', label: t('domainInputBoolean') },
-        { value: 'input_number', label: t('domainInputNumber') },
-        { value: 'input_select', label: t('domainInputSelect') },
-        { value: 'input_text', label: t('domainInputText') }
+    const getLanguageSelectorOptions = (selectedLang = '') => {
+      const languages = [
+        { value: '', label: `- ${t('translationFromLang')} / ${t('translationToLang')} -` },
+        { value: 'en', label: t('langEnglish') },
+        { value: 'de', label: t('langGerman') }
       ];
       
-      return domains.map(domain => 
-        `<option value="${domain.value}" ${domain.value === selectedDomain ? 'selected' : ''}>${domain.label}</option>`
+      return languages.map(lang => 
+        `<option value="${lang.value}" ${lang.value === selectedLang ? 'selected' : ''}>${lang.label}</option>`
       ).join('');
     };
 
@@ -1709,16 +1744,27 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         ${translations.map((translation, index) => {
           const fromText = translation.from || '';
           const toText = translation.to || '';
-          const currentDomain = translation.domain || '';
+          const fromLang = translation.from_lang || '';
+          const toLang = translation.to_lang || '';
           return `
             <div class="entity-name-translation-item" data-translation-index="${index}" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
               <span style="flex: 1; font-size: 14px; word-break: break-word;">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</span>
               <select 
-                class="translation-domain-select" 
+                class="translation-from-lang-select" 
                 data-translation-index="${index}"
-                style="min-width: 150px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+                style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+                title="${t('translationFromLang')}"
               >
-                ${getDomainSelectorOptions(currentDomain)}
+                ${getLanguageSelectorOptions(fromLang)}
+              </select>
+              <span style="color: var(--secondary-text-color);">→</span>
+              <select 
+                class="translation-to-lang-select" 
+                data-translation-index="${index}"
+                style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+                title="${t('translationToLang')}"
+              >
+                ${getLanguageSelectorOptions(toLang)}
               </select>
               <button class="remove-translation-btn" data-translation-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0;">
                 ✕

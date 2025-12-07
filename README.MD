@@ -547,8 +547,12 @@ strategy:
   entity_name_translations:
     - from: "Bedroom"
       to: "Schlafzimmer"
+      from_lang: "en"
+      to_lang: "de"
     - from: "Kitchen"
       to: "Küche"
+      from_lang: "en"
+      to_lang: "de"
 ```
 
 **Beispiel:**
@@ -557,60 +561,46 @@ Wenn deine Entities so benannt sind:
 - `Kitchen Switch`
 - `Bedroom Window`
 
-und du die englischen Begriffe ins Deutsche übersetzen möchtest:
+und du die englischen Begriffe ins Deutsche übersetzen möchtest (wenn das Dashboard auf Deutsch eingestellt ist):
 
 ```yaml
 entity_name_translations:
   - from: "Bedroom"
     to: "Schlafzimmer"
+    from_lang: "en"
+    to_lang: "de"
   - from: "Kitchen"
     to: "Küche"
+    from_lang: "en"
+    to_lang: "de"
 ```
 
-**Ergebnis:**
+**Ergebnis (wenn Dashboard-Sprache = Deutsch):**
 - `Schlafzimmer Light`
 - `Küche Switch`
 - `Schlafzimmer Window`
 
+**Ergebnis (wenn Dashboard-Sprache = Englisch):**
+- `Bedroom Light` (keine Übersetzung angewendet)
+- `Kitchen Switch` (keine Übersetzung angewendet)
+- `Bedroom Window` (keine Übersetzung angewendet)
+
 **Übersetzungs-Format:**
-- Übersetzungen werden als Objekte mit `from` und `to` angegeben
+- Übersetzungen werden als Objekte mit `from`, `to`, `from_lang` und `to_lang` angegeben
 - `from` ist der zu ersetzende Substring (case-insensitive, ganze Wörter)
 - `to` ist der Ersatztext
+- `from_lang` ist die Quellsprache (z.B. `"en"` für Englisch)
+- `to_lang` ist die Zielsprache (z.B. `"de"` für Deutsch)
 - Mehrere Übersetzungen können angegeben werden und werden nacheinander angewendet
 - Übersetzungen werden **vor** den Patterns angewendet (nach dem Entfernen des Raumnamens)
-- Übersetzungen können optional auf bestimmte Entity-Typen beschränkt werden
+- Übersetzungen gelten für **alle** Entities, die im Dashboard angezeigt werden können
+- Übersetzungen werden **nur angewendet**, wenn die Dashboard-Sprache mit `to_lang` übereinstimmt
 
-**Domain-spezifische Übersetzungen:**
-Du kannst Übersetzungen auf bestimmte Entity-Typen beschränken, indem du eine `domain`-Eigenschaft hinzufügst:
+**Verfügbare Sprachen:**
+- `en` - Englisch
+- `de` - Deutsch
 
-```yaml
-entity_name_translations:
-  - from: "Bedroom"
-    to: "Schlafzimmer"  # Gilt für alle Entities
-  - from: "Light"
-    to: "Lampe"
-    domain: "light"  # Gilt nur für Light-Entities
-  - from: "Switch"
-    to: "Schalter"
-    domain: "switch"  # Gilt nur für Switch-Entities
-```
-
-**Verfügbare Domains:**
-- `light` - Beleuchtung
-- `switch` - Schalter (inkl. Steckdosen)
-- `cover` - Rollos, Vorhänge, Jalousien
-- `climate` - Klimageräte, Thermostate
-- `sensor` - Sensoren
-- `binary_sensor` - Binäre Sensoren
-- `media_player` - Media Player
-- `scene` - Szenen
-- `vacuum` - Saugroboter
-- `fan` - Ventilatoren
-- `camera` - Kameras
-- `lock` - Schlösser
-- `input_boolean`, `input_number`, `input_select`, `input_text` - Input-Entities
-
-**Hinweis:** Die Übersetzung wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant. Übersetzungen werden als ganze Wörter behandelt (mit Wortgrenzen), sodass "Bedroom" nicht "BedroomLight" ersetzt.
+**Hinweis:** Die Übersetzung wird nur auf die angezeigten Namen im Dashboard angewendet, nicht auf die tatsächlichen Entity-Namen in Home Assistant. Übersetzungen werden als ganze Wörter behandelt (mit Wortgrenzen), sodass "Bedroom" nicht "BedroomLight" ersetzt. Übersetzungen sind sprachabhängig - sie werden nur angewendet, wenn die Dashboard-Sprache mit der Zielsprache (`to_lang`) übereinstimmt.
 
 </details>
 
