@@ -136,6 +136,13 @@ function applyNamePatterns(name, patterns, entityId = null) {
   // Bereinige mehrfache Leerzeichen und trimme
   transformedName = transformedName.replace(/\s+/g, ' ').trim();
   
+  // Post-Processing: Entferne possessive Präfixe (z.B. "Phillipp's " → entfernen)
+  // Dies hilft bei Namen wie "Socket - Phillipp's PC" → nach "^.* - " bleibt "Phillipp's PC" → wird zu "PC"
+  const possessivePattern = /^[A-Za-z]+'s\s+/;
+  if (possessivePattern.test(transformedName)) {
+    transformedName = transformedName.replace(possessivePattern, '').trim();
+  }
+  
   // Nur verwenden wenn noch ein sinnvoller Name übrig ist
   if (transformedName && transformedName.length > 0) {
     return transformedName;

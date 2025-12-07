@@ -482,6 +482,7 @@ entity_name_patterns:
 - Patterns werden nach dem Entfernen des Raumnamens angewendet
 - Bei ungültigen Patterns wird eine Warnung geloggt und das Pattern ignoriert
 - Patterns können als String (für alle Entities) oder als Objekt mit Domain-Restriktion angegeben werden
+- **Automatische Bereinigung:** Nach der Pattern-Anwendung werden possessive Präfixe (z.B. "Phillipp's ") automatisch entfernt, falls vorhanden. Dies hilft bei Namen wie "Socket - Phillipp's PC", die nach dem Pattern "^.* - " zu "PC" werden.
 
 **Domain-spezifische Patterns:**
 Du kannst Patterns auf bestimmte Entity-Typen beschränken, indem du ein Objekt mit `pattern` und `domain` verwendest:
@@ -505,6 +506,13 @@ entity_name_patterns:
 # Entfernt mehrere Segmente getrennt durch " - " (für alle Entities)
 entity_name_patterns:
   - "^.*? - .*? - "  # Entfernt die ersten beiden Segmente
+
+# Extrahiert den letzten Teil nach dem letzten " - " (für alle Entities)
+# Automatisch entfernt possessive Präfixe wie "Phillipp's " falls vorhanden
+entity_name_patterns:
+  - "^.* - "  # Entfernt alles bis zum letzten " - "
+  # Beispiel: "Socket - Phillipp's PC" → "PC"
+  # Beispiel: "Socket - Phillipp's Bed - Left Charger" → "Left Charger"
 
 # Entfernt spezifische Begriffe am Anfang (für alle Entities)
 entity_name_patterns:
