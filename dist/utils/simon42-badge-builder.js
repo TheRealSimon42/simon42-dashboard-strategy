@@ -40,9 +40,11 @@ export function createPersonBadges(persons, hass, showPersonBadges = true, showP
     // Profilbild hinzufügen wenn aktiviert
     if (showPersonProfilePicture) {
       // Home Assistant Person entities haben ein 'entity_picture' Attribut
+      // Laut Home Assistant Dokumentation kann 'image' verwendet werden, um entity_picture zu überschreiben
+      // Siehe: https://www.home-assistant.io/dashboards/entities/
       const entityPicture = state.attributes?.entity_picture;
       if (entityPicture) {
-        badgeConfig.entity_picture = entityPicture;
+        badgeConfig.image = entityPicture; // Verwende 'image' Property um entity_picture zu überschreiben
       } else {
         // Fallback: Icon anzeigen wenn kein Profilbild verfügbar
         badgeConfig.show_icon = true;
