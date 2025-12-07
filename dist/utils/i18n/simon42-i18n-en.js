@@ -92,6 +92,7 @@ export const en = {
   noneFullWidth: "None (Clock full width)",
   selectEntity: "Select entity...",
   add: "Add",
+  remove: "Remove",
   noEntitiesAdded: "No entities added",
   noFavoritesAdded: "No favorites added",
   noRoomPinsAdded: "No room pins added",

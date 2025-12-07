@@ -92,6 +92,7 @@ export const de = {
   noneFullWidth: "Keine (Uhr in voller Breite)",
   selectEntity: "Entität auswählen...",
   add: "Hinzufügen",
+  remove: "Entfernen",
   noEntitiesAdded: "Keine Entitäten hinzugefügt",
   noFavoritesAdded: "Keine Favoriten hinzugefügt",
   noRoomPinsAdded: "Keine Raum-Pins hinzugefügt",

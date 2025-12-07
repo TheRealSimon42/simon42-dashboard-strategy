@@ -543,29 +543,30 @@ function getLanguageSelectorOptions(selectedLang = '', placeholderKey = 'transla
 
 export function renderEntityNameTranslationsList(translations) {
   if (!translations || translations.length === 0) {
-    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noTranslationsAdded')}</div>`;
+    return `<ha-md-list-item disabled><span slot="headline">${t('noTranslationsAdded')}</span></ha-md-list-item>`;
   }
 
   return `
-    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+    <ha-md-list>
       ${translations.map((translation, index) => {
         const fromText = translation.from || '';
         const toText = translation.to || '';
         const fromLang = translation.from_lang || '';
         const toLang = translation.to_lang || '';
         return `
-          <div class="entity-name-translation-item" data-translation-index="${index}" style="display: flex; flex-direction: column; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <div style="font-size: 14px; word-break: break-word;">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+          <ha-md-list-item data-translation-index="${index}" class="entity-name-translation-item">
+            <ha-icon slot="start" icon="mdi:translate"></ha-icon>
+            <span slot="headline">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</span>
+            <span slot="supporting-text">
               <select 
                 class="translation-from-lang-select" 
                 data-translation-index="${index}"
-                style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
+                style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px; margin-right: 8px;"
                 title="${t('translationFromLang')}"
               >
                 ${getLanguageSelectorOptions(fromLang, 'translationFromLang')}
               </select>
-              <span style="color: var(--secondary-text-color);">→</span>
+              <span style="color: var(--secondary-text-color); margin-right: 8px;">→</span>
               <select 
                 class="translation-to-lang-select" 
                 data-translation-index="${index}"
@@ -574,14 +575,14 @@ export function renderEntityNameTranslationsList(translations) {
               >
                 ${getLanguageSelectorOptions(toLang, 'translationToLang')}
               </select>
-              <button class="remove-translation-btn" data-translation-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0; margin-left: auto;">
-                ✕
-              </button>
-            </div>
-          </div>
+            </span>
+            <ha-icon-button slot="end" class="remove-translation-btn" data-translation-index="${index}" aria-label="${t('remove')}">
+              <ha-svg-icon path="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></ha-svg-icon>
+            </ha-icon-button>
+          </ha-md-list-item>
         `;
       }).join('')}
-    </div>
+    </ha-md-list>
   `;
 }
 
@@ -1121,44 +1122,50 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
 
       <div class="section">
         <div class="section-title">${t('entityNameTranslations')}</div>
-        <div id="entity-name-translations-list" style="margin-bottom: 12px;">
-          ${renderEntityNameTranslationsList(entityNameTranslations || [])}
-        </div>
-        <div style="display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
-          <input 
-            type="text" 
-            id="entity-name-translation-from-input" 
-            placeholder="${t('translationFromPlaceholder')}"
-            style="flex: 1; min-width: 120px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-          />
-          <select 
-            id="entity-name-translation-from-lang-select"
-            style="min-width: 100px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-            title="${t('translationFromLang')}"
-          >
-            ${getLanguageSelectorOptions('', 'translationFromLang')}
-          </select>
-          <span style="align-self: center; color: var(--secondary-text-color);">→</span>
-          <input 
-            type="text" 
-            id="entity-name-translation-to-input" 
-            placeholder="${t('translationToPlaceholder')}"
-            style="flex: 1; min-width: 120px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-          />
-          <select 
-            id="entity-name-translation-to-lang-select"
-            style="min-width: 100px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-            title="${t('translationToLang')}"
-          >
-            ${getLanguageSelectorOptions('', 'translationToLang')}
-          </select>
-          <button id="add-translation-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-            + ${t('addTranslation')}
-          </button>
-        </div>
-        <div class="description">
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('entityNameTranslationsDescription')}
         </div>
+        <ha-expansion-panel outlined>
+          <ha-svg-icon slot="leading-icon" path="M12.87,15.07L10.33,12.56L10.36,12.53C12.1,10.59 13.34,8.36 14.07,6H17V4H10V2H8V4H1V6H12.17C11.5,7.92 10.44,9.75 9,11.35C8.07,10.32 7.3,9.19 6.69,8H4.69C5.42,9.63 6.42,11.17 7.67,12.56L2.58,17.58L4,19L9,14L12.11,17.11L12.87,15.07M18.5,10H16.5L12,22H14L15.12,19H19.87L21,22H23L18.5,10M15.88,17L17.5,12.67L19.12,17H15.88Z"></ha-svg-icon>
+          <span slot="header">${t('entityNameTranslations')}</span>
+          <div style="padding: 16px;">
+            <div id="entity-name-translations-list" style="margin-bottom: 12px;">
+              ${renderEntityNameTranslationsList(entityNameTranslations || [])}
+            </div>
+            <div style="display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
+              <input 
+                type="text" 
+                id="entity-name-translation-from-input" 
+                placeholder="${t('translationFromPlaceholder')}"
+                style="flex: 1; min-width: 120px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+              <select 
+                id="entity-name-translation-from-lang-select"
+                style="min-width: 100px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+                title="${t('translationFromLang')}"
+              >
+                ${getLanguageSelectorOptions('', 'translationFromLang')}
+              </select>
+              <span style="align-self: center; color: var(--secondary-text-color);">→</span>
+              <input 
+                type="text" 
+                id="entity-name-translation-to-input" 
+                placeholder="${t('translationToPlaceholder')}"
+                style="flex: 1; min-width: 120px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+              <select 
+                id="entity-name-translation-to-lang-select"
+                style="min-width: 100px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+                title="${t('translationToLang')}"
+              >
+                ${getLanguageSelectorOptions('', 'translationToLang')}
+              </select>
+              <button id="add-translation-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+                + ${t('addTranslation')}
+              </button>
+            </div>
+          </div>
+        </ha-expansion-panel>
       </div>
   `;
 
