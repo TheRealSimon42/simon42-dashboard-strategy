@@ -106,14 +106,14 @@ export function getEditorStyles() {
       opacity: 0.5;
     }
     
-    /* iOS-style switch for specific checkboxes */
-    .form-row input[type="checkbox"].ios-switch {
+    /* iOS-style switch for all checkboxes */
+    input[type="checkbox"].ios-switch {
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
       width: 51px;
-      height: 31px;
-      border-radius: 16px;
+      height: 26px;
+      border-radius: 13px;
       background-color: var(--switch-unchecked-track-color, rgba(0, 0, 0, 0.3));
       position: relative;
       cursor: pointer;
@@ -124,20 +124,20 @@ export function getEditorStyles() {
       outline: none;
     }
     
-    .form-row input[type="checkbox"].ios-switch:checked {
+    input[type="checkbox"].ios-switch:checked {
       background-color: var(--primary-color, #03a9f4);
     }
     
-    .form-row input[type="checkbox"].ios-switch:disabled {
+    input[type="checkbox"].ios-switch:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
     
-    .form-row input[type="checkbox"].ios-switch::before {
+    input[type="checkbox"].ios-switch::before {
       content: '';
       position: absolute;
-      width: 27px;
-      height: 27px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       background-color: white;
       top: 2px;
@@ -146,30 +146,30 @@ export function getEditorStyles() {
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
     
-    .form-row input[type="checkbox"].ios-switch:checked::before {
-      transform: translateX(20px);
+    input[type="checkbox"].ios-switch:checked::before {
+      transform: translateX(25px);
     }
     
-    .form-row input[type="checkbox"].ios-switch:active::before {
-      width: 35px;
+    input[type="checkbox"].ios-switch:active::before {
+      width: 30px;
     }
     
-    .form-row input[type="checkbox"].ios-switch:checked:active::before {
-      transform: translateX(12px);
+    input[type="checkbox"].ios-switch:checked:active::before {
+      transform: translateX(17px);
     }
     
     /* Better touch targets for mobile */
     @media (max-width: 600px) {
-      .form-row input[type="checkbox"].ios-switch {
+      input[type="checkbox"].ios-switch {
         width: 51px;
-        height: 31px;
+        height: 26px;
         min-width: 51px;
-        min-height: 31px;
+        min-height: 26px;
       }
       
-      .form-row input[type="checkbox"].ios-switch::before {
-        width: 27px;
-        height: 27px;
+      input[type="checkbox"].ios-switch::before {
+        width: 22px;
+        height: 22px;
       }
     }
     
@@ -302,6 +302,43 @@ export function getEditorStyles() {
     
     .area-checkbox {
       margin-right: 12px;
+    }
+    
+    /* Smaller switches for list contexts (area, group, entity checkboxes) */
+    .area-checkbox.ios-switch,
+    .group-checkbox.ios-switch,
+    .entity-checkbox.ios-switch {
+      width: 44px;
+      height: 22px;
+      border-radius: 11px;
+      margin-right: 12px;
+    }
+    
+    .area-checkbox.ios-switch::before,
+    .group-checkbox.ios-switch::before,
+    .entity-checkbox.ios-switch::before {
+      width: 18px;
+      height: 18px;
+      top: 2px;
+      left: 2px;
+    }
+    
+    .area-checkbox.ios-switch:checked::before,
+    .group-checkbox.ios-switch:checked::before,
+    .entity-checkbox.ios-switch:checked::before {
+      transform: translateX(22px);
+    }
+    
+    .area-checkbox.ios-switch:active::before,
+    .group-checkbox.ios-switch:active::before,
+    .entity-checkbox.ios-switch:active::before {
+      width: 24px;
+    }
+    
+    .area-checkbox.ios-switch:checked:active::before,
+    .group-checkbox.ios-switch:checked:active::before,
+    .entity-checkbox.ios-switch:checked:active::before {
+      transform: translateX(14px);
     }
     
     .area-name {

@@ -571,6 +571,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             <input 
               type="checkbox" 
               id="show-horizon-card" 
+              class="ios-switch"
               ${showHorizonCard ? 'checked' : ''}
               ${!hasHorizonCardDeps ? 'disabled' : ''}
             />
@@ -589,6 +590,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="horizon-card-extended" 
+                class="ios-switch"
                 ${horizonCardExtended ? 'checked' : ''}
               />
               <label for="horizon-card-extended">
@@ -608,6 +610,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             <input 
               type="checkbox" 
               id="use-clock-weather-card" 
+              class="ios-switch"
               ${useClockWeatherCard ? 'checked' : ''}
               ${!hasClockWeatherCardDeps ? 'disabled' : ''}
             />
@@ -652,6 +655,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             <input 
               type="checkbox" 
               id="show-person-profile-picture" 
+              class="ios-switch"
               ${showPersonProfilePicture === true ? 'checked' : ''}
             />
             <label for="show-person-profile-picture">
@@ -671,6 +675,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-search-card" 
+            class="ios-switch"
             ${showSearchCard ? 'checked' : ''}
             ${!hasSearchCardDeps ? 'disabled' : ''}
           />
@@ -725,6 +730,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-clock-card" 
+            class="ios-switch"
             ${showClockCard ? 'checked' : ''}
           />
           <label for="show-clock-card">${t('showClockCard')}</label>
@@ -740,6 +746,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-better-thermostat" 
+            class="ios-switch"
             ${showBetterThermostat ? 'checked' : ''}
             ${!hasBetterThermostatDeps ? 'disabled' : ''}
           />
@@ -778,6 +785,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-public-transport" 
+            class="ios-switch"
             ${showPublicTransport ? 'checked' : ''}
           />
           <label for="show-public-transport">${t('showPublicTransport')}</label>
@@ -860,6 +868,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="hvv-show-time" 
+                class="ios-switch"
                 ${hvvShowTime === true ? 'checked' : ''}
               />
               <label for="hvv-show-time">${t('showTime')}</label>
@@ -868,6 +877,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="hvv-show-title" 
+                class="ios-switch"
                 ${hvvShowTitle === true ? 'checked' : ''}
               />
               <label for="hvv-show-title">${t('showTitle')}</label>
@@ -914,6 +924,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="ha-departures-show-card-header" 
+                class="ios-switch"
                 ${haDeparturesShowCardHeader !== false ? 'checked' : ''}
               />
               <label for="ha-departures-show-card-header">${t('showCardHeader')}</label>
@@ -922,6 +933,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="ha-departures-show-animation" 
+                class="ios-switch"
                 ${haDeparturesShowAnimation !== false ? 'checked' : ''}
               />
               <label for="ha-departures-show-animation">${t('showAnimation')}</label>
@@ -930,6 +942,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="ha-departures-show-transport-icon" 
+                class="ios-switch"
                 ${haDeparturesShowTransportIcon === true ? 'checked' : ''}
               />
               <label for="ha-departures-show-transport-icon">${t('showTransportIcon')}</label>
@@ -938,6 +951,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               <input 
                 type="checkbox" 
                 id="ha-departures-hide-empty-departures" 
+                class="ios-switch"
                 ${haDeparturesHideEmptyDepartures === true ? 'checked' : ''}
               />
               <label for="ha-departures-hide-empty-departures">${t('hideEmptyDepartures')}</label>
@@ -1017,6 +1031,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <input 
             type="checkbox" 
             id="show-covers-summary" 
+            class="ios-switch"
             ${showCoversSummary !== false ? 'checked' : ''}
           />
           <label for="show-covers-summary">${t('showCoversSummary')}</label>
@@ -1294,7 +1309,7 @@ function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
           <span class="drag-handle" draggable="true">☰</span>
           <input 
             type="checkbox" 
-            class="area-checkbox" 
+            class="area-checkbox ios-switch" 
             data-area-id="${area.area_id}"
             ${!isHidden ? 'checked' : ''}
           />
@@ -1340,7 +1355,7 @@ export function renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, 
         <div class="entity-group-header">
           <input 
             type="checkbox" 
-            class="group-checkbox" 
+            class="group-checkbox ios-switch" 
             data-area-id="${areaId}"
             data-group="${group.key}"
             ${!allHidden ? 'checked' : ''}
@@ -1363,7 +1378,7 @@ export function renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, 
               <div class="entity-item">
                 <input 
                   type="checkbox" 
-                  class="entity-checkbox" 
+                  class="entity-checkbox ios-switch" 
                   data-area-id="${areaId}"
                   data-group="${group.key}"
                   data-entity-id="${entityId}"
