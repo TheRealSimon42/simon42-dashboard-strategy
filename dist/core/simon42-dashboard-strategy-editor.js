@@ -131,6 +131,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const alarmEntity = this._config.alarm_entity || '';
     const favoriteEntities = this._config.favorite_entities || [];
     const roomPinEntities = this._config.room_pin_entities || [];
+    const searchCardIncludedDomains = this._config.search_card_included_domains || [];
+    const searchCardExcludedDomains = this._config.search_card_excluded_domains || [];
     // Check dependencies using centralized dependency checker
     const hasSearchCardDeps = checkDependency('search-card', this._hass);
     const hasBetterThermostatDeps = checkDependency('better-thermostat', this._hass);
@@ -174,6 +176,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showSearchCard,
         showClockCard,
         hasSearchCardDeps,
+        searchCardIncludedDomains,
+        searchCardExcludedDomains,
         summariesColumns,
         alarmEntity,
         alarmEntities,
@@ -219,6 +223,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachPersonBadgesCheckboxListener(this, (showPersonBadges) => this._showPersonBadgesChanged(showPersonBadges));
     attachPersonProfilePictureCheckboxListener(this, (showPersonProfilePicture) => this._showPersonProfilePictureChanged(showPersonProfilePicture));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
+    this._attachSearchCardDomainListeners();
     attachClockCardCheckboxListener(this, (showClockCard) => this._showClockCardChanged(showClockCard));
     attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
@@ -891,6 +896,44 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _showSearchCardChanged(showSearchCard) {
     this._configManager.updateProperty('show_search_card', showSearchCard, false);
+  }
+
+  _attachSearchCardDomainListeners() {
+    // Included domains input
+    const includedDomainsInput = this.querySelector('#search-card-included-domains');
+    if (includedDomainsInput) {
+      includedDomainsInput.addEventListener('change', (e) => {
+        this._searchCardIncludedDomainsChanged(e.target.value);
+      });
+    }
+
+    // Excluded domains input
+    const excludedDomainsInput = this.querySelector('#search-card-excluded-domains');
+    if (excludedDomainsInput) {
+      excludedDomainsInput.addEventListener('change', (e) => {
+        this._searchCardExcludedDomainsChanged(e.target.value);
+      });
+    }
+  }
+
+  _searchCardIncludedDomainsChanged(value) {
+    const domains = this._parseDomainString(value);
+    this._configManager.updatePropertyCustom('search_card_included_domains', domains, (val) => !val || val.length === 0);
+  }
+
+  _searchCardExcludedDomainsChanged(value) {
+    const domains = this._parseDomainString(value);
+    this._configManager.updatePropertyCustom('search_card_excluded_domains', domains, (val) => !val || val.length === 0);
+  }
+
+  _parseDomainString(value) {
+    if (!value || typeof value !== 'string') {
+      return [];
+    }
+    return value
+      .split(',')
+      .map(domain => domain.trim())
+      .filter(domain => domain.length > 0);
   }
 
   _showSummaryViewsChanged(showSummaryViews) {

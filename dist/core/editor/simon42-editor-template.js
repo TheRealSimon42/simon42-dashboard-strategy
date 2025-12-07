@@ -547,7 +547,7 @@ export function renderSectionGroup(groupId, title, content, isExpanded = false) 
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', hass = null }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, searchCardIncludedDomains = [], searchCardExcludedDomains = [], summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', hass = null }) {
   // Build content for each group
   // Group 1: Dashboard Cards
   const dashboardCardsContent = `
@@ -660,6 +660,40 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             ? t('searchCardDescription')
             : `⚠️ ${t('searchCardMissingDeps')}`}
         </div>
+        ${showSearchCard && hasSearchCardDeps ? `
+        <div style="margin-top: 12px;">
+          <div class="form-row" style="align-items: flex-start; flex-direction: column;">
+            <label for="search-card-included-domains" style="margin-bottom: 4px; font-weight: 500;">
+              ${t('searchCardIncludedDomains')}:
+            </label>
+            <input 
+              type="text" 
+              id="search-card-included-domains" 
+              placeholder="${t('searchCardDomainsPlaceholder')}"
+              value="${(searchCardIncludedDomains || []).join(', ')}"
+              style="width: 100%; padding: 8px; border: 1px solid var(--divider-color); border-radius: 4px; font-family: inherit; font-size: 14px;"
+            />
+          </div>
+          <div class="description" style="margin-left: 0;">
+            ${t('searchCardIncludedDomainsDescription')}
+          </div>
+          <div class="form-row" style="align-items: flex-start; flex-direction: column; margin-top: 12px;">
+            <label for="search-card-excluded-domains" style="margin-bottom: 4px; font-weight: 500;">
+              ${t('searchCardExcludedDomains')}:
+            </label>
+            <input 
+              type="text" 
+              id="search-card-excluded-domains" 
+              placeholder="${t('searchCardDomainsPlaceholder')}"
+              value="${(searchCardExcludedDomains || []).join(', ')}"
+              style="width: 100%; padding: 8px; border: 1px solid var(--divider-color); border-radius: 4px; font-family: inherit; font-size: 14px;"
+            />
+          </div>
+          <div class="description" style="margin-left: 0;">
+            ${t('searchCardExcludedDomainsDescription')}
+          </div>
+        </div>
+        ` : ''}
       </div>
 
       <div class="section">

@@ -20,6 +20,10 @@ export function createOverviewSection(data) {
   logDebug('[Section Builder] Creating overview section...');
   const { someSensorId, showSearchCard, showClockCard, config, hass } = data;
   
+  // Get search card domain settings
+  const includedDomains = config.search_card_included_domains || [];
+  const excludedDomains = config.search_card_excluded_domains || [];
+  
   const cards = [
     {
       type: "heading",
@@ -74,13 +78,25 @@ export function createOverviewSection(data) {
 
   // Füge Search-Card hinzu wenn aktiviert
   if (showSearchCard) {
-    cards.push({
+    const searchCardConfig = {
       type: "custom:search-card",
       search_text: t('searchCardPlaceholder'),
       grid_options: {
         columns: "full",
       }
-    });
+    };
+    
+    // Add included_domains if configured
+    if (includedDomains.length > 0) {
+      searchCardConfig.included_domains = includedDomains;
+    }
+    
+    // Add excluded_domains if configured
+    if (excludedDomains.length > 0) {
+      searchCardConfig.excluded_domains = excludedDomains;
+    }
+    
+    cards.push(searchCardConfig);
   }
 
   // Prüfe ob summaries_columns konfiguriert ist (Standard: 2)
