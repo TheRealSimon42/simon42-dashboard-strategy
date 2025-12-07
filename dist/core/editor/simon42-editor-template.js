@@ -905,6 +905,27 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
   // Group 2: Views & Summaries
   const viewsSummariesContent = `
       <div class="section">
+        <div class="section-title">${t('areas')}</div>
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('areasDescription')}
+        </div>
+        <div class="form-row" style="margin-bottom: 12px;">
+          <input 
+            type="checkbox" 
+            id="group-by-floors" 
+            ${groupByFloors ? 'checked' : ''}
+          />
+          <label for="group-by-floors">${t('groupByFloors')}</label>
+        </div>
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('groupByFloorsDescription')}
+        </div>
+        <div class="area-list" id="area-list">
+          ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}
+        </div>
+      </div>
+
+      <div class="section">
         <div class="section-title">${t('views')}</div>
         <div class="form-row">
           <input 
@@ -975,27 +996,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
 
   // Group 3: Entity Management
   const entityManagementContent = `
-      <div class="section">
-        <div class="section-title">${t('areas')}</div>
-        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
-          ${t('areasDescription')}
-        </div>
-        <div class="form-row" style="margin-bottom: 12px;">
-          <input 
-            type="checkbox" 
-            id="group-by-floors" 
-            ${groupByFloors ? 'checked' : ''}
-          />
-          <label for="group-by-floors">${t('groupByFloors')}</label>
-        </div>
-        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
-          ${t('groupByFloorsDescription')}
-        </div>
-        <div class="area-list" id="area-list">
-          ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}
-        </div>
-      </div>
-
       <div class="section">
         <div class="section-title">${t('favorites')}</div>
         <div id="favorites-list" style="margin-bottom: 12px;">
