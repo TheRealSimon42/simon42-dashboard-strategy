@@ -119,13 +119,6 @@ const DEPENDENCY_DEFINITIONS = {
     keywords: ['alarmo']
   },
   
-  'calendar-card': {
-    customElements: ['calendar-card'],
-    cardTypes: ['custom:calendar-card'],
-    domSelectors: ['calendar-card'],
-    keywords: ['calendar']
-  },
-  
   'calendar-card-pro': {
     customElements: ['calendar-card-pro'],
     cardTypes: ['custom:calendar-card-pro'],

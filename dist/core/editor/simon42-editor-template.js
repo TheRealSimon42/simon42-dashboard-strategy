@@ -368,6 +368,33 @@ function getPublicTransportUrls(integration) {
   return urls[integration] || { integrationUrl: null, cardUrl: null };
 }
 
+/**
+ * Gibt die Repository-URLs für eine Card oder Integration zurück
+ * @param {string} dependencyId - Die Dependency-ID (z.B. 'search-card', 'better-thermostat')
+ * @returns {Object} Objekt mit integrationUrl und cardUrl
+ */
+function getDependencyUrls(dependencyId) {
+  const urls = {
+    'search-card': {
+      integrationUrl: null,
+      cardUrl: 'https://github.com/postlund/search-card'
+    },
+    'better-thermostat': {
+      integrationUrl: 'https://github.com/KartoffelToby/better_thermostat',
+      cardUrl: 'https://github.com/KartoffelToby/better-thermostat-ui-card'
+    },
+    'horizon-card': {
+      integrationUrl: null,
+      cardUrl: 'https://github.com/rejuvenate/lovelace-horizon-card'
+    },
+    'clock-weather-card': {
+      integrationUrl: null,
+      cardUrl: 'https://github.com/pkissling/clock-weather-card'
+    }
+  };
+  return urls[dependencyId] || { integrationUrl: null, cardUrl: null };
+}
+
 function renderPublicTransportList(publicTransportEntities, allEntities) {
   if (!publicTransportEntities || publicTransportEntities.length === 0) {
     return `<div class="empty-state">${t('noEntitiesAdded')}</div>`;
@@ -633,7 +660,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         ${showWeather !== false ? `
         <div class="sub-option">
-          ${hasClockWeatherCardDeps ? `
           <div class="form-row">
             ${renderMDCSwitch('use-clock-weather-card', useClockWeatherCard, t('useClockWeatherCard'), !hasClockWeatherCardDeps)}
             <label for="use-clock-weather-card" style="margin-left: 12px; cursor: pointer;" ${!hasClockWeatherCardDeps ? 'class="disabled-label"' : ''}>
@@ -643,10 +669,18 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <div class="description">
             ${hasClockWeatherCardDeps 
               ? t('clockWeatherCardDescription')
-              : `⚠️ ${t('clockWeatherCardMissingDeps')}`}
+              : (() => {
+                  const urls = getDependencyUrls('clock-weather-card');
+                  let message = `⚠️ ${t('clockWeatherCardMissingDeps')}`;
+                  
+                  if (urls.cardUrl) {
+                    message += '<br><br>';
+                    message += `${t('clockWeatherCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+                  }
+                  
+                  return message;
+                })()}
           </div>
-          ` : ''}
-          ${hasHorizonCardDeps ? `
           <div class="form-row">
             ${renderMDCSwitch('show-horizon-card', showHorizonCard, t('showHorizonCard'), !hasHorizonCardDeps)}
             <label for="show-horizon-card" style="margin-left: 12px; cursor: pointer;" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
@@ -656,7 +690,17 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <div class="description">
             ${hasHorizonCardDeps 
               ? t('horizonCardDescription')
-              : `⚠️ ${t('horizonCardMissingDeps')}`}
+              : (() => {
+                  const urls = getDependencyUrls('horizon-card');
+                  let message = `⚠️ ${t('horizonCardMissingDeps')}`;
+                  
+                  if (urls.cardUrl) {
+                    message += '<br><br>';
+                    message += `${t('horizonCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+                  }
+                  
+                  return message;
+                })()}
           </div>
           ${hasHorizonCardDeps && showHorizonCard ? `
           <div class="sub-option">
@@ -714,7 +758,17 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${hasSearchCardDeps 
             ? t('searchCardDescription')
-            : `⚠️ ${t('searchCardMissingDeps')}`}
+            : (() => {
+                const urls = getDependencyUrls('search-card');
+                let message = `⚠️ ${t('searchCardMissingDeps')}`;
+                
+                if (urls.cardUrl) {
+                  message += '<br><br>';
+                  message += `${t('searchCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+                }
+                
+                return message;
+              })()}
         </div>
         ${showSearchCard === true && hasSearchCardDeps ? `
         <div class="sub-option">
@@ -777,7 +831,22 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${hasBetterThermostatDeps 
             ? t('betterThermostatDescription')
-            : `⚠️ ${t('betterThermostatMissingDeps')}`}
+            : (() => {
+                const urls = getDependencyUrls('better-thermostat');
+                let message = `⚠️ ${t('betterThermostatMissingDeps')}`;
+                
+                if (urls.integrationUrl || urls.cardUrl) {
+                  message += '<br><br>';
+                  if (urls.integrationUrl) {
+                    message += `${t('betterThermostatIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
+                  }
+                  if (urls.cardUrl) {
+                    message += `${t('betterThermostatCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+                  }
+                }
+                
+                return message;
+              })()}
         </div>
       </div>
 
@@ -1031,14 +1100,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         ${showCalendarCard ? `
         <div class="sub-option">
-          ${!hasCalendarCardDeps && !hasCalendarCardProDeps ? `
-          <div class="description" style="margin-top: 8px;">
-            ⚠️ ${t('calendarCardMissingDeps')}<br><br>
-            ${t('calendarCardLink')}: <a href="https://github.com/ljmerza/calendar-card" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/ljmerza/calendar-card</a><br>
-            ${t('calendarCardProLink')}: <a href="https://github.com/alexpfau/calendar-card-pro" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/alexpfau/calendar-card-pro</a>
-          </div>
-          ` : ''}
-          ${(hasCalendarCardDeps || hasCalendarCardProDeps) ? `
           ${hasCalendarCardProDeps ? `
           <div class="form-row" style="margin-bottom: 12px;">
             ${renderMDCSwitch('use-calendar-card-pro', useCalendarCardPro, t('useCalendarCardPro'))}
@@ -1047,7 +1108,13 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <div class="description" style="margin-bottom: 12px;">
             ${t('useCalendarCardProDescription')}
           </div>
-          ` : ''}
+          ` : `
+          <div class="description" style="margin-top: 8px; margin-bottom: 12px;">
+            ${t('calendarCardProLink')}: <a href="https://github.com/alexpfau/calendar-card-pro" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/alexpfau/calendar-card-pro</a>
+            <br><br>
+            ${t('calendarCardProOptional')}
+          </div>
+          `}
           <div class="description" style="margin-top: 12px; margin-bottom: 12px;">
             ${t('calendarEntitiesDescription')}
           </div>
@@ -1088,7 +1155,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               </div>
             </div>
           </ha-expansion-panel>
-          ` : ''}
         </div>
         ` : ''}
       </div>

@@ -143,7 +143,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const useClockWeatherCard = this._config.use_clock_weather_card === true;
     const hasSchedulerCardDeps = checkDependency('scheduler-card', this._hass);
     const hasAlarmoCardDeps = checkDependency('alarmo-card', this._hass);
-    const hasCalendarCardDeps = checkDependency('calendar-card', this._hass);
+    // calendar-card is native Home Assistant card, no dependency check needed
+    const hasCalendarCardDeps = true; // Always available (native card)
     const hasCalendarCardProDeps = checkDependency('calendar-card-pro', this._hass);
     
     // Sammle alle Alarm-Control-Panel-Entitäten
