@@ -81,10 +81,7 @@ export function createOverviewSection(data) {
       if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
         cards.push({
           type: "custom:alarmo-card",
-          entity: alarmEntity,
-          grid_options: {
-            columns: "full",
-          }
+          entity: alarmEntity
         });
       } else {
         cards.push({
