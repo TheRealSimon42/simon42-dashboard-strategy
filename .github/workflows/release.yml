@@ -68,10 +68,9 @@ jobs:
           git push origin "$TAG"
 
       - name: Create GitHub Release
-        uses: ncipollo/create-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: v${{ steps.get_version.outputs.version }}
+          tag_name: v${{ steps.get_version.outputs.version }}
           name: Release v${{ steps.get_version.outputs.version }}
           body: |
             ## Release v${{ steps.get_version.outputs.version }}
@@ -87,5 +86,5 @@ jobs:
             ${{ github.event.before && format('See [commit history](https://github.com/{0}/compare/{1}...{2}) for details.', github.repository, github.event.before, github.sha) || format('See [commit history](https://github.com/{0}/commits/{1}) for details.', github.repository, github.sha) }}
           draft: false
           prerelease: ${{ steps.get_version.outputs.is_prerelease == 'true' }}
-          makeLatest: ${{ steps.get_version.outputs.is_prerelease == 'false' }}
+          make_latest: ${{ steps.get_version.outputs.is_prerelease == 'false' }}
 
