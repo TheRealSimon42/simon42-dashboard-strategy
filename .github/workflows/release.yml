@@ -1,0 +1,91 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'VERSION'
+    tags-ignore:
+      - 'v*'  # Don't trigger on tag pushes
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force release even if VERSION unchanged'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for tags
+
+      - name: Read version from VERSION file
+        id: get_version
+        run: |
+          # Read VERSION file, skip comment lines (starting with #), get first non-empty non-comment line
+          VERSION=$(grep -v '^[[:space:]]*#' VERSION | grep -v '^[[:space:]]*$' | head -n 1 | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Read version: $VERSION"
+          
+          # Check if it's a dev/prerelease version
+          if [[ "$VERSION" == *"-dev"* ]] || [[ "$VERSION" == *"-beta"* ]] || [[ "$VERSION" == *"-alpha"* ]] || [[ "$VERSION" == *"-rc"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "Detected prerelease version"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "Detected stable release version"
+          fi
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          TAG="v${{ steps.get_version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG does not exist"
+          fi
+
+      - name: Create Git tag
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          TAG="v${{ steps.get_version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+
+      - name: Create GitHub Release
+        uses: ncipollo/create-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+          body: |
+            ## Release v${{ steps.get_version.outputs.version }}
+            
+            ${{ steps.get_version.outputs.is_prerelease == 'true' && '⚠️ **This is a development/pre-release version**' || '✅ **Stable release**' }}
+            
+            ### Installation
+            Install via HACS or download manually from the [releases page](https://github.com/${{ github.repository }}/releases).
+            
+            ${{ steps.get_version.outputs.is_prerelease == 'true' && '**Note:** This is a pre-release. To install pre-releases via HACS, enable the option in HACS settings.' || '' }}
+            
+            ### Changes
+            ${{ github.event.before && format('See [commit history](https://github.com/{0}/compare/{1}...{2}) for details.', github.repository, github.event.before, github.sha) || format('See [commit history](https://github.com/{0}/commits/{1}) for details.', github.repository, github.sha) }}
+          draft: false
+          prerelease: ${{ steps.get_version.outputs.is_prerelease == 'true' }}
+          makeLatest: ${{ steps.get_version.outputs.is_prerelease == 'false' }}
+
