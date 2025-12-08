@@ -714,7 +714,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             ? t('searchCardDescription')
             : `⚠️ ${t('searchCardMissingDeps')}`}
         </div>
-        ${showSearchCard && hasSearchCardDeps ? `
+        ${showSearchCard === true && hasSearchCardDeps ? `
         <div class="sub-option">
           <div class="section-title" style="font-size: 13px; margin-bottom: 8px;">${t('searchCardIncludedDomains')}</div>
           <div id="search-card-included-domains-list" style="margin-bottom: 12px;">
@@ -845,10 +845,10 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </div>
           ` : ''}
           ${publicTransportIntegration && hasPublicTransportDeps ? `
-          <div id="public-transport-list" style="margin-top: 12px; margin-bottom: 12px;">
-            ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}
+          <div class="description" style="margin-top: 12px; margin-bottom: 12px;">
+            ${t('publicTransportEntitiesDescription')}
           </div>
-          <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
             <select id="public-transport-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
               <option value="">${t('selectEntity')}</option>
               ${filterEntitiesByIntegration(allEntities || [], publicTransportIntegration, hass)
@@ -860,23 +860,18 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               + ${t('add')}
             </button>
           </div>
-          <div class="description">
-            ${t('publicTransportEntitiesDescription')}
-          </div>
+          <ha-expansion-panel outlined>
+            <ha-svg-icon slot="leading-icon" path="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"></ha-svg-icon>
+            <span slot="header">${t('publicTransportEntitiesList') || 'Abfahrtszeiten Liste'}</span>
+            <div style="padding: 16px;">
+              <div id="public-transport-list">
+                ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}
+              </div>
+            </div>
+          </ha-expansion-panel>
           ` : ''}
           ${publicTransportIntegration === 'hvv' && hasPublicTransportDeps ? `
           <div class="sub-option">
-            <div class="form-row">
-              <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
-              <input 
-                type="number" 
-                id="hvv-max" 
-                value="${hvvMax !== undefined ? hvvMax : 10}" 
-                min="1" 
-                max="50"
-                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
-              />
-            </div>
             <div class="form-row">
               ${renderMDCSwitch('hvv-show-time', hvvShowTime === true, t('showTime'))}
               <label for="hvv-show-time" style="margin-left: 12px; cursor: pointer;">${t('showTime')}</label>
@@ -892,6 +887,17 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
                 id="hvv-title" 
                 value="${hvvTitle || 'HVV'}" 
                 placeholder="HVV"
+                style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              />
+            </div>
+            <div class="form-row">
+              <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
+              <input 
+                type="number" 
+                id="hvv-max" 
+                value="${hvvMax !== undefined ? hvvMax : 10}" 
+                min="1" 
+                max="50"
                 style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
               />
             </div>
@@ -1044,10 +1050,10 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
   const entityManagementContent = `
       <div class="section">
         <div class="section-title">${t('favorites')}</div>
-        <div id="favorites-list" style="margin-bottom: 12px;">
-          ${renderFavoritesList(favoriteEntities, allEntities)}
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('favoritesDescription')}
         </div>
-        <div style="display: flex; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
           <select id="favorite-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
             <option value="">${t('selectEntity')}</option>
             ${allEntities.map(entity => `
@@ -1058,17 +1064,23 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             + ${t('add')}
           </button>
         </div>
-        <div class="description">
-          ${t('favoritesDescription')}
-        </div>
+        <ha-expansion-panel outlined>
+          <ha-svg-icon slot="leading-icon" path="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.46,13.97L5.82,21L12,17.27Z"></ha-svg-icon>
+          <span slot="header">${t('favoritesList') || 'Favoriten Liste'}</span>
+          <div style="padding: 16px;">
+            <div id="favorites-list">
+              ${renderFavoritesList(favoriteEntities, allEntities)}
+            </div>
+          </div>
+        </ha-expansion-panel>
       </div>
 
       <div class="section">
         <div class="section-title">${t('roomPins')}</div>
-        <div id="room-pins-list" style="margin-bottom: 12px;">
-          ${renderRoomPinsList(roomPinEntities, allEntities, allAreas)}
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('roomPinsDescription')}
         </div>
-        <div style="display: flex; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
           <select id="room-pin-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
             <option value="">${t('selectEntity')}</option>
             ${allEntities
@@ -1081,17 +1093,23 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             + ${t('add')}
           </button>
         </div>
-        <div class="description">
-          ${t('roomPinsDescription')}
-        </div>
+        <ha-expansion-panel outlined>
+          <ha-svg-icon slot="leading-icon" path="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z"></ha-svg-icon>
+          <span slot="header">${t('roomPinsList') || 'Raum-Pins Liste'}</span>
+          <div style="padding: 16px;">
+            <div id="room-pins-list">
+              ${renderRoomPinsList(roomPinEntities, allEntities, allAreas)}
+            </div>
+          </div>
+        </ha-expansion-panel>
       </div>
 
       <div class="section">
         <div class="section-title">${t('entityNamePatterns')}</div>
-        <div id="entity-name-patterns-list" style="margin-bottom: 12px;">
-          ${renderEntityNamePatternsList(entityNamePatterns || [])}
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('entityNamePatternsDescription')}
         </div>
-        <div style="display: flex; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
           <input 
             type="text" 
             id="entity-name-pattern-input" 
@@ -1102,9 +1120,15 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             + ${t('addPattern')}
           </button>
         </div>
-        <div class="description">
-          ${t('entityNamePatternsDescription')}
-        </div>
+        <ha-expansion-panel outlined>
+          <ha-svg-icon slot="leading-icon" path="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"></ha-svg-icon>
+          <span slot="header">${t('patternList') || 'Regex-Pattern Liste'}</span>
+          <div style="padding: 16px;">
+            <div id="entity-name-patterns-list">
+              ${renderEntityNamePatternsList(entityNamePatterns || [])}
+            </div>
+          </div>
+        </ha-expansion-panel>
       </div>
 
       <div class="section">

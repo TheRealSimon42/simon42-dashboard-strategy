@@ -237,6 +237,21 @@ export function getEditorStyles() {
       flex-wrap: wrap;
     }
     
+    /* Mobile: Remove margins from Entity Translation List items */
+    @media (max-width: 600px) {
+      .entity-name-translation-item {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+      }
+      
+      .entity-name-translation-item ha-md-list-item {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+    }
+    
     .native-select {
       min-width: 100px;
       padding: 4px 8px;

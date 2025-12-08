@@ -48,7 +48,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Config Manager für zentrale Config-Verwaltung
     this._configManager = new ConfigManager(this);
     // State für Editor-Section-Groups (visibility controlled by navigation)
-    this._activeNavItem = 'entity-management'; // Default active nav item
+    this._activeNavItem = 'dashboard-cards'; // Default active nav item
   }
 
   setConfig(config) {
