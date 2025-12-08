@@ -3,7 +3,7 @@
 // ====================================================================
 // Event-Handler für den Dashboard Strategy Editor
 
-import { renderAreaEntitiesHTML } from './simon42-editor-template.js';
+import { renderAreaEntitiesHTML } from './template/simon42-editor-area-renderers.js';
 import { t } from '../../utils/simon42-i18n.js';
 
 /**
@@ -553,21 +553,7 @@ async function getAreaGroupedEntities(areaId, hass) {
   return roomEntities;
 }
 
-function getHiddenEntitiesForArea(areaId, config) {
-  const areaOptions = config.areas_options?.[areaId];
-  if (!areaOptions || !areaOptions.groups_options) {
-    return {};
-  }
-  
-  const hidden = {};
-  for (const [group, options] of Object.entries(areaOptions.groups_options)) {
-    if (options.hidden) {
-      hidden[group] = options.hidden;
-    }
-  }
-  
-  return hidden;
-}
+// getHiddenEntitiesForArea is now imported from config extractors
 
 function getEntityOrdersForArea(areaId, config) {
   const areaOptions = config.areas_options?.[areaId];

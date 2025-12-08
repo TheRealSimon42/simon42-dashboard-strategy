@@ -6,32 +6,8 @@
 
 import { logDebug } from './simon42-logger.js';
 import { filterStates } from './simon42-entity-filter.js';
-
-/**
- * Gets all hidden entity IDs from areas_options config
- * Returns a Set for O(1) lookup performance
- * @param {Object} config - Dashboard configuration
- * @returns {Set<string>} Set of hidden entity IDs
- */
-export function getHiddenEntitiesFromConfig(config) {
-  const hiddenEntities = new Set();
-  
-  if (!config.areas_options) {
-    return hiddenEntities;
-  }
-  
-  for (const areaOptions of Object.values(config.areas_options)) {
-    if (!areaOptions.groups_options) continue;
-    
-    for (const groupOptions of Object.values(areaOptions.groups_options)) {
-      if (groupOptions.hidden && Array.isArray(groupOptions.hidden)) {
-        groupOptions.hidden.forEach(entityId => hiddenEntities.add(entityId));
-      }
-    }
-  }
-  
-  return hiddenEntities;
-}
+// Re-export config extractors for backward compatibility
+export { getHiddenEntitiesFromConfig } from './config/simon42-config-extractors.js';
 
 /**
  * Collects all person entities
