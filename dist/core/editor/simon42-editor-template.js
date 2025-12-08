@@ -563,7 +563,7 @@ export function renderEntityNameTranslationsList(translations) {
               </select>
             </div>
             <ha-icon-button slot="end" class="remove-translation-btn" data-translation-index="${index}" aria-label="${t('remove')}">
-              <ha-svg-icon path="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></ha-svg-icon>
+              <ha-icon icon="mdi:close"></ha-icon>
             </ha-icon-button>
           </ha-md-list-item>
         `;
@@ -858,7 +858,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             </button>
           </div>
           <ha-expansion-panel outlined>
-            <ha-svg-icon slot="leading-icon" path="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"></ha-svg-icon>
+            <ha-icon slot="leading-icon" icon="mdi:bus"></ha-icon>
             <span slot="header">${t('publicTransportEntitiesList')}</span>
             <div style="padding: 16px;">
               <div id="public-transport-list">
@@ -974,7 +974,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${t('groupByFloorsDescription')}
         </div>
         <ha-expansion-panel outlined expanded>
-          <ha-svg-icon slot="leading-icon" path="M20 2H4C2.9 2 2 2.9 2 4V20C2 21.11 2.9 22 4 22H20C21.11 22 22 21.11 22 20V4C22 2.9 21.11 2 20 2M4 6L6 4H10.9L4 10.9V6M4 13.7L13.7 4H18.6L4 18.6V13.7M20 18L18 20H13.1L20 13.1V18M20 10.3L10.3 20H5.4L20 5.4V10.3Z"></ha-svg-icon>
+          <ha-icon slot="leading-icon" icon="mdi:view-grid"></ha-icon>
           <span slot="header">${t('arrangeAreas')}</span>
           <ha-items-display-editor>
             <ha-sortable draggable-selector="ha-md-list-item.draggable" handle-selector=".handle">
@@ -1062,7 +1062,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </button>
         </div>
         <ha-expansion-panel outlined>
-          <ha-svg-icon slot="leading-icon" path="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.46,13.97L5.82,21L12,17.27Z"></ha-svg-icon>
+          <ha-icon slot="leading-icon" icon="mdi:star"></ha-icon>
           <span slot="header">${t('favoritesList')}</span>
           <div style="padding: 16px;">
             <div id="favorites-list">
@@ -1091,7 +1091,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </button>
         </div>
         <ha-expansion-panel outlined>
-          <ha-svg-icon slot="leading-icon" path="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z"></ha-svg-icon>
+          <ha-icon slot="leading-icon" icon="mdi:map-marker"></ha-icon>
           <span slot="header">${t('roomPinsList')}</span>
           <div style="padding: 16px;">
             <div id="room-pins-list">
@@ -1118,7 +1118,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </button>
         </div>
         <ha-expansion-panel outlined>
-          <ha-svg-icon slot="leading-icon" path="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"></ha-svg-icon>
+          <ha-icon slot="leading-icon" icon="mdi:code-tags"></ha-icon>
           <span slot="header">${t('patternList')}</span>
           <div style="padding: 16px;">
             <div id="entity-name-patterns-list">
@@ -1167,7 +1167,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </ha-button>
         </div>
         <ha-expansion-panel outlined>
-          <ha-svg-icon slot="leading-icon" path="M12.87,15.07L10.33,12.56L10.36,12.53C12.1,10.59 13.34,8.36 14.07,6H17V4H10V2H8V4H1V6H12.17C11.5,7.92 10.44,9.75 9,11.35C8.07,10.32 7.3,9.19 6.69,8H4.69C5.42,9.63 6.42,11.17 7.67,12.56L2.58,17.58L4,19L9,14L12.11,17.11L12.87,15.07M18.5,10H16.5L12,22H14L15.12,19H19.87L21,22H23L18.5,10M15.88,17L17.5,12.67L19.12,17H15.88Z"></ha-svg-icon>
+          <ha-icon slot="leading-icon" icon="mdi:translate"></ha-icon>
           <span slot="header">${t('translationList')}</span>
           <div style="padding: 16px;">
             <div id="entity-name-translations-list">
@@ -1305,9 +1305,9 @@ function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
         <span slot="headline">${area.name}</span>
         ${isHidden ? `<span slot="supporting-text" class="area-hidden-hint">${t('areaHiddenCannotExpand')}</span>` : ''}
         <ha-icon-button slot="end" class="area-visibility-toggle" data-area-id="${area.area_id}" aria-label="${area.name} ${isHidden ? t('show') : t('hide')}">
-          <ha-svg-icon path="${isHidden ? 'M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z' : 'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z'}"></ha-svg-icon>
+          <ha-icon icon="${isHidden ? 'mdi:eye-off' : 'mdi:eye'}"></ha-icon>
         </ha-icon-button>
-        <ha-svg-icon class="handle" slot="end" path="M21 11H3V9H21V11M21 13H3V15H21V13Z"></ha-svg-icon>
+        <ha-icon class="handle" slot="end" icon="mdi:drag"></ha-icon>
       </ha-md-list-item>
       <div class="area-content" data-area-id="${area.area_id}" style="display: none;">
         <div class="loading-placeholder">${t('loadingEntities')}</div>

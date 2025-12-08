@@ -2113,7 +2113,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
                 </select>
               </div>
               <ha-icon-button slot="end" class="remove-translation-btn" data-translation-index="${index}" aria-label="${t('remove')}">
-                <ha-svg-icon path="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></ha-svg-icon>
+                <ha-icon icon="mdi:close"></ha-icon>
               </ha-icon-button>
             </ha-md-list-item>
           `;

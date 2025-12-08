@@ -178,7 +178,7 @@ export const de = {
   publicTransportCardLink: "Card:",
   publicTransportIntegrationAvailableInCore: "Verfügbar in Home Assistant Core (Standard)",
   publicTransportEntitiesDescription: "Wähle eine oder mehrere Entitäten aus, die Abfahrtszeiten bereitstellen. Diese werden in der Übersicht angezeigt.",
-  publicTransportEntitiesList: "Abfahrtszeiten Liste",
+  publicTransportEntitiesList: "Abfahrtsentitäten Liste",
   publicTransportColumnStart: "Start",
   publicTransportColumnConnection: "Verbindung",
   publicTransportColumnDeparture: "Abfahrt",
