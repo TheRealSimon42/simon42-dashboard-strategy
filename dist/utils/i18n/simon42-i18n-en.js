@@ -222,6 +222,7 @@ export const en = {
   domainInputText: "Input Text",
   entityNameTranslations: "Entity Name Translations",
   entityNameTranslationsDescription: "Define translations for substrings in entity names. Example: Replace 'Bedroom' (English) with 'Schlafzimmer' (German). Translations are only applied when the dashboard language matches the target language. Translations are applied after patterns, so they work on the transformed names.",
+  translationList: "Translation List",
   addTranslation: "Add Translation",
   translationFromPlaceholder: "From (e.g., 'Bedroom')",
   translationToPlaceholder: "To (e.g., 'Schlafzimmer')",
