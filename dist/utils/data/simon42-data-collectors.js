@@ -6,8 +6,9 @@
 
 import { logDebug } from '../system/simon42-logger.js';
 import { filterStates } from '../filters/simon42-entity-filter.js';
-// Re-export config extractors for backward compatibility
-export { getHiddenEntitiesFromConfig } from '../config/simon42-config-extractors.js';
+// Import and re-export config extractors for backward compatibility
+import { getHiddenEntitiesFromConfig } from '../config/simon42-config-extractors.js';
+export { getHiddenEntitiesFromConfig };
 
 /**
  * Collects all person entities
