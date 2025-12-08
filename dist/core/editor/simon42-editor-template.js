@@ -464,25 +464,68 @@ export function buildPublicTransportMissingMessage(integration) {
   return message;
 }
 
-function renderPublicTransportList(publicTransportEntities, allEntities) {
-  if (!publicTransportEntities || publicTransportEntities.length === 0) {
-    return `<div class="empty-state">${t('noEntitiesAdded')}</div>`;
+/**
+ * Centralized function to render entity lists with consistent styling
+ * @param {Array<string>} entityIds - Array of entity IDs to display
+ * @param {Array} allEntities - All available entities (for name lookup)
+ * @param {Object} options - Configuration options
+ * @param {string} options.emptyStateText - Text to show when list is empty (default: t('noEntitiesAdded'))
+ * @param {string} options.itemClass - Additional CSS class for list items (e.g., 'calendar-item', 'favorite-item')
+ * @param {boolean} options.showDragHandle - Whether to show drag handle (default: true)
+ * @param {Function} options.getMetadata - Optional function to get metadata for each entity (entityId, entity, hass) => string
+ * @param {Object} options.hass - Home Assistant object (for state/attribute access)
+ * @param {Object} options.allAreas - All areas (for room pins metadata)
+ * @returns {string} HTML string for the entity list
+ */
+export function renderEntityList(entityIds, allEntities, options = {}) {
+  const {
+    emptyStateText = t('noEntitiesAdded'),
+    itemClass = '',
+    showDragHandle = true,
+    getMetadata = null,
+    hass = null,
+    allAreas = null
+  } = options;
+
+  if (!entityIds || entityIds.length === 0) {
+    return `<div class="empty-state">${emptyStateText}</div>`;
   }
 
-  const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
+  // Create entity map for name lookup
+  const entityMap = new Map(allEntities.map(e => [e.entity_id, e]));
 
   return `
     <div class="entity-list-container">
-      ${publicTransportEntities.map((entityId) => {
-        const name = entityMap.get(entityId) || entityId;
+      ${entityIds.map((entityId) => {
+        const entity = entityMap.get(entityId);
+        const name = entity?.name || entityId;
+        
+        // Get metadata if provided
+        let metadataHtml = '';
+        if (getMetadata) {
+          const metadata = getMetadata(entityId, entity, hass, allAreas);
+          if (metadata) {
+            metadataHtml = `<span class="entity-list-meta">${metadata}</span>`;
+          }
+        }
+        
+        // Build drag handle HTML
+        const dragHandleHtml = showDragHandle 
+          ? '<span class="entity-list-drag-handle">☰</span>'
+          : '';
+        
+        // Build item class string
+        const itemClassStr = itemClass ? ` ${itemClass}` : '';
+        
         return `
-          <div class="entity-list-item public-transport-item" data-entity-id="${entityId}">
-            <span class="entity-list-drag-handle">☰</span>
+          <div class="entity-list-item${itemClassStr}" data-entity-id="${entityId}">
+            ${dragHandleHtml}
             <span class="entity-list-content">
               <span class="entity-list-name">${name}</span>
               <span class="entity-list-id">${entityId}</span>
+              ${metadataHtml}
             </span>
-            <button class="entity-list-remove-btn remove-public-transport-btn" data-entity-id="${entityId}">
+            <button class="entity-list-remove-btn" data-entity-id="${entityId}">
               ✕
             </button>
           </div>
@@ -490,6 +533,12 @@ function renderPublicTransportList(publicTransportEntities, allEntities) {
       }).join('')}
     </div>
   `;
+}
+
+function renderPublicTransportList(publicTransportEntities, allEntities) {
+  return renderEntityList(publicTransportEntities, allEntities, {
+    itemClass: 'public-transport-item'
+  });
 }
 
 /**
@@ -1208,20 +1257,10 @@ export function renderEditorHTML({
             <span slot="header">${t('calendarEntitiesList')}</span>
             <div style="padding: 16px;">
               <div id="calendar-list">
-                ${calendarEntities.length === 0 ? `
-                  <div style="color: var(--secondary-text-color); font-style: italic;">${t('noEntitiesAdded')}</div>
-                ` : calendarEntities.map(entityId => {
-                  const state = hass?.states?.[entityId];
-                  const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
-                  return `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--divider-color);">
-                      <span>${name}</span>
-                      <button class="remove-calendar-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--error-color); color: var(--text-primary-color); cursor: pointer;">
-                        ${t('remove')}
-                      </button>
-                    </div>
-                  `;
-                }).join('')}
+                ${renderEntityList(calendarEntities, allEntities, {
+                  itemClass: 'calendar-item',
+                  hass
+                })}
               </div>
             </div>
           </ha-expansion-panel>
@@ -1534,67 +1573,25 @@ export function renderEditorHTML({
 }
 
 function renderFavoritesList(favoriteEntities, allEntities) {
-  if (!favoriteEntities || favoriteEntities.length === 0) {
-    return `<div class="empty-state">${t('noFavoritesAdded')}</div>`;
-  }
-
-  // Erstelle Map für schnellen Zugriff auf Entity-Namen
-  const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
-
-  return `
-    <div class="entity-list-container">
-      ${favoriteEntities.map((entityId, index) => {
-        const name = entityMap.get(entityId) || entityId;
-        return `
-          <div class="entity-list-item favorite-item" data-entity-id="${entityId}">
-            <span class="entity-list-drag-handle">☰</span>
-            <span class="entity-list-content">
-              <span class="entity-list-name">${name}</span>
-              <span class="entity-list-id">${entityId}</span>
-            </span>
-            <button class="entity-list-remove-btn remove-favorite-btn" data-entity-id="${entityId}">
-              ✕
-            </button>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
+  return renderEntityList(favoriteEntities, allEntities, {
+    emptyStateText: t('noFavoritesAdded'),
+    itemClass: 'favorite-item'
+  });
 }
 
 export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
-  if (!roomPinEntities || roomPinEntities.length === 0) {
-    return `<div class="empty-state">${t('noRoomPinsAdded')}</div>`;
-  }
-
-  // Erstelle Maps für schnellen Zugriff
-  const entityMap = new Map(allEntities.map(e => [e.entity_id, e]));
   const areaMap = new Map(allAreas.map(a => [a.area_id, a.name]));
-
-  return `
-    <div class="entity-list-container">
-      ${roomPinEntities.map((entityId, index) => {
-        const entity = entityMap.get(entityId);
-        const name = entity?.name || entityId;
-        const areaId = entity?.area_id || entity?.device_area_id;
-        const areaName = areaId ? areaMap.get(areaId) || areaId : t('noRoom');
-        
-        return `
-          <div class="entity-list-item room-pin-item" data-entity-id="${entityId}">
-            <span class="entity-list-drag-handle">☰</span>
-            <span class="entity-list-content">
-              <span class="entity-list-name">${name}</span>
-              <span class="entity-list-id">${entityId}</span>
-              <span class="entity-list-meta">📍 ${areaName}</span>
-            </span>
-            <button class="entity-list-remove-btn remove-room-pin-btn" data-entity-id="${entityId}">
-              ✕
-            </button>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
+  
+  return renderEntityList(roomPinEntities, allEntities, {
+    emptyStateText: t('noRoomPinsAdded'),
+    itemClass: 'room-pin-item',
+    getMetadata: (entityId, entity, hass, allAreas) => {
+      const areaId = entity?.area_id || entity?.device_area_id;
+      const areaName = areaId ? areaMap.get(areaId) || areaId : t('noRoom');
+      return `📍 ${areaName}`;
+    },
+    allAreas
+  });
 }
 
 function getEntityCountForArea(areaId, hass) {

@@ -2,7 +2,7 @@
 // SIMON42 DASHBOARD STRATEGY - EDITOR
 // ====================================================================
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
-import { renderEditorHTML } from './editor/simon42-editor-template.js';
+import { renderEditorHTML, renderEntityList } from './editor/simon42-editor-template.js';
 import { initLanguage, t } from '../utils/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
 import { logWarn, initLogger } from '../utils/simon42-logger.js';
@@ -722,22 +722,29 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
             const newEntities = [...calendarEntities, entityId];
             this._configManager.updateProperty('calendar_entities', newEntities, []);
             calendarEntitySelect.value = '';
+            // Update the list after adding
+            this._updateCalendarList();
           }
         }
       });
     }
 
-    const removeCalendarBtns = this.querySelectorAll('.remove-calendar-btn');
-    removeCalendarBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const entityId = e.target.getAttribute('data-entity-id');
-        if (entityId) {
-          const calendarEntities = this._config.calendar_entities || [];
-          const newEntities = calendarEntities.filter(id => id !== entityId);
-          this._configManager.updateProperty('calendar_entities', newEntities.length > 0 ? newEntities : undefined, []);
+    // Use event delegation on the container for remove buttons
+    const calendarList = this.querySelector('#calendar-list');
+    if (calendarList) {
+      calendarList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('entity-list-remove-btn')) {
+          const entityId = e.target.getAttribute('data-entity-id');
+          if (entityId) {
+            const calendarEntities = this._config.calendar_entities || [];
+            const newEntities = calendarEntities.filter(id => id !== entityId);
+            this._configManager.updateProperty('calendar_entities', newEntities.length > 0 ? newEntities : undefined, []);
+            // Update the list after removing
+            this._updateCalendarList();
+          }
         }
       });
-    });
+    }
   }
 
   _showCalendarCardChanged(showCalendarCard) {
@@ -745,6 +752,23 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const value = showCalendarCard === true;
     this._configManager.updateProperty('show_calendar_card', value, false);
     this._render();
+  }
+
+  _updateCalendarList() {
+    const container = this.querySelector('#calendar-list');
+    if (!container) return;
+
+    const calendarEntities = this._config.calendar_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+
+    // Use centralized renderEntityList function
+    container.innerHTML = renderEntityList(calendarEntities, allEntities, {
+      itemClass: 'calendar-item',
+      hass: this._hass
+    });
+
+    // Reattach listeners
+    this._attachCalendarCardListeners();
   }
 
   _attachCalendarCardProListener() {
@@ -781,14 +805,16 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       });
     }
 
-    // Remove Buttons
-    const removeButtons = this.querySelectorAll('.remove-favorite-btn');
-    removeButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const entityId = e.target.dataset.entityId;
-        this._removeFavoriteEntity(entityId);
+    // Remove Buttons - use event delegation
+    const favoritesList = this.querySelector('#favorites-list');
+    if (favoritesList) {
+      favoritesList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('entity-list-remove-btn')) {
+          const entityId = e.target.dataset.entityId;
+          this._removeFavoriteEntity(entityId);
+        }
       });
-    });
+    }
   }
 
   _addFavoriteEntity(entityId) {
@@ -865,31 +891,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _renderFavoritesListFallback(favoriteEntities, allEntities) {
-    if (!favoriteEntities || favoriteEntities.length === 0) {
-      return `<div class="empty-state">${t('noFavoritesAdded')}</div>`;
-    }
-
-    const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
-
-    return `
-      <div class="entity-list-container">
-        ${favoriteEntities.map((entityId) => {
-          const name = entityMap.get(entityId) || entityId;
-          return `
-            <div class="entity-list-item favorite-item" data-entity-id="${entityId}">
-              <span class="entity-list-drag-handle">☰</span>
-              <span class="entity-list-content">
-                <span class="entity-list-name">${name}</span>
-                <span class="entity-list-id">${entityId}</span>
-              </span>
-              <button class="entity-list-remove-btn remove-favorite-btn" data-entity-id="${entityId}">
-                ✕
-              </button>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+    // Use centralized renderEntityList function
+    return renderEntityList(favoriteEntities, allEntities, {
+      emptyStateText: t('noFavoritesAdded'),
+      itemClass: 'favorite-item',
+    });
   }
 
   _attachRoomPinsListeners() {
@@ -907,14 +913,16 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       });
     }
 
-    // Remove Buttons
-    const removeButtons = this.querySelectorAll('.remove-room-pin-btn');
-    removeButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const entityId = e.target.dataset.entityId;
-        this._removeRoomPinEntity(entityId);
+    // Remove Buttons - use event delegation
+    const roomPinsList = this.querySelector('#room-pins-list');
+    if (roomPinsList) {
+      roomPinsList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('entity-list-remove-btn')) {
+          const entityId = e.target.dataset.entityId;
+          this._removeRoomPinEntity(entityId);
+        }
       });
-    });
+    }
   }
 
   _addRoomPinEntity(entityId) {
@@ -994,37 +1002,19 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas) {
-    if (!roomPinEntities || roomPinEntities.length === 0) {
-      return `<div class="empty-state">${t('noRoomPinsAdded')}</div>`;
-    }
-
-    const entityMap = new Map(allEntities.map(e => [e.entity_id, e]));
+    // Use centralized renderEntityList function
     const areaMap = new Map(allAreas.map(a => [a.area_id, a.name]));
-
-    return `
-      <div class="entity-list-container">
-        ${roomPinEntities.map((entityId) => {
-          const entity = entityMap.get(entityId);
-          const name = entity?.name || entityId;
-          const areaId = entity?.area_id || entity?.device_area_id;
-          const areaName = areaId ? areaMap.get(areaId) || areaId : t('noRoom');
-          
-          return `
-            <div class="entity-list-item room-pin-item" data-entity-id="${entityId}">
-              <span class="entity-list-drag-handle">☰</span>
-              <span class="entity-list-content">
-                <span class="entity-list-name">${name}</span>
-                <span class="entity-list-id">${entityId}</span>
-                <span class="entity-list-meta">📍 ${areaName}</span>
-              </span>
-              <button class="entity-list-remove-btn remove-room-pin-btn" data-entity-id="${entityId}">
-                ✕
-              </button>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+    
+    return renderEntityList(roomPinEntities, allEntities, {
+      emptyStateText: t('noRoomPinsAdded'),
+      itemClass: 'room-pin-item',
+      getMetadata: (entityId, entity, hass, allAreas) => {
+        const areaId = entity?.area_id || entity?.device_area_id;
+        const areaName = areaId ? areaMap.get(areaId) || areaId : t('noRoom');
+        return `📍 ${areaName}`;
+      },
+      allAreas
+    });
   }
 
   _getAllEntitiesForSelect() {
@@ -1656,14 +1646,16 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       });
     }
 
-    // Remove Buttons
-    const removeButtons = this.querySelectorAll('.remove-public-transport-btn');
-    removeButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const entityId = e.target.dataset.entityId;
-        this._removePublicTransportEntity(entityId);
+    // Remove Buttons - use event delegation
+    const publicTransportList = this.querySelector('#public-transport-list');
+    if (publicTransportList) {
+      publicTransportList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('entity-list-remove-btn')) {
+          const entityId = e.target.dataset.entityId;
+          this._removePublicTransportEntity(entityId);
+        }
       });
-    });
+    }
   }
 
   _addPublicTransportEntity(entityId) {
@@ -1740,31 +1732,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _renderPublicTransportListFallback(publicTransportEntities, allEntities) {
-    if (!publicTransportEntities || publicTransportEntities.length === 0) {
-      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Entitäten hinzugefügt</div>';
-    }
-
-    const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
-
-    return `
-      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
-        ${publicTransportEntities.map((entityId) => {
-          const name = entityMap.get(entityId) || entityId;
-          return `
-            <div class="public-transport-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
-              <span style="flex: 1; font-size: 14px;">
-                <strong>${name}</strong>
-                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
-              </span>
-              <button class="remove-public-transport-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
-                ✕
-              </button>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+    // Use centralized renderEntityList function
+    return renderEntityList(publicTransportEntities, allEntities, {
+      emptyStateText: t('noEntitiesAdded'),
+      itemClass: 'public-transport-item',
+    });
   }
 
   _attachLogLevelListener() {
