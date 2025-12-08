@@ -21,7 +21,6 @@ import {
   attachPersonProfilePictureCheckboxListener,
   attachSearchCardCheckboxListener,
   attachClockCardCheckboxListener,
-  attachSummaryViewsCheckboxListener,
   attachRoomViewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
   attachSummariesCheckboxListener,
@@ -89,7 +88,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showPersonProfilePicture = this._config.show_person_profile_picture === true;
     const showSearchCard = this._config.show_search_card === true;
     const showClockCard = this._config.show_clock_card === true;
-    const showSummaryViews = this._config.show_summary_views === true; // Standard: false
     const showRoomViews = this._config.show_room_views === true; // Standard: false
     const groupByFloors = this._config.group_by_floors === true; // NEU
     const showSummaries = this._config.show_summaries !== false; // Master toggle, default: true
@@ -196,7 +194,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showEnergy,
         showPersonBadges,
         showPersonProfilePicture,
-        showSummaryViews, 
         showRoomViews,
         showSearchCard,
         showClockCard,
@@ -265,7 +262,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     this._attachSearchCardDomainListeners();
     attachClockCardCheckboxListener(this, (showClockCard) => this._showClockCardChanged(showClockCard));
-    attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
     attachSummariesCheckboxListener(this, (showSummaries) => this._showSummariesChanged(showSummaries));
@@ -346,7 +342,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showPersonProfilePicture = this._config.show_person_profile_picture === true;
     const showSearchCard = this._config.show_search_card === true;
     const showClockCard = this._config.show_clock_card === true;
-    const showSummaryViews = this._config.show_summary_views === true;
     const showRoomViews = this._config.show_room_views === true;
     const groupByFloors = this._config.group_by_floors === true;
     const showSummaries = this._config.show_summaries !== false; // Master toggle, default: true
@@ -382,14 +377,13 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       { id: 'show-person-profile-picture', checked: showPersonProfilePicture, disabled: false },
       { id: 'show-search-card', checked: showSearchCard, disabled: !hasSearchCardDeps },
       { id: 'show-clock-card', checked: showClockCard, disabled: false },
-      { id: 'show-summary-views', checked: showSummaryViews, disabled: false },
       { id: 'show-room-views', checked: showRoomViews, disabled: false },
       { id: 'group-by-floors', checked: groupByFloors, disabled: false },
       { id: 'show-summaries', checked: showSummaries, disabled: false },
-      { id: 'show-covers-summary', checked: showCoversSummary, disabled: !showSummaries },
-      { id: 'show-security-summary', checked: showSecuritySummary, disabled: !showSummaries },
-      { id: 'show-light-summary', checked: showLightSummary, disabled: !showSummaries },
-      { id: 'show-battery-summary', checked: showBatterySummary, disabled: !showSummaries },
+      { id: 'show-covers-summary', checked: showCoversSummary, disabled: false },
+      { id: 'show-security-summary', checked: showSecuritySummary, disabled: false },
+      { id: 'show-light-summary', checked: showLightSummary, disabled: false },
+      { id: 'show-battery-summary', checked: showBatterySummary, disabled: false },
       { id: 'show-better-thermostat', checked: showBetterThermostat, disabled: !hasBetterThermostatDeps },
       { id: 'show-horizon-card', checked: showHorizonCard, disabled: !hasHorizonCardDeps },
       { id: 'horizon-card-extended', checked: horizonCardExtended, disabled: !hasHorizonCardDeps },
@@ -1370,10 +1364,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         }).join('')}
       </div>
     `;
-  }
-
-  _showSummaryViewsChanged(showSummaryViews) {
-    this._configManager.updateProperty('show_summary_views', showSummaryViews, false);
   }
 
   _showRoomViewsChanged(showRoomViews) {

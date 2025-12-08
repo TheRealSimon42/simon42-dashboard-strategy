@@ -36,7 +36,6 @@ export const attachPersonBadgesCheckboxListener = createCheckboxListener('#show-
 export const attachPersonProfilePictureCheckboxListener = createCheckboxListener('#show-person-profile-picture');
 export const attachSearchCardCheckboxListener = createCheckboxListener('#show-search-card');
 export const attachClockCardCheckboxListener = createCheckboxListener('#show-clock-card');
-export const attachSummaryViewsCheckboxListener = createCheckboxListener('#show-summary-views');
 export const attachRoomViewsCheckboxListener = createCheckboxListener('#show-room-views');
 export const attachGroupByFloorsCheckboxListener = createCheckboxListener('#group-by-floors');
 export const attachSummariesCheckboxListener = createCheckboxListener('#show-summaries');

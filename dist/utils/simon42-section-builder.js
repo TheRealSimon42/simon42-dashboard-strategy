@@ -40,26 +40,31 @@ export function createOverviewSection(data) {
     const alarmEntity = config.alarm_entity;
 
     if (alarmEntity) {
-      // Uhr und Alarm-Panel nebeneinander
-      cards.push({
-        type: "clock",
-        clock_size: "small",
-        show_seconds: false
-      });
-      
-      // Check if Alarmo card should be used
-      const useAlarmoCard = config.use_alarmo_card === true;
-      if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
-        cards.push({
-          type: "custom:alarmo-card",
-          entity: alarmEntity
-        });
+      // Validate entity exists
+      if (!hass?.states?.[alarmEntity]) {
+        logWarn('[Section Builder] Alarm entity not found:', alarmEntity);
       } else {
+        // Uhr und Alarm-Panel nebeneinander
         cards.push({
-          type: "tile",
-          entity: alarmEntity,
-          vertical: false
+          type: "clock",
+          clock_size: "small",
+          show_seconds: false
         });
+        
+        // Check if Alarmo card should be used
+        const useAlarmoCard = config.use_alarmo_card === true;
+        if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
+          cards.push({
+            type: "custom:alarmo-card",
+            entity: alarmEntity
+          });
+        } else {
+          cards.push({
+            type: "tile",
+            entity: alarmEntity,
+            vertical: false
+          });
+        }
       }
     } else {
       // Nur Uhr in voller Breite
@@ -76,22 +81,27 @@ export function createOverviewSection(data) {
     // Wenn keine Uhr, aber Alarm-Entity vorhanden, zeige nur Alarm-Panel
     const alarmEntity = config.alarm_entity;
     if (alarmEntity) {
-      // Check if Alarmo card should be used
-      const useAlarmoCard = config.use_alarmo_card === true;
-      if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
-        cards.push({
-          type: "custom:alarmo-card",
-          entity: alarmEntity
-        });
+      // Validate entity exists
+      if (!hass?.states?.[alarmEntity]) {
+        logWarn('[Section Builder] Alarm entity not found:', alarmEntity);
       } else {
-        cards.push({
-          type: "tile",
-          entity: alarmEntity,
-          vertical: false,
-          grid_options: {
-            columns: "full",
-          }
-        });
+        // Check if Alarmo card should be used
+        const useAlarmoCard = config.use_alarmo_card === true;
+        if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
+          cards.push({
+            type: "custom:alarmo-card",
+            entity: alarmEntity
+          });
+        } else {
+          cards.push({
+            type: "tile",
+            entity: alarmEntity,
+            vertical: false,
+            grid_options: {
+              columns: "full",
+            }
+          });
+        }
       }
     }
   }
