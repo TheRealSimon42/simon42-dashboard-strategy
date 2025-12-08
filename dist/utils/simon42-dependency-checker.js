@@ -215,24 +215,17 @@ export function checkDependency(dependencyId, hass = null) {
     let customCheckPassed = true; // Default to true if no custom check
     
     // Check card-related requirements (custom elements, card types, etc.)
+    // Prioritize window.customCards checks as they're more reliable
     if (config.customElements || config.cardTypes || config.cardNames || config.keywords || config.domSelectors) {
-      // 1. Check custom elements
-      if (config.customElements) {
-        cardCheckPassed = config.customElements.some(elementName => 
-          checkCustomElement(elementName)
-        );
-        if (cardCheckPassed && !requiresAll) return true;
-      }
-      
-      // 2. Check card types
-      if (!cardCheckPassed && config.cardTypes) {
+      // 1. Check card types first (most reliable - uses window.customCards)
+      if (config.cardTypes) {
         cardCheckPassed = config.cardTypes.some(cardType => 
           checkCardType(cardType)
         );
         if (cardCheckPassed && !requiresAll) return true;
       }
       
-      // 3. Check card names
+      // 2. Check card names
       if (!cardCheckPassed && config.cardNames) {
         cardCheckPassed = config.cardNames.some(cardName => 
           checkCardName(cardName)
@@ -240,13 +233,25 @@ export function checkDependency(dependencyId, hass = null) {
         if (cardCheckPassed && !requiresAll) return true;
       }
       
-      // 4. Check keywords (flexible matching)
+      // 3. Check keywords (flexible matching)
       if (!cardCheckPassed && config.keywords) {
         cardCheckPassed = checkCardKeywords(config.keywords);
         if (cardCheckPassed && !requiresAll) return true;
       }
       
-      // 5. Check DOM selectors
+      // 4. Check custom elements (less reliable - element might not be registered yet)
+      if (!cardCheckPassed && config.customElements) {
+        cardCheckPassed = config.customElements.some(elementName => {
+          try {
+            return checkCustomElement(elementName);
+          } catch (e) {
+            return false;
+          }
+        });
+        if (cardCheckPassed && !requiresAll) return true;
+      }
+      
+      // 5. Check DOM selectors (least reliable - element might not be in DOM)
       if (!cardCheckPassed && config.domSelectors) {
         cardCheckPassed = config.domSelectors.some(selector => 
           checkDOMSelector(selector)
