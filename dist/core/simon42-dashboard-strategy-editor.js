@@ -296,26 +296,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
   
   _initializeMDCSwitches() {
-    // Initialize all MDC switches after rendering
-    // Home Assistant should have MDC loaded, but we need to ensure switches are initialized
-    const switches = this.querySelectorAll('.mdc-switch');
-    
-    switches.forEach(switchElement => {
-      // Check if switch is already initialized
-      if (switchElement._mdcSwitch) {
-        return;
-      }
-      
-      // Try to initialize using Home Assistant's MDC if available
-      if (window.mdc && window.mdc.switchControl && window.mdc.switchControl.MDCSwitch) {
-        try {
-          switchElement._mdcSwitch = new window.mdc.switchControl.MDCSwitch(switchElement);
-        } catch (e) {
-          // If initialization fails, the switch will still work as a checkbox
-          console.warn('Failed to initialize MDC switch:', e);
-        }
-      }
-    });
+    // ha-switch components are web components and don't need manual initialization
+    // They will be automatically initialized by Home Assistant's component system
+    // This method is kept for compatibility but doesn't need to do anything
   }
   
   _removeSpacingAboveNavigation() {

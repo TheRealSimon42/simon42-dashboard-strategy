@@ -6,32 +6,21 @@
 import { t } from '../../utils/simon42-i18n.js';
 
 /**
- * Renders an MDC switch component (Home Assistant official style)
+ * Renders a Home Assistant switch component (ha-switch)
  * @param {string} id - Element ID
  * @param {boolean} checked - Whether switch is checked
  * @param {string} ariaLabel - Aria label for accessibility
  * @param {boolean} disabled - Whether switch is disabled
- * @returns {string} HTML string for MDC switch
+ * @returns {string} HTML string for ha-switch
  */
 function renderMDCSwitch(id, checked = false, ariaLabel = '', disabled = false) {
   return `
-    <div class="mdc-switch ${checked ? 'mdc-switch--checked' : ''} ${disabled ? 'mdc-switch--disabled' : ''}">
-      <div class="mdc-switch__track"></div>
-      <div class="mdc-switch__thumb-underlay">
-        <div class="mdc-switch__thumb">
-          <input 
-            type="checkbox" 
-            id="${id}" 
-            class="mdc-switch__native-control" 
-            role="switch" 
-            aria-label="${ariaLabel}" 
-            aria-checked="${checked ? 'true' : 'false'}"
-            ${checked ? 'checked' : ''}
-            ${disabled ? 'disabled' : ''}
-          />
-        </div>
-      </div>
-    </div>
+    <ha-switch 
+      id="${id}" 
+      .checked="${checked}"
+      .disabled="${disabled}"
+      aria-label="${ariaLabel}"
+    ></ha-switch>
   `;
 }
 

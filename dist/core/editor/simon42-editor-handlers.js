@@ -13,11 +13,18 @@ import { t } from '../../utils/simon42-i18n.js';
  */
 function createCheckboxListener(selector) {
   return function attachCheckboxListener(element, callback) {
-    const checkbox = element.querySelector(selector);
-    if (checkbox) {
-      checkbox.addEventListener('change', (e) => {
-        callback(e.target.checked);
-      });
+    const switchElement = element.querySelector(selector);
+    if (switchElement) {
+      // Handle both ha-switch and regular checkboxes
+      if (switchElement.tagName === 'HA-SWITCH') {
+        switchElement.addEventListener('change', (e) => {
+          callback(e.target.checked);
+        });
+      } else {
+        switchElement.addEventListener('change', (e) => {
+          callback(e.target.checked);
+        });
+      }
     }
   };
 }
@@ -168,12 +175,12 @@ export function attachGroupCheckboxListeners(element, callback) {
       checkbox.indeterminate = true;
     }
     
-    // Sync MDC switch with hidden checkbox
+    // Sync ha-switch with hidden checkbox
     const areaId = checkbox.dataset.areaId;
     const group = checkbox.dataset.group;
-    const mdcSwitchControl = element.querySelector(`#group-checkbox-${areaId}-${group}`)?.closest('.mdc-switch')?.querySelector('.mdc-switch__native-control');
-    if (mdcSwitchControl) {
-      mdcSwitchControl.addEventListener('change', (e) => {
+    const haSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`);
+    if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+      haSwitch.addEventListener('change', (e) => {
         checkbox.checked = e.target.checked;
         checkbox.dispatchEvent(new Event('change'));
       });
@@ -184,19 +191,10 @@ export function attachGroupCheckboxListeners(element, callback) {
       const group = e.target.dataset.group;
       const isVisible = e.target.checked;
       
-      // Update MDC switch
-      const mdcSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`)?.closest('.mdc-switch');
-      if (mdcSwitch) {
-        const switchInput = mdcSwitch.querySelector('.mdc-switch__native-control');
-        if (switchInput) {
-          switchInput.checked = isVisible;
-        }
-        if (isVisible) {
-          mdcSwitch.classList.add('mdc-switch--checked');
-          mdcSwitch.classList.remove('mdc-switch--indeterminate');
-        } else {
-          mdcSwitch.classList.remove('mdc-switch--checked');
-        }
+      // Update ha-switch
+      const haSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`);
+      if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+        haSwitch.checked = isVisible;
       }
       
       callback(areaId, group, null, isVisible); // null = alle Entities in der Gruppe
@@ -207,19 +205,11 @@ export function attachGroupCheckboxListeners(element, callback) {
         const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
         entityCheckboxes.forEach(cb => {
           cb.checked = isVisible;
-          // Update corresponding MDC switch
+          // Update corresponding ha-switch
           const entityId = cb.dataset.entityId;
-          const entityMdcSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`)?.closest('.mdc-switch');
-          if (entityMdcSwitch) {
-            const entitySwitchInput = entityMdcSwitch.querySelector('.mdc-switch__native-control');
-            if (entitySwitchInput) {
-              entitySwitchInput.checked = isVisible;
-            }
-            if (isVisible) {
-              entityMdcSwitch.classList.add('mdc-switch--checked');
-            } else {
-              entityMdcSwitch.classList.remove('mdc-switch--checked');
-            }
+          const entityHaSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`);
+          if (entityHaSwitch && entityHaSwitch.tagName === 'HA-SWITCH') {
+            entityHaSwitch.checked = isVisible;
           }
         });
       }
@@ -235,10 +225,13 @@ export function attachEntityCheckboxListeners(element, callback) {
   const entityCheckboxes = element.querySelectorAll('.entity-checkbox');
   
   entityCheckboxes.forEach(checkbox => {
-    // Sync MDC switch with hidden checkbox
-    const mdcSwitchControl = checkbox.closest('.mdc-switch')?.querySelector('.mdc-switch__native-control');
-    if (mdcSwitchControl && mdcSwitchControl.id === checkbox.id.replace('-hidden-', '-')) {
-      mdcSwitchControl.addEventListener('change', (e) => {
+    // Sync ha-switch with hidden checkbox
+    const entityId = checkbox.dataset.entityId;
+    const areaId = checkbox.dataset.areaId;
+    const group = checkbox.dataset.group;
+    const haSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`);
+    if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+      haSwitch.addEventListener('change', (e) => {
         checkbox.checked = e.target.checked;
         checkbox.dispatchEvent(new Event('change'));
       });
@@ -250,18 +243,10 @@ export function attachEntityCheckboxListeners(element, callback) {
       const entityId = e.target.dataset.entityId;
       const isVisible = e.target.checked;
       
-      // Update MDC switch
-      const mdcSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`)?.closest('.mdc-switch');
-      if (mdcSwitch) {
-        const switchInput = mdcSwitch.querySelector('.mdc-switch__native-control');
-        if (switchInput) {
-          switchInput.checked = isVisible;
-        }
-        if (isVisible) {
-          mdcSwitch.classList.add('mdc-switch--checked');
-        } else {
-          mdcSwitch.classList.remove('mdc-switch--checked');
-        }
+      // Update ha-switch
+      const haSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`);
+      if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+        haSwitch.checked = isVisible;
       }
       
       callback(areaId, group, entityId, isVisible);
@@ -274,40 +259,29 @@ export function attachEntityCheckboxListeners(element, callback) {
         const allCheckboxes = Array.from(entityList.querySelectorAll('.entity-checkbox'));
         const checkedCount = allCheckboxes.filter(cb => cb.checked).length;
         
-        const groupMdcSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`)?.closest('.mdc-switch');
-        const groupSwitchInput = groupMdcSwitch?.querySelector('.mdc-switch__native-control');
+        const groupHaSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`);
         
         if (checkedCount === 0) {
           groupCheckbox.checked = false;
           groupCheckbox.indeterminate = false;
           groupCheckbox.removeAttribute('data-indeterminate');
-          if (groupSwitchInput) {
-            groupSwitchInput.checked = false;
-          }
-          if (groupMdcSwitch) {
-            groupMdcSwitch.classList.remove('mdc-switch--checked', 'mdc-switch--indeterminate');
+          if (groupHaSwitch && groupHaSwitch.tagName === 'HA-SWITCH') {
+            groupHaSwitch.checked = false;
           }
         } else if (checkedCount === allCheckboxes.length) {
           groupCheckbox.checked = true;
           groupCheckbox.indeterminate = false;
           groupCheckbox.removeAttribute('data-indeterminate');
-          if (groupSwitchInput) {
-            groupSwitchInput.checked = true;
-          }
-          if (groupMdcSwitch) {
-            groupMdcSwitch.classList.add('mdc-switch--checked');
-            groupMdcSwitch.classList.remove('mdc-switch--indeterminate');
+          if (groupHaSwitch && groupHaSwitch.tagName === 'HA-SWITCH') {
+            groupHaSwitch.checked = true;
           }
         } else {
           groupCheckbox.checked = false;
           groupCheckbox.indeterminate = true;
           groupCheckbox.setAttribute('data-indeterminate', 'true');
-          if (groupSwitchInput) {
-            groupSwitchInput.checked = false;
-          }
-          if (groupMdcSwitch) {
-            groupMdcSwitch.classList.remove('mdc-switch--checked');
-            groupMdcSwitch.classList.add('mdc-switch--indeterminate');
+          if (groupHaSwitch && groupHaSwitch.tagName === 'HA-SWITCH') {
+            // ha-switch doesn't support indeterminate state, so we'll leave it unchecked
+            groupHaSwitch.checked = false;
           }
         }
       }

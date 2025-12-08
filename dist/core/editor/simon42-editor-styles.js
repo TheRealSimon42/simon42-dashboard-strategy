@@ -104,8 +104,8 @@ export function getEditorStyles() {
       opacity: 0.5;
     }
     
-    /* MDC Switch styles - Home Assistant uses these by default, but ensure proper spacing */
-    .form-row .mdc-switch {
+    /* ha-switch styles - Home Assistant uses these by default, but ensure proper spacing */
+    .form-row ha-switch {
       margin-right: 12px;
       flex-shrink: 0;
     }
@@ -309,9 +309,9 @@ export function getEditorStyles() {
       background: var(--secondary-background-color);
     }
     
-    /* MDC switches for groups and entities */
-    .entity-group-header .mdc-switch,
-    .entity-item .mdc-switch {
+    /* ha-switch for groups and entities */
+    .entity-group-header ha-switch,
+    .entity-item ha-switch {
       margin-right: 8px;
       flex-shrink: 0;
     }
