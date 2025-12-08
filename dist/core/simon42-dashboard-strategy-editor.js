@@ -1781,8 +1781,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     if (addBtn && fromInput && toInput && fromLangSelect && toLangSelect) {
       // Add on Enter key press in either input
       const handleAdd = () => {
-        const from = fromInput.value.trim();
-        const to = toInput.value.trim();
+        const from = (fromInput.value || '').trim();
+        const to = (toInput.value || '').trim();
         const fromLang = fromLangSelect.value || '';
         const toLang = toLangSelect.value || '';
         
@@ -2011,41 +2011,40 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     };
 
     return `
-      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      <ha-md-list>
         ${translations.map((translation, index) => {
           const fromText = translation.from || '';
           const toText = translation.to || '';
           const fromLang = translation.from_lang || '';
           const toLang = translation.to_lang || '';
           return `
-            <div class="entity-name-translation-item" data-translation-index="${index}" style="display: flex; flex-direction: column; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <div style="font-size: 14px; word-break: break-word;">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</div>
-              <div style="display: flex; align-items: center; gap: 8px;">
+            <ha-md-list-item data-translation-index="${index}" class="entity-name-translation-item">
+              <ha-icon slot="start" icon="mdi:translate"></ha-icon>
+              <span slot="headline">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</span>
+              <div slot="supporting-text" class="translation-lang-selectors">
                 <select 
-                  class="translation-from-lang-select" 
+                  class="translation-from-lang-select native-select" 
                   data-translation-index="${index}"
-                  style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
                   title="${t('translationFromLang')}"
                 >
                   ${getLanguageSelectorOptions(fromLang, 'translationFromLang')}
                 </select>
-                <span style="color: var(--secondary-text-color);">→</span>
+                <span class="translation-arrow">→</span>
                 <select 
-                  class="translation-to-lang-select" 
+                  class="translation-to-lang-select native-select" 
                   data-translation-index="${index}"
-                  style="min-width: 100px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
                   title="${t('translationToLang')}"
                 >
                   ${getLanguageSelectorOptions(toLang, 'translationToLang')}
                 </select>
-                <button class="remove-translation-btn" data-translation-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0; margin-left: auto;">
-                  ✕
-                </button>
               </div>
-            </div>
+              <ha-icon-button slot="end" class="remove-translation-btn" data-translation-index="${index}" aria-label="${t('remove')}">
+                <ha-svg-icon path="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></ha-svg-icon>
+              </ha-icon-button>
+            </ha-md-list-item>
           `;
         }).join('')}
-      </div>
+      </ha-md-list>
     `;
   }
 

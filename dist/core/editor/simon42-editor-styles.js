@@ -189,6 +189,96 @@ export function getEditorStyles() {
       cursor: grabbing;
     }
     
+    /* Entity Name Translation native styling */
+    .translation-lang-selectors {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .native-select {
+      min-width: 100px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+    
+    .native-select:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .native-select:focus {
+      border-color: var(--primary-color);
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+    
+    .translation-arrow {
+      color: var(--secondary-text-color);
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    
+    .translation-add-form {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    
+    .native-input {
+      flex: 1;
+      min-width: 120px;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    
+    .native-input:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .native-input:focus {
+      border-color: var(--primary-color);
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+    
+    .translation-lang-select {
+      min-width: 100px;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+    
+    .translation-lang-select:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .translation-lang-select:focus {
+      border-color: var(--primary-color);
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+    
     /* Ensure proper spacing for area content */
     .area-content {
       padding: 0 16px 12px 48px;
