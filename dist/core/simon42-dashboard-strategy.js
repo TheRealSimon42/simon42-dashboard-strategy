@@ -4,7 +4,7 @@
 // Uses registry data directly from hass object (no WebSocket calls needed)
 // ====================================================================
 
-import { getVisibleAreas } from '../utils/simon42-helpers.js';
+import { getVisibleAreas } from '../utils/helpers/simon42-helpers.js';
 import { 
   collectPersons, 
   collectLights, 
@@ -13,8 +13,8 @@ import {
   collectBatteriesCritical, 
   findWeatherEntity, 
   findDummySensor 
-} from '../utils/simon42-data-collectors.js';
-import { createPersonBadges } from '../utils/simon42-badge-builder.js';
+} from '../utils/data/simon42-data-collectors.js';
+import { createPersonBadges } from '../utils/builders/cards/simon42-badge-builder.js';
 import { 
   createOverviewSection, 
   createAreasSection, 
@@ -23,14 +23,14 @@ import {
   createEnergySection,
   createSchedulerCardSection,
   createCalendarCardSection
-} from '../utils/simon42-section-builder.js';
+} from '../utils/builders/sections/simon42-section-builder.js';
 import { 
   createOverviewView, 
   createUtilityViews, 
   createAreaViews 
-} from '../utils/simon42-view-builder.js';
-import { initLanguage, t, getLanguage } from '../utils/simon42-i18n.js';
-import { initLogger, logDebug, logInfo } from '../utils/simon42-logger.js';
+} from '../utils/builders/views/simon42-view-builder.js';
+import { initLanguage, t, getLanguage } from '../utils/system/simon42-i18n.js';
+import { initLogger, logDebug, logInfo } from '../utils/system/simon42-logger.js';
 
 // Cache for last generation state to avoid unnecessary logs
 let lastGenerationState = null;

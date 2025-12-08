@@ -19,14 +19,14 @@
 // ====================================================================
 
 // Lade Logger ZUERST (wird von vielen Modulen benötigt)
-import './utils/simon42-logger.js';
+import './utils/system/simon42-logger.js';
 
 // Lade Helper-Funktionen
-import './utils/simon42-helpers.js';
-import './utils/simon42-data-collectors.js';
-import './utils/simon42-badge-builder.js';
-import './utils/simon42-section-builder.js';
-import './utils/simon42-view-builder.js';
+import './utils/helpers/simon42-helpers.js';
+import './utils/data/simon42-data-collectors.js';
+import './utils/builders/cards/simon42-badge-builder.js';
+import './utils/builders/sections/simon42-section-builder.js';
+import './utils/builders/views/simon42-view-builder.js';
 
 // Lade Custom Cards
 import './cards/simon42-summary-card.js';

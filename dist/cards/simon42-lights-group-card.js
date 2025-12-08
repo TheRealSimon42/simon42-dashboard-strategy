@@ -5,10 +5,10 @@
 // und aktualisiert sich automatisch bei State-Änderungen
 // ====================================================================
 
-import { t, initLanguage } from '../utils/simon42-i18n.js';
-import { filterEntities } from '../utils/simon42-entity-filter.js';
-import { getExcludedLabels } from '../utils/simon42-helpers.js';
-import { getHiddenEntitiesFromConfig } from '../utils/simon42-data-collectors.js';
+import { t, initLanguage } from '../utils/system/simon42-i18n.js';
+import { filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
 
 class Simon42LightsGroupCard extends HTMLElement {
   constructor() {

@@ -4,7 +4,7 @@
 // HTML-Template für den Dashboard Strategy Editor
 // Main orchestrator that imports from focused modules
 
-import { t } from '../../utils/simon42-i18n.js';
+import { t } from '../../utils/system/simon42-i18n.js';
 import { renderMDCSwitch } from './template/simon42-editor-form-renderers.js';
 import { filterEntitiesByIntegration } from './template/simon42-editor-integration-filters.js';
 import {

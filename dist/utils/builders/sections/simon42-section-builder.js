@@ -2,17 +2,17 @@
 // SECTION BUILDER - Creates dashboard sections
 // ====================================================================
 
-import { t, getLanguage } from './simon42-i18n.js';
+import { t, getLanguage } from '../../system/simon42-i18n.js';
 import {
   filterValidEntities,
   filterHaDeparturesEntities,
   getCardType,
   validateCombination,
   CARD_BUILDERS
-} from './simon42-public-transport-builders.js';
-import { WEATHER_CARD_BUILDERS } from './simon42-weather-card-builders.js';
-import { logWarn, logDebug, logInfo } from './simon42-logger.js';
-import { translateAreaName } from './simon42-helpers.js';
+} from '../cards/simon42-public-transport-builders.js';
+import { WEATHER_CARD_BUILDERS } from '../cards/simon42-weather-card-builders.js';
+import { logWarn, logDebug, logInfo } from '../../system/simon42-logger.js';
+import { translateAreaName } from '../../helpers/simon42-helpers.js';
 
 /**
  * Creates the overview section with summaries

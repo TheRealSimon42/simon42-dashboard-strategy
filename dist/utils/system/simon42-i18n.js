@@ -8,7 +8,7 @@
 // 3. Import it below and add it to the translations object
 // ====================================================================
 
-import { logWarn } from './system/simon42-logger.js';
+import { logWarn } from './simon42-logger.js';
 
 // Import language files
 import { de } from '../i18n/simon42-i18n-de.js';

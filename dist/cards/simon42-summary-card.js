@@ -6,10 +6,10 @@
 // KEIN redundantes Caching von Registry-Daten mehr!
 // ====================================================================
 
-import { t, initLanguage } from '../utils/simon42-i18n.js';
-import { filterEntities } from '../utils/simon42-entity-filter.js';
-import { logWarn } from '../utils/simon42-logger.js';
-import { getHiddenEntitiesFromConfig } from '../utils/simon42-data-collectors.js';
+import { t, initLanguage } from '../utils/system/simon42-i18n.js';
+import { filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { logWarn } from '../utils/system/simon42-logger.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
 
 /**
  * Configuration for summary types

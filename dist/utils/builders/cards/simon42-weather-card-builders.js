@@ -5,9 +5,9 @@
 // Makes it easier to add new weather cards and maintain existing ones
 // ====================================================================
 
-import { getUserLocale, getUserHour12, getUserLanguage } from './simon42-user-preferences.js';
-import { t } from './simon42-i18n.js';
-import { translateAreaName } from './simon42-helpers.js';
+import { getUserLocale, getUserHour12, getUserLanguage } from '../../system/simon42-user-preferences.js';
+import { t } from '../../system/simon42-i18n.js';
+import { translateAreaName } from '../../helpers/simon42-helpers.js';
 
 /**
  * Builds clock-weather-card configuration

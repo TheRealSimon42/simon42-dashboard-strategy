@@ -4,7 +4,7 @@
 // Renders area-specific HTML (area items, area entities)
 // ====================================================================
 
-import { t } from '../../../utils/simon42-i18n.js';
+import { t } from '../../../utils/system/simon42-i18n.js';
 import { renderMDCSwitch } from './simon42-editor-form-renderers.js';
 
 function getEntityCountForArea(areaId, hass) {

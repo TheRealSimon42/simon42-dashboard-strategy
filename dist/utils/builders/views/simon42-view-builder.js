@@ -2,8 +2,8 @@
 // VIEW BUILDER - Creates view definitions
 // ====================================================================
 
-import { t } from './simon42-i18n.js';
-import { translateAreaName } from './simon42-helpers.js';
+import { t } from '../../system/simon42-i18n.js';
+import { translateAreaName } from '../../helpers/simon42-helpers.js';
 
 /**
  * Creates the main overview view

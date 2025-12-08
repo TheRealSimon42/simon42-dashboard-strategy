@@ -3,7 +3,7 @@
 // ====================================================================
 // Nutzt zwei reaktive Group-Cards (on/off) die sich automatisch aktualisieren
 // ====================================================================
-import { getExcludedLabels } from '../utils/simon42-helpers.js';
+import { getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
 
 class Simon42ViewLightsStrategy {
   static async generate(config, hass) {

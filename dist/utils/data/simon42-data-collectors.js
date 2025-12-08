@@ -4,10 +4,10 @@
 // Uses centralized entity filter logic for consistency and maintainability
 // ====================================================================
 
-import { logDebug } from './simon42-logger.js';
-import { filterStates } from './simon42-entity-filter.js';
+import { logDebug } from '../system/simon42-logger.js';
+import { filterStates } from '../filters/simon42-entity-filter.js';
 // Re-export config extractors for backward compatibility
-export { getHiddenEntitiesFromConfig } from './config/simon42-config-extractors.js';
+export { getHiddenEntitiesFromConfig } from '../config/simon42-config-extractors.js';
 
 /**
  * Collects all person entities

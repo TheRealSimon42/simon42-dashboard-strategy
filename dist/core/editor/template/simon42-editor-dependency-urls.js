@@ -4,7 +4,7 @@
 // Manages dependency URLs and builds dependency missing messages
 // ====================================================================
 
-import { t } from '../../../utils/simon42-i18n.js';
+import { t } from '../../../utils/system/simon42-i18n.js';
 
 /**
  * Gibt den Card-Namen für eine Integration zurück

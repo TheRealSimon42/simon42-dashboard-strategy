@@ -1,11 +1,11 @@
 // ====================================================================
 // VIEW STRATEGY - SECURITY (Schlösser + Türen/Garagen + Fenster) - REFACTORED
 // ====================================================================
-import { getExcludedLabels } from '../utils/simon42-helpers.js';
-import { t, initLanguage } from '../utils/simon42-i18n.js';
-import { createSecuritySection } from '../utils/simon42-security-card-builder.js';
-import { filterEntities } from '../utils/simon42-entity-filter.js';
-import { getHiddenEntitiesFromConfig } from '../utils/simon42-data-collectors.js';
+import { getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
+import { t, initLanguage } from '../utils/system/simon42-i18n.js';
+import { createSecuritySection } from '../utils/builders/cards/simon42-security-card-builder.js';
+import { filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
 
 class Simon42ViewSecurityStrategy {
   static async generate(config, hass) {

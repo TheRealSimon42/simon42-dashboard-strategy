@@ -4,8 +4,8 @@
 // Common helper functions for all strategies
 // ====================================================================
 
-import { logWarn } from './simon42-logger.js';
-import { getLanguage } from './simon42-i18n.js';
+import { logWarn } from '../system/simon42-logger.js';
+import { getLanguage } from '../system/simon42-i18n.js';
 
 /**
  * Filters and sorts areas based on configuration

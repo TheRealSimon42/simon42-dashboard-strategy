@@ -3,12 +3,12 @@
 // ====================================================================
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML, renderEntityList } from './editor/simon42-editor-template.js';
-import { initLanguage, t } from '../utils/simon42-i18n.js';
+import { initLanguage, t } from '../utils/system/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
-import { logWarn, initLogger } from '../utils/simon42-logger.js';
-import { checkDependency, checkPublicTransportDependencies } from '../utils/simon42-dependency-checker.js';
-import { PUBLIC_TRANSPORT_MAPPING } from '../utils/simon42-public-transport-builders.js';
-import { VERSION } from '../utils/simon42-version.js';
+import { logWarn, initLogger } from '../utils/system/simon42-logger.js';
+import { checkDependency, checkPublicTransportDependencies } from '../utils/system/simon42-dependency-checker.js';
+import { PUBLIC_TRANSPORT_MAPPING } from '../utils/builders/cards/simon42-public-transport-builders.js';
+import { VERSION } from '../utils/system/simon42-version.js';
 import { 
   getAllIntegrationProperties,
   updateNestedConfig,

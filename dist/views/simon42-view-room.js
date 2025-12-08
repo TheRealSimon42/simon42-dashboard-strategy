@@ -1,10 +1,10 @@
 // ====================================================================
 // VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT + KAMERAS
 // ====================================================================
-import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged, isCameraStreamAvailable } from '../utils/simon42-helpers.js';
-import { t, initLanguage } from '../utils/simon42-i18n.js';
-import { filterByArea, filterEntities } from '../utils/simon42-entity-filter.js';
-import { getHiddenEntitiesFromConfig } from '../utils/simon42-data-collectors.js';
+import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged, isCameraStreamAvailable } from '../utils/helpers/simon42-helpers.js';
+import { t, initLanguage } from '../utils/system/simon42-i18n.js';
+import { filterByArea, filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
 
 /**
  * Prüft ob eine Entity eine Better Thermostat Entity ist
