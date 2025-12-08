@@ -39,6 +39,7 @@ export const attachClockCardCheckboxListener = createCheckboxListener('#show-clo
 export const attachSummaryViewsCheckboxListener = createCheckboxListener('#show-summary-views');
 export const attachRoomViewsCheckboxListener = createCheckboxListener('#show-room-views');
 export const attachGroupByFloorsCheckboxListener = createCheckboxListener('#group-by-floors');
+export const attachSummariesCheckboxListener = createCheckboxListener('#show-summaries');
 export const attachCoversSummaryCheckboxListener = createCheckboxListener('#show-covers-summary');
 export const attachSecuritySummaryCheckboxListener = createCheckboxListener('#show-security-summary');
 export const attachLightSummaryCheckboxListener = createCheckboxListener('#show-light-summary');

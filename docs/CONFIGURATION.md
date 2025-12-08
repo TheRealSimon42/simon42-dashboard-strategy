@@ -36,6 +36,7 @@ strategy:
   show_subviews: false           # Utility Views als Subviews
   show_search_card: false        # Optional: Search Card in Overview
   show_clock_card: false         # Optional: Clock Card in Overview
+  show_summaries: true           # Zusammenfassungen anzeigen (Master-Toggle)
   show_covers_summary: true      # Rollo-Zusammenfassung anzeigen
   show_security_summary: true    # Alarm-Zusammenfassung anzeigen
   show_light_summary: true       # Licht-Zusammenfassung anzeigen
@@ -322,10 +323,11 @@ Siehe [INTEGRATIONS.md](INTEGRATIONS.md#öffentlicher-nahverkehr) für Details.
 | `show_room_views` | boolean | `false` | Zeigt Raum-Views in der Navigation |
 | `show_search_card` | boolean | `false` | Zeigt optional eine Search Card in der Übersicht |
 | `show_clock_card` | boolean | `false` | Zeigt optional eine Uhr in der Übersicht an |
-| `show_covers_summary` | boolean | `true` | Zeigt die Rollo-Zusammenfassungskarte in der Übersicht |
-| `show_security_summary` | boolean | `true` | Zeigt die Alarm-Zusammenfassungskarte in der Übersicht |
-| `show_light_summary` | boolean | `true` | Zeigt die Licht-Zusammenfassungskarte in der Übersicht |
-| `show_battery_summary` | boolean | `true` | Zeigt die Batterie-Zusammenfassungskarte in der Übersicht |
+| `show_summaries` | boolean | `true` | Master-Toggle: Zeigt die Zusammenfassungskarten in der Übersicht an. Wenn deaktiviert, werden alle Zusammenfassungen ausgeblendet. |
+| `show_covers_summary` | boolean | `true` | Zeigt die Rollo-Zusammenfassungskarte in der Übersicht (nur wenn `show_summaries` aktiviert ist) |
+| `show_security_summary` | boolean | `true` | Zeigt die Alarm-Zusammenfassungskarte in der Übersicht (nur wenn `show_summaries` aktiviert ist) |
+| `show_light_summary` | boolean | `true` | Zeigt die Licht-Zusammenfassungskarte in der Übersicht (nur wenn `show_summaries` aktiviert ist) |
+| `show_battery_summary` | boolean | `true` | Zeigt die Batterie-Zusammenfassungskarte in der Übersicht (nur wenn `show_summaries` aktiviert ist) |
 | `summaries_columns` | number | `2` | Layout der Zusammenfassungskarten: `2` (2x2 Grid) oder `4` (1x4 Reihe) |
 | `group_by_floors` | boolean | `false` | Gruppiert Bereiche nach Etagen/Floors |
 | `log_level` | string | `'warn'` | Log-Level: `'error'`, `'warn'`, `'info'`, `'debug'` |

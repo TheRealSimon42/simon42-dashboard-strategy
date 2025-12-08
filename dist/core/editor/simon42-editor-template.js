@@ -615,7 +615,7 @@ export function renderSectionGroup(groupId, title, content, isExpanded = false) 
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, searchCardIncludedDomains = [], searchCardExcludedDomains = [], summariesColumns, alarmEntity, alarmEntities, isSelectedAlarmEntityAlarmo = false, hasAlarmoCardDeps = false, useAlarmoCard = false, showSchedulerCard = false, hasSchedulerCardDeps = false, schedulerEntity = '', showCalendarCard = false, hasCalendarCardDeps = false, hasCalendarCardProDeps = false, useCalendarCardPro = false, calendarEntities = [], favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, useClockWeatherCard = false, hasClockWeatherCardDeps = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', version = '1.0.0', hass = null }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, searchCardIncludedDomains = [], searchCardExcludedDomains = [], summariesColumns, alarmEntity, alarmEntities, isSelectedAlarmEntityAlarmo = false, hasAlarmoCardDeps = false, useAlarmoCard = false, showSchedulerCard = false, hasSchedulerCardDeps = false, schedulerEntity = '', showCalendarCard = false, hasCalendarCardDeps = false, hasCalendarCardProDeps = false, useCalendarCardPro = false, calendarEntities = [], favoriteEntities, roomPinEntities, allEntities, groupByFloors, showSummaries = true, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, useClockWeatherCard = false, hasClockWeatherCardDeps = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', version = '1.0.0', hass = null }) {
   // Build content for each group
   // Group 1: Dashboard Cards
   const dashboardCardsContent = `
@@ -1139,31 +1139,38 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
       <div class="section">
         <div class="section-title">${t('summaries')}</div>
         <div class="form-row">
-          ${renderMDCSwitch('show-covers-summary', showCoversSummary !== false, t('showCoversSummary'))}
-          <label for="show-covers-summary" style="margin-left: 12px; cursor: pointer;">${t('showCoversSummary')}</label>
+          ${renderMDCSwitch('show-summaries', showSummaries !== false, t('showSummaries'))}
+          <label for="show-summaries" style="margin-left: 12px; cursor: pointer;">${t('showSummaries')}</label>
         </div>
         <div class="description">
+          ${t('summariesDescription')}
+        </div>
+        <div class="form-row" style="opacity: ${showSummaries !== false ? '1' : '0.5'};">
+          ${renderMDCSwitch('show-covers-summary', showCoversSummary !== false, t('showCoversSummary'), showSummaries === false)}
+          <label for="show-covers-summary" style="margin-left: 12px; cursor: ${showSummaries !== false ? 'pointer' : 'not-allowed'};" onclick="${showSummaries !== false ? '' : 'return false;'}">${t('showCoversSummary')}</label>
+        </div>
+        <div class="description" style="opacity: ${showSummaries !== false ? '1' : '0.5'};">
           ${t('coversSummaryDescription')}
         </div>
-        <div class="form-row">
-          ${renderMDCSwitch('show-light-summary', showLightSummary !== false, t('showLightSummary'))}
-          <label for="show-light-summary" style="margin-left: 12px; cursor: pointer;">${t('showLightSummary')}</label>
+        <div class="form-row" style="opacity: ${showSummaries !== false ? '1' : '0.5'};">
+          ${renderMDCSwitch('show-light-summary', showLightSummary !== false, t('showLightSummary'), showSummaries === false)}
+          <label for="show-light-summary" style="margin-left: 12px; cursor: ${showSummaries !== false ? 'pointer' : 'not-allowed'};" onclick="${showSummaries !== false ? '' : 'return false;'}">${t('showLightSummary')}</label>
         </div>
-        <div class="description">
+        <div class="description" style="opacity: ${showSummaries !== false ? '1' : '0.5'};">
           ${t('lightSummaryDescription')}
         </div>
-        <div class="form-row">
-          ${renderMDCSwitch('show-security-summary', showSecuritySummary !== false, t('showSecuritySummary'))}
-          <label for="show-security-summary" style="margin-left: 12px; cursor: pointer;">${t('showSecuritySummary')}</label>
+        <div class="form-row" style="opacity: ${showSummaries !== false ? '1' : '0.5'};">
+          ${renderMDCSwitch('show-security-summary', showSecuritySummary !== false, t('showSecuritySummary'), showSummaries === false)}
+          <label for="show-security-summary" style="margin-left: 12px; cursor: ${showSummaries !== false ? 'pointer' : 'not-allowed'};" onclick="${showSummaries !== false ? '' : 'return false;'}">${t('showSecuritySummary')}</label>
         </div>
-        <div class="description">
+        <div class="description" style="opacity: ${showSummaries !== false ? '1' : '0.5'};">
           ${t('securitySummaryDescription')}
         </div>
-        <div class="form-row">
-          ${renderMDCSwitch('show-battery-summary', showBatterySummary !== false, t('showBatterySummary'))}
-          <label for="show-battery-summary" style="margin-left: 12px; cursor: pointer;">${t('showBatterySummary')}</label>
+        <div class="form-row" style="opacity: ${showSummaries !== false ? '1' : '0.5'};">
+          ${renderMDCSwitch('show-battery-summary', showBatterySummary !== false, t('showBatterySummary'), showSummaries === false)}
+          <label for="show-battery-summary" style="margin-left: 12px; cursor: ${showSummaries !== false ? 'pointer' : 'not-allowed'};" onclick="${showSummaries !== false ? '' : 'return false;'}">${t('showBatterySummary')}</label>
         </div>
-        <div class="description">
+        <div class="description" style="opacity: ${showSummaries !== false ? '1' : '0.5'};">
           ${t('batterySummaryDescription')}
         </div>
       </div>

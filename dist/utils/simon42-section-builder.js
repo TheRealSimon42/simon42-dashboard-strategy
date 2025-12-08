@@ -122,6 +122,9 @@ export function createOverviewSection(data) {
     cards.push(searchCardConfig);
   }
 
+  // Prüfe Master-Toggle für Zusammenfassungen (Standard: true)
+  const showSummaries = config.show_summaries !== false;
+  
   // Prüfe ob summaries_columns konfiguriert ist (Standard: 2)
   const summariesColumns = config.summaries_columns || 2;
   const showCoversSummary = config.show_covers_summary !== false;
@@ -132,8 +135,12 @@ export function createOverviewSection(data) {
   // Erstelle die Summary-Cards basierend auf Konfiguration
   const summaryCards = [];
 
-  // Lights optional hinzufügen
-  if (showLightSummary) {
+  // Nur Summary-Cards hinzufügen wenn Master-Toggle aktiviert ist
+  if (!showSummaries) {
+    // Wenn Master-Toggle aus ist, keine Summary-Cards hinzufügen
+  } else {
+    // Lights optional hinzufügen
+    if (showLightSummary) {
     summaryCards.push({
       type: "custom:simon42-summary-card",
       summary_type: "lights",
@@ -162,14 +169,15 @@ export function createOverviewSection(data) {
     });
   }
 
-  // Batteries optional hinzufügen
-  if (showBatterySummary) {
-    summaryCards.push({
-      type: "custom:simon42-summary-card",
-      summary_type: "batteries",
-      areas_options: config.areas_options || {},
-      language: config.language
-    });
+    // Batteries optional hinzufügen
+    if (showBatterySummary) {
+      summaryCards.push({
+        type: "custom:simon42-summary-card",
+        summary_type: "batteries",
+        areas_options: config.areas_options || {},
+        language: config.language
+      });
+    }
   }
 
   // Füge Zusammenfassungen hinzu nur wenn mindestens eine Card vorhanden ist
