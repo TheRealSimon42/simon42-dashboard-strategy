@@ -2,7 +2,7 @@
 // SECTION BUILDER - Creates dashboard sections
 // ====================================================================
 
-import { t, getLanguage } from '../../system/simon42-i18n.js';
+import { t, getLanguage } from '../../i18n/simon42-i18n.js';
 import {
   filterValidEntities,
   filterHaDeparturesEntities,

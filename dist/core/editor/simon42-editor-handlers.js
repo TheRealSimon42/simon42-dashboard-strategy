@@ -4,7 +4,7 @@
 // Event-Handler für den Dashboard Strategy Editor
 
 import { renderAreaEntitiesHTML } from './template/simon42-editor-area-renderers.js';
-import { t } from '../../utils/system/simon42-i18n.js';
+import { t } from '../../utils/i18n/simon42-i18n.js';
 
 /**
  * Creates a checkbox listener attachment function

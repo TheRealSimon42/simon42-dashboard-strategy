@@ -5,7 +5,7 @@
 // ====================================================================
 
 import { logWarn } from '../system/simon42-logger.js';
-import { getLanguage } from '../system/simon42-i18n.js';
+import { getLanguage } from '../i18n/simon42-i18n.js';
 
 /**
  * Filters and sorts areas based on configuration

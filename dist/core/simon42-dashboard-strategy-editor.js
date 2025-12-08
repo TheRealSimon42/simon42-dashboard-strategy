@@ -3,7 +3,7 @@
 // ====================================================================
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
 import { renderEditorHTML, renderEntityList } from './editor/simon42-editor-template.js';
-import { initLanguage, t } from '../utils/system/simon42-i18n.js';
+import { initLanguage, t } from '../utils/i18n/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
 import { logWarn, initLogger } from '../utils/system/simon42-logger.js';
 import { checkDependency, checkPublicTransportDependencies } from '../utils/system/simon42-dependency-checker.js';

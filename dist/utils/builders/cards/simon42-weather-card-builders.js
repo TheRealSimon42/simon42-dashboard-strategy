@@ -6,7 +6,7 @@
 // ====================================================================
 
 import { getUserLocale, getUserHour12, getUserLanguage } from '../../system/simon42-user-preferences.js';
-import { t } from '../../system/simon42-i18n.js';
+import { t } from '../../i18n/simon42-i18n.js';
 import { translateAreaName } from '../../helpers/simon42-helpers.js';
 
 /**

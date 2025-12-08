@@ -4,7 +4,7 @@
 // Renders various entity lists (favorites, room pins, patterns, translations, etc.)
 // ====================================================================
 
-import { t } from '../../../utils/system/simon42-i18n.js';
+import { t } from '../../../utils/i18n/simon42-i18n.js';
 
 /**
  * Centralized function to render entity lists with consistent styling

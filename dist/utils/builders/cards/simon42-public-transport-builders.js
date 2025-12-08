@@ -5,7 +5,7 @@
 // Makes it easier to add new integrations and maintain existing ones
 // ====================================================================
 
-import { t, getLanguage } from '../../system/simon42-i18n.js';
+import { t, getLanguage } from '../../i18n/simon42-i18n.js';
 import { getUserDarkMode, getUserLocale, getUserHour12 } from '../../system/simon42-user-preferences.js';
 import { translateAreaName } from '../../helpers/simon42-helpers.js';
 

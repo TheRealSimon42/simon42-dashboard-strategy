@@ -4,7 +4,7 @@
 // Eliminates duplication in security view card building
 // ====================================================================
 
-import { t } from '../../system/simon42-i18n.js';
+import { t } from '../../i18n/simon42-i18n.js';
 
 /**
  * Configuration for security card sections

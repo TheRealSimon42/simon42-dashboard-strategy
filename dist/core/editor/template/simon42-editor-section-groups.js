@@ -4,7 +4,7 @@
 // Renders navigation bar and section groups
 // ====================================================================
 
-import { t } from '../../../utils/system/simon42-i18n.js';
+import { t } from '../../../utils/i18n/simon42-i18n.js';
 
 /**
  * Renders the navigation bar for quick access to section groups

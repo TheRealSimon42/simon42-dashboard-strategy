@@ -2,7 +2,7 @@
 // VIEW STRATEGY - SECURITY (Schlösser + Türen/Garagen + Fenster) - REFACTORED
 // ====================================================================
 import { getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
-import { t, initLanguage } from '../utils/system/simon42-i18n.js';
+import { t, initLanguage } from '../utils/i18n/simon42-i18n.js';
 import { createSecuritySection } from '../utils/builders/cards/simon42-security-card-builder.js';
 import { filterEntities } from '../utils/filters/simon42-entity-filter.js';
 import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';

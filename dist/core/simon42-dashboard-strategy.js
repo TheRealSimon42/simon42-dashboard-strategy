@@ -29,7 +29,7 @@ import {
   createUtilityViews, 
   createAreaViews 
 } from '../utils/builders/views/simon42-view-builder.js';
-import { initLanguage, t, getLanguage } from '../utils/system/simon42-i18n.js';
+import { initLanguage, t, getLanguage } from '../utils/i18n/simon42-i18n.js';
 import { initLogger, logDebug, logInfo } from '../utils/system/simon42-logger.js';
 
 // Cache for last generation state to avoid unnecessary logs

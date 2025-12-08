@@ -8,11 +8,11 @@
 // 3. Import it below and add it to the translations object
 // ====================================================================
 
-import { logWarn } from './simon42-logger.js';
+import { logWarn } from '../system/simon42-logger.js';
 
 // Import language files
-import { de } from '../i18n/simon42-i18n-de.js';
-import { en } from '../i18n/simon42-i18n-en.js';
+import { de } from './simon42-i18n-de.js';
+import { en } from './simon42-i18n-en.js';
 
 // Combine all translations
 // To add a new language, import it above and add it here
