@@ -643,7 +643,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               : `⚠️ ${t('horizonCardMissingDeps')}`}
           </div>
           ${hasHorizonCardDeps && showHorizonCard ? `
-          <div style="margin-top: 12px;">
+          <div class="sub-option">
             <div class="form-row">
               ${renderMDCSwitch('horizon-card-extended', horizonCardExtended, t('showExtendedInfo'))}
               <label for="horizon-card-extended" style="margin-left: 12px; cursor: pointer;">
@@ -687,7 +687,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${t('personBadgesDescription')}
         </div>
         ${showPersonBadges !== false ? `
-        <div style="margin-top: 12px;">
+        <div class="sub-option">
           <div class="form-row">
             ${renderMDCSwitch('show-person-profile-picture', showPersonProfilePicture === true, t('showPersonProfilePicture'))}
             <label for="show-person-profile-picture" style="margin-left: 12px; cursor: pointer;">
@@ -715,7 +715,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             : `⚠️ ${t('searchCardMissingDeps')}`}
         </div>
         ${showSearchCard && hasSearchCardDeps ? `
-        <div style="margin-top: 12px;">
+        <div class="sub-option">
           <div class="section-title" style="font-size: 13px; margin-bottom: 8px;">${t('searchCardIncludedDomains')}</div>
           <div id="search-card-included-domains-list" style="margin-bottom: 12px;">
             ${renderSearchCardDomainsList(searchCardIncludedDomains || [])}
@@ -807,7 +807,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${t('publicTransportDescription')}
         </div>
         ${showPublicTransport ? `
-        <div style="margin-top: 16px;">
+        <div class="sub-option">
           <div class="form-row">
             <label for="public-transport-integration" style="margin-right: 8px; min-width: 120px;">${t('publicTransportIntegration')}</label>
             <select 
@@ -865,7 +865,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </div>
           ` : ''}
           ${publicTransportIntegration === 'hvv' && hasPublicTransportDeps ? `
-          <div style="margin-top: 16px;">
+          <div class="sub-option">
             <div class="form-row">
               <label for="hvv-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
               <input 
@@ -898,7 +898,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </div>
           ` : ''}
           ${publicTransportIntegration === 'ha-departures' && hasPublicTransportDeps ? `
-          <div style="margin-top: 16px;">
+          <div class="sub-option">
             <div class="form-row">
               <label for="ha-departures-max" style="margin-right: 8px; min-width: 120px;">${t('maxDepartures')}</label>
               <input 

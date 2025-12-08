@@ -119,6 +119,28 @@ export function getEditorStyles() {
       cursor: not-allowed;
       opacity: 0.5;
     }
+    
+    /* Indented sub-options that only show when parent switch is enabled */
+    .sub-option {
+      margin-left: 24px;
+      margin-top: 12px;
+      border-left: 2px solid var(--divider-color);
+      padding-left: 16px;
+    }
+    
+    /* Nested sub-options (sub-options of sub-options) */
+    .sub-option .sub-option {
+      margin-left: 0;
+      margin-top: 12px;
+    }
+    
+    .sub-option .form-row {
+      margin-left: 0;
+    }
+    
+    .sub-option .section-title {
+      margin-left: 0;
+    }
 
     .form-row ha-entity-picker {
       flex: 1;
