@@ -4,7 +4,7 @@
 // Uses registry data directly from hass object (no WebSocket calls needed)
 // ====================================================================
 
-import { getVisibleAreas } from '../utils/helpers/simon42-helpers.js';
+import { getVisibleAreas, getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
 import { 
   collectPersons, 
   collectLights, 
@@ -80,9 +80,7 @@ class Simon42DashboardStrategy {
     const floors = Object.values(hass.floors || {});
 
     // Get entities with "no_dboard" label for exclusion
-    const excludeLabels = entities
-      .filter(e => e.labels?.includes("no_dboard"))
-      .map(e => e.entity_id);
+    const excludeLabels = getExcludedLabels(entities);
 
     const visibleAreas = getVisibleAreas(areas, config.areas_display);
 

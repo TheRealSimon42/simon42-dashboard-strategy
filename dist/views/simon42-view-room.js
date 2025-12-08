@@ -1,7 +1,7 @@
 // ====================================================================
 // VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT + KAMERAS
 // ====================================================================
-import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged, isCameraStreamAvailable } from '../utils/helpers/simon42-helpers.js';
+import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged, isCameraStreamAvailable, getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
 import { t, initLanguage } from '../utils/i18n/simon42-i18n.js';
 import { filterByArea, filterEntities } from '../utils/filters/simon42-entity-filter.js';
 import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
@@ -76,11 +76,7 @@ class Simon42ViewRoomStrategy {
     };
 
     // Labels für Filterung - als Set für O(1) Lookup
-    const excludeLabels = new Set(
-      entities
-        .filter(e => e.labels?.includes("no_dboard"))
-        .map(e => e.entity_id)
-    );
+    const excludeLabels = new Set(getExcludedLabels(entities));
     
     const showDboardLabels = new Set(
       entities

@@ -5,6 +5,7 @@
 
 import { renderAreaEntitiesHTML } from './template/simon42-editor-area-renderers.js';
 import { t } from '../../utils/i18n/simon42-i18n.js';
+import { getExcludedLabels } from '../../utils/helpers/simon42-helpers.js';
 
 /**
  * Creates a checkbox listener attachment function
@@ -514,11 +515,7 @@ async function getAreaGroupedEntities(areaId, hass) {
   };
   
   // Build exclude labels set for O(1) lookup
-  const excludeLabels = new Set(
-    entities
-      .filter(e => e.labels?.includes("no_dboard"))
-      .map(e => e.entity_id)
-  );
+  const excludeLabels = new Set(getExcludedLabels(entities));
   
   // Filter and categorize entities
   for (const entity of entities) {

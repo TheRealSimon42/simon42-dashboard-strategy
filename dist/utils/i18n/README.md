@@ -57,7 +57,7 @@ All language files must include the same set of keys. See `simon42-i18n-de.js` o
 The i18n system is used throughout the codebase via the `t()` function:
 
 ```javascript
-import { t, initLanguage } from './utils/simon42-i18n.js';
+import { t, initLanguage } from '../utils/i18n/simon42-i18n.js';
 
 // Initialize language (usually done once at startup)
 initLanguage(config, hass);

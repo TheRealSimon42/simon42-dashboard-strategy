@@ -20,7 +20,8 @@ import {
   renderEntityNameTranslationsList,
   renderFavoritesList,
   renderRoomPinsList,
-  getDomainSelectorOptions
+  getDomainSelectorOptions,
+  getLanguageSelectorOptions
 } from './template/simon42-editor-entity-lists.js';
 import {
   renderNavigationBar,
@@ -32,7 +33,16 @@ import {
 } from './template/simon42-editor-area-renderers.js';
 
 // Re-export functions used by other modules
-export { renderEntityList, renderAreaEntitiesHTML, renderRoomPinsList, renderSearchCardDomainsList, renderEntityNamePatternsList, renderEntityNameTranslationsList };
+export { 
+  renderEntityList, 
+  renderAreaEntitiesHTML, 
+  renderRoomPinsList, 
+  renderSearchCardDomainsList, 
+  renderEntityNamePatternsList, 
+  renderEntityNameTranslationsList,
+  renderFavoritesList,
+  renderPublicTransportList
+};
 
 // filterEntitiesByIntegration is now imported from template/simon42-editor-integration-filters.js
 

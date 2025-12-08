@@ -207,7 +207,7 @@ export function renderEntityNamePatternsList(patterns) {
   `;
 }
 
-function getLanguageSelectorOptions(selectedLang = '', placeholderKey = 'translationFromLang') {
+export function getLanguageSelectorOptions(selectedLang = '', placeholderKey = 'translationFromLang') {
   const languages = [
     { value: '', label: t(placeholderKey) },
     { value: 'en', label: t('langEnglish') },

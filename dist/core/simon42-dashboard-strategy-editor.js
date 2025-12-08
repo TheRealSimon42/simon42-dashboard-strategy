@@ -2,7 +2,16 @@
 // SIMON42 DASHBOARD STRATEGY - EDITOR
 // ====================================================================
 import { getEditorStyles } from './editor/simon42-editor-styles.js';
-import { renderEditorHTML, renderEntityList } from './editor/simon42-editor-template.js';
+import { 
+  renderEditorHTML, 
+  renderEntityList,
+  renderFavoritesList,
+  renderRoomPinsList,
+  renderSearchCardDomainsList,
+  renderEntityNamePatternsList,
+  renderEntityNameTranslationsList,
+  renderPublicTransportList
+} from './editor/simon42-editor-template.js';
 import { initLanguage, t } from '../utils/i18n/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
 import { logWarn, initLogger } from '../utils/system/simon42-logger.js';
@@ -178,9 +187,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const allEntities = this._getAllEntitiesForSelect();
     
     // FEHLENDE VARIABLEN - HIER WAR DAS PROBLEM
-    const allAreas = Object.values(this._hass.areas).sort((a, b) => 
-      a.name.localeCompare(b.name)
-    );
+    const allAreas = this._getSortedAreas();
     const hiddenAreas = this._config.areas_display?.hidden || [];
     const areaOrder = this._config.areas_display?.order || [];
     
@@ -875,27 +882,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const favoriteEntities = this._config.favorite_entities || [];
     const allEntities = this._getAllEntitiesForSelect();
     
-    // Importiere die Render-Funktion
-    import('./editor/simon42-editor-template.js').then(module => {
-      container.innerHTML = module.renderFavoritesList?.(favoriteEntities, allEntities) || 
-                          this._renderFavoritesListFallback(favoriteEntities, allEntities);
-      
-      // Reattach listeners
-      this._attachFavoritesListeners();
-    }).catch((error) => {
-      // Fallback falls Import fehlschlägt
-      logWarn('[Editor] Failed to load favorites list component, using fallback:', error);
-      container.innerHTML = this._renderFavoritesListFallback(favoriteEntities, allEntities);
-      this._attachFavoritesListeners();
-    });
-  }
-
-  _renderFavoritesListFallback(favoriteEntities, allEntities) {
-    // Use centralized renderEntityList function
-    return renderEntityList(favoriteEntities, allEntities, {
-      emptyStateText: t('noFavoritesAdded'),
-      itemClass: 'favorite-item',
-    });
+    // Use directly imported function
+    container.innerHTML = renderFavoritesList(favoriteEntities, allEntities);
+    
+    // Reattach listeners
+    this._attachFavoritesListeners();
   }
 
   _attachRoomPinsListeners() {
@@ -982,39 +973,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     const roomPinEntities = this._config.room_pin_entities || [];
     const allEntities = this._getAllEntitiesForSelect();
-    const allAreas = Object.values(this._hass.areas).sort((a, b) => 
-      a.name.localeCompare(b.name)
-    );
+    const allAreas = this._getSortedAreas();
     
-    // Importiere die Render-Funktion
-    import('./editor/simon42-editor-template.js').then(module => {
-      container.innerHTML = module.renderRoomPinsList?.(roomPinEntities, allEntities, allAreas) || 
-                          this._renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas);
-      
-      // Reattach listeners
-      this._attachRoomPinsListeners();
-    }).catch((error) => {
-      // Fallback falls Import fehlschlägt
-      logWarn('[Editor] Failed to load room pins list component, using fallback:', error);
-      container.innerHTML = this._renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas);
-      this._attachRoomPinsListeners();
-    });
+    // Use directly imported function
+    container.innerHTML = renderRoomPinsList(roomPinEntities, allEntities, allAreas);
+    
+    // Reattach listeners
+    this._attachRoomPinsListeners();
   }
 
-  _renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas) {
-    // Use centralized renderEntityList function
-    const areaMap = new Map(allAreas.map(a => [a.area_id, a.name]));
-    
-    return renderEntityList(roomPinEntities, allEntities, {
-      emptyStateText: t('noRoomPinsAdded'),
-      itemClass: 'room-pin-item',
-      getMetadata: (entityId, entity, hass, allAreas) => {
-        const areaId = entity?.area_id || entity?.device_area_id;
-        const areaName = areaId ? areaMap.get(areaId) || areaId : t('noRoom');
-        return `📍 ${areaName}`;
-      },
-      allAreas
-    });
+  _getSortedAreas() {
+    if (!this._hass || !this._hass.areas) return [];
+    return Object.values(this._hass.areas).sort((a, b) => 
+      a.name.localeCompare(b.name)
+    );
   }
 
   _getAllEntitiesForSelect() {
@@ -1308,19 +1280,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     const domains = this._config.search_card_included_domains || [];
     
-    // Importiere die Render-Funktion
-    import('./editor/simon42-editor-template.js').then(module => {
-      container.innerHTML = module.renderSearchCardDomainsList?.(domains) || 
-                          this._renderSearchCardDomainsListFallback(domains);
-      
-      // Reattach listeners
-      this._attachSearchCardDomainListeners();
-    }).catch((error) => {
-      // Fallback falls Import fehlschlägt
-      logWarn('[Editor] Failed to load domain list component, using fallback:', error);
-      container.innerHTML = this._renderSearchCardDomainsListFallback(domains);
-      this._attachSearchCardDomainListeners();
-    });
+    // Use directly imported function
+    container.innerHTML = renderSearchCardDomainsList(domains);
+    
+    // Reattach listeners
+    this._attachSearchCardDomainListeners();
   }
 
   _updateSearchCardExcludedDomainsList() {
@@ -1329,66 +1293,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     const domains = this._config.search_card_excluded_domains || [];
     
-    // Importiere die Render-Funktion
-    import('./editor/simon42-editor-template.js').then(module => {
-      container.innerHTML = module.renderSearchCardDomainsList?.(domains) || 
-                          this._renderSearchCardDomainsListFallback(domains);
-      
-      // Reattach listeners
-      this._attachSearchCardDomainListeners();
-    }).catch((error) => {
-      // Fallback falls Import fehlschlägt
-      logWarn('[Editor] Failed to load domain list component, using fallback:', error);
-      container.innerHTML = this._renderSearchCardDomainsListFallback(domains);
-      this._attachSearchCardDomainListeners();
-    });
-  }
-
-  _renderSearchCardDomainsListFallback(domains) {
-    if (!domains || domains.length === 0) {
-      return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noDomainsAdded')}</div>`;
-    }
-
-    const getDomainLabel = (domain) => {
-      const domainMap = {
-        'light': t('domainLight'),
-        'switch': t('domainSwitch'),
-        'cover': t('domainCover'),
-        'climate': t('domainClimate'),
-        'sensor': t('domainSensor'),
-        'binary_sensor': t('domainBinarySensor'),
-        'media_player': t('domainMediaPlayer'),
-        'scene': t('domainScene'),
-        'vacuum': t('domainVacuum'),
-        'fan': t('domainFan'),
-        'camera': t('domainCamera'),
-        'lock': t('domainLock'),
-        'input_boolean': t('domainInputBoolean'),
-        'input_number': t('domainInputNumber'),
-        'input_select': t('domainInputSelect'),
-        'input_text': t('domainInputText')
-      };
-      return domainMap[domain] || domain;
-    };
-
-    return `
-      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
-        ${domains.map((domain) => {
-          const label = getDomainLabel(domain);
-          return `
-            <div class="search-card-domain-item" data-domain="${domain}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <span style="flex: 1; font-size: 14px;">
-                <strong>${label}</strong>
-                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${domain}</span>
-              </span>
-              <button class="remove-domain-btn" data-domain="${domain}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
-                ✕
-              </button>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+    // Use directly imported function
+    container.innerHTML = renderSearchCardDomainsList(domains);
+    
+    // Reattach listeners
+    this._attachSearchCardDomainListeners();
   }
 
   _showRoomViewsChanged(showRoomViews) {
@@ -1716,27 +1625,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const publicTransportEntities = this._config.public_transport_entities || [];
     const allEntities = this._getAllEntitiesForSelect();
     
-    // Importiere die Render-Funktion
-    import('./editor/simon42-editor-template.js').then(module => {
-      // Die renderPublicTransportList Funktion ist nicht exportiert, verwende Fallback
-      container.innerHTML = this._renderPublicTransportListFallback(publicTransportEntities, allEntities);
-      
-      // Reattach listeners
-      this._attachPublicTransportListeners();
-    }).catch((error) => {
-      // Fallback falls Import fehlschlägt
-      logWarn('[Editor] Failed to load public transport list component, using fallback:', error);
-      container.innerHTML = this._renderPublicTransportListFallback(publicTransportEntities, allEntities);
-      this._attachPublicTransportListeners();
-    });
-  }
-
-  _renderPublicTransportListFallback(publicTransportEntities, allEntities) {
-    // Use centralized renderEntityList function
-    return renderEntityList(publicTransportEntities, allEntities, {
-      emptyStateText: t('noEntitiesAdded'),
-      itemClass: 'public-transport-item',
-    });
+    // Use directly imported function
+    container.innerHTML = renderPublicTransportList(publicTransportEntities, allEntities);
+    
+    // Reattach listeners
+    this._attachPublicTransportListeners();
   }
 
   _attachLogLevelListener() {
@@ -1968,22 +1861,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     const patterns = this._config.entity_name_patterns || [];
     
-    // Importiere die Render-Funktion
-    import('./editor/simon42-editor-template.js').then(module => {
-      if (module.renderEntityNamePatternsList) {
-        container.innerHTML = module.renderEntityNamePatternsList(patterns);
-      } else {
-        container.innerHTML = this._renderEntityNamePatternsListFallback(patterns);
-      }
-      
-      // Reattach listeners
-      this._attachEntityNamePatternsListeners();
-    }).catch((error) => {
-      // Fallback falls Import fehlschlägt
-      logWarn('[Editor] Failed to load entity name patterns list component, using fallback:', error);
-      container.innerHTML = this._renderEntityNamePatternsListFallback(patterns);
-      this._attachEntityNamePatternsListeners();
-    });
+    // Use directly imported function
+    container.innerHTML = renderEntityNamePatternsList(patterns);
+    
+    // Reattach listeners
+    this._attachEntityNamePatternsListeners();
   }
 
   _attachEntityNameTranslationsListeners() {
@@ -2191,148 +2073,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     const translations = this._config.entity_name_translations || [];
     
-    // Importiere die Render-Funktion
-    import('./editor/simon42-editor-template.js').then(module => {
-      if (module.renderEntityNameTranslationsList) {
-        container.innerHTML = module.renderEntityNameTranslationsList(translations);
-      } else {
-        container.innerHTML = this._renderEntityNameTranslationsListFallback(translations);
-      }
-      
-      // Reattach listeners
-      this._attachEntityNameTranslationsListeners();
-    }).catch((error) => {
-      // Fallback falls Import fehlschlägt
-      logWarn('[Editor] Failed to load entity name translations list component, using fallback:', error);
-      container.innerHTML = this._renderEntityNameTranslationsListFallback(translations);
-      this._attachEntityNameTranslationsListeners();
-    });
-  }
-
-  _renderEntityNameTranslationsListFallback(translations) {
-    if (!translations || translations.length === 0) {
-      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Übersetzungen hinzugefügt</div>';
-    }
-
-    const getLanguageSelectorOptions = (selectedLang = '', placeholderKey = 'translationFromLang') => {
-      const languages = [
-        { value: '', label: t(placeholderKey) },
-        { value: 'en', label: t('langEnglish') },
-        { value: 'de', label: t('langGerman') }
-      ];
-      
-      return languages.map(lang => 
-        `<option value="${lang.value}" ${lang.value === selectedLang ? 'selected' : ''}>${lang.label}</option>`
-      ).join('');
-    };
-
-    return `
-      <ha-md-list>
-        ${translations.map((translation, index) => {
-          const fromText = translation.from || '';
-          const toText = translation.to || '';
-          const fromLang = translation.from_lang || '';
-          const toLang = translation.to_lang || '';
-          return `
-            <ha-md-list-item data-translation-index="${index}" class="entity-name-translation-item">
-              <ha-icon slot="start" icon="mdi:translate"></ha-icon>
-              <span slot="headline">"${fromText.replace(/"/g, '&quot;')}" → "${toText.replace(/"/g, '&quot;')}"</span>
-              <div slot="supporting-text" class="translation-lang-selectors">
-                <select 
-                  class="translation-from-lang-select native-select" 
-                  data-translation-index="${index}"
-                  title="${t('translationFromLang')}"
-                >
-                  ${getLanguageSelectorOptions(fromLang, 'translationFromLang')}
-                </select>
-                <span class="translation-arrow">→</span>
-                <select 
-                  class="translation-to-lang-select native-select" 
-                  data-translation-index="${index}"
-                  title="${t('translationToLang')}"
-                >
-                  ${getLanguageSelectorOptions(toLang, 'translationToLang')}
-                </select>
-              </div>
-              <ha-icon-button slot="end" class="remove-translation-btn" data-translation-index="${index}" aria-label="${t('remove')}">
-                <ha-icon icon="mdi:close"></ha-icon>
-              </ha-icon-button>
-            </ha-md-list-item>
-          `;
-        }).join('')}
-      </ha-md-list>
-    `;
-  }
-
-  _renderEntityNamePatternsListFallback(patterns) {
-    if (!patterns || patterns.length === 0) {
-      return `<div class="empty-state">${t('noPatternsAdded')}</div>`;
-    }
-
-    // Hilfsfunktion: Escaped HTML-Sonderzeichen und ersetzt Leerzeichen durch sichtbare Zeichen
-    const makeSpacesVisible = (text) => {
-      // Escaped zuerst HTML-Sonderzeichen
-      const escaped = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-      
-      // Ersetze dann normale Leerzeichen durch · (middle dot) für bessere Sichtbarkeit
-      // Verwende HTML-Entity für zuverlässige Darstellung
-      return escaped.replace(/ /g, '&middot;');
-    };
-
-    const getDomainSelectorOptions = (selectedDomain = '') => {
-      const domains = [
-        { value: '', label: t('patternDomainAll') },
-        { value: 'light', label: t('domainLight') },
-        { value: 'switch', label: t('domainSwitch') },
-        { value: 'cover', label: t('domainCover') },
-        { value: 'climate', label: t('domainClimate') },
-        { value: 'sensor', label: t('domainSensor') },
-        { value: 'binary_sensor', label: t('domainBinarySensor') },
-        { value: 'media_player', label: t('domainMediaPlayer') },
-        { value: 'scene', label: t('domainScene') },
-        { value: 'vacuum', label: t('domainVacuum') },
-        { value: 'fan', label: t('domainFan') },
-        { value: 'camera', label: t('domainCamera') },
-        { value: 'lock', label: t('domainLock') },
-        { value: 'input_boolean', label: t('domainInputBoolean') },
-        { value: 'input_number', label: t('domainInputNumber') },
-        { value: 'input_select', label: t('domainInputSelect') },
-        { value: 'input_text', label: t('domainInputText') }
-      ];
-      
-      return domains.map(domain => 
-        `<option value="${domain.value}" ${domain.value === selectedDomain ? 'selected' : ''}>${domain.label}</option>`
-      ).join('');
-    };
-
-    return `
-      <div class="entity-list-container">
-        ${patterns.map((pattern, index) => {
-          const patternText = typeof pattern === 'string' ? pattern : pattern.pattern || '';
-          const displayText = makeSpacesVisible(patternText);
-          const currentDomain = typeof pattern === 'object' ? pattern.domain : '';
-          return `
-            <div class="entity-list-item entity-name-pattern-item" data-pattern-index="${index}">
-              <span class="entity-list-pattern-text" title="${patternText.replace(/"/g, '&quot;')}">${displayText}</span>
-              <select 
-                class="entity-list-select pattern-domain-select" 
-                data-pattern-index="${index}"
-              >
-                ${getDomainSelectorOptions(currentDomain)}
-              </select>
-              <button class="entity-list-remove-btn remove-pattern-btn" data-pattern-index="${index}">
-                ✕
-              </button>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+    // Use directly imported function
+    container.innerHTML = renderEntityNameTranslationsList(translations);
+    
+    // Reattach listeners
+    this._attachEntityNameTranslationsListeners();
   }
 
   _attachHvvCardListeners() {
