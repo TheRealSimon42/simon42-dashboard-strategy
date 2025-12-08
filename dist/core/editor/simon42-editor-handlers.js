@@ -123,28 +123,12 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
       // Check if area is hidden
       const isHidden = item.dataset.areaHidden === 'true' || item.classList.contains('area-hidden');
       if (isHidden) {
-        // Show visual feedback that hidden areas can't be expanded
-        item.style.transition = 'opacity 0.2s, transform 0.2s';
-        const originalOpacity = item.style.opacity;
-        const originalTransform = item.style.transform;
-        
-        // Shake animation to indicate it's not expandable
-        item.style.opacity = '0.5';
-        item.style.transform = 'translateX(-4px)';
-        
-        setTimeout(() => {
-          item.style.transform = 'translateX(4px)';
-        }, 50);
-        
-        setTimeout(() => {
-          item.style.transform = 'translateX(-2px)';
-        }, 100);
-        
-        setTimeout(() => {
-          item.style.opacity = originalOpacity || '';
-          item.style.transform = originalTransform || '';
-        }, 200);
-        
+        // When clicking on a hidden area, toggle its visibility instead of expanding
+        const visibilityButton = item.querySelector('ha-icon-button.area-visibility-toggle[data-area-id]');
+        if (visibilityButton) {
+          // Trigger the visibility toggle button click
+          visibilityButton.click();
+        }
         return; // Don't expand hidden areas
       }
       

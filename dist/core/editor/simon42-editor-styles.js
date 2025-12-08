@@ -219,7 +219,13 @@ export function getEditorStyles() {
     /* Hidden area styling */
     ha-md-list-item.area-hidden {
       opacity: 0.6;
-      cursor: not-allowed !important;
+      /* Allow clicking to activate hidden areas */
+      cursor: pointer;
+    }
+    
+    /* Drag handle should still work for hidden areas */
+    ha-md-list-item.area-hidden .handle {
+      cursor: grab;
     }
     
     ha-md-list-item.area-hidden:hover {

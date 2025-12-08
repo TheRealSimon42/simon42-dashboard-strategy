@@ -44,23 +44,38 @@ export function createOverviewSection(data) {
       if (!hass?.states?.[alarmEntity]) {
         logWarn('[Section Builder] Alarm entity not found:', alarmEntity);
       } else {
-        // Uhr und Alarm-Panel nebeneinander
-        cards.push({
-          type: "clock",
-          clock_size: "small",
-          show_seconds: false
-        });
-        
         // Check if Alarmo card should be used
         const useAlarmoCard = config.use_alarmo_card === true;
         // Validate entity is an alarm_control_panel entity and from Alarmo platform
         const isValidAlarmEntity = alarmEntity.startsWith('alarm_control_panel.');
-        if (useAlarmoCard && isValidAlarmEntity && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
+        const isAlarmoCard = useAlarmoCard && isValidAlarmEntity && hass?.entities?.[alarmEntity]?.platform === 'alarmo';
+        
+        // Wenn Alarmo-Karte verwendet wird, Uhr in voller Breite (da Alarmo-Karte groß ist)
+        if (isAlarmoCard) {
+          cards.push({
+            type: "clock",
+            clock_size: "small",
+            show_seconds: false,
+            grid_options: {
+              columns: "full",
+            }
+          });
+          
           cards.push({
             type: "custom:alarmo-card",
-            entity: alarmEntity
+            entity: alarmEntity,
+            grid_options: {
+              columns: "full",
+            }
           });
         } else {
+          // Uhr und Alarm-Panel nebeneinander
+          cards.push({
+            type: "clock",
+            clock_size: "small",
+            show_seconds: false
+          });
+          
           cards.push({
             type: "tile",
             entity: alarmEntity,
