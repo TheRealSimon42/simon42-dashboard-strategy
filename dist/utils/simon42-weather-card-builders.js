@@ -5,7 +5,7 @@
 // Makes it easier to add new weather cards and maintain existing ones
 // ====================================================================
 
-import { getUserLocale, getUserHour12 } from './simon42-user-preferences.js';
+import { getUserLocale, getUserHour12, getUserLanguage } from './simon42-user-preferences.js';
 import { t } from './simon42-i18n.js';
 import { translateAreaName } from './simon42-helpers.js';
 
@@ -18,7 +18,9 @@ import { translateAreaName } from './simon42-helpers.js';
  */
 export function buildClockWeatherCard(weatherEntity, config, hass) {
   // Get user preferences
-  const locale = getUserLocale(hass, config);
+  // Use language code (e.g., 'de', 'en') instead of full locale (e.g., 'de-DE', 'en-US')
+  // as the clock-weather-card expects a simple language string
+  const language = getUserLanguage(hass, config);
   const hour12 = getUserHour12(hass, config);
   
   // Build base configuration
@@ -58,12 +60,15 @@ export function buildClockWeatherCard(weatherEntity, config, hass) {
   }
   
   // Locale (always set from user preference for proper translation)
-  // The card uses this for date/time formatting and translations
-  cardConfig.locale = locale;
+  // The card expects a simple language string (e.g., 'de', 'en'), not a full locale
+  cardConfig.locale = language;
   
   // Time format (always set from user preference)
   // The card uses this to determine 12-hour vs 24-hour format
   cardConfig.time_format = hour12 ? 12 : 24;
+  
+  // Hide clock (always set to true as requested)
+  cardConfig.hide_clock = true;
   
   // Optional: time pattern (luxon format)
   if (config.clock_weather_time_pattern) {
@@ -88,11 +93,6 @@ export function buildClockWeatherCard(weatherEntity, config, hass) {
   // Optional: hide forecast section
   if (config.clock_weather_hide_forecast_section === true) {
     cardConfig.hide_forecast_section = true;
-  }
-  
-  // Optional: hide clock
-  if (config.clock_weather_hide_clock === true) {
-    cardConfig.hide_clock = true;
   }
   
   // Optional: hide date
