@@ -265,6 +265,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       () => this._updateAreaOrder()
     );
     
+    // Initialize MDC switches
+    this._initializeMDCSwitches();
+    
     // Expand Button Listener
     attachExpandButtonListeners(
       this,
@@ -290,6 +293,29 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Remove spacing above navigation bar
     this._removeSpacingAboveNavigation();
+  }
+  
+  _initializeMDCSwitches() {
+    // Initialize all MDC switches after rendering
+    // Home Assistant should have MDC loaded, but we need to ensure switches are initialized
+    const switches = this.querySelectorAll('.mdc-switch');
+    
+    switches.forEach(switchElement => {
+      // Check if switch is already initialized
+      if (switchElement._mdcSwitch) {
+        return;
+      }
+      
+      // Try to initialize using Home Assistant's MDC if available
+      if (window.mdc && window.mdc.switchControl && window.mdc.switchControl.MDCSwitch) {
+        try {
+          switchElement._mdcSwitch = new window.mdc.switchControl.MDCSwitch(switchElement);
+        } catch (e) {
+          // If initialization fails, the switch will still work as a checkbox
+          console.warn('Failed to initialize MDC switch:', e);
+        }
+      }
+    });
   }
   
   _removeSpacingAboveNavigation() {

@@ -149,6 +149,11 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
         attachEntityCheckboxListeners(finalContent, onEntitiesLoad);
         attachGroupCheckboxListeners(finalContent, onEntitiesLoad);
         attachEntityExpandButtonListeners(finalContent, element);
+        
+        // Initialize MDC switches in the newly loaded content
+        if (element._initializeMDCSwitches) {
+          element._initializeMDCSwitches();
+        }
       }
     });
   });
