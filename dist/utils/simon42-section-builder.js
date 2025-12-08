@@ -655,22 +655,22 @@ export function createCalendarCardSection(config, hass) {
 
   // Check if Calendar Card Pro should be used
   const useCalendarCardPro = config.use_calendar_card_pro === true;
-  const cardType = useCalendarCardPro ? 'custom:calendar-card-pro' : 'custom:calendar-card';
   
-  // Build card config - calendar-card-pro uses entities array with entity property
+  // Build card config
   let cardConfig;
   if (useCalendarCardPro) {
     // calendar-card-pro expects entities array with entity property
     cardConfig = {
-      type: cardType,
+      type: 'custom:calendar-card-pro',
       entities: validEntities.map(entityId => ({
         entity: entityId
       }))
     };
   } else {
-    // calendar-card expects simple entities array
+    // Standard Home Assistant calendar card
     cardConfig = {
-      type: cardType,
+      type: 'calendar',
+      initial_view: 'dayGridDay',
       entities: validEntities
     };
   }
