@@ -629,7 +629,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ${t('weatherCardDescription')}
         </div>
         ${showWeather !== false ? `
-        <div style="margin-top: 12px;">
+        <div class="sub-option">
           ${hasClockWeatherCardDeps ? `
           <div class="form-row">
             ${renderMDCSwitch('use-clock-weather-card', useClockWeatherCard, t('useClockWeatherCard'), !hasClockWeatherCardDeps)}
