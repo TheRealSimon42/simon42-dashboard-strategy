@@ -89,6 +89,9 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Masonry Layout** - Integration des s42-masonry-view Projekts
 - **Better Thermostat** - Ersetzt Standard-Thermostat-Karten durch Better Thermostat UI-Karten
 - **Horizon Card** - Zeigt Sonnen- und Mondposition über dem Horizont in der Wetter-Sektion
+- **Alarmo Card** - Unterstützung für Alarmo-Karten bei Alarm-Entitäten
+- **Scheduler Card** - Zeitplan-Verwaltung mit der Scheduler-Karte
+- **Calendar Card** - Kalender-Integration mit der Calendar-Karte
 - **Öffentlicher Nahverkehr** - Unterstützt HVV (Hamburg), ha-departures, KVV (Karlsruhe) und db_info Integrationen
 
 ## 📦 Installation
@@ -412,6 +415,12 @@ strategy:
 | `show_horizon_card` | boolean | `false` | Zeigt die Horizon Card in der Wetter-Sektion an |
 | `horizon_card_extended` | boolean | `false` | Zeigt erweiterte Informationen in der Horizon Card an (Azimut, Elevation, etc.) |
 | `alarm_entity` | string | `''` | Entity-ID des Alarm-Panels für die Security-View |
+| `use_alarmo_card` | boolean | `false` | Verwendet die Alarmo-Karte statt der Standard-Tile-Karte (nur bei Alarmo-Entities) |
+| `show_scheduler_card` | boolean | `false` | Zeigt die Scheduler-Karte in der Übersicht an |
+| `scheduler_entity` | string | `''` | Entity-ID der Scheduler-Entity (z.B. `switch.scheduler_heating`) |
+| `show_calendar_card` | boolean | `false` | Zeigt die Calendar-Karte in der Übersicht an |
+| `use_calendar_card_pro` | boolean | `false` | Verwendet Calendar Card Pro statt der Standard-Kalender-Karte |
+| `calendar_entities` | array | `[]` | Array von Kalender-Entity-IDs (z.B. `['calendar.home', 'calendar.work']`) |
 | `favorite_entities` | array | `[]` | Array von Entity-IDs, die als Favoriten in der Übersicht angezeigt werden |
 | `room_pin_entities` | array | `[]` | Array von Entity-IDs, die als Raum-Pins angezeigt werden (siehe Raum-Pins) |
 
@@ -950,6 +959,9 @@ Das Dashboard unterstützt verschiedene optionale Integrationen, die alle über 
 - **Reolink Kameras** - Erweiterte Unterstützung für Reolink-Kameras
 - **Better Thermostat** - Ersetzt Standard-Thermostat-Karten durch Better Thermostat UI-Karten
 - **Horizon Card** - Zeigt Sonnen- und Mondposition über dem Horizont
+- **Alarmo Card** - Unterstützung für Alarmo-Karten bei Alarm-Entitäten
+- **Scheduler Card** - Zeitplan-Verwaltung mit der Scheduler-Karte
+- **Calendar Card** - Kalender-Integration mit der Calendar-Karte
 - **Öffentlicher Nahverkehr** - Unterstützt HVV, ha-departures, KVV und db_info Integrationen
 
 <details>
@@ -1078,6 +1090,107 @@ strategy:
 ```
 
 Die Card verwendet automatisch die Benutzer-Präferenzen für Sprache, Zeitformat und Locale. Weitere Optionen können direkt in der Card-Konfiguration gesetzt werden (siehe [Clock Weather Card Dokumentation](https://github.com/pkissling/clock-weather-card)).
+
+</details>
+
+#### Alarmo Card
+
+Ersetzt die Standard-Tile-Karte für Alarm-Entitäten durch die Alarmo-Karte, wenn eine Alarmo-Entität ausgewählt wurde. Konfigurierbar im Editor.
+
+**Features:**
+- Automatische Erkennung von Alarmo-Entities über die Platform in der Entity Registry
+- Option wird nur angezeigt, wenn eine Alarmo-Entität als Alarm-Entity ausgewählt wurde
+- Verwendet die `alarmo-card` statt der Standard-Tile-Karte
+
+**Voraussetzung:**
+- Alarmo Integration muss installiert sein
+- `alarmo-card` muss als Custom Card installiert sein
+- Der Editor prüft automatisch, ob die Card verfügbar ist
+
+<details>
+<summary>YAML-Konfiguration</summary>
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  alarm_entity: alarm_control_panel.alarmo
+  use_alarmo_card: true
+```
+
+</details>
+
+#### Scheduler Card
+
+Zeigt eine Scheduler-Karte an, um Zeitpläne zu verwalten. Konfigurierbar im Editor.
+
+**Features:**
+- Integration der Scheduler-Karte in die Übersicht
+- Unterstützt Scheduler-Entities (switch.scheduler_* oder input_boolean.scheduler_*)
+- Automatische Erkennung verfügbarer Scheduler-Entities im Editor
+
+**Voraussetzung:**
+- Scheduler Component Integration muss installiert sein
+- `scheduler-card` muss als Custom Card installiert sein
+- Der Editor prüft automatisch, ob beide Komponenten verfügbar sind
+
+<details>
+<summary>YAML-Konfiguration</summary>
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_scheduler_card: true
+  scheduler_entity: switch.scheduler_heating
+```
+
+**Links:**
+- [Scheduler Card](https://github.com/nielsfaber/scheduler-card)
+- [Scheduler Component](https://github.com/nielsfaber/scheduler-component)
+
+</details>
+
+#### Calendar Card
+
+Zeigt eine Kalender-Karte mit ausgewählten Kalender-Entitäten an. Konfigurierbar im Editor.
+
+**Features:**
+- Integration der Calendar-Karte in die Übersicht
+- Unterstützt mehrere Kalender-Entities
+- Automatische Erkennung verfügbarer Kalender-Entities im Editor
+- Optionale Verwendung von Calendar Card Pro für erweiterte Funktionen und bessere Performance
+
+**Voraussetzung:**
+- `calendar-card` oder `calendar-card-pro` muss als Custom Card installiert sein
+- Der Editor prüft automatisch, ob eine der Cards verfügbar ist
+- Kalender-Entities müssen vorhanden sein
+
+<details>
+<summary>YAML-Konfiguration</summary>
+
+**Standard Calendar Card:**
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_calendar_card: true
+  calendar_entities:
+    - calendar.home
+    - calendar.work
+```
+
+**Calendar Card Pro:**
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_calendar_card: true
+  use_calendar_card_pro: true
+  calendar_entities:
+    - calendar.home
+    - calendar.work
+```
+
+**Links:**
+- [Calendar Card](https://github.com/ljmerza/calendar-card)
+- [Calendar Card Pro](https://github.com/alexpfau/calendar-card-pro)
 
 </details>
 
@@ -1345,4 +1458,4 @@ Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenz
 
 **Entwickelt mit ❤️ für die Home Assistant Community**
 
-*Letzte Aktualisierung: 07.12.2025*
+*Letzte Aktualisierung: 08.12.2025*

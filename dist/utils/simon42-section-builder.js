@@ -46,11 +46,21 @@ export function createOverviewSection(data) {
         clock_size: "small",
         show_seconds: false
       });
-      cards.push({
-        type: "tile",
-        entity: alarmEntity,
-        vertical: false
-      });
+      
+      // Check if Alarmo card should be used
+      const useAlarmoCard = config.use_alarmo_card === true;
+      if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
+        cards.push({
+          type: "custom:alarmo-card",
+          entity: alarmEntity
+        });
+      } else {
+        cards.push({
+          type: "tile",
+          entity: alarmEntity,
+          vertical: false
+        });
+      }
     } else {
       // Nur Uhr in voller Breite
       cards.push({
@@ -66,14 +76,26 @@ export function createOverviewSection(data) {
     // Wenn keine Uhr, aber Alarm-Entity vorhanden, zeige nur Alarm-Panel
     const alarmEntity = config.alarm_entity;
     if (alarmEntity) {
-      cards.push({
-        type: "tile",
-        entity: alarmEntity,
-        vertical: false,
-        grid_options: {
-          columns: "full",
-        }
-      });
+      // Check if Alarmo card should be used
+      const useAlarmoCard = config.use_alarmo_card === true;
+      if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
+        cards.push({
+          type: "custom:alarmo-card",
+          entity: alarmEntity,
+          grid_options: {
+            columns: "full",
+          }
+        });
+      } else {
+        cards.push({
+          type: "tile",
+          entity: alarmEntity,
+          vertical: false,
+          grid_options: {
+            columns: "full",
+          }
+        });
+      }
     }
   }
 
@@ -522,6 +544,112 @@ export function createPublicTransportSection(config, hass) {
   } else {
     cards.push(cardConfig);
   }
+
+  return {
+    type: "grid",
+    cards: cards
+  };
+}
+
+/**
+ * Erstellt die Scheduler-Card-Section
+ * @param {Object} config - Konfigurationsobjekt
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
+ */
+export function createSchedulerCardSection(config, hass) {
+  const showSchedulerCard = config.show_scheduler_card === true;
+  if (!showSchedulerCard) {
+    return null;
+  }
+
+  const schedulerEntity = config.scheduler_entity;
+  if (!schedulerEntity) {
+    return null;
+  }
+
+  // Validate entity exists
+  if (!hass?.states?.[schedulerEntity]) {
+    logWarn('[Section Builder] Scheduler entity not found:', schedulerEntity);
+    return null;
+  }
+
+  const cards = [
+    {
+      type: "heading",
+      heading: t('scheduler'),
+      heading_style: "title",
+      icon: "mdi:calendar-clock"
+    },
+    {
+      type: "custom:scheduler-card",
+      entity: schedulerEntity
+    }
+  ];
+
+  return {
+    type: "grid",
+    cards: cards
+  };
+}
+
+/**
+ * Erstellt die Calendar-Card-Section
+ * @param {Object} config - Konfigurationsobjekt
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
+ */
+export function createCalendarCardSection(config, hass) {
+  const showCalendarCard = config.show_calendar_card === true;
+  if (!showCalendarCard) {
+    return null;
+  }
+
+  const calendarEntities = config.calendar_entities || [];
+  if (calendarEntities.length === 0) {
+    return null;
+  }
+
+  // Filter valid entities
+  const validEntities = calendarEntities.filter(entityId => {
+    return hass?.states?.[entityId] !== undefined;
+  });
+
+  if (validEntities.length === 0) {
+    return null;
+  }
+
+  // Check if Calendar Card Pro should be used
+  const useCalendarCardPro = config.use_calendar_card_pro === true;
+  const cardType = useCalendarCardPro ? 'custom:calendar-card-pro' : 'custom:calendar-card';
+  
+  // Build card config - calendar-card-pro uses entities array with entity property
+  let cardConfig;
+  if (useCalendarCardPro) {
+    // calendar-card-pro expects entities array with entity property
+    cardConfig = {
+      type: cardType,
+      entities: validEntities.map(entityId => ({
+        entity: entityId
+      }))
+    };
+  } else {
+    // calendar-card expects simple entities array
+    cardConfig = {
+      type: cardType,
+      entities: validEntities
+    };
+  }
+
+  const cards = [
+    {
+      type: "heading",
+      heading: t('calendar'),
+      heading_style: "title",
+      icon: "mdi:calendar"
+    },
+    cardConfig
+  ];
 
   return {
     type: "grid",

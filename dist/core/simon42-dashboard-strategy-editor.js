@@ -141,18 +141,37 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const hasHorizonCardDeps = checkDependency('horizon-card', this._hass);
     const hasClockWeatherCardDeps = checkDependency('clock-weather-card', this._hass);
     const useClockWeatherCard = this._config.use_clock_weather_card === true;
+    const hasSchedulerCardDeps = checkDependency('scheduler-card', this._hass);
+    const hasAlarmoCardDeps = checkDependency('alarmo-card', this._hass);
+    const hasCalendarCardDeps = checkDependency('calendar-card', this._hass);
+    const hasCalendarCardProDeps = checkDependency('calendar-card-pro', this._hass);
     
     // Sammle alle Alarm-Control-Panel-Entitäten
     const alarmEntities = Object.keys(this._hass.states)
       .filter(entityId => entityId.startsWith('alarm_control_panel.'))
       .map(entityId => {
         const state = this._hass.states[entityId];
+        const entityRegistry = this._hass.entities?.[entityId];
         return {
           entity_id: entityId,
-          name: state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ')
+          name: state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+          isAlarmo: entityRegistry?.platform === 'alarmo'
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Check if selected alarm entity is from Alarmo
+    const selectedAlarmEntity = this._config.alarm_entity || '';
+    const isSelectedAlarmEntityAlarmo = selectedAlarmEntity && 
+      this._hass.entities?.[selectedAlarmEntity]?.platform === 'alarmo';
+    const useAlarmoCard = this._config.use_alarmo_card === true;
+    
+    // Scheduler and Calendar card configs
+    const showSchedulerCard = this._config.show_scheduler_card === true;
+    const schedulerEntity = this._config.scheduler_entity || '';
+    const showCalendarCard = this._config.show_calendar_card === true;
+    const calendarEntities = this._config.calendar_entities || [];
+    const useCalendarCardPro = this._config.use_calendar_card_pro === true;
     
     // Alle Entitäten für Favoriten-Select
     const allEntities = this._getAllEntitiesForSelect();
@@ -185,6 +204,17 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         summariesColumns,
         alarmEntity,
         alarmEntities,
+        isSelectedAlarmEntityAlarmo,
+        hasAlarmoCardDeps,
+        useAlarmoCard,
+        showSchedulerCard,
+        hasSchedulerCardDeps,
+        schedulerEntity,
+        showCalendarCard,
+        hasCalendarCardDeps,
+        hasCalendarCardProDeps,
+        useCalendarCardPro,
+        calendarEntities,
         favoriteEntities,
         roomPinEntities,
         allEntities,
@@ -249,6 +279,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._attachHaDeparturesCardListeners();
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();
+    this._attachAlarmoCardListener();
+    this._attachSchedulerCardListeners();
+    this._attachCalendarCardListeners();
+    this._attachCalendarCardProListener();
     this._attachFavoritesListeners();
     this._attachRoomPinsListeners();
     this._attachPublicTransportListeners();
@@ -600,6 +634,101 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _alarmEntityChanged(entityId) {
     this._configManager.updatePropertyCustom('alarm_entity', entityId, (val) => !val || val === '');
+    // Re-render to show/hide Alarmo card option
+    this._render();
+  }
+
+  _attachAlarmoCardListener() {
+    const alarmoCardSwitch = this.querySelector('#use-alarmo-card');
+    if (alarmoCardSwitch) {
+      alarmoCardSwitch.addEventListener('change', (e) => {
+        this._useAlarmoCardChanged(e.target.checked);
+      });
+    }
+  }
+
+  _useAlarmoCardChanged(useAlarmoCard) {
+    this._configManager.updateProperty('use_alarmo_card', useAlarmoCard, false);
+  }
+
+  _attachSchedulerCardListeners() {
+    const schedulerCardSwitch = this.querySelector('#show-scheduler-card');
+    if (schedulerCardSwitch) {
+      schedulerCardSwitch.addEventListener('change', (e) => {
+        this._showSchedulerCardChanged(e.target.checked);
+      });
+    }
+
+    const schedulerEntitySelect = this.querySelector('#scheduler-entity');
+    if (schedulerEntitySelect) {
+      schedulerEntitySelect.addEventListener('change', (e) => {
+        this._schedulerEntityChanged(e.target.value);
+      });
+    }
+  }
+
+  _showSchedulerCardChanged(showSchedulerCard) {
+    this._configManager.updateProperty('show_scheduler_card', showSchedulerCard, false);
+    this._render();
+  }
+
+  _schedulerEntityChanged(entityId) {
+    this._configManager.updatePropertyCustom('scheduler_entity', entityId, (val) => !val || val === '');
+  }
+
+  _attachCalendarCardListeners() {
+    const calendarCardSwitch = this.querySelector('#show-calendar-card');
+    if (calendarCardSwitch) {
+      calendarCardSwitch.addEventListener('change', (e) => {
+        this._showCalendarCardChanged(e.target.checked);
+      });
+    }
+
+    const addCalendarBtn = this.querySelector('#add-calendar-btn');
+    const calendarEntitySelect = this.querySelector('#calendar-entity-select');
+    if (addCalendarBtn && calendarEntitySelect) {
+      addCalendarBtn.addEventListener('click', () => {
+        const entityId = calendarEntitySelect.value;
+        if (entityId) {
+          const calendarEntities = this._config.calendar_entities || [];
+          if (!calendarEntities.includes(entityId)) {
+            const newEntities = [...calendarEntities, entityId];
+            this._configManager.updateProperty('calendar_entities', newEntities, []);
+            calendarEntitySelect.value = '';
+          }
+        }
+      });
+    }
+
+    const removeCalendarBtns = this.querySelectorAll('.remove-calendar-btn');
+    removeCalendarBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const entityId = e.target.getAttribute('data-entity-id');
+        if (entityId) {
+          const calendarEntities = this._config.calendar_entities || [];
+          const newEntities = calendarEntities.filter(id => id !== entityId);
+          this._configManager.updateProperty('calendar_entities', newEntities.length > 0 ? newEntities : undefined, []);
+        }
+      });
+    });
+  }
+
+  _showCalendarCardChanged(showCalendarCard) {
+    this._configManager.updateProperty('show_calendar_card', showCalendarCard, false);
+    this._render();
+  }
+
+  _attachCalendarCardProListener() {
+    const calendarCardProSwitch = this.querySelector('#use-calendar-card-pro');
+    if (calendarCardProSwitch) {
+      calendarCardProSwitch.addEventListener('change', (e) => {
+        this._useCalendarCardProChanged(e.target.checked);
+      });
+    }
+  }
+
+  _useCalendarCardProChanged(useCalendarCardPro) {
+    this._configManager.updateProperty('use_calendar_card_pro', useCalendarCardPro, false);
   }
 
   _attachFavoritesListeners() {

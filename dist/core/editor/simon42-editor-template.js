@@ -615,7 +615,7 @@ export function renderSectionGroup(groupId, title, content, isExpanded = false) 
   `;
 }
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, searchCardIncludedDomains = [], searchCardExcludedDomains = [], summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, useClockWeatherCard = false, hasClockWeatherCardDeps = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', version = '1.0.0', hass = null }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showPersonBadges = true, showPersonProfilePicture = false, showSummaryViews, showRoomViews, showSearchCard, showClockCard = false, hasSearchCardDeps, searchCardIncludedDomains = [], searchCardExcludedDomains = [], summariesColumns, alarmEntity, alarmEntities, isSelectedAlarmEntityAlarmo = false, hasAlarmoCardDeps = false, useAlarmoCard = false, showSchedulerCard = false, hasSchedulerCardDeps = false, schedulerEntity = '', showCalendarCard = false, hasCalendarCardDeps = false, hasCalendarCardProDeps = false, useCalendarCardPro = false, calendarEntities = [], favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, showSecuritySummary = true, showLightSummary = true, showBatterySummary = true, showBetterThermostat = false, hasBetterThermostatDeps = false, showHorizonCard = false, hasHorizonCardDeps = false, horizonCardExtended = false, useClockWeatherCard = false, hasClockWeatherCardDeps = false, showPublicTransport = false, publicTransportEntities = [], publicTransportIntegration = '', publicTransportCard = '', hasPublicTransportDeps = false, hvvMax = 10, hvvShowTime = false, hvvShowTitle = false, hvvTitle = 'HVV', haDeparturesMax = 3, haDeparturesShowCardHeader = true, haDeparturesShowAnimation = true, haDeparturesShowTransportIcon = false, haDeparturesHideEmptyDepartures = false, haDeparturesTimeStyle = 'dynamic', haDeparturesIcon = 'mdi:bus-multiple', entityNamePatterns = [], entityNameTranslations = [], logLevel = 'warn', version = '1.0.0', hass = null }) {
   // Build content for each group
   // Group 1: Dashboard Cards
   const dashboardCardsContent = `
@@ -794,6 +794,23 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${t('alarmEntityDescription')}
         </div>
+        ${isSelectedAlarmEntityAlarmo && hasAlarmoCardDeps ? `
+        <div class="sub-option">
+          <div class="form-row">
+            ${renderMDCSwitch('use-alarmo-card', useAlarmoCard, t('useAlarmoCard'))}
+            <label for="use-alarmo-card" style="margin-left: 12px; cursor: pointer;">${t('useAlarmoCard')}</label>
+          </div>
+          <div class="description">
+            ${t('useAlarmoCardDescription')}
+          </div>
+        </div>
+        ` : ''}
+        ${isSelectedAlarmEntityAlarmo && !hasAlarmoCardDeps ? `
+        <div class="description" style="margin-top: 8px;">
+          ⚠️ ${t('alarmoCardMissingDeps')}<br><br>
+          ${t('alarmoCardLink')}: <a href="https://github.com/nielsfaber/alarmo-card" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/nielsfaber/alarmo-card</a>
+        </div>
+        ` : ''}
       </div>
 
       <div class="section">
@@ -955,6 +972,119 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               </select>
             </div>
           </div>
+          ` : ''}
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('scheduler')}</div>
+        <div class="form-row">
+          ${renderMDCSwitch('show-scheduler-card', showSchedulerCard, t('showSchedulerCard'))}
+          <label for="show-scheduler-card" style="margin-left: 12px; cursor: pointer;">${t('showSchedulerCard')}</label>
+        </div>
+        <div class="description">
+          ${t('schedulerCardDescription')}
+        </div>
+        ${showSchedulerCard ? `
+        <div class="sub-option">
+          ${!hasSchedulerCardDeps ? `
+          <div class="description" style="margin-top: 8px;">
+            ⚠️ ${t('schedulerCardMissingDeps')}<br><br>
+            ${t('schedulerCardLink')}: <a href="https://github.com/nielsfaber/scheduler-card" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/nielsfaber/scheduler-card</a><br>
+            ${t('schedulerIntegrationLink')}: <a href="https://github.com/nielsfaber/scheduler-component" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/nielsfaber/scheduler-component</a>
+          </div>
+          ` : ''}
+          ${hasSchedulerCardDeps ? `
+          <div class="form-row">
+            <label for="scheduler-entity" style="margin-right: 8px; min-width: 120px;">${t('schedulerEntity')}</label>
+            <select id="scheduler-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+              <option value="">${t('selectEntity')}</option>
+              ${Object.keys(hass?.states || {})
+                .filter(entityId => entityId.startsWith('switch.scheduler_') || entityId.startsWith('input_boolean.scheduler_'))
+                .map(entityId => {
+                  const state = hass.states[entityId];
+                  const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+                  return `<option value="${entityId}" ${entityId === schedulerEntity ? 'selected' : ''}>${name}</option>`;
+                }).join('')}
+            </select>
+          </div>
+          <div class="description">
+            ${t('schedulerEntityDescription')}
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('calendar')}</div>
+        <div class="form-row">
+          ${renderMDCSwitch('show-calendar-card', showCalendarCard, t('showCalendarCard'))}
+          <label for="show-calendar-card" style="margin-left: 12px; cursor: pointer;">${t('showCalendarCard')}</label>
+        </div>
+        <div class="description">
+          ${t('calendarCardDescription')}
+        </div>
+        ${showCalendarCard ? `
+        <div class="sub-option">
+          ${!hasCalendarCardDeps && !hasCalendarCardProDeps ? `
+          <div class="description" style="margin-top: 8px;">
+            ⚠️ ${t('calendarCardMissingDeps')}<br><br>
+            ${t('calendarCardLink')}: <a href="https://github.com/ljmerza/calendar-card" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/ljmerza/calendar-card</a><br>
+            ${t('calendarCardProLink')}: <a href="https://github.com/alexpfau/calendar-card-pro" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/alexpfau/calendar-card-pro</a>
+          </div>
+          ` : ''}
+          ${(hasCalendarCardDeps || hasCalendarCardProDeps) ? `
+          ${hasCalendarCardProDeps ? `
+          <div class="form-row" style="margin-bottom: 12px;">
+            ${renderMDCSwitch('use-calendar-card-pro', useCalendarCardPro, t('useCalendarCardPro'))}
+            <label for="use-calendar-card-pro" style="margin-left: 12px; cursor: pointer;">${t('useCalendarCardPro')}</label>
+          </div>
+          <div class="description" style="margin-bottom: 12px;">
+            ${t('useCalendarCardProDescription')}
+          </div>
+          ` : ''}
+          <div class="description" style="margin-top: 12px; margin-bottom: 12px;">
+            ${t('calendarEntitiesDescription')}
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
+            <select id="calendar-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+              <option value="">${t('selectEntity')}</option>
+              ${Object.keys(hass?.states || {})
+                .filter(entityId => entityId.startsWith('calendar.'))
+                .map(entityId => {
+                  const state = hass.states[entityId];
+                  const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+                  return `<option value="${entityId}">${name}</option>`;
+                }).join('')}
+            </select>
+            <button id="add-calendar-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+              + ${t('add')}
+            </button>
+          </div>
+          <ha-expansion-panel outlined>
+            <ha-icon slot="leading-icon" icon="mdi:calendar"></ha-icon>
+            <span slot="header">${t('calendarEntitiesList')}</span>
+            <div style="padding: 16px;">
+              <div id="calendar-list">
+                ${calendarEntities.length === 0 ? `
+                  <div style="color: var(--secondary-text-color); font-style: italic;">${t('noEntitiesAdded')}</div>
+                ` : calendarEntities.map(entityId => {
+                  const state = hass?.states?.[entityId];
+                  const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+                  return `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--divider-color);">
+                      <span>${name}</span>
+                      <button class="remove-calendar-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--error-color); color: var(--text-primary-color); cursor: pointer;">
+                        ${t('remove')}
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </ha-expansion-panel>
           ` : ''}
         </div>
         ` : ''}

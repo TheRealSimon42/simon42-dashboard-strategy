@@ -93,6 +93,44 @@ const DEPENDENCY_DEFINITIONS = {
     cardTypes: ['custom:clock-weather-card'],
     domSelectors: ['clock-weather-card'],
     keywords: ['clock-weather', 'clock weather']
+  },
+  
+  'scheduler-card': {
+    // Requires BOTH scheduler-component integration AND scheduler-card
+    requiresAll: true,
+    // Check for scheduler-component integration via entity registry
+    customCheck: (hass) => {
+      const entities = Object.values(hass?.entities || {});
+      return entities.some(entity => {
+        return entity.platform === 'scheduler';
+      });
+    },
+    // Check for scheduler-card
+    customElements: ['scheduler-card'],
+    cardTypes: ['custom:scheduler-card'],
+    domSelectors: ['scheduler-card'],
+    keywords: ['scheduler']
+  },
+  
+  'alarmo-card': {
+    customElements: ['alarmo-card'],
+    cardTypes: ['custom:alarmo-card'],
+    domSelectors: ['alarmo-card'],
+    keywords: ['alarmo']
+  },
+  
+  'calendar-card': {
+    customElements: ['calendar-card'],
+    cardTypes: ['custom:calendar-card'],
+    domSelectors: ['calendar-card'],
+    keywords: ['calendar']
+  },
+  
+  'calendar-card-pro': {
+    customElements: ['calendar-card-pro'],
+    cardTypes: ['custom:calendar-card-pro'],
+    domSelectors: ['calendar-card-pro'],
+    keywords: ['calendar-card-pro', 'calendar card pro']
   }
 };
 

@@ -21,7 +21,9 @@ import {
   createAreasSection, 
   createWeatherSection,
   createPublicTransportSection,
-  createEnergySection
+  createEnergySection,
+  createSchedulerCardSection,
+  createCalendarCardSection
 } from '../utils/simon42-section-builder.js';
 import { 
   createOverviewView, 
@@ -122,11 +124,13 @@ class Simon42DashboardStrategy {
     logDebug('[Strategy] Creating areas section...');
     const areasSections = createAreasSection(visibleAreas, groupByFloors, hass, config);
 
-    // Erstelle separate Sections: Weather, Public Transport, Energy
+    // Erstelle separate Sections: Weather, Public Transport, Energy, Scheduler, Calendar
     logDebug('[Strategy] Creating additional sections...');
     const weatherSection = createWeatherSection(weatherEntity, showWeather, config, hass);
     const publicTransportSection = createPublicTransportSection(config, hass);
     const energySection = createEnergySection(showEnergy);
+    const schedulerCardSection = createSchedulerCardSection(config, hass);
+    const calendarCardSection = createCalendarCardSection(config, hass);
     
     // Erstelle Sections für den Haupt-View
     logDebug('[Strategy] Creating overview section...');
@@ -144,10 +148,12 @@ class Simon42DashboardStrategy {
       }),
       // Wenn groupByFloors aktiv ist, ist areasSections ein Array von Sections
       ...(Array.isArray(areasSections) ? areasSections : [areasSections]),
-      // Füge Sections in der richtigen Reihenfolge hinzu: Weather, Public Transport, Energy
+      // Füge Sections in der richtigen Reihenfolge hinzu: Weather, Public Transport, Energy, Scheduler, Calendar
       ...(weatherSection ? [weatherSection] : []),
       ...(publicTransportSection ? [publicTransportSection] : []),
-      ...(energySection ? [energySection] : [])
+      ...(energySection ? [energySection] : []),
+      ...(schedulerCardSection ? [schedulerCardSection] : []),
+      ...(calendarCardSection ? [calendarCardSection] : [])
     ];
     logDebug('[Strategy] Created', overviewSections.length, 'overview sections');
 
