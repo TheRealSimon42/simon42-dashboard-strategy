@@ -37,9 +37,9 @@ export function createOverviewSection(data) {
   // Prüfe ob Uhr-Karte angezeigt werden soll
   if (showClockCard) {
     // Prüfe ob Alarm-Entity konfiguriert ist
-    const alarmEntity = config.alarm_entity;
+    const alarmEntity = config.alarm_entity ? String(config.alarm_entity).trim() : null;
 
-    if (alarmEntity) {
+    if (alarmEntity && alarmEntity.length > 0) {
       // Validate entity exists
       if (!hass?.states?.[alarmEntity]) {
         logWarn('[Section Builder] Alarm entity not found:', alarmEntity);
@@ -53,7 +53,9 @@ export function createOverviewSection(data) {
         
         // Check if Alarmo card should be used
         const useAlarmoCard = config.use_alarmo_card === true;
-        if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
+        // Validate entity is an alarm_control_panel entity and from Alarmo platform
+        const isValidAlarmEntity = alarmEntity.startsWith('alarm_control_panel.');
+        if (useAlarmoCard && isValidAlarmEntity && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
           cards.push({
             type: "custom:alarmo-card",
             entity: alarmEntity
@@ -79,15 +81,17 @@ export function createOverviewSection(data) {
     }
   } else {
     // Wenn keine Uhr, aber Alarm-Entity vorhanden, zeige nur Alarm-Panel
-    const alarmEntity = config.alarm_entity;
-    if (alarmEntity) {
+    const alarmEntity = config.alarm_entity ? String(config.alarm_entity).trim() : null;
+    if (alarmEntity && alarmEntity.length > 0) {
       // Validate entity exists
       if (!hass?.states?.[alarmEntity]) {
         logWarn('[Section Builder] Alarm entity not found:', alarmEntity);
       } else {
         // Check if Alarmo card should be used
         const useAlarmoCard = config.use_alarmo_card === true;
-        if (useAlarmoCard && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
+        // Validate entity is an alarm_control_panel entity and from Alarmo platform
+        const isValidAlarmEntity = alarmEntity.startsWith('alarm_control_panel.');
+        if (useAlarmoCard && isValidAlarmEntity && hass?.entities?.[alarmEntity]?.platform === 'alarmo') {
           cards.push({
             type: "custom:alarmo-card",
             entity: alarmEntity
