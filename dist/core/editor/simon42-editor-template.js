@@ -979,7 +979,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <ha-items-display-editor>
             <ha-sortable draggable-selector="ha-md-list-item.draggable" handle-selector=".handle">
               <ha-md-list>
-                ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}
+                ${renderAreaItems(allAreas, hiddenAreas, areaOrder, hass)}
               </ha-md-list>
             </ha-sortable>
           </ha-items-display-editor>
@@ -1289,7 +1289,58 @@ export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
   `;
 }
 
-function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
+function getEntityCountForArea(areaId, hass) {
+  if (!hass || !hass.devices || !hass.entities) {
+    return 0;
+  }
+  
+  // Convert objects to arrays
+  const devices = Object.values(hass.devices);
+  const entities = Object.values(hass.entities);
+  
+  // Find all devices in the area
+  const areaDevices = new Set();
+  for (const device of devices) {
+    if (device.area_id === areaId) {
+      areaDevices.add(device.id);
+    }
+  }
+  
+  // Build exclude labels set for O(1) lookup
+  const excludeLabels = new Set(
+    entities
+      .filter(e => e.labels?.includes("no_dboard"))
+      .map(e => e.entity_id)
+  );
+  
+  // Count entities in this area
+  let count = 0;
+  for (const entity of entities) {
+    // Check if entity belongs to area
+    let belongsToArea = false;
+    
+    if (entity.area_id) {
+      belongsToArea = entity.area_id === areaId;
+    } else if (entity.device_id && areaDevices.has(entity.device_id)) {
+      belongsToArea = true;
+    }
+    
+    if (!belongsToArea) continue;
+    if (excludeLabels.has(entity.entity_id)) continue;
+    if (!hass.states[entity.entity_id]) continue;
+    if (entity.hidden_by || entity.disabled_by) continue;
+    
+    const entityRegistry = hass.entities?.[entity.entity_id];
+    if (entityRegistry && (entityRegistry.hidden_by || entityRegistry.disabled_by)) continue;
+    
+    // Count this entity
+    count++;
+  }
+  
+  return count;
+}
+
+function renderAreaItems(allAreas, hiddenAreas, areaOrder, hass = null) {
   if (allAreas.length === 0) {
     return `<ha-md-list-item disabled><span slot="headline">${t('noAreasAvailable')}</span></ha-md-list-item>`;
   }
@@ -1299,10 +1350,13 @@ function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
     const orderIndex = areaOrder.indexOf(area.area_id);
     const displayOrder = orderIndex !== -1 ? orderIndex : 9999 + index;
     
+    // Get entity count for this area
+    const entityCount = hass ? getEntityCountForArea(area.area_id, hass) : 0;
+    
     return `
       <ha-md-list-item type="button" class="draggable ${isHidden ? 'area-hidden' : ''}" data-area-id="${area.area_id}" data-order="${displayOrder}" data-area-hidden="${isHidden}">
         <ha-icon class="icon" slot="start" icon="${area.icon || 'mdi:home'}"></ha-icon>
-        <span slot="headline">${area.name}</span>
+        <span slot="headline">${area.name}${entityCount > 0 ? ` <span class="entity-count">(${entityCount})</span>` : ''}</span>
         ${isHidden ? `<span slot="supporting-text" class="area-hidden-hint">${t('areaHiddenCannotExpand')}</span>` : ''}
         <ha-icon-button slot="end" class="area-visibility-toggle" data-area-id="${area.area_id}" aria-label="${area.name} ${isHidden ? t('show') : t('hide')}">
           <ha-icon icon="${isHidden ? 'mdi:eye-off' : 'mdi:eye'}"></ha-icon>
