@@ -14,11 +14,14 @@ import { t } from '../../utils/simon42-i18n.js';
  * @returns {string} HTML string for ha-switch
  */
 function renderMDCSwitch(id, checked = false, ariaLabel = '', disabled = false) {
+  // Ensure checked is explicitly a boolean
+  const checkedValue = checked === true;
+  const disabledValue = disabled === true;
   return `
     <ha-switch 
       id="${id}" 
-      .checked="${checked}"
-      .disabled="${disabled}"
+      .checked="${checkedValue}"
+      .disabled="${disabledValue}"
       aria-label="${ariaLabel}"
     ></ha-switch>
   `;
