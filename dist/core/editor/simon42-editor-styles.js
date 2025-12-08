@@ -190,6 +190,11 @@ export function getEditorStyles() {
       margin-bottom: 16px;
     }
     
+    /* Remove background from expansion panel content */
+    ha-expansion-panel .content {
+      background: transparent !important;
+    }
+    
     ha-items-display-editor {
       display: block;
     }
@@ -578,7 +583,7 @@ export function getEditorStyles() {
       align-items: center;
       padding: 8px 12px;
       border-bottom: 1px solid var(--divider-color);
-      background: var(--card-background-color);
+      background: transparent;
     }
     
     .entity-list-item:last-child {
