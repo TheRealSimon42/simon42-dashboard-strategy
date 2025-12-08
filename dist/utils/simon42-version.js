@@ -9,7 +9,7 @@
 // Version is read from VERSION file during build/deployment
 // IMPORTANT: Keep this in sync with the VERSION file in project root
 // The GitHub workflow reads from VERSION file to create releases
-export const VERSION = '2.0.8-dev';
+export const VERSION = '2.0.9-dev';
 
 /**
  * Check if the current version is a dev/prerelease version
