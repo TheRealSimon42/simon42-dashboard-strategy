@@ -252,6 +252,11 @@ export const de = {
   cacheReload: "Cache neu laden",
   cacheReloadDescription: "Lädt den Cache neu und aktualisiert alle Entitäten und Bereiche. Nützlich nach Änderungen an Entitäten oder Bereichen in Home Assistant.",
   
+  // Version Info
+  versionInfo: "Versionsinformationen",
+  version: "Version",
+  versionDescription: "Aktuelle Version der Dashboard-Strategy.",
+  
   // Dashboard-Präferenzen
   dashboardPreferences: "Dashboard-Einstellungen",
   languageToggle: "Sprache",

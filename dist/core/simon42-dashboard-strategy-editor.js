@@ -8,6 +8,7 @@ import { ConfigManager } from './editor/simon42-config-manager.js';
 import { logWarn, initLogger } from '../utils/simon42-logger.js';
 import { checkDependency, checkPublicTransportDependencies } from '../utils/simon42-dependency-checker.js';
 import { PUBLIC_TRANSPORT_MAPPING } from '../utils/simon42-public-transport-builders.js';
+import { VERSION } from '../utils/simon42-version.js';
 import { 
   getAllIntegrationProperties,
   updateNestedConfig,
@@ -218,6 +219,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         entityNamePatterns: this._config.entity_name_patterns || [],
         entityNameTranslations: this._config.entity_name_translations || [],
         logLevel: this._config.log_level || 'warn',
+        version: VERSION,
         hass: this._hass
       })}
     `;
