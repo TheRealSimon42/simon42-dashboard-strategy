@@ -57,10 +57,12 @@ export function buildClockWeatherCard(weatherEntity, config, hass) {
     cardConfig.forecast_rows = config.clock_weather_forecast_rows;
   }
   
-  // Locale (use user preference)
+  // Locale (always set from user preference for proper translation)
+  // The card uses this for date/time formatting and translations
   cardConfig.locale = locale;
   
-  // Time format (use user preference)
+  // Time format (always set from user preference)
+  // The card uses this to determine 12-hour vs 24-hour format
   cardConfig.time_format = hour12 ? 12 : 24;
   
   // Optional: time pattern (luxon format)

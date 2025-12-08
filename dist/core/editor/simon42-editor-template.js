@@ -628,8 +628,22 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${t('weatherCardDescription')}
         </div>
-        ${hasHorizonCardDeps ? `
+        ${showWeather !== false ? `
         <div style="margin-top: 12px;">
+          ${hasClockWeatherCardDeps ? `
+          <div class="form-row">
+            ${renderMDCSwitch('use-clock-weather-card', useClockWeatherCard, t('useClockWeatherCard'), !hasClockWeatherCardDeps)}
+            <label for="use-clock-weather-card" style="margin-left: 12px; cursor: pointer;" ${!hasClockWeatherCardDeps ? 'class="disabled-label"' : ''}>
+              ${t('useClockWeatherCard')}
+            </label>
+          </div>
+          <div class="description">
+            ${hasClockWeatherCardDeps 
+              ? t('clockWeatherCardDescription')
+              : `⚠️ ${t('clockWeatherCardMissingDeps')}`}
+          </div>
+          ` : ''}
+          ${hasHorizonCardDeps ? `
           <div class="form-row">
             ${renderMDCSwitch('show-horizon-card', showHorizonCard, t('showHorizonCard'), !hasHorizonCardDeps)}
             <label for="show-horizon-card" style="margin-left: 12px; cursor: pointer;" ${!hasHorizonCardDeps ? 'class="disabled-label"' : ''}>
@@ -654,21 +668,9 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
             </div>
           </div>
           ` : ''}
+          ` : ''}
         </div>
         ` : ''}
-        <div style="margin-top: 12px;">
-          <div class="form-row">
-            ${renderMDCSwitch('use-clock-weather-card', useClockWeatherCard, t('useClockWeatherCard'), !hasClockWeatherCardDeps)}
-            <label for="use-clock-weather-card" style="margin-left: 12px; cursor: pointer;" ${!hasClockWeatherCardDeps ? 'class="disabled-label"' : ''}>
-              ${t('useClockWeatherCard')}
-            </label>
-          </div>
-          <div class="description">
-            ${hasClockWeatherCardDeps 
-              ? t('clockWeatherCardDescription')
-              : `⚠️ ${t('clockWeatherCardMissingDeps')}`}
-          </div>
-        </div>
         <div class="form-row">
           ${renderMDCSwitch('show-energy', showEnergy, t('showEnergyDashboard'))}
           <label for="show-energy" style="margin-left: 12px; cursor: pointer;">${t('showEnergyDashboard')}</label>
