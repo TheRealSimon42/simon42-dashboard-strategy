@@ -331,7 +331,7 @@ function filterEntitiesByIntegration(allEntities, integration, hass = null) {
  * @param {string} integration - Die Integration ('hvv', 'ha-departures', 'db_info')
  * @returns {string} Der Card-Name für die Anzeige
  */
-function getCardNameForIntegration(integration) {
+export function getCardNameForIntegration(integration) {
   const cardNames = {
     'hvv': 'hvv-card',
     'ha-departures': 'departures-card', // ha-departures-card uses 'departures-card' as element name
@@ -346,7 +346,7 @@ function getCardNameForIntegration(integration) {
  * @param {string} integration - Die Integration ('hvv', 'ha-departures', 'db_info')
  * @returns {Object} Objekt mit integrationUrl und cardUrl
  */
-function getPublicTransportUrls(integration) {
+export function getPublicTransportUrls(integration) {
   const urls = {
     'ha-departures': {
       integrationUrl: 'https://github.com/alex-jung/ha-departures',
@@ -373,7 +373,7 @@ function getPublicTransportUrls(integration) {
  * @param {string} dependencyId - Die Dependency-ID (z.B. 'search-card', 'better-thermostat')
  * @returns {Object} Objekt mit integrationUrl und cardUrl
  */
-function getDependencyUrls(dependencyId) {
+export function getDependencyUrls(dependencyId) {
   const urls = {
     'search-card': {
       integrationUrl: null,
@@ -402,7 +402,7 @@ function getDependencyUrls(dependencyId) {
  * @param {string} linkKey - Translation key for link label
  * @returns {string} HTML message
  */
-function buildDependencyMissingMessage(dependencyId, missingDepsKey, linkKey) {
+export function buildDependencyMissingMessage(dependencyId, missingDepsKey, linkKey) {
   const urls = getDependencyUrls(dependencyId);
   let message = `⚠️ ${t(missingDepsKey)}`;
   
@@ -418,7 +418,7 @@ function buildDependencyMissingMessage(dependencyId, missingDepsKey, linkKey) {
  * Builds a better thermostat dependency missing message
  * @returns {string} HTML message
  */
-function buildBetterThermostatMissingMessage() {
+export function buildBetterThermostatMissingMessage() {
   const urls = getDependencyUrls('better-thermostat');
   let message = `⚠️ ${t('betterThermostatMissingDeps')}`;
   
@@ -440,7 +440,7 @@ function buildBetterThermostatMissingMessage() {
  * @param {string} integration - The integration ID
  * @returns {string} HTML message
  */
-function buildPublicTransportMissingMessage(integration) {
+export function buildPublicTransportMissingMessage(integration) {
   const cardName = getCardNameForIntegration(integration);
   const urls = getPublicTransportUrls(integration);
   
