@@ -986,6 +986,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _showSearchCardChanged(showSearchCard) {
     this._configManager.updateProperty('show_search_card', showSearchCard, false);
+    // Re-render to show/hide search card sub-options
+    this._render();
   }
 
   _attachSearchCardDomainListeners() {
