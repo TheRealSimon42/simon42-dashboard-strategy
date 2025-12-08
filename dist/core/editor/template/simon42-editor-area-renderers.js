@@ -72,7 +72,6 @@ export function renderAreaItems(allAreas, hiddenAreas, areaOrder, hass = null) {
       <ha-md-list-item type="button" class="draggable ${isHidden ? 'area-hidden' : ''}" data-area-id="${area.area_id}" data-order="${displayOrder}" data-area-hidden="${isHidden}">
         <ha-icon class="icon" slot="start" icon="${area.icon || 'mdi:home'}"></ha-icon>
         <span slot="headline">${area.name}${entityCount > 0 ? ` <span class="entity-count">(${entityCount})</span>` : ''}</span>
-        ${isHidden ? `<span slot="supporting-text" class="area-hidden-hint">${t('areaHiddenCannotExpand')}</span>` : ''}
         <ha-icon-button slot="end" class="area-visibility-toggle" data-area-id="${area.area_id}" aria-label="${area.name} ${isHidden ? t('show') : t('hide')}">
           <ha-icon icon="${isHidden ? 'mdi:eye-off' : 'mdi:eye'}"></ha-icon>
         </ha-icon-button>

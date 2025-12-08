@@ -60,9 +60,13 @@ export function attachAreaCheckboxListeners(element, callback) {
       const listItem = button.closest('ha-md-list-item[data-area-id]');
       if (!listItem) return;
       
-      // Toggle visibility state
+      // Determine current visibility state from multiple sources for reliability
       const iconElement = button.querySelector('ha-icon');
-      const isCurrentlyHidden = iconElement?.getAttribute('icon') === 'mdi:eye-off';
+      const iconState = iconElement?.getAttribute('icon') === 'mdi:eye-off';
+      const dataState = listItem.dataset.areaHidden === 'true';
+      const classState = listItem.classList.contains('area-hidden');
+      // If any indicator says it's hidden, treat it as hidden
+      const isCurrentlyHidden = iconState || dataState || classState;
       const isVisible = !isCurrentlyHidden;
       
       // Update icon
@@ -83,13 +87,10 @@ export function attachAreaCheckboxListeners(element, callback) {
       } else {
         listItem.classList.add('area-hidden');
         listItem.dataset.areaHidden = 'true';
-        // Add hint text if not present
-        if (!listItem.querySelector('span.area-hidden-hint')) {
-          const hint = document.createElement('span');
-          hint.className = 'area-hidden-hint';
-          hint.slot = 'supporting-text';
-          hint.textContent = t('areaHiddenCannotExpand');
-          listItem.appendChild(hint);
+        // Remove hint text if present (no longer needed since hidden areas can be expanded)
+        const hint = listItem.querySelector('span.area-hidden-hint');
+        if (hint) {
+          hint.remove();
         }
       }
       
@@ -114,24 +115,13 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
   areaItems.forEach(item => {
     item.addEventListener('click', async (e) => {
       // Don't expand if clicking on icon-button or handle
+      // This allows the button's own click handler to work
       if (e.target.closest('ha-icon-button') || e.target.closest('.handle')) {
         return;
       }
       
       e.stopPropagation();
       const areaId = item.dataset.areaId;
-      
-      // Check if area is hidden
-      const isHidden = item.dataset.areaHidden === 'true' || item.classList.contains('area-hidden');
-      if (isHidden) {
-        // When clicking on a hidden area, toggle its visibility instead of expanding
-        const visibilityButton = item.querySelector('ha-icon-button.area-visibility-toggle[data-area-id]');
-        if (visibilityButton) {
-          // Trigger the visibility toggle button click
-          visibilityButton.click();
-        }
-        return; // Don't expand hidden areas
-      }
       
       const areaList = item.closest('ha-md-list');
       if (!areaList) return;
