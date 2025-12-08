@@ -973,7 +973,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('groupByFloorsDescription')}
         </div>
-        <ha-expansion-panel outlined expanded>
+        <ha-expansion-panel outlined>
           <ha-icon slot="leading-icon" icon="mdi:view-grid"></ha-icon>
           <span slot="header">${t('arrangeAreas')}</span>
           <ha-items-display-editor>
