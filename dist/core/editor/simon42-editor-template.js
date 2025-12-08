@@ -367,23 +367,23 @@ function getPublicTransportUrls(integration) {
 
 function renderPublicTransportList(publicTransportEntities, allEntities) {
   if (!publicTransportEntities || publicTransportEntities.length === 0) {
-    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noEntitiesAdded')}</div>`;
+    return `<div class="empty-state">${t('noEntitiesAdded')}</div>`;
   }
 
   const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
 
   return `
-    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+    <div class="entity-list-container">
       ${publicTransportEntities.map((entityId) => {
         const name = entityMap.get(entityId) || entityId;
         return `
-          <div class="public-transport-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
-            <span style="flex: 1; font-size: 14px;">
-              <strong>${name}</strong>
-              <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+          <div class="entity-list-item public-transport-item" data-entity-id="${entityId}">
+            <span class="entity-list-drag-handle">☰</span>
+            <span class="entity-list-content">
+              <span class="entity-list-name">${name}</span>
+              <span class="entity-list-id">${entityId}</span>
             </span>
-            <button class="remove-public-transport-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+            <button class="entity-list-remove-btn remove-public-transport-btn" data-entity-id="${entityId}">
               ✕
             </button>
           </div>
@@ -464,20 +464,20 @@ function getDomainLabel(domain) {
 
 export function renderSearchCardDomainsList(domains) {
   if (!domains || domains.length === 0) {
-    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noDomainsAdded')}</div>`;
+    return `<div class="empty-state">${t('noDomainsAdded')}</div>`;
   }
 
   return `
-    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+    <div class="entity-list-container">
       ${domains.map((domain) => {
         const label = getDomainLabel(domain);
         return `
-          <div class="search-card-domain-item" data-domain="${domain}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <span style="flex: 1; font-size: 14px;">
-              <strong>${label}</strong>
-              <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${domain}</span>
+          <div class="entity-list-item search-card-domain-item" data-domain="${domain}">
+            <span class="entity-list-content">
+              <span class="entity-list-name">${label}</span>
+              <span class="entity-list-id">${domain}</span>
             </span>
-            <button class="remove-domain-btn" data-domain="${domain}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+            <button class="entity-list-remove-btn remove-domain-btn" data-domain="${domain}">
               ✕
             </button>
           </div>
@@ -489,26 +489,25 @@ export function renderSearchCardDomainsList(domains) {
 
 export function renderEntityNamePatternsList(patterns) {
   if (!patterns || patterns.length === 0) {
-    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noPatternsAdded')}</div>`;
+    return `<div class="empty-state">${t('noPatternsAdded')}</div>`;
   }
 
   return `
-    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+    <div class="entity-list-container">
       ${patterns.map((pattern, index) => {
         const patternText = typeof pattern === 'string' ? pattern : pattern.pattern || '';
         const displayText = makeSpacesVisible(patternText);
         const currentDomain = typeof pattern === 'object' ? pattern.domain : '';
         return `
-          <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all; white-space: pre-wrap;" title="${patternText.replace(/"/g, '&quot;')}">${displayText}</span>
+          <div class="entity-list-item entity-name-pattern-item" data-pattern-index="${index}">
+            <span class="entity-list-pattern-text" title="${patternText.replace(/"/g, '&quot;')}">${displayText}</span>
             <select 
-              class="pattern-domain-select" 
+              class="entity-list-select pattern-domain-select" 
               data-pattern-index="${index}"
-              style="min-width: 150px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
             >
               ${getDomainSelectorOptions(currentDomain)}
             </select>
-            <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0;">
+            <button class="entity-list-remove-btn remove-pattern-btn" data-pattern-index="${index}">
               ✕
             </button>
           </div>
@@ -657,7 +656,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           ` : ''}
         </div>
         ` : ''}
-        ${hasClockWeatherCardDeps ? `
         <div style="margin-top: 12px;">
           <div class="form-row">
             ${renderMDCSwitch('use-clock-weather-card', useClockWeatherCard, t('useClockWeatherCard'), !hasClockWeatherCardDeps)}
@@ -671,7 +669,6 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
               : `⚠️ ${t('clockWeatherCardMissingDeps')}`}
           </div>
         </div>
-        ` : ''}
         <div class="form-row">
           ${renderMDCSwitch('show-energy', showEnergy, t('showEnergyDashboard'))}
           <label for="show-energy" style="margin-left: 12px; cursor: pointer;">${t('showEnergyDashboard')}</label>
@@ -862,7 +859,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </div>
           <ha-expansion-panel outlined>
             <ha-svg-icon slot="leading-icon" path="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"></ha-svg-icon>
-            <span slot="header">${t('publicTransportEntitiesList') || 'Abfahrtszeiten Liste'}</span>
+            <span slot="header">${t('publicTransportEntitiesList')}</span>
             <div style="padding: 16px;">
               <div id="public-transport-list">
                 ${renderPublicTransportList(publicTransportEntities || [], allEntities || [])}
@@ -1066,7 +1063,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <ha-expansion-panel outlined>
           <ha-svg-icon slot="leading-icon" path="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.46,13.97L5.82,21L12,17.27Z"></ha-svg-icon>
-          <span slot="header">${t('favoritesList') || 'Favoriten Liste'}</span>
+          <span slot="header">${t('favoritesList')}</span>
           <div style="padding: 16px;">
             <div id="favorites-list">
               ${renderFavoritesList(favoriteEntities, allEntities)}
@@ -1095,7 +1092,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <ha-expansion-panel outlined>
           <ha-svg-icon slot="leading-icon" path="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z"></ha-svg-icon>
-          <span slot="header">${t('roomPinsList') || 'Raum-Pins Liste'}</span>
+          <span slot="header">${t('roomPinsList')}</span>
           <div style="padding: 16px;">
             <div id="room-pins-list">
               ${renderRoomPinsList(roomPinEntities, allEntities, allAreas)}
@@ -1122,7 +1119,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         </div>
         <ha-expansion-panel outlined>
           <ha-svg-icon slot="leading-icon" path="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"></ha-svg-icon>
-          <span slot="header">${t('patternList') || 'Regex-Pattern Liste'}</span>
+          <span slot="header">${t('patternList')}</span>
           <div style="padding: 16px;">
             <div id="entity-name-patterns-list">
               ${renderEntityNamePatternsList(entityNamePatterns || [])}
@@ -1230,24 +1227,24 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
 
 function renderFavoritesList(favoriteEntities, allEntities) {
   if (!favoriteEntities || favoriteEntities.length === 0) {
-    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noFavoritesAdded')}</div>`;
+    return `<div class="empty-state">${t('noFavoritesAdded')}</div>`;
   }
 
   // Erstelle Map für schnellen Zugriff auf Entity-Namen
   const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
 
   return `
-    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+    <div class="entity-list-container">
       ${favoriteEntities.map((entityId, index) => {
         const name = entityMap.get(entityId) || entityId;
         return `
-          <div class="favorite-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
-            <span style="flex: 1; font-size: 14px;">
-              <strong>${name}</strong>
-              <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+          <div class="entity-list-item favorite-item" data-entity-id="${entityId}">
+            <span class="entity-list-drag-handle">☰</span>
+            <span class="entity-list-content">
+              <span class="entity-list-name">${name}</span>
+              <span class="entity-list-id">${entityId}</span>
             </span>
-            <button class="remove-favorite-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+            <button class="entity-list-remove-btn remove-favorite-btn" data-entity-id="${entityId}">
               ✕
             </button>
           </div>
@@ -1259,7 +1256,7 @@ function renderFavoritesList(favoriteEntities, allEntities) {
 
 export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
   if (!roomPinEntities || roomPinEntities.length === 0) {
-    return `<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${t('noRoomPinsAdded')}</div>`;
+    return `<div class="empty-state">${t('noRoomPinsAdded')}</div>`;
   }
 
   // Erstelle Maps für schnellen Zugriff
@@ -1267,7 +1264,7 @@ export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
   const areaMap = new Map(allAreas.map(a => [a.area_id, a.name]));
 
   return `
-    <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+    <div class="entity-list-container">
       ${roomPinEntities.map((entityId, index) => {
         const entity = entityMap.get(entityId);
         const name = entity?.name || entityId;
@@ -1275,15 +1272,14 @@ export function renderRoomPinsList(roomPinEntities, allEntities, allAreas) {
         const areaName = areaId ? areaMap.get(areaId) || areaId : t('noRoom');
         
         return `
-          <div class="room-pin-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-            <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
-            <span style="flex: 1; font-size: 14px;">
-              <strong>${name}</strong>
-              <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
-              <br>
-              <span style="font-size: 11px; color: var(--secondary-text-color);">📍 ${areaName}</span>
+          <div class="entity-list-item room-pin-item" data-entity-id="${entityId}">
+            <span class="entity-list-drag-handle">☰</span>
+            <span class="entity-list-content">
+              <span class="entity-list-name">${name}</span>
+              <span class="entity-list-id">${entityId}</span>
+              <span class="entity-list-meta">📍 ${areaName}</span>
             </span>
-            <button class="remove-room-pin-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+            <button class="entity-list-remove-btn remove-room-pin-btn" data-entity-id="${entityId}">
               ✕
             </button>
           </div>

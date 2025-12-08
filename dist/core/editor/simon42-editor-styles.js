@@ -559,11 +559,115 @@ export function getEditorStyles() {
     }
     
     .empty-state {
-      padding: 16px;
+      padding: 12px;
       text-align: center;
       color: var(--secondary-text-color);
       font-style: italic;
       font-size: 14px;
+    }
+    
+    /* Standardized Entity List Styles */
+    .entity-list-container {
+      border: 1px solid var(--divider-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .entity-list-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+    }
+    
+    .entity-list-item:last-child {
+      border-bottom: none;
+    }
+    
+    .entity-list-drag-handle {
+      margin-right: 12px;
+      cursor: grab;
+      color: var(--secondary-text-color);
+      flex-shrink: 0;
+    }
+    
+    .entity-list-drag-handle:active {
+      cursor: grabbing;
+    }
+    
+    .entity-list-content {
+      flex: 1;
+      font-size: 14px;
+      min-width: 0;
+    }
+    
+    .entity-list-name {
+      font-weight: 500;
+      color: var(--primary-text-color);
+    }
+    
+    .entity-list-id {
+      margin-left: 8px;
+      font-size: 12px;
+      color: var(--secondary-text-color);
+      font-family: monospace;
+    }
+    
+    .entity-list-meta {
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      margin-top: 2px;
+      display: block;
+    }
+    
+    .entity-list-remove-btn {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 14px;
+      line-height: 1;
+    }
+    
+    .entity-list-remove-btn:hover {
+      background: var(--secondary-background-color);
+      border-color: var(--primary-color);
+    }
+    
+    .entity-list-select {
+      min-width: 150px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+    
+    .entity-list-select:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .entity-list-select:focus {
+      border-color: var(--primary-color);
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+    
+    .entity-list-pattern-text {
+      flex: 1;
+      font-size: 14px;
+      font-family: monospace;
+      word-break: break-all;
+      white-space: pre-wrap;
+      min-width: 0;
     }
     
     .nav-item {

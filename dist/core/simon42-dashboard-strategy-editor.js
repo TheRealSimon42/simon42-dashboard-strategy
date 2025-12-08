@@ -700,23 +700,23 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _renderFavoritesListFallback(favoriteEntities, allEntities) {
     if (!favoriteEntities || favoriteEntities.length === 0) {
-      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Favoriten hinzugefügt</div>';
+      return `<div class="empty-state">${t('noFavoritesAdded')}</div>`;
     }
 
     const entityMap = new Map(allEntities.map(e => [e.entity_id, e.name]));
 
     return `
-      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      <div class="entity-list-container">
         ${favoriteEntities.map((entityId) => {
           const name = entityMap.get(entityId) || entityId;
           return `
-            <div class="favorite-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
-              <span style="flex: 1; font-size: 14px;">
-                <strong>${name}</strong>
-                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+            <div class="entity-list-item favorite-item" data-entity-id="${entityId}">
+              <span class="entity-list-drag-handle">☰</span>
+              <span class="entity-list-content">
+                <span class="entity-list-name">${name}</span>
+                <span class="entity-list-id">${entityId}</span>
               </span>
-              <button class="remove-favorite-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+              <button class="entity-list-remove-btn remove-favorite-btn" data-entity-id="${entityId}">
                 ✕
               </button>
             </div>
@@ -829,30 +829,29 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas) {
     if (!roomPinEntities || roomPinEntities.length === 0) {
-      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Raum-Pins hinzugefügt</div>';
+      return `<div class="empty-state">${t('noRoomPinsAdded')}</div>`;
     }
 
     const entityMap = new Map(allEntities.map(e => [e.entity_id, e]));
     const areaMap = new Map(allAreas.map(a => [a.area_id, a.name]));
 
     return `
-      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      <div class="entity-list-container">
         ${roomPinEntities.map((entityId) => {
           const entity = entityMap.get(entityId);
           const name = entity?.name || entityId;
           const areaId = entity?.area_id || entity?.device_area_id;
-          const areaName = areaId ? areaMap.get(areaId) || areaId : 'Kein Raum';
+          const areaName = areaId ? areaMap.get(areaId) || areaId : t('noRoom');
           
           return `
-            <div class="room-pin-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
-              <span style="flex: 1; font-size: 14px;">
-                <strong>${name}</strong>
-                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
-                <br>
-                <span style="font-size: 11px; color: var(--secondary-text-color);">📍 ${areaName}</span>
+            <div class="entity-list-item room-pin-item" data-entity-id="${entityId}">
+              <span class="entity-list-drag-handle">☰</span>
+              <span class="entity-list-content">
+                <span class="entity-list-name">${name}</span>
+                <span class="entity-list-id">${entityId}</span>
+                <span class="entity-list-meta">📍 ${areaName}</span>
               </span>
-              <button class="remove-room-pin-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+              <button class="entity-list-remove-btn remove-room-pin-btn" data-entity-id="${entityId}">
                 ✕
               </button>
             </div>
@@ -2123,7 +2122,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _renderEntityNamePatternsListFallback(patterns) {
     if (!patterns || patterns.length === 0) {
-      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Patterns hinzugefügt</div>';
+      return `<div class="empty-state">${t('noPatternsAdded')}</div>`;
     }
 
     // Hilfsfunktion: Escaped HTML-Sonderzeichen und ersetzt Leerzeichen durch sichtbare Zeichen
@@ -2168,22 +2167,21 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     };
 
     return `
-      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+      <div class="entity-list-container">
         ${patterns.map((pattern, index) => {
           const patternText = typeof pattern === 'string' ? pattern : pattern.pattern || '';
           const displayText = makeSpacesVisible(patternText);
           const currentDomain = typeof pattern === 'object' ? pattern.domain : '';
           return `
-            <div class="entity-name-pattern-item" data-pattern-index="${index}" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <span style="flex: 1; font-size: 14px; font-family: monospace; word-break: break-all; white-space: pre-wrap;" title="${patternText.replace(/"/g, '&quot;')}">${displayText}</span>
+            <div class="entity-list-item entity-name-pattern-item" data-pattern-index="${index}">
+              <span class="entity-list-pattern-text" title="${patternText.replace(/"/g, '&quot;')}">${displayText}</span>
               <select 
-                class="pattern-domain-select" 
+                class="entity-list-select pattern-domain-select" 
                 data-pattern-index="${index}"
-                style="min-width: 150px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-size: 12px;"
               >
                 ${getDomainSelectorOptions(currentDomain)}
               </select>
-              <button class="remove-pattern-btn" data-pattern-index="${index}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer; flex-shrink: 0;">
+              <button class="entity-list-remove-btn remove-pattern-btn" data-pattern-index="${index}">
                 ✕
               </button>
             </div>
