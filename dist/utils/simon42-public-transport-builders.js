@@ -82,9 +82,42 @@ export function filterHaDeparturesEntities(entityIds, hass) {
  * @returns {Object} Card configuration
  */
 export function buildHvvCard(entityIds, config, hass = null) {
+  // Build entities array with translated names if translations are configured
+  // Many cards support entity objects with 'name' property for custom display names
+  let entities = entityIds;
+  
+  if (hass && config.entity_name_translations && config.entity_name_translations.length > 0) {
+    // Translate entity friendly names and pass as entity objects with translated names
+    entities = entityIds.map(entityId => {
+      const entity = hass.states[entityId];
+      if (!entity || !entity.attributes) {
+        return entityId; // Fallback to entity ID if entity not found
+      }
+      
+      const friendlyName = entity.attributes.friendly_name || '';
+      if (!friendlyName) {
+        return entityId; // No friendly name to translate
+      }
+      
+      // Translate the friendly name
+      const translatedName = translateAreaName(friendlyName, config);
+      
+      // If name was translated, return entity object with translated name
+      // Otherwise, return entity ID (card will use friendly_name from hass.states)
+      if (translatedName !== friendlyName) {
+        return {
+          entity: entityId,
+          name: translatedName
+        };
+      }
+      
+      return entityId;
+    });
+  }
+  
   const cardConfig = {
     type: 'custom:hvv-card',
-    entities: entityIds,
+    entities: entities,
     max: config.hvv_max !== undefined ? config.hvv_max : 10,
     show_time: config.hvv_show_time !== undefined ? config.hvv_show_time : false,
     show_title: config.hvv_show_title !== undefined ? config.hvv_show_title : false,
@@ -95,7 +128,8 @@ export function buildHvvCard(entityIds, config, hass = null) {
   // (next[].direction, next[].name, etc.). These nested attribute values cannot be translated
   // directly from this codebase since the card reads them from hass.states.
   // 
-  // However, entity friendly_names can be translated using entity_name_translations in the config.
+  // However, entity friendly_names displayed as headings can be translated using entity_name_translations.
+  // If the card supports entity objects with 'name' property, translated names will be used.
   // For departure names in attributes, users may need to:
   // 1. Configure translations at the HVV integration level (if supported)
   // 2. Use Home Assistant's translation system (if the card supports it)
@@ -185,14 +219,16 @@ export function buildDbInfoCard(entityIds, config, hass) {
       return;
     }
     
-    const friendlyName = entity.attributes.friendly_name || '';
+    let friendlyName = entity.attributes.friendly_name || '';
+    
+    // Apply translations to friendly name FIRST, then extract path name
+    // This ensures any translatable parts (city names, route names, etc.) are translated
+    friendlyName = translateAreaName(friendlyName, config);
+    
     // Extract path name by removing "Verbindung X" or "Connection X" pattern
     let pathName = friendlyName
       .replace(/\s*(?:Verbindung|Connection)\s+\d+$/, '')
       .trim();
-    
-    // Apply translations to path name if configured
-    pathName = translateAreaName(pathName, config);
     
     const groupKey = pathName || friendlyName || entityId;
     
