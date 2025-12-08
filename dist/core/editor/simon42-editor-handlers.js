@@ -180,6 +180,9 @@ export function attachGroupCheckboxListeners(element, callback) {
     const group = checkbox.dataset.group;
     const haSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`);
     if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+      // Initialize switch state from checkbox
+      haSwitch.checked = checkbox.checked;
+      
       haSwitch.addEventListener('change', (e) => {
         checkbox.checked = e.target.checked;
         checkbox.dispatchEvent(new Event('change'));
@@ -231,6 +234,9 @@ export function attachEntityCheckboxListeners(element, callback) {
     const group = checkbox.dataset.group;
     const haSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`);
     if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+      // Initialize switch state from checkbox
+      haSwitch.checked = checkbox.checked;
+      
       haSwitch.addEventListener('change', (e) => {
         checkbox.checked = e.target.checked;
         checkbox.dispatchEvent(new Event('change'));

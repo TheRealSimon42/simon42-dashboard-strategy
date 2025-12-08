@@ -296,9 +296,82 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
   
   _initializeMDCSwitches() {
-    // ha-switch components are web components and don't need manual initialization
-    // They will be automatically initialized by Home Assistant's component system
-    // This method is kept for compatibility but doesn't need to do anything
+    // Property bindings don't work with innerHTML, so we need to manually set
+    // the checked and disabled properties on all ha-switch elements
+    
+    // Get all config values
+    const showWeather = this._config.show_weather !== false;
+    const showEnergy = this._config.show_energy !== false;
+    const showPersonBadges = this._config.show_person_badges !== false;
+    const showPersonProfilePicture = this._config.show_person_profile_picture === true;
+    const showSearchCard = this._config.show_search_card === true;
+    const showClockCard = this._config.show_clock_card === true;
+    const showSummaryViews = this._config.show_summary_views === true;
+    const showRoomViews = this._config.show_room_views === true;
+    const groupByFloors = this._config.group_by_floors === true;
+    const showCoversSummary = this._config.show_covers_summary !== false;
+    const showSecuritySummary = this._config.show_security_summary !== false;
+    const showLightSummary = this._config.show_light_summary !== false;
+    const showBatterySummary = this._config.show_battery_summary !== false;
+    const showBetterThermostat = this._config.show_better_thermostat === true;
+    const showHorizonCard = this._config.show_horizon_card === true;
+    const horizonCardExtended = this._config.horizon_card_extended === true;
+    const useClockWeatherCard = this._config.use_clock_weather_card === true;
+    const showPublicTransport = this._config.show_public_transport === true;
+    
+    // Check dependencies
+    const hasSearchCardDeps = checkDependency('search-card', this._hass);
+    const hasBetterThermostatDeps = checkDependency('better-thermostat', this._hass);
+    const hasHorizonCardDeps = checkDependency('horizon-card', this._hass);
+    const hasClockWeatherCardDeps = checkDependency('clock-weather-card', this._hass);
+    
+    // Public transport config
+    const hvvShowTime = this._config.hvv_show_time === true;
+    const hvvShowTitle = this._config.hvv_show_title === true;
+    const haDeparturesShowCardHeader = this._config.ha_departures_show_card_header !== false;
+    const haDeparturesShowAnimation = this._config.ha_departures_show_animation !== false;
+    const haDeparturesShowTransportIcon = this._config.ha_departures_show_transport_icon === true;
+    const haDeparturesHideEmptyDepartures = this._config.ha_departures_hide_empty_departures === true;
+    
+    // Initialize switches with their correct states
+    const switchConfigs = [
+      { id: 'show-weather', checked: showWeather, disabled: false },
+      { id: 'show-energy', checked: showEnergy, disabled: false },
+      { id: 'show-person-badges', checked: showPersonBadges, disabled: false },
+      { id: 'show-person-profile-picture', checked: showPersonProfilePicture, disabled: false },
+      { id: 'show-search-card', checked: showSearchCard, disabled: !hasSearchCardDeps },
+      { id: 'show-clock-card', checked: showClockCard, disabled: false },
+      { id: 'show-summary-views', checked: showSummaryViews, disabled: false },
+      { id: 'show-room-views', checked: showRoomViews, disabled: false },
+      { id: 'group-by-floors', checked: groupByFloors, disabled: false },
+      { id: 'show-covers-summary', checked: showCoversSummary, disabled: false },
+      { id: 'show-security-summary', checked: showSecuritySummary, disabled: false },
+      { id: 'show-light-summary', checked: showLightSummary, disabled: false },
+      { id: 'show-battery-summary', checked: showBatterySummary, disabled: false },
+      { id: 'show-better-thermostat', checked: showBetterThermostat, disabled: !hasBetterThermostatDeps },
+      { id: 'show-horizon-card', checked: showHorizonCard, disabled: !hasHorizonCardDeps },
+      { id: 'horizon-card-extended', checked: horizonCardExtended, disabled: !hasHorizonCardDeps },
+      { id: 'use-clock-weather-card', checked: useClockWeatherCard, disabled: !hasClockWeatherCardDeps },
+      { id: 'show-public-transport', checked: showPublicTransport, disabled: false },
+      { id: 'hvv-show-time', checked: hvvShowTime, disabled: false },
+      { id: 'hvv-show-title', checked: hvvShowTitle, disabled: false },
+      { id: 'ha-departures-show-card-header', checked: haDeparturesShowCardHeader, disabled: false },
+      { id: 'ha-departures-show-animation', checked: haDeparturesShowAnimation, disabled: false },
+      { id: 'ha-departures-show-transport-icon', checked: haDeparturesShowTransportIcon, disabled: false },
+      { id: 'ha-departures-hide-empty-departures', checked: haDeparturesHideEmptyDepartures, disabled: false }
+    ];
+    
+    // Set properties on all switches
+    switchConfigs.forEach(({ id, checked, disabled }) => {
+      const switchElement = this.querySelector(`#${id}`);
+      if (switchElement && switchElement.tagName === 'HA-SWITCH') {
+        switchElement.checked = checked;
+        switchElement.disabled = disabled;
+      }
+    });
+    
+    // Also initialize switches in dynamically loaded entity groups
+    // These are handled separately in attachGroupCheckboxListeners and attachEntityCheckboxListeners
   }
   
   _removeSpacingAboveNavigation() {
@@ -2132,18 +2205,18 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       });
     }
 
-    // Show time checkbox
-    const showTimeCheckbox = this.querySelector('#hvv-show-time');
-    if (showTimeCheckbox) {
-      showTimeCheckbox.addEventListener('change', (e) => {
+    // Show time switch (ha-switch)
+    const showTimeSwitch = this.querySelector('#hvv-show-time');
+    if (showTimeSwitch && showTimeSwitch.tagName === 'HA-SWITCH') {
+      showTimeSwitch.addEventListener('change', (e) => {
         this._hvvShowTimeChanged(e.target.checked);
       });
     }
 
-    // Show title checkbox
-    const showTitleCheckbox = this.querySelector('#hvv-show-title');
-    if (showTitleCheckbox) {
-      showTitleCheckbox.addEventListener('change', (e) => {
+    // Show title switch (ha-switch)
+    const showTitleSwitch = this.querySelector('#hvv-show-title');
+    if (showTitleSwitch && showTitleSwitch.tagName === 'HA-SWITCH') {
+      showTitleSwitch.addEventListener('change', (e) => {
         this._hvvShowTitleChanged(e.target.checked);
       });
     }
@@ -2193,34 +2266,34 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       });
     }
 
-    // Show card header checkbox
-    const showCardHeaderCheckbox = this.querySelector('#ha-departures-show-card-header');
-    if (showCardHeaderCheckbox) {
-      showCardHeaderCheckbox.addEventListener('change', (e) => {
+    // Show card header switch (ha-switch)
+    const showCardHeaderSwitch = this.querySelector('#ha-departures-show-card-header');
+    if (showCardHeaderSwitch && showCardHeaderSwitch.tagName === 'HA-SWITCH') {
+      showCardHeaderSwitch.addEventListener('change', (e) => {
         this._haDeparturesShowCardHeaderChanged(e.target.checked);
       });
     }
 
-    // Show animation checkbox
-    const showAnimationCheckbox = this.querySelector('#ha-departures-show-animation');
-    if (showAnimationCheckbox) {
-      showAnimationCheckbox.addEventListener('change', (e) => {
+    // Show animation switch (ha-switch)
+    const showAnimationSwitch = this.querySelector('#ha-departures-show-animation');
+    if (showAnimationSwitch && showAnimationSwitch.tagName === 'HA-SWITCH') {
+      showAnimationSwitch.addEventListener('change', (e) => {
         this._haDeparturesShowAnimationChanged(e.target.checked);
       });
     }
 
-    // Show transport icon checkbox
-    const showTransportIconCheckbox = this.querySelector('#ha-departures-show-transport-icon');
-    if (showTransportIconCheckbox) {
-      showTransportIconCheckbox.addEventListener('change', (e) => {
+    // Show transport icon switch (ha-switch)
+    const showTransportIconSwitch = this.querySelector('#ha-departures-show-transport-icon');
+    if (showTransportIconSwitch && showTransportIconSwitch.tagName === 'HA-SWITCH') {
+      showTransportIconSwitch.addEventListener('change', (e) => {
         this._haDeparturesShowTransportIconChanged(e.target.checked);
       });
     }
 
-    // Hide empty departures checkbox
-    const hideEmptyDeparturesCheckbox = this.querySelector('#ha-departures-hide-empty-departures');
-    if (hideEmptyDeparturesCheckbox) {
-      hideEmptyDeparturesCheckbox.addEventListener('change', (e) => {
+    // Hide empty departures switch (ha-switch)
+    const hideEmptyDeparturesSwitch = this.querySelector('#ha-departures-hide-empty-departures');
+    if (hideEmptyDeparturesSwitch && hideEmptyDeparturesSwitch.tagName === 'HA-SWITCH') {
+      hideEmptyDeparturesSwitch.addEventListener('change', (e) => {
         this._haDeparturesHideEmptyDeparturesChanged(e.target.checked);
       });
     }
