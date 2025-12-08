@@ -69,6 +69,31 @@ export function attachAreaCheckboxListeners(element, callback) {
         icon.setAttribute('path', isVisible ? 'M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z' : 'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z');
       }
       
+      // Update list item classes and data attributes
+      if (isVisible) {
+        listItem.classList.remove('area-hidden');
+        listItem.dataset.areaHidden = 'false';
+        // Remove hint text if present
+        const hint = listItem.querySelector('span.area-hidden-hint');
+        if (hint) {
+          hint.remove();
+        }
+      } else {
+        listItem.classList.add('area-hidden');
+        listItem.dataset.areaHidden = 'true';
+        // Add hint text if not present
+        if (!listItem.querySelector('span.area-hidden-hint')) {
+          const hint = document.createElement('span');
+          hint.className = 'area-hidden-hint';
+          hint.slot = 'supporting-text';
+          hint.textContent = t('areaHiddenCannotExpand');
+          listItem.appendChild(hint);
+        }
+      }
+      
+      // Update aria-label
+      button.setAttribute('aria-label', `${listItem.querySelector('span[slot="headline"]')?.textContent || areaId} ${isVisible ? t('show') : t('hide')}`);
+      
       // Hide/show area content if expanded
       const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
       if (content && !isVisible) {
@@ -95,9 +120,30 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
       const areaId = item.dataset.areaId;
       
       // Check if area is hidden
-      const visibilityButton = item.querySelector('ha-icon-button.area-visibility-toggle');
-      const isHidden = visibilityButton?.querySelector('ha-svg-icon')?.getAttribute('path')?.includes('M12,9A3,3');
+      const isHidden = item.dataset.areaHidden === 'true' || item.classList.contains('area-hidden');
       if (isHidden) {
+        // Show visual feedback that hidden areas can't be expanded
+        item.style.transition = 'opacity 0.2s, transform 0.2s';
+        const originalOpacity = item.style.opacity;
+        const originalTransform = item.style.transform;
+        
+        // Shake animation to indicate it's not expandable
+        item.style.opacity = '0.5';
+        item.style.transform = 'translateX(-4px)';
+        
+        setTimeout(() => {
+          item.style.transform = 'translateX(4px)';
+        }, 50);
+        
+        setTimeout(() => {
+          item.style.transform = 'translateX(-2px)';
+        }, 100);
+        
+        setTimeout(() => {
+          item.style.opacity = originalOpacity || '';
+          item.style.transform = originalTransform || '';
+        }, 200);
+        
         return; // Don't expand hidden areas
       }
       

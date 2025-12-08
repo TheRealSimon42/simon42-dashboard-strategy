@@ -211,6 +211,24 @@ export function getEditorStyles() {
       cursor: grabbing;
     }
     
+    /* Hidden area styling */
+    ha-md-list-item.area-hidden {
+      opacity: 0.6;
+      cursor: not-allowed !important;
+    }
+    
+    ha-md-list-item.area-hidden:hover {
+      background: var(--secondary-background-color);
+    }
+    
+    .area-hidden-hint {
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      font-style: italic;
+      margin-top: 2px;
+      display: block;
+    }
+    
     /* Entity Name Translation native styling */
     .translation-lang-selectors {
       display: flex;

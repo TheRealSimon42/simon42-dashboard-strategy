@@ -232,6 +232,9 @@ export const en = {
   langGerman: "German",
   noTranslationsAdded: "No translations added",
   noPatternsAdded: "No patterns added",
+  show: "show",
+  hide: "hide",
+  areaHiddenCannotExpand: "Hidden areas cannot be expanded. Enable the area first to manage entities.",
   areasDescription: "Choose which areas should be displayed in the dashboard and in what order. Expand areas to manage individual entities.",
   
   // Debug Settings

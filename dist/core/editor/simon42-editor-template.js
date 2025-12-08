@@ -1280,9 +1280,10 @@ function renderAreaItems(allAreas, hiddenAreas, areaOrder) {
     const displayOrder = orderIndex !== -1 ? orderIndex : 9999 + index;
     
     return `
-      <ha-md-list-item type="button" class="draggable" data-area-id="${area.area_id}" data-order="${displayOrder}">
+      <ha-md-list-item type="button" class="draggable ${isHidden ? 'area-hidden' : ''}" data-area-id="${area.area_id}" data-order="${displayOrder}" data-area-hidden="${isHidden}">
         <ha-icon class="icon" slot="start" icon="${area.icon || 'mdi:home'}"></ha-icon>
         <span slot="headline">${area.name}</span>
+        ${isHidden ? `<span slot="supporting-text" class="area-hidden-hint">${t('areaHiddenCannotExpand')}</span>` : ''}
         <ha-icon-button slot="end" class="area-visibility-toggle" data-area-id="${area.area_id}" aria-label="${area.name} ${isHidden ? t('show') : t('hide')}">
           <ha-svg-icon path="${isHidden ? 'M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z' : 'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z'}"></ha-svg-icon>
         </ha-icon-button>

@@ -232,6 +232,9 @@ export const de = {
   langEnglish: "Englisch",
   langGerman: "Deutsch",
   noTranslationsAdded: "Keine Übersetzungen hinzugefügt",
+  show: "anzeigen",
+  hide: "ausblenden",
+  areaHiddenCannotExpand: "Ausgeblendete Bereiche können nicht erweitert werden. Aktiviere den Bereich zuerst, um Entitäten zu verwalten.",
   areasDescription: "Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten.",
   
   // Debug-Einstellungen
