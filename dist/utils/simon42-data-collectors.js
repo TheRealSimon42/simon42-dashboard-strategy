@@ -13,7 +13,7 @@ import { filterStates } from './simon42-entity-filter.js';
  * @param {Object} config - Dashboard configuration
  * @returns {Set<string>} Set of hidden entity IDs
  */
-function getHiddenEntitiesFromConfig(config) {
+export function getHiddenEntitiesFromConfig(config) {
   const hiddenEntities = new Set();
   
   if (!config.areas_options) {
