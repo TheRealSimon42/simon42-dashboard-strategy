@@ -6,6 +6,9 @@
 // ====================================================================
 
 import { t, initLanguage } from '../utils/simon42-i18n.js';
+import { filterEntities } from '../utils/simon42-entity-filter.js';
+import { getExcludedLabels } from '../utils/simon42-helpers.js';
+import { getHiddenEntitiesFromConfig } from '../utils/simon42-data-collectors.js';
 
 class Simon42LightsGroupCard extends HTMLElement {
   constructor() {
@@ -57,46 +60,26 @@ class Simon42LightsGroupCard extends HTMLElement {
   }
 
   _calculateExcludeSets() {
-    // no_dboard Label
-    this._excludeSet = new Set();
-    this._entities.forEach(e => {
-      if (e.labels?.includes("no_dboard")) {
-        this._excludeSet.add(e.entity_id);
-      }
-    });
+    // Use centralized utilities
+    const excludeLabels = getExcludedLabels(this._entities);
+    this._excludeSet = new Set(excludeLabels);
     
-    // Hidden from config
-    this._hiddenFromConfigSet = new Set();
-    if (this._config.config?.areas_options) {
-      for (const areaOptions of Object.values(this._config.config.areas_options)) {
-        if (areaOptions.groups_options?.lights?.hidden) {
-          areaOptions.groups_options.lights.hidden.forEach(id => 
-            this._hiddenFromConfigSet.add(id)
-          );
-        }
-      }
-    }
+    // Use centralized hidden entities extraction
+    this._hiddenFromConfigSet = getHiddenEntitiesFromConfig(this._config.config || {});
   }
 
   _getFilteredLightEntities() {
     if (!this._hass) return [];
     
-    return this._entities
-      .filter(e => {
-        const id = e.entity_id;
-        
-        if (!id.startsWith('light.')) return false;
-        if (e.hidden === true) return false;
-        if (e.hidden_by) return false;
-        if (e.disabled_by) return false;
-        if (e.entity_category === 'config' || e.entity_category === 'diagnostic') return false;
-        if (this._hass.states[id] === undefined) return false;
-        if (this._excludeSet.has(id)) return false;
-        if (this._hiddenFromConfigSet.has(id)) return false;
-        
-        return true;
-      })
-      .map(e => e.entity_id);
+    // REFACTORED: Use centralized filterEntities utility
+    return filterEntities(this._entities, {
+      domain: 'light',
+      excludeLabels: this._excludeSet,
+      hiddenFromConfig: this._hiddenFromConfigSet,
+      hass: this._hass,
+      checkRegistry: true,
+      checkState: true
+    });
   }
 
   _getRelevantLights() {

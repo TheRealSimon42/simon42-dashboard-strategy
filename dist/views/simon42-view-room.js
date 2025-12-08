@@ -4,6 +4,7 @@
 import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged, isCameraStreamAvailable } from '../utils/simon42-helpers.js';
 import { t, initLanguage } from '../utils/simon42-i18n.js';
 import { filterByArea, filterEntities } from '../utils/simon42-entity-filter.js';
+import { getHiddenEntitiesFromConfig } from '../utils/simon42-data-collectors.js';
 
 /**
  * Prüft ob eine Entity eine Better Thermostat Entity ist
@@ -99,27 +100,12 @@ class Simon42ViewRoomStrategy {
     }
 
     // REFACTORED: Use centralized filtering utilities
-    // Helper function to get hidden entities from config (similar to data-collectors)
-    const getHiddenEntitiesFromConfig = (config) => {
-      const hiddenEntities = new Set();
-      if (!config.areas_options) return hiddenEntities;
-      
-      const areaOptions = config.areas_options[area.area_id];
-      if (!areaOptions?.groups_options) return hiddenEntities;
-      
-      for (const groupOptions of Object.values(areaOptions.groups_options)) {
-        if (groupOptions.hidden && Array.isArray(groupOptions.hidden)) {
-          groupOptions.hidden.forEach(entityId => hiddenEntities.add(entityId));
-        }
-      }
-      
-      return hiddenEntities;
-    };
-
     // Step 1: Filter by area using centralized utility
     const areaFilteredEntities = filterByArea(entities, area.area_id, areaDevices);
     
-    // Step 2: Get hidden entities from config for this area
+    // Step 2: Get hidden entities from config using centralized utility
+    // Note: This gets ALL hidden entities from all areas, but we filter by area first
+    // so only entities in this area will be affected
     const hiddenFromConfig = getHiddenEntitiesFromConfig(dashboardConfig);
     
     // Step 3: Apply centralized filtering with custom filter for battery sensor handling

@@ -5,6 +5,7 @@ import { getExcludedLabels } from '../utils/simon42-helpers.js';
 import { t, initLanguage } from '../utils/simon42-i18n.js';
 import { createSecuritySection } from '../utils/simon42-security-card-builder.js';
 import { filterEntities } from '../utils/simon42-entity-filter.js';
+import { getHiddenEntitiesFromConfig } from '../utils/simon42-data-collectors.js';
 
 class Simon42ViewSecurityStrategy {
   static async generate(config, hass) {
@@ -18,19 +19,8 @@ class Simon42ViewSecurityStrategy {
     const excludeLabels = getExcludedLabels(entities);
     const excludeSet = new Set(excludeLabels);
     
-    // Hole hidden entities aus areas_options (wenn config übergeben wurde)
-    const hiddenFromConfig = new Set();
-    if (config.config?.areas_options) {
-      for (const areaOptions of Object.values(config.config.areas_options)) {
-        // Alle relevanten Gruppen durchsuchen
-        const relevantGroups = ['covers', 'covers_curtain', 'switches'];
-        relevantGroups.forEach(group => {
-          if (areaOptions.groups_options?.[group]?.hidden) {
-            areaOptions.groups_options[group].hidden.forEach(id => hiddenFromConfig.add(id));
-          }
-        });
-      }
-    }
+    // Use centralized hidden entities extraction
+    const hiddenFromConfig = getHiddenEntitiesFromConfig(config.config || {});
 
     // Gruppiere nach Typ - REFACTORED: Nutzt zentrale Entity-Filter-Logik
     const filteredEntities = filterEntities(entities, {

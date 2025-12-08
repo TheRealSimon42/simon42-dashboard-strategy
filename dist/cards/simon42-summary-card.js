@@ -9,6 +9,7 @@
 import { t, initLanguage } from '../utils/simon42-i18n.js';
 import { filterEntities } from '../utils/simon42-entity-filter.js';
 import { logWarn } from '../utils/simon42-logger.js';
+import { getHiddenEntitiesFromConfig } from '../utils/simon42-data-collectors.js';
 
 /**
  * Configuration for summary types
@@ -182,28 +183,9 @@ class Simon42SummaryCard extends HTMLElement {
   }
 
   _getHiddenFromConfig() {
-    const hiddenEntities = new Set();
-    
-    if (!this.config.areas_options) {
-      return hiddenEntities;
-    }
-    
-    // Welche Gruppen sind für diesen Summary-Type relevant?
-    const relevantGroups = this._getRelevantGroupsForSummary();
-    
-    // Durchlaufe alle Bereiche und sammle versteckte Entities
-    for (const areaOptions of Object.values(this.config.areas_options)) {
-      if (!areaOptions.groups_options) continue;
-      
-      for (const groupKey of relevantGroups) {
-        const groupOptions = areaOptions.groups_options[groupKey];
-        if (groupOptions?.hidden && Array.isArray(groupOptions.hidden)) {
-          groupOptions.hidden.forEach(entityId => hiddenEntities.add(entityId));
-        }
-      }
-    }
-    
-    return hiddenEntities;
+    // Use centralized hidden entities extraction
+    // Gets all hidden entities from all groups (if entity is hidden in any group, exclude it)
+    return getHiddenEntitiesFromConfig(this.config);
   }
 
   _getRelevantGroupsForSummary() {

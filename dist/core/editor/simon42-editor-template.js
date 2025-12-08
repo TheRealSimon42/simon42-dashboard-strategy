@@ -831,7 +831,6 @@ export function renderEditorHTML({
           ` : ''}
           ` : ''}
         </div>
-        ` : ''}
         <div class="form-row">
           ${renderMDCSwitch('show-energy', showEnergy, t('showEnergyDashboard'))}
           <label for="show-energy" style="margin-left: 12px; cursor: pointer;">${t('showEnergyDashboard')}</label>
