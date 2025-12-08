@@ -25,15 +25,12 @@ const translations = {
   // etc.
 };
 
-// Standard-Sprache (de)
 const DEFAULT_LANGUAGE = 'de';
-
-// Aktuelle Sprache
 let currentLanguage = DEFAULT_LANGUAGE;
 
 /**
- * Setzt die aktuelle Sprache
- * @param {string} lang - Sprachcode (z.B. 'de', 'en')
+ * Sets the current language
+ * @param {string} lang - Language code (e.g., 'de', 'en')
  */
 export function setLanguage(lang) {
   if (translations[lang]) {
@@ -45,28 +42,27 @@ export function setLanguage(lang) {
 }
 
 /**
- * Gibt die aktuelle Sprache zurück
- * @returns {string} Sprachcode
+ * Gets the current language
+ * @returns {string} Language code
  */
 export function getLanguage() {
   return currentLanguage;
 }
 
 /**
- * Übersetzt einen Schlüssel in die aktuelle Sprache
- * @param {string} key - Übersetzungsschlüssel
- * @param {Object} params - Optionale Parameter für Platzhalter
- * @returns {string} Übersetzter Text
+ * Translates a key to the current language
+ * @param {string} key - Translation key
+ * @param {Object} params - Optional parameters for placeholders
+ * @returns {string} Translated text
  */
 export function t(key, params = {}) {
   const translation = translations[currentLanguage]?.[key];
   
   if (!translation) {
-    // Silent fallback to key - no console spam
     return key;
   }
   
-  // Ersetze Platzhalter falls vorhanden
+  // Replace placeholders if present
   if (Object.keys(params).length > 0) {
     let result = translation;
     Object.keys(params).forEach(paramKey => {
@@ -79,19 +75,18 @@ export function t(key, params = {}) {
 }
 
 /**
- * Initialisiert die Sprache basierend auf der Config und/oder hass-Einstellungen
- * @param {Object} config - Dashboard-Konfiguration
- * @param {Object} hass - Home Assistant Objekt (optional)
+ * Initializes language based on config and/or hass settings
+ * Priority: 1) config.language/config.lang, 2) hass.language, 3) default
+ * @param {Object} config - Dashboard configuration
+ * @param {Object} hass - Home Assistant object (optional)
  */
 export function initLanguage(config, hass = null) {
-  // 1. Prüfe explizite Spracheinstellung in der Config
   if (config.language || config.lang) {
     const lang = config.language || config.lang;
     setLanguage(lang);
     return;
   }
   
-  // 2. Versuche Sprache aus hass.language zu lesen
   if (hass?.language) {
     const lang = hass.language.toLowerCase();
     if (translations[lang]) {
@@ -102,13 +97,12 @@ export function initLanguage(config, hass = null) {
     }
   }
   
-  // 3. Fallback auf Standard-Sprache
   setLanguage(DEFAULT_LANGUAGE);
 }
 
 /**
- * Gibt alle verfügbaren Sprachen zurück
- * @returns {Array<string>} Array von Sprachcodes
+ * Gets all available languages
+ * @returns {Array<string>} Array of language codes
  */
 export function getAvailableLanguages() {
   return Object.keys(translations);

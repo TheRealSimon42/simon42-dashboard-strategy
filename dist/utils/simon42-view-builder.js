@@ -1,12 +1,17 @@
 // ====================================================================
-// VIEW BUILDER - Erstellt View-Definitionen
+// VIEW BUILDER - Creates view definitions
 // ====================================================================
 
 import { t } from './simon42-i18n.js';
 import { translateAreaName } from './simon42-helpers.js';
 
 /**
- * Erstellt den Haupt-Übersichts-View
+ * Creates the main overview view
+ * @param {Array} sections - Array of sections for the overview
+ * @param {Array} personBadges - Array of person badges
+ * @param {Object} config - Dashboard configuration
+ * @param {Object} hass - Home Assistant object
+ * @returns {Object} Overview view definition
  */
 export function createOverviewView(sections, personBadges, config = {}, hass = null) {
   return {
@@ -26,7 +31,11 @@ export function createOverviewView(sections, personBadges, config = {}, hass = n
 }
 
 /**
- * Erstellt die Utility-Views (Lichter, Covers, Security, Batterien)
+ * Creates utility views (lights, covers, security, batteries)
+ * @param {Array} entities - All entities
+ * @param {boolean} showSummaryViews - Whether to show summary views
+ * @param {Object} config - Dashboard configuration (passed for areas_options filtering)
+ * @returns {Array<Object>} Array of utility view definitions
  */
 export function createUtilityViews(entities, showSummaryViews = false, config = {}) {
   return [
@@ -38,7 +47,7 @@ export function createUtilityViews(entities, showSummaryViews = false, config = 
       strategy: {
         type: "custom:simon42-view-lights",
         entities,
-        config // Übergebe config für areas_options Filterung
+        config
       }
     },
     {
@@ -50,7 +59,7 @@ export function createUtilityViews(entities, showSummaryViews = false, config = 
         type: "custom:simon42-view-covers",
         entities,
         device_classes: ["awning", "blind", "curtain", "shade", "shutter", "window"],
-        config // Übergebe config für areas_options Filterung
+        config
       }
     },
     {
@@ -61,7 +70,7 @@ export function createUtilityViews(entities, showSummaryViews = false, config = 
       strategy: {
         type: "custom:simon42-view-security",
         entities,
-        config // Übergebe config für areas_options Filterung
+        config
       }
     },
     {
@@ -72,20 +81,26 @@ export function createUtilityViews(entities, showSummaryViews = false, config = 
       strategy: {
         type: "custom:simon42-view-batteries",
         entities,
-        config // Übergebe config für areas_options Filterung
+        config
       }
     }
   ];
 }
 
 /**
- * Erstellt Views für jeden sichtbaren Bereich
+ * Creates views for each visible area
+ * @param {Array} visibleAreas - Array of visible area objects
+ * @param {Array} devices - All devices
+ * @param {Array} entities - All entities
+ * @param {boolean} showRoomViews - Whether to show room views
+ * @param {Object} areasOptions - Area-specific options
+ * @param {Object} dashboardConfig - Dashboard configuration (for area name translation)
+ * @returns {Array<Object>} Array of area view definitions
  */
 export function createAreaViews(visibleAreas, devices, entities, showRoomViews = false, areasOptions = {}, dashboardConfig = {}) {
   return visibleAreas.map(area => {
     const areaOptions = areasOptions[area.area_id] || {};
     
-    // Übersetze Area-Namen falls Übersetzungen konfiguriert sind
     const translatedAreaName = translateAreaName(area.name, dashboardConfig);
     
     return {

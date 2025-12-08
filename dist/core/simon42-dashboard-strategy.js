@@ -1,8 +1,7 @@
 // ====================================================================
-// DASHBOARD STRATEGY - Generiert die Hauptstruktur
+// DASHBOARD STRATEGY - Generates the main dashboard structure
 // ====================================================================
-// Nutzt direkt die im hass-Objekt verfügbaren Registry-Daten
-// Keine WebSocket-Calls mehr nötig!
+// Uses registry data directly from hass object (no WebSocket calls needed)
 // ====================================================================
 
 import { getVisibleAreas } from '../utils/simon42-helpers.js';
@@ -33,11 +32,20 @@ import {
 import { initLanguage, t, getLanguage } from '../utils/simon42-i18n.js';
 import { initLogger, logDebug, logInfo } from '../utils/simon42-logger.js';
 
-// Cache für letzte Generation, um unnötige Logs zu vermeiden
+// Cache for last generation state to avoid unnecessary logs
 let lastGenerationState = null;
 
 /**
- * Erstellt einen Hash-Key für die aktuelle Generation basierend auf wichtigen Metriken
+ * Creates a hash key for the current generation based on important metrics
+ * @param {Array} entities - All entities
+ * @param {Array} areas - All areas
+ * @param {Array} persons - All persons
+ * @param {Array} lightsOn - Lights that are on
+ * @param {Array} coversOpen - Covers that are open
+ * @param {Array} securityUnsafe - Unsafe security entities
+ * @param {Array} batteriesCritical - Critical batteries
+ * @param {string|null} weatherEntity - Weather entity ID or null
+ * @returns {string} JSON stringified hash key
  */
 function getGenerationKey(entities, areas, persons, lightsOn, coversOpen, securityUnsafe, batteriesCritical, weatherEntity) {
   return JSON.stringify({
@@ -53,31 +61,32 @@ function getGenerationKey(entities, areas, persons, lightsOn, coversOpen, securi
 }
 
 class Simon42DashboardStrategy {
+  /**
+   * Generates the dashboard structure
+   * @param {Object} config - Dashboard configuration
+   * @param {Object} hass - Home Assistant object
+   * @returns {Object} Dashboard structure with title and views
+   */
   static async generate(config, hass) {
-    // Initialisiere Logger basierend auf Config
     initLogger(config);
     
-    // Initialisiere Sprache basierend auf Config und hass-Einstellungen
-    // Wichtig: Muss VOR allen t()-Aufrufen passieren!
+    // Initialize language - must happen BEFORE all t() calls
     initLanguage(config, hass);
     
-    // Nutze die bereits im hass-Objekt verfügbaren Registry-Daten
-    // Diese sind als Objects verfügbar mit ID als Key
-    // Konvertiere sie zu Arrays für die weitere Verarbeitung
+    // Convert registry objects to arrays for processing
     const areas = Object.values(hass.areas || {});
     const devices = Object.values(hass.devices || {});
     const entities = Object.values(hass.entities || {});
     const floors = Object.values(hass.floors || {});
 
-    // Labels für Filterung von Entitäten
+    // Get entities with "no_dboard" label for exclusion
     const excludeLabels = entities
       .filter(e => e.labels?.includes("no_dboard"))
       .map(e => e.entity_id);
 
-    // Filtere und sortiere Areale basierend auf Config
     const visibleAreas = getVisibleAreas(areas, config.areas_display);
 
-    // Sammle alle benötigten Daten (übergebe config für areas_options Filterung)
+    // Collect all required data (config passed for areas_options filtering)
     const persons = collectPersons(hass, excludeLabels, config);
     const lightsOn = collectLights(hass, excludeLabels, config);
     const coversOpen = collectCovers(hass, excludeLabels, config);
@@ -86,11 +95,11 @@ class Simon42DashboardStrategy {
     const weatherEntity = findWeatherEntity(hass, excludeLabels, config);
     const someSensorId = findDummySensor(hass, excludeLabels, config);
     
-    // Prüfe ob sich etwas geändert hat
+    // Check if anything changed to avoid unnecessary logging
     const currentKey = getGenerationKey(entities, areas, persons, lightsOn, coversOpen, securityUnsafe, batteriesCritical, weatherEntity);
     const hasChanged = lastGenerationState !== currentKey;
     
-    // Nur loggen wenn sich etwas geändert hat oder es die erste Generation ist
+    // Only log if something changed or it's the first generation
     if (hasChanged || lastGenerationState === null) {
       logInfo('[Strategy] Starting dashboard generation' + (hasChanged && lastGenerationState !== null ? ' (changes detected)' : ''));
       logDebug('[Strategy] Config:', config);
@@ -113,47 +122,27 @@ class Simon42DashboardStrategy {
         someSensorId: someSensorId || 'none'
       });
       
-      // Aktualisiere Cache
       lastGenerationState = currentKey;
     }
 
-    // Prüfe ob Personen-Badges angezeigt werden sollen (Standard: true)
+    // Read config flags (defaults shown in comments)
     const showPersonBadges = config.show_person_badges !== false;
-
-    // Prüfe ob Profilbilder für Personen angezeigt werden sollen (Standard: false)
     const showPersonProfilePicture = config.show_person_profile_picture === true;
-
-    // Prüfe ob Wetter-Karte angezeigt werden soll (Standard: true)
     const showWeather = config.show_weather !== false;
-
-    // Prüfe ob Energie-Dashboard angezeigt werden soll (Standard: true)
     const showEnergy = config.show_energy !== false;
-
-    // Prüfe ob Such-Karte angezeigt werden soll (Standard: false)
     const showSearchCard = config.show_search_card === true;
-
-    // Prüfe ob Uhr-Karte angezeigt werden soll (Standard: false)
     const showClockCard = config.show_clock_card === true;
-
-    // Prüfe ob Zusammenfassungs-Views angezeigt werden sollen (Standard: false)
     const showSummaryViews = config.show_summary_views === true;
-
-    // Prüfe ob Raum-Views angezeigt werden sollen (Standard: false)
     const showRoomViews = config.show_room_views === true;
-
-    // Prüfe ob Bereiche nach Etagen gruppiert werden sollen (Standard: false)
     const groupByFloors = config.group_by_floors === true;
 
-    // Erstelle Person-Badges (mit showPersonBadges und showPersonProfilePicture Parameter)
     const personBadges = createPersonBadges(persons, hass, showPersonBadges, showPersonProfilePicture);
 
-    // Erstelle Bereiche-Section(s)
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating areas section...');
     }
     const areasSections = createAreasSection(visibleAreas, groupByFloors, hass, config);
 
-    // Erstelle separate Sections: Weather, Public Transport, Energy, Scheduler, Calendar
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating additional sections...');
     }
@@ -163,10 +152,11 @@ class Simon42DashboardStrategy {
     const schedulerCardSection = createSchedulerCardSection(config, hass);
     const calendarCardSection = createCalendarCardSection(config, hass);
     
-    // Erstelle Sections für den Haupt-View
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating overview section...');
     }
+    // Build overview sections array
+    // Note: areasSections is an array when groupByFloors is active
     const overviewSections = [
       createOverviewSection({
         lightsOn,
@@ -179,9 +169,8 @@ class Simon42DashboardStrategy {
         config,
         hass
       }),
-      // Wenn groupByFloors aktiv ist, ist areasSections ein Array von Sections
       ...(Array.isArray(areasSections) ? areasSections : [areasSections]),
-      // Füge Sections in der richtigen Reihenfolge hinzu: Weather, Public Transport, Energy, Scheduler, Calendar
+      // Add sections in order: Weather, Public Transport, Energy, Scheduler, Calendar
       ...(weatherSection ? [weatherSection] : []),
       ...(publicTransportSection ? [publicTransportSection] : []),
       ...(energySection ? [energySection] : []),
@@ -192,7 +181,7 @@ class Simon42DashboardStrategy {
       logDebug('[Strategy] Created', overviewSections.length, 'overview sections');
     }
 
-    // Erstelle alle Views mit areas_options und config
+    // Create all views (config passed for areas_options filtering)
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating views...');
     }
@@ -217,15 +206,15 @@ class Simon42DashboardStrategy {
     };
   }
 
-  // Füge die Methode hinzu, um den Config-Editor zu laden
+  /**
+   * Returns the config editor element
+   * @returns {Promise<HTMLElement>} Config editor element
+   */
   static async getConfigElement() {
-    // Der Editor sollte schon geladen sein, da er im Loader ist
-    // Warte kurz, falls er noch lädt
     await import('./simon42-dashboard-strategy-editor.js');
     await customElements.whenDefined('simon42-dashboard-strategy-editor');
     return document.createElement('simon42-dashboard-strategy-editor');
   }
 }
 
-// Registriere Custom Element mit dem korrekten Namen
 customElements.define("ll-strategy-simon42-dashboard", Simon42DashboardStrategy);

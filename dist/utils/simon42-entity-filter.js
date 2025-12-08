@@ -5,13 +5,16 @@
 // Eliminates duplication and ensures consistent behavior
 // ====================================================================
 
-// Lazy access to logger to avoid loading order issues
-// Logger is made available via window.Simon42Logger in simon42-logger.js
+/**
+ * Gets logger function with lazy loading to avoid circular dependencies
+ * Logger is made available via window.Simon42Logger in simon42-logger.js
+ * @returns {Function} logDebug function or no-op fallback
+ */
 function getLogDebug() {
   if (typeof window !== 'undefined' && window.Simon42Logger?.logDebug) {
     return window.Simon42Logger.logDebug;
   }
-  return () => {}; // No-op fallback if logger not available
+  return () => {};
 }
 
 /**
@@ -51,7 +54,6 @@ export function filterEntities(entities, options = {}) {
     return [];
   }
 
-  // Collect entities hidden by visibility upfront for logging
   const hiddenByVisibility = checkRegistry 
     ? entities.filter(e => e.hidden === true).map(e => e.entity_id)
     : [];
@@ -66,21 +68,20 @@ export function filterEntities(entities, options = {}) {
   const domains = domain ? (Array.isArray(domain) ? domain : [domain]) : null;
   const states = state ? (Array.isArray(state) ? state : [state]) : null;
 
+  // Filter order optimized for performance: domain first (reduces set size), then fast checks
   const result = entities
     .filter(entity => {
       const entityId = entity.entity_id;
       if (!entityId) return false;
 
-      // 1. Domain-Check (early return for performance)
+      // 1. Domain check (early return for performance)
       if (domains && !domains.some(d => entityId.startsWith(`${d}.`))) {
         return false;
       }
 
-      // 2. Registry-Checks (if enabled)
+      // 2. Registry checks (if enabled)
       if (checkRegistry) {
-        if (entity.hidden === true) {
-          return false;
-        }
+        if (entity.hidden === true) return false;
         if (entity.hidden_by) return false;
         if (entity.disabled_by) return false;
         if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') {
@@ -88,17 +89,17 @@ export function filterEntities(entities, options = {}) {
         }
       }
 
-      // 3. State-Existence-Check (if enabled)
+      // 3. State existence check (if enabled)
       if (checkState && hass) {
         const stateObj = hass.states[entityId];
         if (!stateObj) return false;
 
-        // 4. State-Value-Check (if specified)
+        // 4. State value check (if specified)
         if (states && !states.includes(stateObj.state)) {
           return false;
         }
 
-        // 5. Device-Class-Check (if specified)
+        // 5. Device class check (if specified)
         if (deviceClasses && deviceClasses.length > 0) {
           const deviceClass = stateObj.attributes?.device_class;
           if (!deviceClasses.includes(deviceClass)) {
@@ -107,11 +108,11 @@ export function filterEntities(entities, options = {}) {
         }
       }
 
-      // 6. Exclude-Checks (Set-Lookup = O(1))
+      // 6. Exclude checks (Set lookup = O(1))
       if (excludeLabels.has(entityId)) return false;
       if (hiddenFromConfig.has(entityId)) return false;
 
-      // 7. Custom Filter (if provided)
+      // 7. Custom filter (if provided)
       if (customFilter && !customFilter(entity, hass)) {
         return false;
       }
@@ -196,16 +197,4 @@ export function filterByArea(entities, areaId, areaDevices = new Set()) {
   });
 }
 
-/**
- * Usage Examples:
- * 
- * // Filter lights:
- * filterEntities(entities, { domain: 'light', ...options })
- * 
- * // Filter covers:
- * filterEntities(entities, { domain: 'cover', ...options })
- * 
- * // Filter multiple domains:
- * filterEntities(entities, { domain: ['light', 'switch'], ...options })
- */
 

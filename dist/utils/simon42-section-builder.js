@@ -1,5 +1,5 @@
 // ====================================================================
-// SECTION BUILDER - Erstellt Dashboard-Sections
+// SECTION BUILDER - Creates dashboard sections
 // ====================================================================
 
 import { t, getLanguage } from './simon42-i18n.js';
@@ -15,7 +15,9 @@ import { logWarn, logDebug, logInfo } from './simon42-logger.js';
 import { translateAreaName } from './simon42-helpers.js';
 
 /**
- * Erstellt die Übersichts-Section mit Zusammenfassungen
+ * Creates the overview section with summaries
+ * @param {Object} data - Section data including lightsOn, coversOpen, securityUnsafe, etc.
+ * @returns {Object} Overview section definition
  */
 export function createOverviewSection(data) {
   logDebug('[Section Builder] Creating overview section...');
@@ -34,23 +36,18 @@ export function createOverviewSection(data) {
     }
   ];
 
-  // Prüfe ob Uhr-Karte angezeigt werden soll
   if (showClockCard) {
-    // Prüfe ob Alarm-Entity konfiguriert ist
     const alarmEntity = config.alarm_entity ? String(config.alarm_entity).trim() : null;
 
     if (alarmEntity && alarmEntity.length > 0) {
-      // Validate entity exists
       if (!hass?.states?.[alarmEntity]) {
         logWarn('[Section Builder] Alarm entity not found:', alarmEntity);
       } else {
-        // Check if Alarmo card should be used
         const useAlarmoCard = config.use_alarmo_card === true;
-        // Validate entity is an alarm_control_panel entity and from Alarmo platform
         const isValidAlarmEntity = alarmEntity.startsWith('alarm_control_panel.');
         const isAlarmoCard = useAlarmoCard && isValidAlarmEntity && hass?.entities?.[alarmEntity]?.platform === 'alarmo';
         
-        // Wenn Alarmo-Karte verwendet wird, Uhr in voller Breite (da Alarmo-Karte groß ist)
+        // If Alarmo card is used, clock takes full width (Alarmo card is large)
         if (isAlarmoCard) {
           cards.push({
             type: "clock",
@@ -69,7 +66,7 @@ export function createOverviewSection(data) {
             }
           });
         } else {
-          // Uhr und Alarm-Panel nebeneinander
+          // Clock and alarm panel side by side
           cards.push({
             type: "clock",
             clock_size: "small",
@@ -84,7 +81,7 @@ export function createOverviewSection(data) {
         }
       }
     } else {
-      // Nur Uhr in voller Breite
+      // Clock only, full width
       cards.push({
         type: "clock",
         clock_size: "small",
@@ -95,7 +92,7 @@ export function createOverviewSection(data) {
       });
     }
   } else {
-    // Wenn keine Uhr, aber Alarm-Entity vorhanden, zeige nur Alarm-Panel
+    // No clock, but alarm entity present: show only alarm panel
     const alarmEntity = config.alarm_entity ? String(config.alarm_entity).trim() : null;
     if (alarmEntity && alarmEntity.length > 0) {
       // Validate entity exists
@@ -125,7 +122,6 @@ export function createOverviewSection(data) {
     }
   }
 
-  // Füge Search-Card hinzu wenn aktiviert
   if (showSearchCard) {
     const searchCardConfig = {
       type: "custom:search-card",
@@ -206,7 +202,6 @@ export function createOverviewSection(data) {
     }
   }
 
-  // Füge Zusammenfassungen hinzu nur wenn mindestens eine Card vorhanden ist
   if (summaryCards.length > 0) {
     cards.push({
       type: "heading",
@@ -226,7 +221,7 @@ export function createOverviewSection(data) {
     for (let i = 0; i < summaryCards.length; i += 2) {
       const rowCards = summaryCards.slice(i, i + 2);
       
-      // Wenn nur eine Karte übrig (ungerade Anzahl), trotzdem horizontal-stack verwenden
+      // If only one card remains (odd number), still use horizontal-stack
       cards.push({
         type: "horizontal-stack",
         cards: rowCards

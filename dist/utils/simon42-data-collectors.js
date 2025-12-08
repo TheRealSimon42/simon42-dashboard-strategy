@@ -1,16 +1,17 @@
 // ====================================================================
-// DATA COLLECTORS - Sammelt und bereitet Daten auf (REFACTORED)
+// DATA COLLECTORS - Collects and prepares entity data
 // ====================================================================
-// Nutzt zentrale Entity-Filter-Logik für Konsistenz und Wartbarkeit
+// Uses centralized entity filter logic for consistency and maintainability
 // ====================================================================
 
-// Import logger FIRST to ensure it's available for entity-filter
 import { logDebug } from './simon42-logger.js';
 import { filterStates } from './simon42-entity-filter.js';
 
 /**
- * Erstellt eine Liste aller versteckten Entity-IDs aus areas_options
- * OPTIMIERT: Wird als Set zurückgegeben für O(1) Lookup
+ * Gets all hidden entity IDs from areas_options config
+ * Returns a Set for O(1) lookup performance
+ * @param {Object} config - Dashboard configuration
+ * @returns {Set<string>} Set of hidden entity IDs
  */
 function getHiddenEntitiesFromConfig(config) {
   const hiddenEntities = new Set();
@@ -19,11 +20,9 @@ function getHiddenEntitiesFromConfig(config) {
     return hiddenEntities;
   }
   
-  // Durchlaufe alle Bereiche
   for (const areaOptions of Object.values(config.areas_options)) {
     if (!areaOptions.groups_options) continue;
     
-    // Durchlaufe alle Gruppen im Bereich
     for (const groupOptions of Object.values(areaOptions.groups_options)) {
       if (groupOptions.hidden && Array.isArray(groupOptions.hidden)) {
         groupOptions.hidden.forEach(entityId => hiddenEntities.add(entityId));
@@ -35,8 +34,11 @@ function getHiddenEntitiesFromConfig(config) {
 }
 
 /**
- * Sammelt alle Personen-Entitäten
- * REFACTORED: Nutzt zentrale filterStates Funktion
+ * Collects all person entities
+ * @param {Object} hass - Home Assistant object
+ * @param {Array<string>} excludeLabels - Entity IDs to exclude
+ * @param {Object} config - Dashboard configuration
+ * @returns {Array<Object>} Array of person objects with entity_id, name, state, isHome
  */
 export function collectPersons(hass, excludeLabels, config = {}) {
   logDebug('[Data Collector] Collecting persons...');
@@ -58,8 +60,11 @@ export function collectPersons(hass, excludeLabels, config = {}) {
 }
 
 /**
- * Zählt eingeschaltete Lichter
- * REFACTORED: Nutzt zentrale filterStates Funktion
+ * Collects all lights that are currently on
+ * @param {Object} hass - Home Assistant object
+ * @param {Array<string>} excludeLabels - Entity IDs to exclude
+ * @param {Object} config - Dashboard configuration
+ * @returns {Array<Object>} Array of light state objects
  */
 export function collectLights(hass, excludeLabels, config = {}) {
   logDebug('[Data Collector] Collecting lights...');
@@ -76,8 +81,11 @@ export function collectLights(hass, excludeLabels, config = {}) {
 }
 
 /**
- * Zählt offene Covers
- * REFACTORED: Nutzt zentrale filterStates Funktion
+ * Collects all covers that are open or opening
+ * @param {Object} hass - Home Assistant object
+ * @param {Array<string>} excludeLabels - Entity IDs to exclude
+ * @param {Object} config - Dashboard configuration
+ * @returns {Array<Object>} Array of cover state objects
  */
 export function collectCovers(hass, excludeLabels, config = {}) {
   logDebug('[Data Collector] Collecting covers...');
@@ -94,8 +102,11 @@ export function collectCovers(hass, excludeLabels, config = {}) {
 }
 
 /**
- * Zählt unsichere Security-Entitäten
- * REFACTORED: Nutzt zentrale filterStates Funktion mit customFilter
+ * Collects all unsafe security entities (unlocked locks, open doors/windows)
+ * @param {Object} hass - Home Assistant object
+ * @param {Array<string>} excludeLabels - Entity IDs to exclude
+ * @param {Object} config - Dashboard configuration
+ * @returns {Array<string>} Array of unsafe security entity IDs
  */
 export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
   logDebug('[Data Collector] Collecting security entities...');
@@ -107,7 +118,7 @@ export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
     domain: ['lock', 'cover', 'binary_sensor'],
     excludeLabels: excludeSet,
     hiddenFromConfig,
-    checkCategory: false // Security entities need special handling
+    checkCategory: false
   });
   logDebug('[Data Collector] Found', allSecurityStates.length, 'security entities, filtering unsafe...');
   
@@ -145,16 +156,18 @@ export function collectSecurityUnsafe(hass, excludeLabels, config = {}) {
 }
 
 /**
- * Zählt kritische Batterien (unter 20%)
- * REFACTORED: Nutzt zentrale filterStates Funktion mit customFilter
- * Ignoriert hidden_by (Integration), respektiert aber manuelles hidden
+ * Collects all batteries with charge level below 20%
+ * Ignores hidden_by (integration), but respects manual hidden flag
+ * @param {Object} hass - Home Assistant object
+ * @param {Array<string>} excludeLabels - Entity IDs to exclude
+ * @param {Object} config - Dashboard configuration
+ * @returns {Array<string>} Array of critical battery entity IDs
  */
 export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
   logDebug('[Data Collector] Collecting critical batteries...');
   const hiddenFromConfig = getHiddenEntitiesFromConfig(config);
   const excludeSet = new Set(excludeLabels);
   
-  // Get all states and filter for batteries
   const allStates = Object.values(hass.states || {});
   logDebug('[Data Collector] Checking', allStates.length, 'states for batteries...');
   
@@ -163,20 +176,20 @@ export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
       const entityId = stateObj.entity_id;
       if (!entityId) return false;
       
-      // 1. Battery-Check (String-includes ist schnell)
+      // Check if entity is a battery (string includes is fast)
       const isBattery = entityId.includes('battery') || 
                        stateObj.attributes?.device_class === 'battery';
       if (!isBattery) return false;
       
-      // 2. Registry-Check: Nur manuell versteckte ausschließen (hidden_by wird ignoriert)
+      // Registry check: only exclude manually hidden (hidden_by is ignored)
       const registryEntry = hass.entities?.[entityId];
       if (registryEntry?.hidden === true) return false;
       
-      // 3. Exclude-Checks
+      // Exclude checks
       if (excludeSet.has(entityId)) return false;
       if (hiddenFromConfig.has(entityId)) return false;
       
-      // 4. Value-Check am Ende
+      // Value check: battery level below 20%
       const value = parseFloat(stateObj.state);
       return !isNaN(value) && value < 20;
     })
@@ -186,8 +199,11 @@ export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
 }
 
 /**
- * Findet eine Weather-Entität
- * REFACTORED: Nutzt zentrale filterStates Funktion
+ * Finds the first available weather entity
+ * @param {Object} hass - Home Assistant object
+ * @param {Array<string>} excludeLabels - Entity IDs to exclude
+ * @param {Object} config - Dashboard configuration
+ * @returns {string|undefined} Weather entity ID or undefined if not found
  */
 export function findWeatherEntity(hass, excludeLabels, config = {}) {
   logDebug('[Data Collector] Finding weather entity...');
@@ -197,18 +213,21 @@ export function findWeatherEntity(hass, excludeLabels, config = {}) {
     domain: 'weather',
     excludeLabels: new Set(excludeLabels),
     hiddenFromConfig,
-    checkCategory: false // Weather entities don't have category restrictions typically
+    checkCategory: false
   });
   
-  // Return first weather entity found
   const weatherEntity = weatherStates.length > 0 ? weatherStates[0].entity_id : undefined;
   logDebug('[Data Collector] Weather entity:', weatherEntity || 'none found');
   return weatherEntity;
 }
 
 /**
- * Findet eine Dummy-Sensor-Entität für Tile-Cards
- * REFACTORED: Nutzt zentrale filterStates Funktion
+ * Finds a dummy sensor entity for tile cards
+ * Tries sensor first, falls back to light, then sun.sun
+ * @param {Object} hass - Home Assistant object
+ * @param {Array<string>} excludeLabels - Entity IDs to exclude
+ * @param {Object} config - Dashboard configuration
+ * @returns {string} Entity ID to use for tile cards
  */
 export function findDummySensor(hass, excludeLabels, config = {}) {
   logDebug('[Data Collector] Finding dummy sensor...');
