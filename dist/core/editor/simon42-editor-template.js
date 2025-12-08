@@ -395,6 +395,71 @@ function getDependencyUrls(dependencyId) {
   return urls[dependencyId] || { integrationUrl: null, cardUrl: null };
 }
 
+/**
+ * Builds a dependency missing message with links
+ * @param {string} dependencyId - The dependency ID (e.g., 'search-card', 'clock-weather-card')
+ * @param {string} missingDepsKey - Translation key for missing deps message
+ * @param {string} linkKey - Translation key for link label
+ * @returns {string} HTML message
+ */
+function buildDependencyMissingMessage(dependencyId, missingDepsKey, linkKey) {
+  const urls = getDependencyUrls(dependencyId);
+  let message = `⚠️ ${t(missingDepsKey)}`;
+  
+  if (urls.cardUrl) {
+    message += '<br><br>';
+    message += `${t(linkKey)}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+  }
+  
+  return message;
+}
+
+/**
+ * Builds a better thermostat dependency missing message
+ * @returns {string} HTML message
+ */
+function buildBetterThermostatMissingMessage() {
+  const urls = getDependencyUrls('better-thermostat');
+  let message = `⚠️ ${t('betterThermostatMissingDeps')}`;
+  
+  if (urls.integrationUrl || urls.cardUrl) {
+    message += '<br><br>';
+    if (urls.integrationUrl) {
+      message += `${t('betterThermostatIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
+    }
+    if (urls.cardUrl) {
+      message += `${t('betterThermostatCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+    }
+  }
+  
+  return message;
+}
+
+/**
+ * Builds a public transport dependency missing message
+ * @param {string} integration - The integration ID
+ * @returns {string} HTML message
+ */
+function buildPublicTransportMissingMessage(integration) {
+  const cardName = getCardNameForIntegration(integration);
+  const urls = getPublicTransportUrls(integration);
+  let message = `⚠️ ${t('publicTransportCardMissingDeps', { card: cardName })}`;
+  
+  if (urls.integrationUrl || urls.cardUrl) {
+    message += '<br><br>';
+    if (urls.integrationUrl) {
+      message += `${t('publicTransportIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
+    } else if (integration === 'hvv') {
+      message += `${t('publicTransportIntegrationLink')}: ${t('publicTransportIntegrationAvailableInCore')}<br>`;
+    }
+    if (urls.cardUrl) {
+      message += `${t('publicTransportCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
+    }
+  }
+  
+  return message;
+}
+
 function renderPublicTransportList(publicTransportEntities, allEntities) {
   if (!publicTransportEntities || publicTransportEntities.length === 0) {
     return `<div class="empty-state">${t('noEntitiesAdded')}</div>`;
@@ -669,17 +734,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <div class="description">
             ${hasClockWeatherCardDeps 
               ? t('clockWeatherCardDescription')
-              : (() => {
-                  const urls = getDependencyUrls('clock-weather-card');
-                  let message = `⚠️ ${t('clockWeatherCardMissingDeps')}`;
-                  
-                  if (urls.cardUrl) {
-                    message += '<br><br>';
-                    message += `${t('clockWeatherCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
-                  }
-                  
-                  return message;
-                })()}
+              : buildDependencyMissingMessage('clock-weather-card', 'clockWeatherCardMissingDeps', 'clockWeatherCardLink')}
           </div>
           <div class="form-row">
             ${renderMDCSwitch('show-horizon-card', showHorizonCard, t('showHorizonCard'), !hasHorizonCardDeps)}
@@ -690,17 +745,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           <div class="description">
             ${hasHorizonCardDeps 
               ? t('horizonCardDescription')
-              : (() => {
-                  const urls = getDependencyUrls('horizon-card');
-                  let message = `⚠️ ${t('horizonCardMissingDeps')}`;
-                  
-                  if (urls.cardUrl) {
-                    message += '<br><br>';
-                    message += `${t('horizonCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
-                  }
-                  
-                  return message;
-                })()}
+              : buildDependencyMissingMessage('horizon-card', 'horizonCardMissingDeps', 'horizonCardLink')}
           </div>
           ${hasHorizonCardDeps && showHorizonCard ? `
           <div class="sub-option">
@@ -758,17 +803,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${hasSearchCardDeps 
             ? t('searchCardDescription')
-            : (() => {
-                const urls = getDependencyUrls('search-card');
-                let message = `⚠️ ${t('searchCardMissingDeps')}`;
-                
-                if (urls.cardUrl) {
-                  message += '<br><br>';
-                  message += `${t('searchCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
-                }
-                
-                return message;
-              })()}
+            : buildDependencyMissingMessage('search-card', 'searchCardMissingDeps', 'searchCardLink')}
         </div>
         ${showSearchCard === true && hasSearchCardDeps ? `
         <div class="sub-option">
@@ -831,22 +866,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="description">
           ${hasBetterThermostatDeps 
             ? t('betterThermostatDescription')
-            : (() => {
-                const urls = getDependencyUrls('better-thermostat');
-                let message = `⚠️ ${t('betterThermostatMissingDeps')}`;
-                
-                if (urls.integrationUrl || urls.cardUrl) {
-                  message += '<br><br>';
-                  if (urls.integrationUrl) {
-                    message += `${t('betterThermostatIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
-                  }
-                  if (urls.cardUrl) {
-                    message += `${t('betterThermostatCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
-                  }
-                }
-                
-                return message;
-              })()}
+            : buildBetterThermostatMissingMessage()}
         </div>
       </div>
 
@@ -911,25 +931,7 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
           </div>
           ${publicTransportIntegration && !hasPublicTransportDeps ? `
           <div class="description" style="margin-top: 8px;">
-            ${(() => {
-                const cardName = getCardNameForIntegration(publicTransportIntegration);
-                const urls = getPublicTransportUrls(publicTransportIntegration);
-                let message = `⚠️ ${t('publicTransportCardMissingDeps', { card: cardName })}`;
-                
-                if (urls.integrationUrl || urls.cardUrl) {
-                  message += '<br><br>';
-                  if (urls.integrationUrl) {
-                    message += `${t('publicTransportIntegrationLink')}: <a href="${urls.integrationUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.integrationUrl}</a><br>`;
-                  } else if (publicTransportIntegration === 'hvv') {
-                    message += `${t('publicTransportIntegrationLink')}: ${t('publicTransportIntegrationAvailableInCore')}<br>`;
-                  }
-                  if (urls.cardUrl) {
-                    message += `${t('publicTransportCardLink')}: <a href="${urls.cardUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">${urls.cardUrl}</a>`;
-                  }
-                }
-                
-                return message;
-              })()}
+            ${buildPublicTransportMissingMessage(publicTransportIntegration)}
           </div>
           ` : ''}
           ${publicTransportIntegration && hasPublicTransportDeps ? `
