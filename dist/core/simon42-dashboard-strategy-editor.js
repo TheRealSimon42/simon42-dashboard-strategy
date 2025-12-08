@@ -641,6 +641,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   _attachAlarmoCardListener() {
     const alarmoCardSwitch = this.querySelector('#use-alarmo-card');
     if (alarmoCardSwitch) {
+      // Ensure toggle state matches config value
+      const useAlarmoCard = this._config.use_alarmo_card === true;
+      alarmoCardSwitch.checked = useAlarmoCard;
+      
       alarmoCardSwitch.addEventListener('change', (e) => {
         this._useAlarmoCardChanged(e.target.checked);
       });
@@ -648,12 +652,18 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _useAlarmoCardChanged(useAlarmoCard) {
-    this._configManager.updateProperty('use_alarmo_card', useAlarmoCard, false);
+    // Ensure value is explicitly a boolean
+    const value = useAlarmoCard === true;
+    this._configManager.updateProperty('use_alarmo_card', value, false);
   }
 
   _attachSchedulerCardListeners() {
     const schedulerCardSwitch = this.querySelector('#show-scheduler-card');
     if (schedulerCardSwitch) {
+      // Ensure toggle state matches config value
+      const showSchedulerCard = this._config.show_scheduler_card === true;
+      schedulerCardSwitch.checked = showSchedulerCard;
+      
       schedulerCardSwitch.addEventListener('change', (e) => {
         this._showSchedulerCardChanged(e.target.checked);
       });
@@ -668,7 +678,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _showSchedulerCardChanged(showSchedulerCard) {
-    this._configManager.updateProperty('show_scheduler_card', showSchedulerCard, false);
+    // Ensure value is explicitly a boolean
+    const value = showSchedulerCard === true;
+    this._configManager.updateProperty('show_scheduler_card', value, false);
     this._render();
   }
 
@@ -679,6 +691,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   _attachCalendarCardListeners() {
     const calendarCardSwitch = this.querySelector('#show-calendar-card');
     if (calendarCardSwitch) {
+      // Ensure toggle state matches config value
+      const showCalendarCard = this._config.show_calendar_card === true;
+      calendarCardSwitch.checked = showCalendarCard;
+      
       calendarCardSwitch.addEventListener('change', (e) => {
         this._showCalendarCardChanged(e.target.checked);
       });
@@ -714,13 +730,19 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _showCalendarCardChanged(showCalendarCard) {
-    this._configManager.updateProperty('show_calendar_card', showCalendarCard, false);
+    // Ensure value is explicitly a boolean
+    const value = showCalendarCard === true;
+    this._configManager.updateProperty('show_calendar_card', value, false);
     this._render();
   }
 
   _attachCalendarCardProListener() {
     const calendarCardProSwitch = this.querySelector('#use-calendar-card-pro');
     if (calendarCardProSwitch) {
+      // Ensure toggle state matches config value
+      const useCalendarCardPro = this._config.use_calendar_card_pro === true;
+      calendarCardProSwitch.checked = useCalendarCardPro;
+      
       calendarCardProSwitch.addEventListener('change', (e) => {
         this._useCalendarCardProChanged(e.target.checked);
       });
@@ -728,7 +750,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _useCalendarCardProChanged(useCalendarCardPro) {
-    this._configManager.updateProperty('use_calendar_card_pro', useCalendarCardPro, false);
+    // Ensure value is explicitly a boolean
+    const value = useCalendarCardPro === true;
+    this._configManager.updateProperty('use_calendar_card_pro', value, false);
   }
 
   _attachFavoritesListeners() {
