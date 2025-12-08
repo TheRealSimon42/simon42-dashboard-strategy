@@ -82,6 +82,12 @@ jobs:
             
             ${{ steps.get_version.outputs.is_prerelease == 'true' && '**Note:** This is a pre-release. To install pre-releases via HACS, enable the option in HACS settings.' || '' }}
             
+            ### After Update: Clear Browser Cache
+            **Important:** After updating, clear your browser cache:
+            - **Hard Refresh**: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
+            - **Chrome DevTools**: F12 → Right-click on Refresh → "Empty Cache and Hard Reload"
+            - **Companion App**: Settings → Companion App → Debugging → Reset frontend cache → pull to refresh dashboard
+            
             ### Changes
             ${{ github.event.before && format('See [commit history](https://github.com/{0}/compare/{1}...{2}) for details.', github.repository, github.event.before, github.sha) || format('See [commit history](https://github.com/{0}/commits/{1}) for details.', github.repository, github.sha) }}
           draft: false
