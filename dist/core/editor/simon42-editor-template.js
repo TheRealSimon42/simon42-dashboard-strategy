@@ -443,7 +443,11 @@ function buildBetterThermostatMissingMessage() {
 function buildPublicTransportMissingMessage(integration) {
   const cardName = getCardNameForIntegration(integration);
   const urls = getPublicTransportUrls(integration);
-  let message = `⚠️ ${t('publicTransportCardMissingDeps', { card: cardName })}`;
+  
+  // Build the main message with card name replacement
+  const mainMessage = t('publicTransportCardMissingDeps');
+  const messageWithCard = mainMessage.replace('{card}', cardName);
+  let message = `⚠️ ${messageWithCard}`;
   
   if (urls.integrationUrl || urls.cardUrl) {
     message += '<br><br>';

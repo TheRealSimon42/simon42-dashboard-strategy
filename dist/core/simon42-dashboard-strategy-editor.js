@@ -183,8 +183,15 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     );
     const hiddenAreas = this._config.areas_display?.hidden || [];
     const areaOrder = this._config.areas_display?.order || [];
+    
+    // Extract properties that need explicit values
+    const entityNamePatterns = this._config.entity_name_patterns || [];
+    const entityNameTranslations = this._config.entity_name_translations || [];
+    const logLevel = this._config.log_level || 'warn';
+    const version = VERSION;
+    const hass = this._hass;
 
-    // Prepare editor config object
+    // Prepare editor config object (using consistent shorthand syntax)
     const editorConfig = { 
       allAreas, 
       hiddenAreas, 
@@ -245,11 +252,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       haDeparturesHideEmptyDepartures,
       haDeparturesTimeStyle,
       haDeparturesIcon,
-      entityNamePatterns: this._config.entity_name_patterns || [],
-      entityNameTranslations: this._config.entity_name_translations || [],
-      logLevel: this._config.log_level || 'warn',
-      version: VERSION,
-      hass: this._hass
+      entityNamePatterns,
+      entityNameTranslations,
+      logLevel,
+      version,
+      hass
     };
 
     // Setze HTML-Inhalt mit Styles und Template
