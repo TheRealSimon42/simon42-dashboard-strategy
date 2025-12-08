@@ -49,10 +49,8 @@ export function buildClockWeatherCard(weatherEntity, config, hass) {
     cardConfig.weather_icon_type = config.clock_weather_icon_type;
   }
   
-  // Optional: animated icon (default: true)
-  if (config.clock_weather_animated_icon === false) {
-    cardConfig.animated_icon = false;
-  }
+  // Disable animated icon (always set to false)
+  cardConfig.animated_icon = false;
   
   // Optional: forecast rows (default: 5)
   if (config.clock_weather_forecast_rows !== undefined) {
