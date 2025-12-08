@@ -6,4 +6,4 @@
 #   - Dev: 1.0.0-dev
 #   - Beta: 1.0.0-beta
 # The GitHub workflow reads this file and creates releases automatically
-2.0.0-dev
+2.0.1-dev
