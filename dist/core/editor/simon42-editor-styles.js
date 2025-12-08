@@ -303,8 +303,8 @@ export function getEditorStyles() {
     
     /* Ensure proper spacing for area content */
     .area-content {
-      padding: 0 16px 12px 48px;
-      background: var(--secondary-background-color);
+      padding: 0;
+      background: transparent;
       max-height: 0;
       overflow: hidden;
       transition: max-height 0.3s ease-out, padding 0.3s ease-out;
@@ -312,8 +312,8 @@ export function getEditorStyles() {
     
     .area-content[style*="block"] {
       max-height: 5000px;
-      padding-top: 8px;
-      padding-bottom: 12px;
+      padding-top: 4px;
+      padding-bottom: 8px;
     }
     
     .area-checkbox {
@@ -392,29 +392,37 @@ export function getEditorStyles() {
     
     
     .loading-placeholder {
-      padding: 12px;
+      padding: 16px;
       text-align: center;
       color: var(--secondary-text-color);
       font-style: italic;
+      font-size: 14px;
     }
     
     .entity-groups {
-      padding-top: 8px;
+      padding: 0;
+      margin: 0;
     }
     
     .entity-group {
-      margin-bottom: 8px;
-      border: 1px solid var(--divider-color);
-      border-radius: 4px;
-      background: var(--card-background-color);
+      margin-bottom: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      border-bottom: 1px solid var(--divider-color);
+    }
+    
+    .entity-group:last-child {
+      border-bottom: none;
     }
     
     .entity-group-header {
       display: flex;
       align-items: center;
-      padding: 8px 12px;
+      padding: 12px 16px;
       cursor: pointer;
       user-select: none;
+      transition: background-color 0.2s;
     }
     
     .entity-group-header:hover {
@@ -433,28 +441,38 @@ export function getEditorStyles() {
     }
     
     .entity-group-header ha-icon {
-      margin-right: 8px;
-      --mdc-icon-size: 18px;
-      color: var(--secondary-text-color);
+      margin-right: 12px;
+      --mdc-icon-size: 20px;
+      color: var(--primary-text-color);
     }
     
     .group-name {
       flex: 1;
-      font-weight: 500;
+      font-weight: 400;
+      font-size: 14px;
+      color: var(--primary-text-color);
     }
     
     .entity-count {
       color: var(--secondary-text-color);
       font-size: 12px;
-      margin-right: 8px;
+      margin-right: 12px;
     }
     
     .expand-button-small {
       background: none;
       border: none;
-      padding: 4px;
+      padding: 4px 8px;
       cursor: pointer;
       color: var(--secondary-text-color);
+      transition: transform 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .expand-button-small:hover {
+      color: var(--primary-text-color);
     }
     
     .expand-button-small.expanded .expand-icon-small {
@@ -463,13 +481,14 @@ export function getEditorStyles() {
     
     .expand-icon-small {
       display: inline-block;
-      font-size: 12px;
+      font-size: 10px;
       transition: transform 0.2s;
     }
     
     .entity-list {
-      padding: 8px 12px 8px 36px;
-      border-top: 1px solid var(--divider-color);
+      padding: 0 16px 0 48px;
+      border-top: none;
+      background: transparent;
       max-height: 0;
       overflow: hidden;
       transition: max-height 0.3s ease-out, padding 0.3s ease-out;
@@ -477,14 +496,19 @@ export function getEditorStyles() {
     
     .entity-list.expanded {
       max-height: 2000px;
-      padding-top: 8px;
+      padding-top: 4px;
       padding-bottom: 8px;
     }
     
     .entity-item {
       display: flex;
       align-items: center;
-      padding: 6px 0;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--divider-color);
+    }
+    
+    .entity-item:last-child {
+      border-bottom: none;
     }
     
     /* Entity checkboxes are now MDC switches, handled above */
@@ -502,10 +526,11 @@ export function getEditorStyles() {
     }
     
     .empty-state {
-      padding: 24px;
+      padding: 16px;
       text-align: center;
       color: var(--secondary-text-color);
       font-style: italic;
+      font-size: 14px;
     }
     
     .nav-item {
