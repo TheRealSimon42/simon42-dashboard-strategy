@@ -265,6 +265,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Re-read config values after potential resets
     const showTodoSwipeCard = this._config.show_todo_swipe_card === true;
+    const hasTodoSwipeCardDeps = checkDependency('todo-swipe-card', this._hass);
     const todoEntities = this._config.todo_entities || [];
     
     // Alle Entitäten für Favoriten-Select
