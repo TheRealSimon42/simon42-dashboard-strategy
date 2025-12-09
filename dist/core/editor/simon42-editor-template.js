@@ -75,7 +75,7 @@ export function renderEditorHTML({
   useAlarmoCard = false,
   showSchedulerCard = false,
   hasSchedulerCardDeps = false,
-  schedulerEntity = '',
+  schedulerEntities = [],
   showCalendarCard = false,
   hasCalendarCardDeps = false,
   hasCalendarCardProDeps = false,
@@ -464,9 +464,11 @@ export function renderEditorHTML({
           </div>
           ` : ''}
           ${hasSchedulerCardDeps ? `
-          <div class="form-row">
-            <label for="scheduler-entity" style="margin-right: 8px; min-width: 120px;">${t('schedulerEntity')}</label>
-            <select id="scheduler-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+          <div class="description" style="margin-top: 12px; margin-bottom: 12px;">
+            ${t('schedulerEntitiesDescription')}
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
+            <select id="scheduler-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
               <option value="">${t('selectEntity')}</option>
               ${Object.keys(hass?.states || {})
                 .filter(entityId => {
@@ -477,13 +479,25 @@ export function renderEditorHTML({
                 .map(entityId => {
                   const state = hass.states[entityId];
                   const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
-                  return `<option value="${entityId}" ${entityId === schedulerEntity ? 'selected' : ''}>${name}</option>`;
+                  return `<option value="${entityId}">${name}</option>`;
                 }).join('')}
             </select>
+            <button id="add-scheduler-btn" class="add-btn">
+              + ${t('add')}
+            </button>
           </div>
-          <div class="description">
-            ${t('schedulerEntityDescription')}
-          </div>
+          <ha-expansion-panel outlined>
+            <ha-icon slot="leading-icon" icon="mdi:calendar-clock"></ha-icon>
+            <span slot="header">${t('schedulerEntitiesList')}</span>
+            <div style="padding: 16px;">
+              <div id="scheduler-list">
+                ${renderEntityList(schedulerEntities, allEntities, {
+                  itemClass: 'scheduler-item',
+                  hass
+                })}
+              </div>
+            </div>
+          </ha-expansion-panel>
           ` : ''}
         </div>
         ` : ''}

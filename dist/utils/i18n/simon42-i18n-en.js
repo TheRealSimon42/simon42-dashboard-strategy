@@ -162,6 +162,8 @@ export const en = {
   schedulerIntegrationLink: "Scheduler Integration:",
   schedulerEntity: "Scheduler Entity:",
   schedulerEntityDescription: "Select a scheduler entity to display.",
+  schedulerEntitiesDescription: "Select scheduler entities to display.",
+  schedulerEntitiesList: "Scheduler Entities List",
   calendar: "Calendar",
   showCalendarCard: "Show Calendar Card",
   calendarCardDescription: "Shows a calendar card with selected calendar entities.",

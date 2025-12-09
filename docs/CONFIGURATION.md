@@ -276,6 +276,15 @@ Siehe [INTEGRATIONS.md](INTEGRATIONS.md#alarm-panel) für Details.
 
 ### Scheduler Card
 
+**Mehrere Scheduler-Entities (empfohlen):**
+```yaml
+show_scheduler_card: true
+scheduler_entities:
+  - switch.scheduler_heating
+  - switch.scheduler_lighting
+```
+
+**Eine einzelne Scheduler-Entity (veraltet, aber weiterhin unterstützt):**
 ```yaml
 show_scheduler_card: true
 scheduler_entity: switch.scheduler_heating

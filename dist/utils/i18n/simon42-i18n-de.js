@@ -162,6 +162,8 @@ export const de = {
   schedulerIntegrationLink: "Scheduler-Integration:",
   schedulerEntity: "Scheduler-Entität:",
   schedulerEntityDescription: "Wähle eine Scheduler-Entität aus, die angezeigt werden soll.",
+  schedulerEntitiesDescription: "Wähle Scheduler-Entitäten aus, die angezeigt werden sollen.",
+  schedulerEntitiesList: "Scheduler-Entitäten Liste",
   calendar: "Kalender",
   showCalendarCard: "Kalender-Karte anzeigen",
   calendarCardDescription: "Zeigt eine Kalender-Karte mit ausgewählten Kalender-Entitäten an.",

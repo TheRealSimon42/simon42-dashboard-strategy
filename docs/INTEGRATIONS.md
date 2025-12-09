@@ -189,13 +189,14 @@ strategy:
 
 ## Scheduler Card
 
-Zeigt eine Scheduler-Karte an, um Zeitpläne zu verwalten. Konfigurierbar im Editor.
+Zeigt eine oder mehrere Scheduler-Karten an, um Zeitpläne zu verwalten. Konfigurierbar im Editor.
 
 ### Features
 
 - Integration der Scheduler-Karte in die Übersicht
-- Unterstützt Scheduler-Entities (switch.scheduler_* oder input_boolean.scheduler_*)
-- Automatische Erkennung verfügbarer Scheduler-Entities im Editor
+- Unterstützt mehrere Scheduler-Entities
+- Jede Scheduler-Entity wird mit ihrem Namen als Überschrift angezeigt
+- Automatische Erkennung verfügbarer Scheduler-Entities im Editor über die Entity Registry
 
 ### Voraussetzung
 
@@ -205,6 +206,17 @@ Zeigt eine Scheduler-Karte an, um Zeitpläne zu verwalten. Konfigurierbar im Edi
 
 ### Konfiguration
 
+**Mehrere Scheduler-Entities (empfohlen):**
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_scheduler_card: true
+  scheduler_entities:
+    - switch.scheduler_heating
+    - switch.scheduler_lighting
+```
+
+**Eine einzelne Scheduler-Entity (veraltet, aber weiterhin unterstützt):**
 ```yaml
 strategy:
   type: custom:simon42-dashboard
