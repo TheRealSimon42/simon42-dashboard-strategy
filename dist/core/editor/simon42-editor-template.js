@@ -266,6 +266,9 @@ export function renderEditorHTML({
 
       <div class="section">
         <div class="section-title">${t('alarmControlPanel')}</div>
+        <div class="description">
+          ${t('alarmEntityDescription')}
+        </div>
         <div class="form-row">
           <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${t('alarmEntity')}</label>
           <select id="alarm-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
@@ -276,9 +279,6 @@ export function renderEditorHTML({
               </option>
             `).join('')}
           </select>
-        </div>
-        <div class="description">
-          ${t('alarmEntityDescription')}
         </div>
         ${isSelectedAlarmEntityAlarmo && hasAlarmoCardDeps ? `
         <div class="sub-option">
@@ -680,6 +680,9 @@ export function renderEditorHTML({
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('favoritesDescription')}
         </div>
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('favoritesDomainFilterDescription')}
+        </div>
         <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px;">
           <select id="favorite-domain-filter" style="flex: 0 0 auto; min-width: 150px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
             ${getDomainSelectorOptions('', false)}
@@ -693,9 +696,6 @@ export function renderEditorHTML({
           <button id="add-favorite-btn" class="add-btn">
             + ${t('add')}
           </button>
-        </div>
-        <div class="description" style="margin-left: 0; margin-bottom: 16px;">
-          ${t('favoritesDomainFilterDescription')}
         </div>
         <ha-expansion-panel outlined>
           <ha-icon slot="leading-icon" icon="mdi:star"></ha-icon>
@@ -712,6 +712,9 @@ export function renderEditorHTML({
         <div class="section-title">${t('roomPins')}</div>
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('roomPinsDescription')}
+        </div>
+        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+          ${t('roomPinsAreaFilterDescription')}
         </div>
         <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px;">
           <select id="room-pin-area-filter" style="flex: 0 0 auto; min-width: 150px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
@@ -731,9 +734,6 @@ export function renderEditorHTML({
           <button id="add-room-pin-btn" class="add-btn">
             + ${t('add')}
           </button>
-        </div>
-        <div class="description" style="margin-left: 0; margin-bottom: 16px;">
-          ${t('roomPinsAreaFilterDescription')}
         </div>
         <ha-expansion-panel outlined>
           <ha-icon slot="leading-icon" icon="mdi:map-marker"></ha-icon>
@@ -858,11 +858,11 @@ export function renderEditorHTML({
       </div>
       <div class="section">
         <div class="section-title">${t('versionInfo')}</div>
-        <div style="padding: 8px 0; color: var(--primary-text-color); font-family: monospace; font-size: 14px;">
-          ${version}
-        </div>
         <div class="description">
           ${t('versionDescription')}
+        </div>
+        <div style="padding: 8px 0; color: var(--primary-text-color); font-family: monospace; font-size: 14px;">
+          ${version}
         </div>
       </div>
   `;
