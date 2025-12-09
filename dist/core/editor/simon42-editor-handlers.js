@@ -34,7 +34,6 @@ function createCheckboxListener(selector) {
 export const attachWeatherCheckboxListener = createCheckboxListener('#show-weather');
 export const attachEnergyCheckboxListener = createCheckboxListener('#show-energy');
 export const attachPersonBadgesCheckboxListener = createCheckboxListener('#show-person-badges');
-export const attachPersonProfilePictureCheckboxListener = createCheckboxListener('#show-person-profile-picture');
 export const attachSearchCardCheckboxListener = createCheckboxListener('#show-search-card');
 export const attachClockCardCheckboxListener = createCheckboxListener('#show-clock-card');
 export const attachRoomViewsCheckboxListener = createCheckboxListener('#show-room-views');
@@ -52,59 +51,70 @@ export const attachPublicTransportCheckboxListener = createCheckboxListener('#sh
 
 export function attachAreaCheckboxListeners(element, callback) {
   // Handle icon-button clicks for hide/show (replaces checkbox functionality)
-  const hideButtons = element.querySelectorAll('ha-icon-button.area-visibility-toggle[data-area-id]');
-  hideButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const areaId = button.dataset.areaId;
-      const listItem = button.closest('ha-md-list-item[data-area-id]');
-      if (!listItem) return;
-      
-      // Determine current visibility state from multiple sources for reliability
-      const iconElement = button.querySelector('ha-icon');
-      const iconState = iconElement?.getAttribute('icon') === 'mdi:eye-off';
-      const dataState = listItem.dataset.areaHidden === 'true';
-      const classState = listItem.classList.contains('area-hidden');
-      // If any indicator says it's hidden, treat it as hidden
-      const isCurrentlyHidden = iconState || dataState || classState;
-      const isVisible = !isCurrentlyHidden;
-      
-      // Update icon
-      const icon = button.querySelector('ha-icon');
-      if (icon) {
-        icon.setAttribute('icon', isVisible ? 'mdi:eye' : 'mdi:eye-off');
+  // Use event delegation to handle dynamically added buttons
+  const areaList = element.querySelector('ha-md-list');
+  if (!areaList) return;
+  
+  areaList.addEventListener('click', (e) => {
+    const button = e.target.closest('ha-icon-button.area-visibility-toggle[data-area-id]');
+    if (!button) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const areaId = button.dataset.areaId;
+    const listItem = button.closest('ha-md-list-item[data-area-id]');
+    if (!listItem) return;
+    
+    // Determine current visibility state from multiple sources for reliability
+    const iconElement = button.querySelector('ha-icon');
+    const iconState = iconElement?.getAttribute('icon') === 'mdi:eye-off';
+    const dataState = listItem.dataset.areaHidden === 'true';
+    const classState = listItem.classList.contains('area-hidden');
+    // If any indicator says it's hidden, treat it as hidden
+    const isCurrentlyHidden = iconState || dataState || classState;
+    
+    // Toggle: Calculate the NEW visibility state after clicking
+    // If currently hidden, clicking should SHOW it (remove from hidden list) → isVisible = true
+    // If currently visible, clicking should HIDE it (add to hidden list) → isVisible = false
+    // The new state is the opposite of the current hidden state
+    const isVisible = !isCurrentlyHidden;
+    
+    // Update icon
+    const icon = button.querySelector('ha-icon');
+    if (icon) {
+      icon.setAttribute('icon', isVisible ? 'mdi:eye' : 'mdi:eye-off');
+    }
+    
+    // Update list item classes and data attributes
+    if (isVisible) {
+      listItem.classList.remove('area-hidden');
+      listItem.dataset.areaHidden = 'false';
+      // Remove hint text if present
+      const hint = listItem.querySelector('span.area-hidden-hint');
+      if (hint) {
+        hint.remove();
       }
-      
-      // Update list item classes and data attributes
-      if (isVisible) {
-        listItem.classList.remove('area-hidden');
-        listItem.dataset.areaHidden = 'false';
-        // Remove hint text if present
-        const hint = listItem.querySelector('span.area-hidden-hint');
-        if (hint) {
-          hint.remove();
-        }
-      } else {
-        listItem.classList.add('area-hidden');
-        listItem.dataset.areaHidden = 'true';
-        // Remove hint text if present (no longer needed since hidden areas can be expanded)
-        const hint = listItem.querySelector('span.area-hidden-hint');
-        if (hint) {
-          hint.remove();
-        }
+    } else {
+      listItem.classList.add('area-hidden');
+      listItem.dataset.areaHidden = 'true';
+      // Remove hint text if present (no longer needed since hidden areas can be expanded)
+      const hint = listItem.querySelector('span.area-hidden-hint');
+      if (hint) {
+        hint.remove();
       }
-      
-      // Update aria-label
-      button.setAttribute('aria-label', `${listItem.querySelector('span[slot="headline"]')?.textContent || areaId} ${isVisible ? t('show') : t('hide')}`);
-      
-      // Hide/show area content if expanded
-      const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
-      if (content && !isVisible) {
-        content.style.display = 'none';
-      }
-      
-      callback(areaId, isVisible);
-    });
+    }
+    
+    // Update aria-label
+    button.setAttribute('aria-label', `${listItem.querySelector('span[slot="headline"]')?.textContent || areaId} ${isVisible ? t('show') : t('hide')}`);
+    
+    // Hide/show area content if expanded
+    const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+    if (content && !isVisible) {
+      content.style.display = 'none';
+    }
+    
+    callback(areaId, isVisible);
   });
 }
 
@@ -166,22 +176,37 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
       }
       
       // Load entities if not already loaded
-      if (finalContent.querySelector('.loading-placeholder')) {
-        const groupedEntities = await getAreaGroupedEntities(areaId, hass);
-        const hiddenEntities = getHiddenEntitiesForArea(areaId, config);
-        const entityOrders = getEntityOrdersForArea(areaId, config);
+      const loadingPlaceholder = finalContent.querySelector('.loading-placeholder');
+      const hasEntities = finalContent.querySelector('.entity-groups');
+      
+      if (loadingPlaceholder || (!hasEntities && finalContent.children.length === 0)) {
+        // Show loading state
+        if (loadingPlaceholder) {
+          loadingPlaceholder.textContent = t('loadingEntities');
+        } else {
+          finalContent.innerHTML = `<div class="loading-placeholder">${t('loadingEntities')}</div>`;
+        }
         
-        const entitiesHTML = renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, entityOrders, hass);
-        finalContent.innerHTML = entitiesHTML;
-        
-        // Attach listeners for the new entity checkboxes
-        attachEntityCheckboxListeners(finalContent, onEntitiesLoad);
-        attachGroupCheckboxListeners(finalContent, onEntitiesLoad);
-        attachEntityExpandButtonListeners(finalContent, element);
-        
-        // Initialize MDC switches in the newly loaded content
-        if (element._initializeMDCSwitches) {
-          element._initializeMDCSwitches();
+        try {
+          const groupedEntities = await getAreaGroupedEntities(areaId, hass);
+          const hiddenEntities = getHiddenEntitiesForArea(areaId, config);
+          const entityOrders = getEntityOrdersForArea(areaId, config);
+          
+          const entitiesHTML = renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, entityOrders, hass);
+          finalContent.innerHTML = entitiesHTML;
+          
+          // Attach listeners for the new entity checkboxes
+          attachEntityCheckboxListeners(finalContent, onEntitiesLoad);
+          attachGroupCheckboxListeners(finalContent, onEntitiesLoad);
+          attachEntityExpandButtonListeners(finalContent, element);
+          
+          // Initialize MDC switches in the newly loaded content
+          if (element._initializeMDCSwitches) {
+            element._initializeMDCSwitches();
+          }
+        } catch (error) {
+          console.error('Error loading area entities:', error);
+          finalContent.innerHTML = `<div class="empty-state">${t('errorLoadingEntities')}</div>`;
         }
       }
     });

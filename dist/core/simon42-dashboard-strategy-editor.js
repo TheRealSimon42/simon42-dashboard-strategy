@@ -27,7 +27,6 @@ import {
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
   attachPersonBadgesCheckboxListener,
-  attachPersonProfilePictureCheckboxListener,
   attachSearchCardCheckboxListener,
   attachClockCardCheckboxListener,
   attachRoomViewsCheckboxListener,
@@ -94,7 +93,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
     const showPersonBadges = this._config.show_person_badges !== false;
-    const showPersonProfilePicture = this._config.show_person_profile_picture === true;
     const showSearchCard = this._config.show_search_card === true;
     const showClockCard = this._config.show_clock_card === true;
     const showRoomViews = this._config.show_room_views === true; // Standard: false
@@ -206,7 +204,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       showWeather,
       showEnergy,
       showPersonBadges,
-      showPersonProfilePicture,
       showRoomViews,
       showSearchCard,
       showClockCard,
@@ -276,7 +273,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachWeatherCheckboxListener(this, (showWeather) => this._showWeatherChanged(showWeather));
     attachEnergyCheckboxListener(this, (showEnergy) => this._showEnergyChanged(showEnergy));
     attachPersonBadgesCheckboxListener(this, (showPersonBadges) => this._showPersonBadgesChanged(showPersonBadges));
-    attachPersonProfilePictureCheckboxListener(this, (showPersonProfilePicture) => this._showPersonProfilePictureChanged(showPersonProfilePicture));
     attachSearchCardCheckboxListener(this, (showSearchCard) => this._showSearchCardChanged(showSearchCard));
     this._attachSearchCardDomainListeners();
     attachClockCardCheckboxListener(this, (showClockCard) => this._showClockCardChanged(showClockCard));
@@ -357,7 +353,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showWeather = this._config.show_weather !== false;
     const showEnergy = this._config.show_energy !== false;
     const showPersonBadges = this._config.show_person_badges !== false;
-    const showPersonProfilePicture = this._config.show_person_profile_picture === true;
     const showSearchCard = this._config.show_search_card === true;
     const showClockCard = this._config.show_clock_card === true;
     const showRoomViews = this._config.show_room_views === true;
@@ -392,7 +387,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       { id: 'show-weather', checked: showWeather, disabled: false },
       { id: 'show-energy', checked: showEnergy, disabled: false },
       { id: 'show-person-badges', checked: showPersonBadges, disabled: false },
-      { id: 'show-person-profile-picture', checked: showPersonProfilePicture, disabled: false },
       { id: 'show-search-card', checked: showSearchCard, disabled: !hasSearchCardDeps },
       { id: 'show-clock-card', checked: showClockCard, disabled: false },
       { id: 'show-room-views', checked: showRoomViews, disabled: false },
@@ -798,6 +792,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _attachFavoritesListeners() {
+    // Domain Filter
+    const domainFilter = this.querySelector('#favorite-domain-filter');
+    if (domainFilter) {
+      domainFilter.addEventListener('change', () => {
+        this._updateFavoriteEntitySelect();
+      });
+    }
+
     // Add Button
     const addBtn = this.querySelector('#add-favorite-btn');
     const select = this.querySelector('#favorite-entity-select');
@@ -822,6 +824,29 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         }
       });
     }
+  }
+
+  _updateFavoriteEntitySelect() {
+    const domainFilter = this.querySelector('#favorite-domain-filter');
+    const select = this.querySelector('#favorite-entity-select');
+    
+    if (!domainFilter || !select) return;
+    
+    const selectedDomain = domainFilter.value;
+    const allEntities = this._getAllEntitiesForSelect();
+    
+    // Filter entities by domain if a domain is selected
+    const filteredEntities = selectedDomain 
+      ? allEntities.filter(entity => entity.entity_id.startsWith(`${selectedDomain}.`))
+      : allEntities;
+    
+    // Update select options
+    select.innerHTML = `
+      <option value="">${t('selectEntity')}</option>
+      ${filteredEntities.map(entity => `
+        <option value="${entity.entity_id}">${entity.name}</option>
+      `).join('')}
+    `;
   }
 
   _addFavoriteEntity(entityId) {
@@ -885,8 +910,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Use directly imported function
     container.innerHTML = renderFavoritesList(favoriteEntities, allEntities);
     
-    // Reattach listeners
-    this._attachFavoritesListeners();
+    // Reattach listeners (but don't reattach domain filter listener to avoid duplicates)
+    const addBtn = this.querySelector('#add-favorite-btn');
+    const select = this.querySelector('#favorite-entity-select');
+    
+    if (addBtn && select) {
+      // Remove old listeners by cloning and replacing
+      const newAddBtn = addBtn.cloneNode(true);
+      addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+      
+      newAddBtn.addEventListener('click', () => {
+        const entityId = select.value;
+        if (entityId && entityId !== '') {
+          this._addFavoriteEntity(entityId);
+          select.value = ''; // Reset selection
+        }
+      });
+    }
+
+    // Remove Buttons - use event delegation (already attached to container, no need to reattach)
   }
 
   _attachRoomPinsListeners() {
@@ -1106,12 +1148,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _showPersonBadgesChanged(showPersonBadges) {
     this._configManager.updateProperty('show_person_badges', showPersonBadges, true);
-    // Re-render to show/hide profile picture option
-    this._render();
-  }
-
-  _showPersonProfilePictureChanged(showPersonProfilePicture) {
-    this._configManager.updateProperty('show_person_profile_picture', showPersonProfilePicture, false);
   }
 
   _showSearchCardChanged(showSearchCard) {

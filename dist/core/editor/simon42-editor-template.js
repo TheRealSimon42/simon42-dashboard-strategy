@@ -61,7 +61,6 @@ export function renderEditorHTML({
   showEnergy,
   showWeather,
   showPersonBadges = true,
-  showPersonProfilePicture = false,
   showRoomViews,
   showSearchCard,
   showClockCard = false,
@@ -185,19 +184,6 @@ export function renderEditorHTML({
         <div class="description">
           ${t('personBadgesDescription')}
         </div>
-        ${showPersonBadges !== false ? `
-        <div class="sub-option">
-          <div class="form-row">
-            ${renderMDCSwitch('show-person-profile-picture', showPersonProfilePicture === true, t('showPersonProfilePicture'))}
-            <label for="show-person-profile-picture" style="margin-left: 12px; cursor: pointer;">
-              ${t('showPersonProfilePicture')}
-            </label>
-          </div>
-          <div class="description">
-            ${t('personProfilePictureDescription')}
-          </div>
-        </div>
-        ` : ''}
       </div>
 
       <div class="section">
@@ -676,7 +662,10 @@ export function renderEditorHTML({
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('favoritesDescription')}
         </div>
-        <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
+        <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px;">
+          <select id="favorite-domain-filter" style="flex: 0 0 auto; min-width: 150px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            ${getDomainSelectorOptions('', false)}
+          </select>
           <select id="favorite-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
             <option value="">${t('selectEntity')}</option>
             ${allEntities.map(entity => `
@@ -686,6 +675,9 @@ export function renderEditorHTML({
           <button id="add-favorite-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
             + ${t('add')}
           </button>
+        </div>
+        <div class="description" style="margin-left: 0; margin-bottom: 16px;">
+          ${t('favoritesDomainFilterDescription')}
         </div>
         <ha-expansion-panel outlined>
           <ha-icon slot="leading-icon" icon="mdi:star"></ha-icon>
@@ -840,11 +832,8 @@ export function renderEditorHTML({
       </div>
       <div class="section">
         <div class="section-title">${t('versionInfo')}</div>
-        <div class="form-row">
-          <label style="display: block; margin-bottom: 8px;">${t('version')}</label>
-          <div style="padding: 8px 12px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace; font-size: 14px;">
-            ${version}
-          </div>
+        <div style="padding: 8px 0; color: var(--primary-text-color); font-family: monospace; font-size: 14px;">
+          ${version}
         </div>
         <div class="description">
           ${t('versionDescription')}

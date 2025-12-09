@@ -30,7 +30,6 @@ strategy:
   type: custom:simon42-dashboard
   language: de                  # Sprache: 'de' (Deutsch) oder 'en' (Englisch)
   show_person_badges: true      # Person Badges anzeigen
-  show_person_profile_picture: false  # Profilbilder für Personen anzeigen
   show_weather: true             # Wetter-Karte anzeigen
   show_energy: true              # Energie-Dashboard anzeigen
   show_subviews: false           # Utility Views als Subviews
@@ -81,7 +80,6 @@ Alle Überschriften, Labels und Texte im Dashboard werden automatisch in der gew
 
 ```yaml
 show_person_badges: true          # Person Badges anzeigen (Standard: true)
-show_person_profile_picture: false # Profilbilder für Personen anzeigen (Standard: false)
 ```
 
 ### Wetter
@@ -315,7 +313,6 @@ Siehe [INTEGRATIONS.md](INTEGRATIONS.md#öffentlicher-nahverkehr) für Details.
 |-----------|-----|----------|--------------|
 | `language` | string | `'de'` | Sprache des Dashboards: `'de'` (Deutsch) oder `'en'` (Englisch) |
 | `show_person_badges` | boolean | `true` | Zeige die Person Badges in der Übersicht |
-| `show_person_profile_picture` | boolean | `false` | Zeige Profilbilder für Personen |
 | `show_weather` | boolean | `true` | Zeigt die Wetter-Karte in der Übersicht (falls Weather-Entity vorhanden) |
 | `show_energy` | boolean | `true` | Zeigt das Energie-Dashboard in der Übersicht |
 | `show_subviews` | boolean | `false` | Zeigt Utility-Views in der Navigation |

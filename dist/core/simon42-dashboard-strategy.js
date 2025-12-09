@@ -125,7 +125,6 @@ class Simon42DashboardStrategy {
 
     // Read config flags (defaults shown in comments)
     const showPersonBadges = config.show_person_badges !== false;
-    const showPersonProfilePicture = config.show_person_profile_picture === true;
     const showWeather = config.show_weather !== false;
     const showEnergy = config.show_energy !== false;
     const showSearchCard = config.show_search_card === true;
@@ -134,7 +133,7 @@ class Simon42DashboardStrategy {
     const showRoomViews = config.show_room_views === true;
     const groupByFloors = config.group_by_floors === true;
 
-    const personBadges = createPersonBadges(persons, hass, showPersonBadges, showPersonProfilePicture);
+    const personBadges = createPersonBadges(persons, hass, showPersonBadges);
 
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating areas section...');

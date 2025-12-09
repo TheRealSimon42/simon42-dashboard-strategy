@@ -8,9 +8,8 @@
  * @param {Array} persons - Array von Person-Entitäten
  * @param {Object} hass - Home Assistant Objekt
  * @param {boolean} showPersonBadges - Ob Person-Badges angezeigt werden sollen (Standard: true)
- * @param {boolean} showPersonProfilePicture - Ob Profilbilder angezeigt werden sollen (Standard: false)
  */
-export function createPersonBadges(persons, hass, showPersonBadges = true, showPersonProfilePicture = false) {
+export function createPersonBadges(persons, hass, showPersonBadges = true) {
   const badges = [];
   
   if (!showPersonBadges) {
@@ -32,24 +31,10 @@ export function createPersonBadges(persons, hass, showPersonBadges = true, showP
       type: "entity",
       show_name: true,
       show_state: true,
-      show_icon: !showPersonProfilePicture, // Icon nur anzeigen wenn kein Profilbild
+      show_icon: true,
       entity: person.entity_id,
       name: person.name.split(' ')[0] // Nur Vorname
     };
-    
-    // Profilbild hinzufügen wenn aktiviert
-    if (showPersonProfilePicture) {
-      // Home Assistant Person entities haben ein 'entity_picture' Attribut
-      // Laut Home Assistant Dokumentation kann 'image' verwendet werden, um entity_picture zu überschreiben
-      // Siehe: https://www.home-assistant.io/dashboards/entities/
-      const entityPicture = state.attributes?.entity_picture;
-      if (entityPicture) {
-        badgeConfig.image = entityPicture; // Verwende 'image' Property um entity_picture zu überschreiben
-      } else {
-        // Fallback: Icon anzeigen wenn kein Profilbild verfügbar
-        badgeConfig.show_icon = true;
-      }
-    }
     
     if (!isHome) {
       badgeConfig.color = "accent";
