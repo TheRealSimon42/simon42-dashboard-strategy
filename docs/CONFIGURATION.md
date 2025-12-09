@@ -304,6 +304,17 @@ calendar_entities:
 
 Siehe [INTEGRATIONS.md](INTEGRATIONS.md#calendar-card) für Details.
 
+### Todo Swipe Card
+
+```yaml
+show_todo_swipe_card: true
+todo_entities:
+  - todo.shopping_list
+  - todo.home_tasks
+```
+
+Siehe [INTEGRATIONS.md](INTEGRATIONS.md#todo-swipe-card) für Details.
+
 ### Öffentlicher Nahverkehr
 
 ```yaml

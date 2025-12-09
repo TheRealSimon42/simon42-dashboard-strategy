@@ -81,6 +81,9 @@ export function renderEditorHTML({
   hasCalendarCardProDeps = false,
   useCalendarCardPro = false,
   calendarEntities = [],
+  showTodoSwipeCard = false,
+  hasTodoSwipeCardDeps = false,
+  todoEntities = [],
   favoriteEntities,
   roomPinEntities,
   allEntities,
@@ -559,6 +562,59 @@ export function renderEditorHTML({
               </div>
             </div>
           </ha-expansion-panel>
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('todo')}</div>
+        <div class="form-row">
+          ${renderMDCSwitch('show-todo-swipe-card', showTodoSwipeCard, t('showTodoSwipeCard'))}
+          <label for="show-todo-swipe-card" style="margin-left: 12px; cursor: pointer;">${t('showTodoSwipeCard')}</label>
+        </div>
+        <div class="description">
+          ${t('todoSwipeCardDescription')}
+        </div>
+        ${showTodoSwipeCard ? `
+        <div class="sub-option">
+          ${!hasTodoSwipeCardDeps ? `
+          <div class="description" style="margin-top: 8px;">
+            ⚠️ ${t('todoSwipeCardMissingDeps')}<br><br>
+            ${t('todoSwipeCardLink')}: <a href="https://github.com/nutteloost/todo-swipe-card" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/nutteloost/todo-swipe-card</a>
+          </div>
+          ` : ''}
+          ${hasTodoSwipeCardDeps ? `
+          <div class="description" style="margin-top: 12px; margin-bottom: 12px;">
+            ${t('todoEntitiesDescription')}
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
+            <select id="todo-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+              <option value="">${t('selectEntity')}</option>
+              ${Object.keys(hass?.states || {})
+                .filter(entityId => entityId.startsWith('todo.'))
+                .map(entityId => {
+                  const state = hass.states[entityId];
+                  const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+                  return `<option value="${entityId}">${name}</option>`;
+                }).join('')}
+            </select>
+            <button id="add-todo-btn" class="add-btn">
+              + ${t('add')}
+            </button>
+          </div>
+          <ha-expansion-panel outlined>
+            <ha-icon slot="leading-icon" icon="mdi:format-list-checks"></ha-icon>
+            <span slot="header">${t('todoEntitiesList')}</span>
+            <div style="padding: 16px;">
+              <div id="todo-list">
+                ${renderEntityList(todoEntities, allEntities, {
+                  itemClass: 'todo-item',
+                  hass
+                })}
+              </div>
+            </div>
+          </ha-expansion-panel>
+          ` : ''}
         </div>
         ` : ''}
       </div>

@@ -22,7 +22,8 @@ import {
   createPublicTransportSection,
   createEnergySection,
   createSchedulerCardSection,
-  createCalendarCardSection
+  createCalendarCardSection,
+  createTodoSwipeCardSection
 } from '../utils/builders/sections/simon42-section-builder.js';
 import { 
   createOverviewView, 
@@ -148,6 +149,7 @@ class Simon42DashboardStrategy {
     const energySection = createEnergySection(showEnergy);
     const schedulerCardSection = createSchedulerCardSection(config, hass);
     const calendarCardSection = createCalendarCardSection(config, hass);
+    const todoSwipeCardSection = createTodoSwipeCardSection(config, hass);
     
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating overview section...');
@@ -167,12 +169,13 @@ class Simon42DashboardStrategy {
         hass
       }),
       ...(Array.isArray(areasSections) ? areasSections : [areasSections]),
-      // Add sections in order: Weather, Public Transport, Energy, Scheduler, Calendar
+      // Add sections in order: Weather, Public Transport, Energy, Scheduler, Calendar, Todo Swipe Card
       ...(weatherSection ? [weatherSection] : []),
       ...(publicTransportSection ? [publicTransportSection] : []),
       ...(energySection ? [energySection] : []),
       ...(schedulerCardSection ? [schedulerCardSection] : []),
-      ...(calendarCardSection ? [calendarCardSection] : [])
+      ...(calendarCardSection ? [calendarCardSection] : []),
+      ...(todoSwipeCardSection ? [todoSwipeCardSection] : [])
     ];
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Created', overviewSections.length, 'overview sections');

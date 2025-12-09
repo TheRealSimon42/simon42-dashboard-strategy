@@ -713,6 +713,96 @@ export function createCalendarCardSection(config, hass) {
 }
 
 /**
+ * Erstellt die Todo Swipe Card-Section
+ * @param {Object} config - Konfigurationsobjekt
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird
+ */
+export function createTodoSwipeCardSection(config, hass) {
+  const showTodoSwipeCard = config.show_todo_swipe_card === true;
+  if (!showTodoSwipeCard) {
+    return null;
+  }
+
+  const todoEntities = config.todo_entities || [];
+  if (todoEntities.length === 0) {
+    return null;
+  }
+
+  // Filter valid entities
+  const validEntities = todoEntities.filter(entityId => {
+    return hass?.states?.[entityId] !== undefined;
+  });
+
+  if (validEntities.length === 0) {
+    return null;
+  }
+
+  // Build card config - support both simple array and entity objects
+  let entitiesConfig;
+  if (typeof validEntities[0] === 'string') {
+    // Simple array of entity IDs
+    entitiesConfig = validEntities;
+  } else {
+    // Array of entity objects with additional config
+    entitiesConfig = validEntities;
+  }
+
+  // Build card configuration
+  const cardConfig = {
+    type: 'custom:todo-swipe-card',
+    entities: entitiesConfig
+  };
+
+  // Add optional properties if configured
+  if (config.todo_swipe_card_show_pagination !== undefined) {
+    cardConfig.show_pagination = config.todo_swipe_card_show_pagination;
+  }
+  if (config.todo_swipe_card_show_icons !== undefined) {
+    cardConfig.show_icons = config.todo_swipe_card_show_icons;
+  }
+  if (config.todo_swipe_card_show_addbutton !== undefined) {
+    cardConfig.show_addbutton = config.todo_swipe_card_show_addbutton;
+  }
+  if (config.todo_swipe_card_show_create !== undefined) {
+    cardConfig.show_create = config.todo_swipe_card_show_create;
+  }
+  if (config.todo_swipe_card_show_completed !== undefined) {
+    cardConfig.show_completed = config.todo_swipe_card_show_completed;
+  }
+  if (config.todo_swipe_card_show_completed_menu !== undefined) {
+    cardConfig.show_completed_menu = config.todo_swipe_card_show_completed_menu;
+  }
+  if (config.todo_swipe_card_enable_search !== undefined) {
+    cardConfig.enable_search = config.todo_swipe_card_enable_search;
+  }
+  if (config.todo_swipe_card_clear_search_on_uncheck !== undefined) {
+    cardConfig.clear_search_on_uncheck = config.todo_swipe_card_clear_search_on_uncheck;
+  }
+  if (config.todo_swipe_card_delete_confirmation !== undefined) {
+    cardConfig.delete_confirmation = config.todo_swipe_card_delete_confirmation;
+  }
+  if (config.todo_swipe_card_card_spacing !== undefined) {
+    cardConfig.card_spacing = config.todo_swipe_card_card_spacing;
+  }
+
+  const cards = [
+    {
+      type: "heading",
+      heading: t('todo'),
+      heading_style: "title",
+      icon: "mdi:format-list-checks"
+    },
+    cardConfig
+  ];
+
+  return {
+    type: "grid",
+    cards: cards
+  };
+}
+
+/**
  * Erstellt die Energie-Section
  * @param {boolean} showEnergy - Ob Energie-Dashboard angezeigt werden soll
  * @returns {Object|null} Section oder null wenn keine Karte angezeigt wird

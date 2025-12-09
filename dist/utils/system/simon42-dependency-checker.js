@@ -124,6 +124,13 @@ const DEPENDENCY_DEFINITIONS = {
     cardTypes: ['custom:calendar-card-pro'],
     domSelectors: ['calendar-card-pro'],
     keywords: ['calendar-card-pro', 'calendar card pro']
+  },
+  
+  'todo-swipe-card': {
+    customElements: ['todo-swipe-card'],
+    cardTypes: ['custom:todo-swipe-card'],
+    domSelectors: ['todo-swipe-card'],
+    keywords: ['todo-swipe-card', 'todo swipe card']
   }
 };
 

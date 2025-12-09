@@ -72,6 +72,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Alarmo Card** - Unterstützung für Alarmo-Karten bei Alarm-Entitäten
 - **Scheduler Card** - Zeitplan-Verwaltung mit der Scheduler-Karte
 - **Calendar Card** - Kalender-Integration mit der Calendar-Karte
+- **Todo Swipe Card** - Todo-Listen mit Swipe-Funktionalität
 - **Öffentlicher Nahverkehr** - Unterstützt HVV, ha-departures, KVV und db_info Integrationen
 
 **📚 [Vollständige Feature-Liste →](docs/FEATURES.md)**
@@ -274,4 +275,4 @@ Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenz
 
 **Entwickelt mit ❤️ für die Home Assistant Community**
 
-*Letzte Aktualisierung: 08.12.2025*
+*Letzte Aktualisierung: 09.12.2025*

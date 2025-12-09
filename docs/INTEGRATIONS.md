@@ -14,6 +14,7 @@ Diese Dokumentation beschreibt alle optionalen Integrationen, die mit der simon4
 - [Alarmo Card](#alarmo-card)
 - [Scheduler Card](#scheduler-card)
 - [Calendar Card](#calendar-card)
+- [Todo Swipe Card](#todo-swipe-card)
 - [Öffentlicher Nahverkehr](#öffentlicher-nahverkehr)
 
 ## Search Card
@@ -273,6 +274,58 @@ strategy:
 
 - [Calendar Card](https://github.com/ljmerza/calendar-card)
 - [Calendar Card Pro](https://github.com/alexpfau/calendar-card-pro)
+
+## Todo Swipe Card
+
+Zeigt eine Todo Swipe Card mit ausgewählten Todo-Entitäten an. Konfigurierbar im Editor.
+
+### Features
+
+- Integration der Todo Swipe Card in die Übersicht
+- Unterstützt mehrere Todo-Entities
+- Automatische Erkennung verfügbarer Todo-Entities im Editor
+- Swipe-Funktionalität zum Wechseln zwischen Todo-Listen
+- Unterstützt alle Optionen der Todo Swipe Card
+
+### Voraussetzung
+
+- `todo-swipe-card` muss als Custom Card installiert sein
+- Der Editor prüft automatisch, ob die Card verfügbar ist
+- Todo-Entities müssen vorhanden sein
+
+### Konfiguration
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_todo_swipe_card: true
+  todo_entities:
+    - todo.shopping_list
+    - todo.home_tasks
+    - todo.work_projects
+```
+
+### Erweiterte Optionen
+
+Die Todo Swipe Card unterstützt zusätzliche Optionen:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_todo_swipe_card: true
+  todo_entities:
+    - todo.shopping_list
+    - todo.home_tasks
+  todo_swipe_card_show_pagination: true
+  todo_swipe_card_show_completed: false
+  todo_swipe_card_card_spacing: 15
+```
+
+Weitere Optionen können direkt in der Card-Konfiguration gesetzt werden (siehe [Todo Swipe Card Dokumentation](https://github.com/nutteloost/todo-swipe-card)).
+
+### Links
+
+- [Todo Swipe Card](https://github.com/nutteloost/todo-swipe-card)
 
 ## Öffentlicher Nahverkehr
 

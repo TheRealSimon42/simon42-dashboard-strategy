@@ -153,6 +153,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // calendar-card is native Home Assistant card, no dependency check needed
     const hasCalendarCardDeps = true; // Always available (native card)
     const hasCalendarCardProDeps = checkDependency('calendar-card-pro', this._hass);
+    const hasTodoSwipeCardDeps = checkDependency('todo-swipe-card', this._hass);
     
     // Sammle alle Alarm-Control-Panel-Entitäten
     const alarmEntities = Object.keys(this._hass.states)
@@ -182,6 +183,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showCalendarCard = this._config.show_calendar_card === true;
     const calendarEntities = this._config.calendar_entities || [];
     const useCalendarCardPro = this._config.use_calendar_card_pro === true;
+    const showTodoSwipeCard = this._config.show_todo_swipe_card === true;
+    const todoEntities = this._config.todo_entities || [];
     
     // Alle Entitäten für Favoriten-Select
     const allEntities = this._getAllEntitiesForSelect();
@@ -226,6 +229,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       hasCalendarCardProDeps,
       useCalendarCardPro,
       calendarEntities,
+      showTodoSwipeCard,
+      hasTodoSwipeCardDeps,
+      todoEntities,
       favoriteEntities,
       roomPinEntities,
       allEntities,
@@ -299,6 +305,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._attachSchedulerCardListeners();
     this._attachCalendarCardListeners();
     this._attachCalendarCardProListener();
+    this._attachTodoSwipeCardListeners();
     this._attachFavoritesListeners();
     this._attachRoomPinsListeners();
     this._attachPublicTransportListeners();
@@ -824,6 +831,13 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._render();
   }
 
+  _showTodoSwipeCardChanged(showTodoSwipeCard) {
+    // Ensure value is explicitly a boolean
+    const value = showTodoSwipeCard === true;
+    this._configManager.updateProperty('show_todo_swipe_card', value, false);
+    this._render();
+  }
+
   _updateCalendarList() {
     const container = this.querySelector('#calendar-list');
     if (!container) return;
@@ -858,6 +872,71 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Ensure value is explicitly a boolean
     const value = useCalendarCardPro === true;
     this._configManager.updateProperty('use_calendar_card_pro', value, false);
+  }
+
+  _attachTodoSwipeCardListeners() {
+    const todoSwipeCardSwitch = this.querySelector('#show-todo-swipe-card');
+    if (todoSwipeCardSwitch) {
+      // Ensure toggle state matches config value
+      const showTodoSwipeCard = this._config.show_todo_swipe_card === true;
+      todoSwipeCardSwitch.checked = showTodoSwipeCard;
+      
+      todoSwipeCardSwitch.addEventListener('change', (e) => {
+        this._showTodoSwipeCardChanged(e.target.checked);
+      });
+    }
+
+    const addTodoBtn = this.querySelector('#add-todo-btn');
+    const todoEntitySelect = this.querySelector('#todo-entity-select');
+    if (addTodoBtn && todoEntitySelect) {
+      addTodoBtn.addEventListener('click', () => {
+        const entityId = todoEntitySelect.value;
+        if (entityId) {
+          const todoEntities = this._config.todo_entities || [];
+          if (!todoEntities.includes(entityId)) {
+            const newEntities = [...todoEntities, entityId];
+            this._configManager.updateProperty('todo_entities', newEntities, []);
+            todoEntitySelect.value = '';
+            // Update the list after adding
+            this._updateTodoList();
+          }
+        }
+      });
+    }
+
+    // Use event delegation on the container for remove buttons
+    const todoList = this.querySelector('#todo-list');
+    if (todoList) {
+      todoList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('entity-list-remove-btn')) {
+          const entityId = e.target.getAttribute('data-entity-id');
+          if (entityId) {
+            const todoEntities = this._config.todo_entities || [];
+            const newEntities = todoEntities.filter(id => id !== entityId);
+            this._configManager.updateProperty('todo_entities', newEntities.length > 0 ? newEntities : undefined, []);
+            // Update the list after removing
+            this._updateTodoList();
+          }
+        }
+      });
+    }
+  }
+
+  _updateTodoList() {
+    const container = this.querySelector('#todo-list');
+    if (!container) return;
+
+    const todoEntities = this._config.todo_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+
+    // Use centralized renderEntityList function
+    container.innerHTML = renderEntityList(todoEntities, allEntities, {
+      itemClass: 'todo-item',
+      hass: this._hass
+    });
+
+    // Reattach listeners
+    this._attachTodoSwipeCardListeners();
   }
 
   _attachFavoritesListeners() {
