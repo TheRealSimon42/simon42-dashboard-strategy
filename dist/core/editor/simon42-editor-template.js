@@ -11,7 +11,7 @@ import {
   buildDependencyMissingMessage,
   buildBetterThermostatMissingMessage,
   buildPublicTransportMissingMessage
-} from './template/simon42-editor-dependency-urls.js';
+} from '../../utils/system/simon42-dependency-checker.js';
 import {
   renderEntityList,
   renderPublicTransportList,
@@ -48,7 +48,7 @@ export {
 
 // Removed: filterEntitiesByIntegration function (moved to template/simon42-editor-integration-filters.js)
 
-// Dependency URL functions moved to template/simon42-editor-dependency-urls.js
+// Dependency URL functions consolidated in utils/system/simon42-dependency-checker.js
 
 // Entity list rendering functions moved to template/simon42-editor-entity-lists.js
 
@@ -283,21 +283,17 @@ export function renderEditorHTML({
             `).join('')}
           </select>
         </div>
-        ${isSelectedAlarmEntityAlarmo && hasAlarmoCardDeps ? `
+        ${isSelectedAlarmEntityAlarmo ? `
         <div class="sub-option">
           <div class="form-row">
-            ${renderMDCSwitch('use-alarmo-card', useAlarmoCard, t('useAlarmoCard'))}
-            <label for="use-alarmo-card" style="margin-left: 12px; cursor: pointer;">${t('useAlarmoCard')}</label>
+            ${renderMDCSwitch('use-alarmo-card', useAlarmoCard, t('useAlarmoCard'), !hasAlarmoCardDeps)}
+            <label for="use-alarmo-card" style="margin-left: 12px; cursor: pointer;" ${!hasAlarmoCardDeps ? 'class="disabled-label"' : ''}>${t('useAlarmoCard')}</label>
           </div>
           <div class="description">
-            ${t('useAlarmoCardDescription')}
+            ${hasAlarmoCardDeps 
+              ? t('useAlarmoCardDescription')
+              : buildDependencyMissingMessage('alarmo-card')}
           </div>
-        </div>
-        ` : ''}
-        ${isSelectedAlarmEntityAlarmo && !hasAlarmoCardDeps ? `
-        <div class="description" style="margin-top: 8px;">
-          ⚠️ ${t('alarmoCardMissingDeps')}<br><br>
-          ${t('alarmoCardLink')}: <a href="https://github.com/nielsfaber/alarmo-card" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/nielsfaber/alarmo-card</a>
         </div>
         ` : ''}
       </div>
@@ -451,19 +447,19 @@ export function renderEditorHTML({
       <div class="section">
         <div class="section-title">${t('scheduler')}</div>
         <div class="form-row">
-          ${renderMDCSwitch('show-scheduler-card', showSchedulerCard, t('showSchedulerCard'))}
-          <label for="show-scheduler-card" style="margin-left: 12px; cursor: pointer;">${t('showSchedulerCard')}</label>
+          ${renderMDCSwitch('show-scheduler-card', showSchedulerCard, t('showSchedulerCard'), !hasSchedulerCardDeps)}
+          <label for="show-scheduler-card" style="margin-left: 12px; cursor: pointer;" ${!hasSchedulerCardDeps ? 'class="disabled-label"' : ''}>${t('showSchedulerCard')}</label>
         </div>
         <div class="description">
-          ${t('schedulerCardDescription')}
+          ${hasSchedulerCardDeps 
+            ? t('schedulerCardDescription')
+            : buildDependencyMissingMessage('scheduler-card')}
         </div>
         ${showSchedulerCard ? `
         <div class="sub-option">
           ${!hasSchedulerCardDeps ? `
           <div class="description" style="margin-top: 8px;">
-            ⚠️ ${t('schedulerCardMissingDeps')}<br><br>
-            ${t('schedulerCardLink')}: <a href="https://github.com/nielsfaber/scheduler-card" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/nielsfaber/scheduler-card</a><br>
-            ${t('schedulerIntegrationLink')}: <a href="https://github.com/nielsfaber/scheduler-component" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/nielsfaber/scheduler-component</a>
+            ${buildDependencyMissingMessage('scheduler-card')}
           </div>
           ` : ''}
           ${hasSchedulerCardDeps ? `
@@ -517,21 +513,15 @@ export function renderEditorHTML({
         </div>
         ${showCalendarCard ? `
         <div class="sub-option">
-          ${hasCalendarCardProDeps ? `
           <div class="form-row" style="margin-bottom: 12px;">
-            ${renderMDCSwitch('use-calendar-card-pro', useCalendarCardPro, t('useCalendarCardPro'))}
-            <label for="use-calendar-card-pro" style="margin-left: 12px; cursor: pointer;">${t('useCalendarCardPro')}</label>
+            ${renderMDCSwitch('use-calendar-card-pro', useCalendarCardPro, t('useCalendarCardPro'), !hasCalendarCardProDeps)}
+            <label for="use-calendar-card-pro" style="margin-left: 12px; cursor: pointer;" ${!hasCalendarCardProDeps ? 'class="disabled-label"' : ''}>${t('useCalendarCardPro')}</label>
           </div>
           <div class="description" style="margin-bottom: 12px;">
-            ${t('useCalendarCardProDescription')}
+            ${hasCalendarCardProDeps 
+              ? t('useCalendarCardProDescription')
+              : `${t('calendarCardProLink')}: <a href="https://github.com/alexpfau/calendar-card-pro" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/alexpfau/calendar-card-pro</a><br><br>${t('calendarCardProOptional')}`}
           </div>
-          ` : `
-          <div class="description" style="margin-top: 8px; margin-bottom: 12px;">
-            ${t('calendarCardProLink')}: <a href="https://github.com/alexpfau/calendar-card-pro" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline;">https://github.com/alexpfau/calendar-card-pro</a>
-            <br><br>
-            ${t('calendarCardProOptional')}
-          </div>
-          `}
           <div class="description" style="margin-top: 12px; margin-bottom: 12px;">
             ${t('calendarEntitiesDescription')}
           </div>
