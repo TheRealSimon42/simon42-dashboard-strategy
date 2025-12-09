@@ -4,5 +4,5 @@
   "content_in_root": false,
   "render_readme": true,
   "homeassistant": "2021.12.0",
-  "version": "2.1.3-dev"
+  "version": "2.1.4-dev"
 }

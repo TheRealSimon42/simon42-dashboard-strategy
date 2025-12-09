@@ -210,7 +210,7 @@ export function renderEditorHTML({
               <option value="">${t('selectDomain')}</option>
               ${getDomainSelectorOptions('', true)}
             </select>
-            <button id="add-included-domain-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            <button id="add-included-domain-btn" class="add-btn">
               + ${t('add')}
             </button>
           </div>
@@ -227,7 +227,7 @@ export function renderEditorHTML({
               <option value="">${t('selectDomain')}</option>
               ${getDomainSelectorOptions('', true)}
             </select>
-            <button id="add-excluded-domain-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            <button id="add-excluded-domain-btn" class="add-btn">
               + ${t('add')}
             </button>
           </div>
@@ -340,7 +340,7 @@ export function renderEditorHTML({
                   <option value="${entity.entity_id}">${entity.name}</option>
                 `).join('')}
             </select>
-            <button id="add-public-transport-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            <button id="add-public-transport-btn" class="add-btn">
               + ${t('add')}
             </button>
           </div>
@@ -525,7 +525,7 @@ export function renderEditorHTML({
                   return `<option value="${entityId}">${name}</option>`;
                 }).join('')}
             </select>
-            <button id="add-calendar-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            <button id="add-calendar-btn" class="add-btn">
               + ${t('add')}
             </button>
           </div>
@@ -672,7 +672,7 @@ export function renderEditorHTML({
               <option value="${entity.entity_id}">${entity.name}</option>
             `).join('')}
           </select>
-          <button id="add-favorite-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+          <button id="add-favorite-btn" class="add-btn">
             + ${t('add')}
           </button>
         </div>
@@ -704,7 +704,7 @@ export function renderEditorHTML({
                 <option value="${entity.entity_id}">${entity.name}</option>
               `).join('')}
           </select>
-          <button id="add-room-pin-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+          <button id="add-room-pin-btn" class="add-btn">
             + ${t('add')}
           </button>
         </div>
@@ -731,8 +731,8 @@ export function renderEditorHTML({
             placeholder="${t('patternPlaceholder')}"
             style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace;"
           />
-          <button id="add-pattern-btn" style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-            + ${t('addPattern')}
+          <button id="add-pattern-btn" class="add-btn">
+            + ${t('add')}
           </button>
         </div>
         <ha-expansion-panel outlined>
@@ -779,10 +779,9 @@ export function renderEditorHTML({
           >
             ${getLanguageSelectorOptions('', 'translationToLang')}
           </select>
-          <ha-button id="add-translation-btn" outlined>
-            <ha-icon slot="icon" icon="mdi:plus"></ha-icon>
-            ${t('addTranslation')}
-          </ha-button>
+          <button id="add-translation-btn" class="add-btn">
+            + ${t('add')}
+          </button>
         </div>
         <ha-expansion-panel outlined>
           <ha-icon slot="leading-icon" icon="mdi:translate"></ha-icon>

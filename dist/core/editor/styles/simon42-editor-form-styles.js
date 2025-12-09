@@ -208,5 +208,28 @@ export function getFormStyles() {
       outline: 2px solid var(--primary-color);
       outline-offset: 2px;
     }
+    
+    /* Add button - consistent styling for all "Add" buttons */
+    .add-btn {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: 1px solid var(--divider-color);
+      background: var(--primary-color);
+      color: var(--text-primary-color);
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    
+    .add-btn:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    
+    .add-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
   `;
 }
