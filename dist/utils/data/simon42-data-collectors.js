@@ -153,12 +153,21 @@ export function collectBatteriesCritical(hass, excludeLabels, config = {}) {
       const entityId = stateObj.entity_id;
       if (!entityId) return false;
       
-      // Check if entity is a battery (string includes is fast)
-      const isBattery = entityId.includes('battery') || 
-                       stateObj.attributes?.device_class === 'battery';
+      // Enhanced battery detection (case-insensitive, multiple patterns)
+      const entityIdLower = entityId.toLowerCase();
+      const deviceClass = stateObj.attributes?.device_class;
+      const unitOfMeasurement = stateObj.attributes?.unit_of_measurement;
+      
+      const isBattery = 
+        entityIdLower.includes('battery') ||
+        deviceClass === 'battery' ||
+        (deviceClass === null && unitOfMeasurement === '%' && 
+         (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
+      
       if (!isBattery) return false;
       
-      // Registry check: only exclude manually hidden (hidden_by is ignored)
+      // Registry check: only exclude manually hidden (ignore hidden_by)
+      // Note: Battery sensors are often marked as 'diagnostic', but we still want to show them
       const registryEntry = hass.entities?.[entityId];
       if (registryEntry?.hidden === true) return false;
       

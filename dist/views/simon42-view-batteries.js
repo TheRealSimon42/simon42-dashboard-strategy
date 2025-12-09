@@ -37,19 +37,28 @@ class Simon42ViewBatteriesStrategy {
         const state = hass.states[entityId];
         if (!state) return false;
         
-        // Battery detection
-        const isBattery = entityId.includes('battery') || 
-                         state.attributes?.device_class === 'battery';
+        // Enhanced battery detection (case-insensitive, multiple patterns)
+        const entityIdLower = entityId.toLowerCase();
+        const deviceClass = state.attributes?.device_class;
+        const unitOfMeasurement = state.attributes?.unit_of_measurement;
+        
+        const isBattery = 
+          entityIdLower.includes('battery') ||
+          deviceClass === 'battery' ||
+          (deviceClass === null && unitOfMeasurement === '%' && 
+           (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
+        
         if (!isBattery) return false;
         
         // Battery-specific registry check: only exclude manually hidden (ignore hidden_by)
+        // Note: Battery sensors are often marked as 'diagnostic', but we still want to show them
         if (entity.hidden === true) return false;
         if (entity.disabled_by) return false;
-        if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') return false;
+        // Only exclude config category, NOT diagnostic (batteries are often diagnostic)
+        if (entity.entity_category === 'config') return false;
         
-        // Check state attributes entity_category too
-        if (state.attributes?.entity_category === 'config' || 
-            state.attributes?.entity_category === 'diagnostic') return false;
+        // Check state attributes entity_category too (only exclude config, not diagnostic)
+        if (state.attributes?.entity_category === 'config') return false;
         
         // Value check: only numeric values
         const value = parseFloat(state.state);

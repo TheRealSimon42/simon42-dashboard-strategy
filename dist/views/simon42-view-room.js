@@ -116,18 +116,27 @@ class Simon42ViewRoomStrategy {
       customFilter: (entity, hass) => {
         const entityId = entity.entity_id;
         const state = hass.states[entityId];
-        const isBatterySensor = entityId.includes('battery') || 
-                               state?.attributes?.device_class === 'battery';
+        // Enhanced battery detection (case-insensitive, multiple patterns)
+        const entityIdLower = entityId.toLowerCase();
+        const deviceClass = state?.attributes?.device_class;
+        const unitOfMeasurement = state?.attributes?.unit_of_measurement;
+        
+        const isBatterySensor = 
+          entityIdLower.includes('battery') ||
+          deviceClass === 'battery' ||
+          (deviceClass === null && unitOfMeasurement === '%' && 
+           (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
         
         if (isBatterySensor) {
           // Battery sensor special handling: Only check manual hidden, ignore hidden_by
+          // Note: Battery sensors are often marked as 'diagnostic', but we still want to show them
           // (consistent with Battery-View and Summary)
           if (entity.hidden === true) return false;
           if (entity.disabled_by) return false;
-          if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') return false;
-          // Check state attributes entity_category too
-          if (state?.attributes?.entity_category === 'config' || 
-              state?.attributes?.entity_category === 'diagnostic') return false;
+          // Only exclude config category, NOT diagnostic (batteries are often diagnostic)
+          if (entity.entity_category === 'config') return false;
+          // Check state attributes entity_category too (only exclude config, not diagnostic)
+          if (state?.attributes?.entity_category === 'config') return false;
           return true;
         } else {
           // For all others: Use full hidden/disabled check
@@ -205,7 +214,16 @@ class Simon42ViewRoomStrategy {
       // === SENSOREN FÜR BADGES ===
       if (domain === 'sensor') {
         // Batterie (nur niedrige Werte < 20%) - ZUERST prüfen, bevor % für Humidity matcht!
-        if (entityId.includes('battery') || deviceClass === 'battery') {
+        // Enhanced battery detection (case-insensitive, multiple patterns)
+        const entityIdLower = entityId.toLowerCase();
+        const unitOfMeasurement = state.attributes?.unit_of_measurement;
+        const isBatterySensor = 
+          entityIdLower.includes('battery') ||
+          deviceClass === 'battery' ||
+          (deviceClass === null && unitOfMeasurement === '%' && 
+           (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
+        
+        if (isBatterySensor) {
           const batteryLevel = parseFloat(state.state);
           if (!isNaN(batteryLevel) && batteryLevel < 20) {
             sensorEntities.battery.push(entityId);

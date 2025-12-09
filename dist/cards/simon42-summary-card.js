@@ -63,8 +63,15 @@ const SUMMARY_TYPE_CONFIG = {
       const state = hass.states[entityId];
       if (!state) return false;
       
-      // Battery-Check (String-includes is faster than attribute lookup)
-      return entityId.includes('battery') || state.attributes?.device_class === 'battery';
+      // Enhanced battery detection (case-insensitive, multiple patterns)
+      const entityIdLower = entityId.toLowerCase();
+      const deviceClass = state.attributes?.device_class;
+      const unitOfMeasurement = state.attributes?.unit_of_measurement;
+      
+      return entityIdLower.includes('battery') ||
+             deviceClass === 'battery' ||
+             (deviceClass === null && unitOfMeasurement === '%' && 
+              (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
     },
     relevantGroups: ['lights', 'covers', 'covers_curtain', 'climate', 
                     'media_player', 'vacuum', 'fan', 'switches']
