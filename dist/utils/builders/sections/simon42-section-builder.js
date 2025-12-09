@@ -636,7 +636,8 @@ export function createSchedulerCardSection(config, hass) {
       },
       {
         type: "custom:scheduler-card",
-        entity: entityId
+        entity: entityId,
+        discover_existing: false
       }
     ])
   ];
