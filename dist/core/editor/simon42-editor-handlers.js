@@ -51,20 +51,9 @@ export const attachPublicTransportCheckboxListener = createCheckboxListener('#sh
 
 export function attachAreaCheckboxListeners(element, callback) {
   // Handle icon-button clicks for hide/show (replaces checkbox functionality)
-  // Use event delegation to handle dynamically added buttons
-  const areaList = element.querySelector('ha-md-list');
-  if (!areaList) return;
-  
-  areaList.addEventListener('click', (e) => {
-    const button = e.target.closest('ha-icon-button.area-visibility-toggle[data-area-id]');
-    if (!button) return;
-    
-    e.stopPropagation();
-    e.preventDefault();
-    
+  // Attach listeners directly to each visibility toggle button to avoid delegation issues
+  const handleVisibilityToggle = (button, listItem) => {
     const areaId = button.dataset.areaId;
-    const listItem = button.closest('ha-md-list-item[data-area-id]');
-    if (!listItem) return;
     
     // Determine current visibility state from multiple sources for reliability
     const iconElement = button.querySelector('ha-icon');
@@ -115,7 +104,57 @@ export function attachAreaCheckboxListeners(element, callback) {
     }
     
     callback(areaId, isVisible);
+  };
+  
+  // Attach listeners to existing buttons
+  const buttons = element.querySelectorAll('ha-icon-button.area-visibility-toggle[data-area-id]');
+  buttons.forEach(button => {
+    // Skip if already has listener attached (marked with data attribute)
+    if (button.dataset.visibilityListenerAttached === 'true') {
+      return;
+    }
+    
+    const listItem = button.closest('ha-md-list-item[data-area-id]');
+    if (!listItem) return;
+    
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      handleVisibilityToggle(button, listItem);
+    });
+    
+    // Mark as having listener attached
+    button.dataset.visibilityListenerAttached = 'true';
   });
+  
+  // Also use event delegation as fallback for dynamically added buttons
+  const areaList = element.querySelector('ha-md-list');
+  if (areaList) {
+    areaList.addEventListener('click', (e) => {
+      const button = e.target.closest('ha-icon-button.area-visibility-toggle[data-area-id]');
+      if (!button) return;
+      
+      // Skip if button already has direct listener
+      if (button.dataset.visibilityListenerAttached === 'true') {
+        return;
+      }
+      
+      const listItem = button.closest('ha-md-list-item[data-area-id]');
+      if (!listItem) return;
+      
+      e.stopPropagation();
+      e.preventDefault();
+      handleVisibilityToggle(button, listItem);
+      
+      // Attach direct listener for future clicks
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        handleVisibilityToggle(button, listItem);
+      });
+      button.dataset.visibilityListenerAttached = 'true';
+    });
+  }
 }
 
 export function attachExpandButtonListeners(element, hass, config, onEntitiesLoad) {
@@ -124,10 +163,10 @@ export function attachExpandButtonListeners(element, hass, config, onEntitiesLoa
   
   areaItems.forEach(item => {
     item.addEventListener('click', async (e) => {
-      // Don't expand if clicking on icon-button or handle
+      // Don't expand if clicking on visibility toggle button or handle
       // This allows the button's own click handler to work
-      if (e.target.closest('ha-icon-button') || e.target.closest('.handle')) {
-        return;
+      if (e.target.closest('ha-icon-button.area-visibility-toggle') || e.target.closest('.handle')) {
+        return; // Return early without stopPropagation to allow event to bubble to delegation handler
       }
       
       e.stopPropagation();
