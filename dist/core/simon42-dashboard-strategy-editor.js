@@ -79,6 +79,83 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   // Dependency checks now use centralized dependency checker utility
   // See dist/utils/simon42-dependency-checker.js
 
+  /**
+   * Validates that a dependency is available before allowing a feature to be enabled
+   * @param {string} dependencyId - The dependency identifier (e.g., 'search-card', 'better-thermostat')
+   * @param {boolean} enableValue - The value being set (true = enable, false = disable)
+   * @param {string} switchSelector - CSS selector for the switch element to reset if validation fails
+   * @returns {boolean} True if the change should be allowed, false if blocked
+   */
+  _validateDependencyBeforeChange(dependencyId, enableValue, switchSelector) {
+    // Always allow disabling (setting to false)
+    if (enableValue === false) {
+      return true;
+    }
+    
+    // Check dependency when enabling (setting to true)
+    const hasDeps = checkDependency(dependencyId, this._hass);
+    
+    if (!hasDeps) {
+      // Reset switch to false if dependency is missing
+      const switchElement = this.querySelector(switchSelector);
+      if (switchElement) {
+        switchElement.checked = false;
+      }
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Resets config values for features that require dependencies when dependencies are missing
+   * Called during render to ensure config stays consistent with available dependencies
+   */
+  _resetConfigForMissingDependencies() {
+    // Map of config property names to their dependency IDs
+    const dependencyConfigMap = {
+      'show_search_card': 'search-card',
+      'show_better_thermostat': 'better-thermostat',
+      'show_horizon_card': 'horizon-card',
+      'horizon_card_extended': 'horizon-card', // Also depends on horizon-card
+      'use_clock_weather_card': 'clock-weather-card',
+      'use_alarmo_card': 'alarmo-card',
+      'show_scheduler_card': 'scheduler-card',
+      'use_calendar_card_pro': 'calendar-card-pro',
+      'show_todo_swipe_card': 'todo-swipe-card'
+    };
+
+    let configChanged = false;
+    const newConfig = { ...this._config };
+
+    // Check each dependency and reset config if missing
+    for (const [configKey, dependencyId] of Object.entries(dependencyConfigMap)) {
+      const currentValue = this._config[configKey];
+      
+      // Only reset if the feature is enabled but dependency is missing
+      if (currentValue === true) {
+        const hasDeps = checkDependency(dependencyId, this._hass);
+        
+        if (!hasDeps) {
+          // Reset to default value (false for all these features)
+          if (configKey === 'horizon_card_extended') {
+            // Extended depends on horizon card being enabled, so reset it
+            delete newConfig[configKey];
+          } else {
+            delete newConfig[configKey];
+          }
+          configChanged = true;
+        }
+      }
+    }
+
+    // Update config if any changes were made
+    if (configChanged) {
+      this._config = newConfig;
+      this._fireConfigChanged(newConfig);
+    }
+  }
+
   _render() {
     if (!this._hass || !this._config) {
       return;
@@ -153,7 +230,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // calendar-card is native Home Assistant card, no dependency check needed
     const hasCalendarCardDeps = true; // Always available (native card)
     const hasCalendarCardProDeps = checkDependency('calendar-card-pro', this._hass);
-    const hasTodoSwipeCardDeps = checkDependency('todo-swipe-card', this._hass);
     
     // Sammle alle Alarm-Control-Panel-Entitäten
     const alarmEntities = Object.keys(this._hass.states)
@@ -183,6 +259,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showCalendarCard = this._config.show_calendar_card === true;
     const calendarEntities = this._config.calendar_entities || [];
     const useCalendarCardPro = this._config.use_calendar_card_pro === true;
+    
+    // Reset config values for features with missing dependencies
+    this._resetConfigForMissingDependencies();
+    
+    // Re-read config values after potential resets
     const showTodoSwipeCard = this._config.show_todo_swipe_card === true;
     const todoEntities = this._config.todo_entities || [];
     
@@ -377,11 +458,21 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const useClockWeatherCard = this._config.use_clock_weather_card === true;
     const showPublicTransport = this._config.show_public_transport === true;
     
-    // Check dependencies
+    // Check all dependencies using centralized dependency checker
     const hasSearchCardDeps = checkDependency('search-card', this._hass);
     const hasBetterThermostatDeps = checkDependency('better-thermostat', this._hass);
     const hasHorizonCardDeps = checkDependency('horizon-card', this._hass);
     const hasClockWeatherCardDeps = checkDependency('clock-weather-card', this._hass);
+    const hasSchedulerCardDeps = checkDependency('scheduler-card', this._hass);
+    const hasAlarmoCardDeps = checkDependency('alarmo-card', this._hass);
+    const hasCalendarCardProDeps = checkDependency('calendar-card-pro', this._hass);
+    const hasTodoSwipeCardDeps = checkDependency('todo-swipe-card', this._hass);
+    
+    // Get additional config values
+    const showSchedulerCard = this._config.show_scheduler_card === true;
+    const useAlarmoCard = this._config.use_alarmo_card === true;
+    const useCalendarCardPro = this._config.use_calendar_card_pro === true;
+    const showTodoSwipeCard = this._config.show_todo_swipe_card === true;
     
     // Public transport config
     const hvvShowTime = this._config.hvv_show_time === true;
@@ -409,6 +500,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       { id: 'show-horizon-card', checked: showHorizonCard, disabled: !hasHorizonCardDeps },
       { id: 'horizon-card-extended', checked: horizonCardExtended, disabled: !hasHorizonCardDeps },
       { id: 'use-clock-weather-card', checked: useClockWeatherCard, disabled: !hasClockWeatherCardDeps },
+      { id: 'show-scheduler-card', checked: showSchedulerCard, disabled: !hasSchedulerCardDeps },
+      { id: 'use-alarmo-card', checked: useAlarmoCard, disabled: !hasAlarmoCardDeps },
+      { id: 'use-calendar-card-pro', checked: useCalendarCardPro, disabled: !hasCalendarCardProDeps },
+      { id: 'show-todo-swipe-card', checked: showTodoSwipeCard, disabled: !hasTodoSwipeCardDeps },
       { id: 'show-public-transport', checked: showPublicTransport, disabled: false },
       { id: 'hvv-show-time', checked: hvvShowTime, disabled: false },
       { id: 'hvv-show-title', checked: hvvShowTitle, disabled: false },
@@ -673,6 +768,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _useAlarmoCardChanged(useAlarmoCard) {
+    if (!this._validateDependencyBeforeChange('alarmo-card', useAlarmoCard, '#use-alarmo-card')) {
+      return;
+    }
     // Ensure value is explicitly a boolean
     const value = useAlarmoCard === true;
     this._configManager.updateProperty('use_alarmo_card', value, false);
@@ -752,6 +850,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _showSchedulerCardChanged(showSchedulerCard) {
+    if (!this._validateDependencyBeforeChange('scheduler-card', showSchedulerCard, '#show-scheduler-card')) {
+      return;
+    }
     // Ensure value is explicitly a boolean
     const value = showSchedulerCard === true;
     this._configManager.updateProperty('show_scheduler_card', value, false);
@@ -832,6 +933,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _showTodoSwipeCardChanged(showTodoSwipeCard) {
+    if (!this._validateDependencyBeforeChange('todo-swipe-card', showTodoSwipeCard, '#show-todo-swipe-card')) {
+      return;
+    }
     // Ensure value is explicitly a boolean
     const value = showTodoSwipeCard === true;
     this._configManager.updateProperty('show_todo_swipe_card', value, false);
@@ -869,6 +973,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _useCalendarCardProChanged(useCalendarCardPro) {
+    if (!this._validateDependencyBeforeChange('calendar-card-pro', useCalendarCardPro, '#use-calendar-card-pro')) {
+      return;
+    }
     // Ensure value is explicitly a boolean
     const value = useCalendarCardPro === true;
     this._configManager.updateProperty('use_calendar_card_pro', value, false);
@@ -1333,6 +1440,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _showSearchCardChanged(showSearchCard) {
+    if (!this._validateDependencyBeforeChange('search-card', showSearchCard, '#show-search-card')) {
+      return;
+    }
     this._configManager.updateProperty('show_search_card', showSearchCard, false);
     // Re-render to show/hide search card sub-options
     this._render();
@@ -1639,24 +1749,91 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _showBetterThermostatChanged(showBetterThermostat) {
+    if (!this._validateDependencyBeforeChange('better-thermostat', showBetterThermostat, '#show-better-thermostat')) {
+      return;
+    }
     this._configManager.updateProperty('show_better_thermostat', showBetterThermostat, false);
   }
 
   _showHorizonCardChanged(showHorizonCard) {
+    if (!this._validateDependencyBeforeChange('horizon-card', showHorizonCard, '#show-horizon-card')) {
+      return;
+    }
     this._configManager.updateProperty('show_horizon_card', showHorizonCard, false);
     this._render();
   }
 
   _horizonCardExtendedChanged(horizonCardExtended) {
+    // Extended option requires horizon card to be enabled
+    if (horizonCardExtended === true) {
+      const hasHorizonCardDeps = checkDependency('horizon-card', this._hass);
+      if (!hasHorizonCardDeps) {
+        const switchElement = this.querySelector('#horizon-card-extended');
+        if (switchElement) {
+          switchElement.checked = false;
+        }
+        return;
+      }
+    }
     this._configManager.updateProperty('horizon_card_extended', horizonCardExtended, false);
   }
 
   _useClockWeatherCardChanged(useClockWeatherCard) {
+    if (!this._validateDependencyBeforeChange('clock-weather-card', useClockWeatherCard, '#use-clock-weather-card')) {
+      return;
+    }
     this._configManager.updateProperty('use_clock_weather_card', useClockWeatherCard, false);
     this._render();
   }
 
   _showPublicTransportChanged(showPublicTransport) {
+    // Public transport has complex dependency checking (integration + card)
+    if (showPublicTransport === true) {
+      const publicTransportIntegration = this._config.public_transport_integration || '';
+      const publicTransportCard = this._config.public_transport_card || '';
+      
+      if (publicTransportIntegration && publicTransportCard) {
+        const hasDeps = checkPublicTransportDependencies(
+          publicTransportIntegration,
+          publicTransportCard,
+          this._hass
+        );
+        
+        if (!hasDeps) {
+          const switchElement = this.querySelector('#show-public-transport');
+          if (switchElement) {
+            switchElement.checked = false;
+          }
+          return;
+        }
+      } else if (publicTransportIntegration || publicTransportCard) {
+        // If only one is set, check what we have
+        const cardMapping = {
+          'hvv': 'hvv-card',
+          'ha-departures': 'ha-departures-card',
+          'db_info': 'db-info-card',
+          'kvv': 'kvv-departures-card'
+        };
+        const cardToCheck = publicTransportCard || (publicTransportIntegration ? cardMapping[publicTransportIntegration] : null);
+        
+        if (cardToCheck) {
+          const hasDeps = checkPublicTransportDependencies(
+            publicTransportIntegration,
+            cardToCheck,
+            this._hass
+          );
+          
+          if (!hasDeps) {
+            const switchElement = this.querySelector('#show-public-transport');
+            if (switchElement) {
+              switchElement.checked = false;
+            }
+            return;
+          }
+        }
+      }
+    }
+    
     this._configManager.updateProperty('show_public_transport', showPublicTransport, false);
     // Re-render to show/hide integration selection
     this._render();

@@ -70,6 +70,10 @@ export function getDependencyUrls(dependencyId) {
     'clock-weather-card': {
       integrationUrl: null,
       cardUrl: 'https://github.com/pkissling/clock-weather-card'
+    },
+    'todo-swipe-card': {
+      integrationUrl: null,
+      cardUrl: 'https://github.com/nutteloost/todo-swipe-card'
     }
   };
   return urls[dependencyId] || { integrationUrl: null, cardUrl: null };

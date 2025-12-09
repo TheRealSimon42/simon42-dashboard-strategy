@@ -569,11 +569,15 @@ export function renderEditorHTML({
       <div class="section">
         <div class="section-title">${t('todo')}</div>
         <div class="form-row">
-          ${renderMDCSwitch('show-todo-swipe-card', showTodoSwipeCard, t('showTodoSwipeCard'))}
-          <label for="show-todo-swipe-card" style="margin-left: 12px; cursor: pointer;">${t('showTodoSwipeCard')}</label>
+          ${renderMDCSwitch('show-todo-swipe-card', showTodoSwipeCard, t('showTodoSwipeCard'), !hasTodoSwipeCardDeps)}
+          <label for="show-todo-swipe-card" style="margin-left: 12px; cursor: pointer;" ${!hasTodoSwipeCardDeps ? 'class="disabled-label"' : ''}>
+            ${t('showTodoSwipeCard')}
+          </label>
         </div>
         <div class="description">
-          ${t('todoSwipeCardDescription')}
+          ${hasTodoSwipeCardDeps 
+            ? t('todoSwipeCardDescription')
+            : buildDependencyMissingMessage('todo-swipe-card', 'todoSwipeCardMissingDeps', 'todoSwipeCardLink')}
         </div>
         ${showTodoSwipeCard ? `
         <div class="sub-option">
