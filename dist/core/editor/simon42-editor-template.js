@@ -695,7 +695,13 @@ export function renderEditorHTML({
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           ${t('roomPinsDescription')}
         </div>
-        <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
+        <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px;">
+          <select id="room-pin-area-filter" style="flex: 0 0 auto; min-width: 150px; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">${t('selectRoom')}</option>
+            ${allAreas.map(area => `
+              <option value="${area.area_id}">${area.name}</option>
+            `).join('')}
+          </select>
           <select id="room-pin-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
             <option value="">${t('selectEntity')}</option>
             ${allEntities
@@ -707,6 +713,9 @@ export function renderEditorHTML({
           <button id="add-room-pin-btn" class="add-btn">
             + ${t('add')}
           </button>
+        </div>
+        <div class="description" style="margin-left: 0; margin-bottom: 16px;">
+          ${t('roomPinsAreaFilterDescription')}
         </div>
         <ha-expansion-panel outlined>
           <ha-icon slot="leading-icon" icon="mdi:map-marker"></ha-icon>

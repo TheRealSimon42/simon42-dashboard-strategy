@@ -932,6 +932,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _attachRoomPinsListeners() {
+    // Area Filter
+    const areaFilter = this.querySelector('#room-pin-area-filter');
+    if (areaFilter) {
+      areaFilter.addEventListener('change', () => {
+        this._updateRoomPinEntitySelect();
+      });
+    }
+
     // Add Button
     const addBtn = this.querySelector('#add-room-pin-btn');
     const select = this.querySelector('#room-pin-entity-select');
@@ -956,6 +964,32 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         }
       });
     }
+  }
+
+  _updateRoomPinEntitySelect() {
+    const areaFilter = this.querySelector('#room-pin-area-filter');
+    const select = this.querySelector('#room-pin-entity-select');
+    
+    if (!areaFilter || !select) return;
+    
+    const selectedAreaId = areaFilter.value;
+    const allEntities = this._getAllEntitiesForSelect();
+    
+    // Filter entities: must have area_id, and if area filter is selected, match that area
+    const filteredEntities = allEntities.filter(entity => {
+      const entityAreaId = entity.area_id || entity.device_area_id;
+      if (!entityAreaId) return false; // Must have an area
+      if (selectedAreaId && entityAreaId !== selectedAreaId) return false; // Must match selected area
+      return true;
+    });
+    
+    // Update select options
+    select.innerHTML = `
+      <option value="">${t('selectEntity')}</option>
+      ${filteredEntities.map(entity => `
+        <option value="${entity.entity_id}">${entity.name}</option>
+      `).join('')}
+    `;
   }
 
   _addRoomPinEntity(entityId) {
