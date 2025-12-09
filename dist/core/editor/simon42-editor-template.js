@@ -469,7 +469,11 @@ export function renderEditorHTML({
             <select id="scheduler-entity" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
               <option value="">${t('selectEntity')}</option>
               ${Object.keys(hass?.states || {})
-                .filter(entityId => entityId.startsWith('switch.scheduler_') || entityId.startsWith('input_boolean.scheduler_'))
+                .filter(entityId => {
+                  // Filter by platform from entity registry (like Alarmo)
+                  const entityRegistry = hass?.entities?.[entityId];
+                  return entityRegistry?.platform === 'scheduler';
+                })
                 .map(entityId => {
                   const state = hass.states[entityId];
                   const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
