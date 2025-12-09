@@ -695,11 +695,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
             const newEntities = [...schedulerEntities, entityId];
             // Migrate from old scheduler_entity to scheduler_entities if needed
             if (this._config.scheduler_entity && !this._config.scheduler_entities) {
-              // Remove old scheduler_entity from config
+              // Remove old scheduler_entity and add scheduler_entities
               const newConfig = { ...this._config };
               delete newConfig.scheduler_entity;
               newConfig.scheduler_entities = newEntities;
               this._config = newConfig;
+              this._fireConfigChanged(newConfig);
             } else {
               this._configManager.updateProperty('scheduler_entities', newEntities, []);
             }
@@ -727,8 +728,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
               delete newConfig.scheduler_entity;
               if (newEntities.length > 0) {
                 newConfig.scheduler_entities = newEntities;
+              } else {
+                delete newConfig.scheduler_entities;
               }
               this._config = newConfig;
+              this._fireConfigChanged(newConfig);
             } else {
               this._configManager.updateProperty('scheduler_entities', newEntities.length > 0 ? newEntities : undefined, []);
             }
