@@ -759,7 +759,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       alarmoCardSwitch.checked = useAlarmoCard;
       
       alarmoCardSwitch.addEventListener('change', (e) => {
-        this._useAlarmoCardChanged(e.target.checked);
+        // Check if switch is disabled
+        const isDisabled = alarmoCardSwitch.disabled === true;
+        const newValue = e.target.checked;
+        
+        // If disabled and trying to enable (set to true), prevent the change
+        if (isDisabled && newValue === true) {
+          // Reset switch to false immediately
+          alarmoCardSwitch.checked = false;
+          return;
+        }
+        
+        // Allow disabling even if switch is disabled (always safe)
+        // Allow all changes if switch is not disabled
+        this._useAlarmoCardChanged(newValue);
       });
     }
   }
@@ -781,7 +794,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       schedulerCardSwitch.checked = showSchedulerCard;
       
       schedulerCardSwitch.addEventListener('change', (e) => {
-        this._showSchedulerCardChanged(e.target.checked);
+        // Check if switch is disabled
+        const isDisabled = schedulerCardSwitch.disabled === true;
+        const newValue = e.target.checked;
+        
+        // If disabled and trying to enable (set to true), prevent the change
+        if (isDisabled && newValue === true) {
+          // Reset switch to false immediately
+          schedulerCardSwitch.checked = false;
+          return;
+        }
+        
+        // Allow disabling even if switch is disabled (always safe)
+        // Allow all changes if switch is not disabled
+        this._showSchedulerCardChanged(newValue);
       });
     }
   }
@@ -887,7 +913,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       calendarCardProSwitch.checked = useCalendarCardPro;
       
       calendarCardProSwitch.addEventListener('change', (e) => {
-        this._useCalendarCardProChanged(e.target.checked);
+        // Check if switch is disabled
+        const isDisabled = calendarCardProSwitch.disabled === true;
+        const newValue = e.target.checked;
+        
+        // If disabled and trying to enable (set to true), prevent the change
+        if (isDisabled && newValue === true) {
+          // Reset switch to false immediately
+          calendarCardProSwitch.checked = false;
+          return;
+        }
+        
+        // Allow disabling even if switch is disabled (always safe)
+        // Allow all changes if switch is not disabled
+        this._useCalendarCardProChanged(newValue);
       });
     }
   }
@@ -909,7 +948,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       todoSwipeCardSwitch.checked = showTodoSwipeCard;
       
       todoSwipeCardSwitch.addEventListener('change', (e) => {
-        this._showTodoSwipeCardChanged(e.target.checked);
+        // Check if switch is disabled
+        const isDisabled = todoSwipeCardSwitch.disabled === true;
+        const newValue = e.target.checked;
+        
+        // If disabled and trying to enable (set to true), prevent the change
+        if (isDisabled && newValue === true) {
+          // Reset switch to false immediately
+          todoSwipeCardSwitch.checked = false;
+          return;
+        }
+        
+        // Allow disabling even if switch is disabled (always safe)
+        // Allow all changes if switch is not disabled
+        this._showTodoSwipeCardChanged(newValue);
       });
     }
 

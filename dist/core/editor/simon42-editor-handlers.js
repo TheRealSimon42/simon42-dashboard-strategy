@@ -19,11 +19,37 @@ function createCheckboxListener(selector) {
       // Handle both ha-switch and regular checkboxes
       if (switchElement.tagName === 'HA-SWITCH') {
         switchElement.addEventListener('change', (e) => {
-          callback(e.target.checked);
+          // Check if switch is disabled
+          const isDisabled = switchElement.disabled === true;
+          const newValue = e.target.checked;
+          
+          // If disabled and trying to enable (set to true), prevent the change
+          if (isDisabled && newValue === true) {
+            // Reset switch to false immediately
+            switchElement.checked = false;
+            return;
+          }
+          
+          // Allow disabling even if switch is disabled (always safe)
+          // Allow all changes if switch is not disabled
+          callback(newValue);
         });
       } else {
         switchElement.addEventListener('change', (e) => {
-          callback(e.target.checked);
+          // Check if switch is disabled
+          const isDisabled = switchElement.disabled === true;
+          const newValue = e.target.checked;
+          
+          // If disabled and trying to enable (set to true), prevent the change
+          if (isDisabled && newValue === true) {
+            // Reset switch to false immediately
+            switchElement.checked = false;
+            return;
+          }
+          
+          // Allow disabling even if switch is disabled (always safe)
+          // Allow all changes if switch is not disabled
+          callback(newValue);
         });
       }
     }
