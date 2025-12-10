@@ -64,7 +64,6 @@ export function renderEntityList(entityIds, allEntities, options = {}) {
             ${dragHandleHtml}
             <span class="entity-list-content">
               <span class="entity-list-name">${name}</span>
-              <span class="entity-list-id">${entityId}</span>
               ${metadataHtml}
             </span>
             <button class="entity-list-remove-btn" data-entity-id="${entityId}">
