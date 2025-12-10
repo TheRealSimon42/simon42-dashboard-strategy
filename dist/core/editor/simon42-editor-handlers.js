@@ -117,6 +117,7 @@ export function attachAreaCheckboxListeners(element, callback) {
     const listItem = button.closest('ha-md-list-item[data-area-id]');
     if (!listItem) return;
     
+    // Attach listener to button - clicks on icon inside will bubble to button
     button.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -128,31 +129,32 @@ export function attachAreaCheckboxListeners(element, callback) {
   });
   
   // Also use event delegation as fallback for dynamically added buttons
+  // This handles clicks on the button itself or the icon inside it
   const areaList = element.querySelector('ha-md-list');
   if (areaList) {
     areaList.addEventListener('click', (e) => {
+      // Check if click is on the button or icon inside it
       const button = e.target.closest('ha-icon-button.area-visibility-toggle[data-area-id]');
       if (!button) return;
-      
-      // Skip if button already has direct listener
-      if (button.dataset.visibilityListenerAttached === 'true') {
-        return;
-      }
       
       const listItem = button.closest('ha-md-list-item[data-area-id]');
       if (!listItem) return;
       
+      // Always handle the click via delegation to ensure it works
+      // Stop propagation to prevent list item expansion
       e.stopPropagation();
       e.preventDefault();
       handleVisibilityToggle(button, listItem);
       
-      // Attach direct listener for future clicks
-      button.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        handleVisibilityToggle(button, listItem);
-      });
-      button.dataset.visibilityListenerAttached = 'true';
+      // Attach direct listener for future clicks if not already attached
+      if (button.dataset.visibilityListenerAttached !== 'true') {
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          handleVisibilityToggle(button, listItem);
+        });
+        button.dataset.visibilityListenerAttached = 'true';
+      }
     });
   }
 }
