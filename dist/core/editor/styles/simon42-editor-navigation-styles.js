@@ -46,7 +46,7 @@ export function getNavigationStyles() {
       padding: 6px 12px;
       border: 1px solid var(--divider-color);
       border-radius: 4px;
-      background: var(--card-background-color);
+      background: transparent;
       color: var(--primary-text-color);
       cursor: pointer;
       transition: all 0.2s;

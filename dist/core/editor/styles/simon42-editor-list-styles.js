@@ -334,8 +334,8 @@ export function getListStyles() {
       padding: 4px 8px;
       border-radius: 4px;
       border: 1px solid var(--divider-color);
-      background: var(--card-background-color);
-      color: var(--primary-text-color);
+      background: #f44336;
+      color: white;
       cursor: pointer;
       flex-shrink: 0;
       font-size: 14px;
@@ -343,8 +343,8 @@ export function getListStyles() {
     }
     
     .entity-list-remove-btn:hover {
-      background: var(--secondary-background-color);
-      border-color: var(--primary-color);
+      background: #d32f2f;
+      border-color: #d32f2f;
     }
     
     .entity-list-select {
