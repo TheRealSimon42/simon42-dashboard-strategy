@@ -592,34 +592,7 @@ export function createSchedulerCardSection(config, hass) {
     return null;
   }
 
-  // Support both old scheduler_entity (singular) and new scheduler_entities (plural)
-  const schedulerEntities = config.scheduler_entities || 
-    (config.scheduler_entity ? [config.scheduler_entity] : []);
-  
-  if (schedulerEntities.length === 0) {
-    return null;
-  }
-
-  // Filter valid entities and get their names
-  const validEntities = schedulerEntities
-    .filter(entityId => {
-      if (!hass?.states?.[entityId]) {
-        logWarn('[Section Builder] Scheduler entity not found:', entityId);
-        return false;
-      }
-      return true;
-    })
-    .map(entityId => {
-      const state = hass.states[entityId];
-      const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
-      return { entityId, name };
-    });
-
-  if (validEntities.length === 0) {
-    return null;
-  }
-
-  // Build cards: one heading + one scheduler card per entity (each with its own heading)
+  // Build cards: one heading + one scheduler card (shows all schedules automatically)
   const cards = [
     {
       type: "heading",
@@ -627,19 +600,10 @@ export function createSchedulerCardSection(config, hass) {
       heading_style: "title",
       icon: "mdi:calendar-clock"
     },
-    ...validEntities.flatMap(({ entityId, name }) => [
-      {
-        type: "heading",
-        heading: name,
-        heading_style: "subtitle",
-        icon: "mdi:calendar-clock"
-      },
-      {
-        type: "custom:scheduler-card",
-        entity: entityId,
-        discover_existing: false
-      }
-    ])
+    {
+      type: "custom:scheduler-card",
+      discover_existing: true
+    }
   ];
 
   return {

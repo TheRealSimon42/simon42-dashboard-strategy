@@ -253,9 +253,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // Scheduler and Calendar card configs
     const showSchedulerCard = this._config.show_scheduler_card === true;
-    // Support both old scheduler_entity (singular) and new scheduler_entities (plural)
-    const schedulerEntities = this._config.scheduler_entities || 
-      (this._config.scheduler_entity ? [this._config.scheduler_entity] : []);
     const showCalendarCard = this._config.show_calendar_card === true;
     const calendarEntities = this._config.calendar_entities || [];
     const useCalendarCardPro = this._config.use_calendar_card_pro === true;
@@ -305,7 +302,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       useAlarmoCard,
       showSchedulerCard,
       hasSchedulerCardDeps,
-      schedulerEntities,
       showCalendarCard,
       hasCalendarCardDeps,
       hasCalendarCardProDeps,
@@ -788,66 +784,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         this._showSchedulerCardChanged(e.target.checked);
       });
     }
-
-    const addSchedulerBtn = this.querySelector('#add-scheduler-btn');
-    const schedulerEntitySelect = this.querySelector('#scheduler-entity-select');
-    if (addSchedulerBtn && schedulerEntitySelect) {
-      addSchedulerBtn.addEventListener('click', () => {
-        const entityId = schedulerEntitySelect.value;
-        if (entityId) {
-          const schedulerEntities = this._config.scheduler_entities || 
-            (this._config.scheduler_entity ? [this._config.scheduler_entity] : []);
-          if (!schedulerEntities.includes(entityId)) {
-            const newEntities = [...schedulerEntities, entityId];
-            // Migrate from old scheduler_entity to scheduler_entities if needed
-            if (this._config.scheduler_entity && !this._config.scheduler_entities) {
-              // Remove old scheduler_entity and add scheduler_entities
-              const newConfig = { ...this._config };
-              delete newConfig.scheduler_entity;
-              newConfig.scheduler_entities = newEntities;
-              this._config = newConfig;
-              this._fireConfigChanged(newConfig);
-            } else {
-              this._configManager.updateProperty('scheduler_entities', newEntities, []);
-            }
-            schedulerEntitySelect.value = '';
-            // Update the list after adding
-            this._updateSchedulerList();
-          }
-        }
-      });
-    }
-
-    // Use event delegation on the container for remove buttons
-    const schedulerList = this.querySelector('#scheduler-list');
-    if (schedulerList) {
-      schedulerList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('entity-list-remove-btn')) {
-          const entityId = e.target.getAttribute('data-entity-id');
-          if (entityId) {
-            const schedulerEntities = this._config.scheduler_entities || 
-              (this._config.scheduler_entity ? [this._config.scheduler_entity] : []);
-            const newEntities = schedulerEntities.filter(id => id !== entityId);
-            // Migrate from old scheduler_entity to scheduler_entities if needed
-            if (this._config.scheduler_entity && !this._config.scheduler_entities) {
-              const newConfig = { ...this._config };
-              delete newConfig.scheduler_entity;
-              if (newEntities.length > 0) {
-                newConfig.scheduler_entities = newEntities;
-              } else {
-                delete newConfig.scheduler_entities;
-              }
-              this._config = newConfig;
-              this._fireConfigChanged(newConfig);
-            } else {
-              this._configManager.updateProperty('scheduler_entities', newEntities.length > 0 ? newEntities : undefined, []);
-            }
-            // Update the list after removing
-            this._updateSchedulerList();
-          }
-        }
-      });
-    }
   }
 
   _showSchedulerCardChanged(showSchedulerCard) {
@@ -860,23 +796,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._render();
   }
 
-  _updateSchedulerList() {
-    const container = this.querySelector('#scheduler-list');
-    if (!container) return;
-
-    const schedulerEntities = this._config.scheduler_entities || 
-      (this._config.scheduler_entity ? [this._config.scheduler_entity] : []);
-    const allEntities = this._getAllEntitiesForSelect();
-
-    // Use centralized renderEntityList function
-    container.innerHTML = renderEntityList(schedulerEntities, allEntities, {
-      itemClass: 'scheduler-item',
-      hass: this._hass
-    });
-
-    // Reattach listeners
-    this._attachSchedulerCardListeners();
-  }
 
   _attachCalendarCardListeners() {
     const calendarCardSwitch = this.querySelector('#show-calendar-card');

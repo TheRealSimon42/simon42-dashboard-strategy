@@ -275,4 +275,4 @@ Interessiert an kommerzieller Nutzung? Kontaktiere mich für individuelle Lizenz
 
 **Entwickelt mit ❤️ für die Home Assistant Community**
 
-*Letzte Aktualisierung: 09.12.2025*
+*Letzte Aktualisierung: 10.12.2025*

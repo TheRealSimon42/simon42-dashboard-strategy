@@ -455,51 +455,6 @@ export function renderEditorHTML({
             ? t('schedulerCardDescription')
             : buildDependencyMissingMessage('scheduler-card')}
         </div>
-        ${showSchedulerCard ? `
-        <div class="sub-option">
-          ${!hasSchedulerCardDeps ? `
-          <div class="description" style="margin-top: 8px;">
-            ${buildDependencyMissingMessage('scheduler-card')}
-          </div>
-          ` : ''}
-          ${hasSchedulerCardDeps ? `
-          <div class="description" style="margin-top: 12px; margin-bottom: 12px;">
-            ${t('schedulerEntitiesDescription')}
-          </div>
-          <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px;">
-            <select id="scheduler-entity-select" style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-              <option value="">${t('selectEntity')}</option>
-              ${Object.keys(hass?.states || {})
-                .filter(entityId => {
-                  // Filter by platform from entity registry (like Alarmo)
-                  const entityRegistry = hass?.entities?.[entityId];
-                  return entityRegistry?.platform === 'scheduler';
-                })
-                .map(entityId => {
-                  const state = hass.states[entityId];
-                  const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
-                  return `<option value="${entityId}">${name}</option>`;
-                }).join('')}
-            </select>
-            <button id="add-scheduler-btn" class="add-btn">
-              + ${t('add')}
-            </button>
-          </div>
-          <ha-expansion-panel outlined>
-            <ha-icon slot="leading-icon" icon="mdi:calendar-clock"></ha-icon>
-            <span slot="header">${t('schedulerEntitiesList')}</span>
-            <div style="padding: 16px;">
-              <div id="scheduler-list">
-                ${renderEntityList(schedulerEntities, allEntities, {
-                  itemClass: 'scheduler-item',
-                  hass
-                })}
-              </div>
-            </div>
-          </ha-expansion-panel>
-          ` : ''}
-        </div>
-        ` : ''}
       </div>
 
       <div class="section">
