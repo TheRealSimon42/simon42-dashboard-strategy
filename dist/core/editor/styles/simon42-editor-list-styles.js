@@ -378,5 +378,11 @@ export function getListStyles() {
       white-space: pre-wrap;
       min-width: 0;
     }
+    
+    @media (max-width: 600px) {
+      .pattern-domain-select {
+        margin-right: 8px;
+      }
+    }
   `;
 }
