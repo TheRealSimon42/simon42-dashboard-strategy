@@ -5,6 +5,11 @@
 // und aktualisiert sich automatisch bei State-Änderungen
 // ====================================================================
 
+import { t, initLanguage } from '../utils/i18n/simon42-i18n.js';
+import { filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
+
 class Simon42CoversGroupCard extends HTMLElement {
   constructor() {
     super();
@@ -33,6 +38,11 @@ class Simon42CoversGroupCard extends HTMLElement {
   set hass(hass) {
     const oldHass = this._hass;
     this._hass = hass;
+    
+    // Initialisiere Sprache aus hass-Einstellungen (falls noch nicht geschehen)
+    if (hass && this._config?.config) {
+      initLanguage(this._config.config, hass);
+    }
     
     // Beim ersten Mal: Entity Registry hat sich möglicherweise geändert
     if (!oldHass || oldHass.entities !== hass.entities) {
@@ -72,56 +82,37 @@ class Simon42CoversGroupCard extends HTMLElement {
   }
 
   _calculateExcludeSets() {
-    // no_dboard Label
-    this._excludeSet = new Set();
-    this._entities.forEach(e => {
-      if (e.labels?.includes("no_dboard")) {
-        this._excludeSet.add(e.entity_id);
-      }
-    });
+    // Use centralized utilities
+    const excludeLabels = getExcludedLabels(this._entities);
+    this._excludeSet = new Set(excludeLabels);
     
-    // Hidden from config (covers + covers_curtain)
-    this._hiddenFromConfigSet = new Set();
-    if (this._config.config?.areas_options) {
-      for (const areaOptions of Object.values(this._config.config.areas_options)) {
-        if (areaOptions.groups_options?.covers?.hidden) {
-          areaOptions.groups_options.covers.hidden.forEach(id => 
-            this._hiddenFromConfigSet.add(id)
-          );
-        }
-        if (areaOptions.groups_options?.covers_curtain?.hidden) {
-          areaOptions.groups_options.covers_curtain.hidden.forEach(id => 
-            this._hiddenFromConfigSet.add(id)
-          );
-        }
-      }
-    }
+    // Use centralized hidden entities extraction
+    this._hiddenFromConfigSet = getHiddenEntitiesFromConfig(this._config.config || {});
   }
 
   _getFilteredCoverEntities() {
     if (!this._hass) return [];
     
-    return this._entities
-      .filter(e => {
-        const id = e.entity_id;
+    // REFACTORED: Use centralized filterEntities utility with device class filtering
+    const filtered = filterEntities(this._entities, {
+      domain: 'cover',
+      excludeLabels: this._excludeSet,
+      hiddenFromConfig: this._hiddenFromConfigSet,
+      hass: this._hass,
+      checkRegistry: true,
+      checkState: true,
+      customFilter: (entity, hass) => {
+        // Device class filtering: only include if device class matches or is undefined
+        const entityId = entity.entity_id;
+        const state = hass.states[entityId];
+        if (!state) return false;
         
-        if (!id.startsWith('cover.')) return false;
-        if (e.hidden === true) return false;
-        if (e.hidden_by) return false;
-        if (e.disabled_by) return false;
-        if (e.entity_category === 'config' || e.entity_category === 'diagnostic') return false;
-        if (this._hass.states[id] === undefined) return false;
-        if (this._excludeSet.has(id)) return false;
-        if (this._hiddenFromConfigSet.has(id)) return false;
-        
-        return true;
-      })
-      .map(e => e.entity_id)
-      .filter(entityId => {
-        const state = this._hass.states[entityId];
-        const deviceClass = state?.attributes?.device_class;
+        const deviceClass = state.attributes?.device_class;
         return this._deviceClasses.includes(deviceClass) || !deviceClass;
-      });
+      }
+    });
+    
+    return filtered;
   }
 
   _getRelevantCovers() {
@@ -188,7 +179,7 @@ class Simon42CoversGroupCard extends HTMLElement {
     this.style.display = 'block';
     
     const icon = isOpen ? '🪟' : '🔒';
-    const title = isOpen ? 'Offene Rollos & Vorhänge' : 'Geschlossene Rollos & Vorhänge';
+    const title = isOpen ? t('coversOpen') : t('coversClosed');
     const headingStyle = isOpen ? 'title' : 'subtitle';
     const actionIcon = isOpen ? 'mdi:arrow-down' : 'mdi:arrow-up';
     const actionService = isOpen ? 'close_cover' : 'open_cover';
@@ -247,7 +238,7 @@ class Simon42CoversGroupCard extends HTMLElement {
           </h${isOpen ? '2' : '3'}>
           <button class="batch-button" id="batch-action">
             <ha-icon icon="${actionIcon}"></ha-icon>
-            Alle ${isOpen ? 'schließen' : 'öffnen'}
+            ${isOpen ? t('closeAll') : t('openAll')}
           </button>
         </div>
         <div class="cover-grid" id="cover-grid"></div>
@@ -291,4 +282,3 @@ class Simon42CoversGroupCard extends HTMLElement {
 // Registriere Custom Element
 customElements.define("simon42-covers-group-card", Simon42CoversGroupCard);
 
-console.log('✅ Simon42 Covers Group Card loaded');

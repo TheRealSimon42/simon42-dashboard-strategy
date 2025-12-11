@@ -18,12 +18,15 @@
 //   type: custom:simon42-dashboard
 // ====================================================================
 
+// Lade Logger ZUERST (wird von vielen Modulen benötigt)
+import './utils/system/simon42-logger.js';
+
 // Lade Helper-Funktionen
-import './utils/simon42-helpers.js';
-import './utils/simon42-data-collectors.js';
-import './utils/simon42-badge-builder.js';
-import './utils/simon42-section-builder.js';
-import './utils/simon42-view-builder.js';
+import './utils/helpers/simon42-helpers.js';
+import './utils/data/simon42-data-collectors.js';
+import './utils/builders/cards/simon42-badge-builder.js';
+import './utils/builders/sections/simon42-section-builder.js';
+import './utils/builders/views/simon42-view-builder.js';
 
 // Lade Custom Cards
 import './cards/simon42-summary-card.js';
@@ -40,4 +43,5 @@ import './views/simon42-view-covers.js';
 import './views/simon42-view-security.js';
 import './views/simon42-view-batteries.js';
 
-console.log('Simon42 Dashboard Strategies loaded successfully (with reactive lights + covers cards)!');
+// Module loaded successfully - logging removed for production
+// Version info available via window.Simon42DashboardVersion if needed

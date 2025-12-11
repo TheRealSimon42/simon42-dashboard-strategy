@@ -1,7 +1,25 @@
 // ====================================================================
 // VIEW STRATEGY - RAUM (generiert Raum-Details mit Sensor-Badges) - OPTIMIERT + KAMERAS
 // ====================================================================
-import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged } from '../utils/simon42-helpers.js';
+import { stripAreaName, isEntityHiddenOrDisabled, sortByLastChanged, isCameraStreamAvailable, getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
+import { t, initLanguage } from '../utils/i18n/simon42-i18n.js';
+import { filterByArea, filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
+
+/**
+ * Prüft ob eine Entity eine Better Thermostat Entity ist
+ * @param {string} entityId - Entity ID
+ * @param {Object} hass - Home Assistant Objekt
+ * @returns {boolean} True wenn es eine Better Thermostat Entity ist
+ */
+function isBetterThermostatEntity(entityId, hass) {
+  if (!entityId.startsWith('climate.')) {
+    return false;
+  }
+  
+  const entity = hass.entities?.[entityId];
+  return entity?.platform === 'better_thermostat';
+}
 
 class Simon42ViewRoomStrategy {
   static async generate(config, hass) {
@@ -10,8 +28,14 @@ class Simon42ViewRoomStrategy {
     // Hole Dashboard-Config für Raum-Pins (wird über ViewBuilder übergeben)
     const dashboardConfig = config.dashboardConfig || {};
     
+    // Initialisiere Sprache (falls noch nicht geschehen)
+    initLanguage(dashboardConfig, hass);
+    
     // Hole groups_options aus der Dashboard-Config (falls vorhanden)
     const groupsOptions = config.groups_options || {};
+    
+    // Helper-Funktion für Entity-Namen mit Config-Unterstützung
+    const getEntityName = (entityId) => stripAreaName(entityId, area, hass, dashboardConfig);
     
     // Finde alle Geräte im Raum - als Set für O(1) Lookup
     const areaDevices = new Set();
@@ -52,11 +76,7 @@ class Simon42ViewRoomStrategy {
     };
 
     // Labels für Filterung - als Set für O(1) Lookup
-    const excludeLabels = new Set(
-      entities
-        .filter(e => e.labels?.includes("no_dboard"))
-        .map(e => e.entity_id)
-    );
+    const excludeLabels = new Set(getExcludedLabels(entities));
     
     const showDboardLabels = new Set(
       entities
@@ -75,42 +95,67 @@ class Simon42ViewRoomStrategy {
       }
     }
 
-    // OPTIMIERT: Hauptfilter-Loop
-    for (const entity of entities) {
-      const entityId = entity.entity_id;
-      
-      // 1. Prüfe ob Entität zum Raum gehört (früh ausschließen)
-      let belongsToArea = false;
-      
-      if (entity.area_id) {
-        belongsToArea = entity.area_id === area.area_id;
-      } else if (entity.device_id && areaDevices.has(entity.device_id)) {
-        belongsToArea = true;
+    // REFACTORED: Use centralized filtering utilities
+    // Step 1: Filter by area using centralized utility
+    const areaFilteredEntities = filterByArea(entities, area.area_id, areaDevices);
+    
+    // Step 2: Get hidden entities from config using centralized utility
+    // Note: This gets ALL hidden entities from all areas, but we filter by area first
+    // so only entities in this area will be affected
+    const hiddenFromConfig = getHiddenEntitiesFromConfig(dashboardConfig);
+    
+    // Step 3: Apply centralized filtering with custom filter for battery sensor handling
+    // Note: We use checkRegistry: false and handle registry checks in customFilter
+    // because battery sensors need special handling (ignore hidden_by)
+    const filteredEntityIds = filterEntities(areaFilteredEntities, {
+      excludeLabels,
+      hiddenFromConfig,
+      hass,
+      checkRegistry: false, // Handle manually in customFilter for battery sensor special case
+      checkState: true,
+      customFilter: (entity, hass) => {
+        const entityId = entity.entity_id;
+        const state = hass.states[entityId];
+        // Enhanced battery detection (case-insensitive, multiple patterns)
+        const entityIdLower = entityId.toLowerCase();
+        const deviceClass = state?.attributes?.device_class;
+        const unitOfMeasurement = state?.attributes?.unit_of_measurement;
+        
+        const isBatterySensor = 
+          entityIdLower.includes('battery') ||
+          deviceClass === 'battery' ||
+          (deviceClass === null && unitOfMeasurement === '%' && 
+           (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
+        
+        if (isBatterySensor) {
+          // Battery sensor special handling: Only check manual hidden, ignore hidden_by
+          // Note: Battery sensors are often marked as 'diagnostic', but we still want to show them
+          // (consistent with Battery-View and Summary)
+          if (entity.hidden === true) return false;
+          if (entity.disabled_by) return false;
+          // Only exclude config category, NOT diagnostic (batteries are often diagnostic)
+          if (entity.entity_category === 'config') return false;
+          // Check state attributes entity_category too (only exclude config, not diagnostic)
+          if (state?.attributes?.entity_category === 'config') return false;
+          return true;
+        } else {
+          // For all others: Use full hidden/disabled check
+          return !isEntityHiddenOrDisabled(entity, hass);
+        }
       }
-      
-      if (!belongsToArea) continue;
-      
-      // 2. Exclude-Check (Set-Lookup = O(1))
-      if (excludeLabels.has(entityId)) continue;
+    });
 
-      // 3. State-Existence-Check
+    // Step 4: Create entity map for quick lookup
+    const entityMap = new Map(entities.map(e => [e.entity_id, e]));
+
+    // Step 5: Categorize filtered entities by domain
+    for (const entityId of filteredEntityIds) {
+      const entity = entityMap.get(entityId);
+      if (!entity) continue;
+      
       const state = hass.states[entityId];
       if (!state) continue;
 
-      // 4. Hidden/Disabled-Check
-      // Batterie-Sensoren: Ignoriere 'hidden_by' (oft von Integrations gesetzt), aber respektiere manuelles 'hidden'
-      const isBatterySensor = entityId.includes('battery') || state.attributes?.device_class === 'battery';
-      
-      if (isBatterySensor) {
-        // Für Batterie-Sensoren: Nur prüfen auf manuelles Hidden (konsistent mit Battery-View und Summary)
-        if (entity.hidden === true) continue;
-        // hidden_by wird ignoriert für kritische Batterien (wichtige Info!)
-      } else {
-        // Für alle anderen: Vollständige Hidden-Prüfung
-        if (isEntityHiddenOrDisabled(entity, hass)) continue;
-      }
-
-      // 5. Domain-basierte Kategorisierung
       const domain = entityId.split('.')[0];
       const deviceClass = state.attributes?.device_class;
       const unit = state.attributes?.unit_of_measurement;
@@ -169,7 +214,16 @@ class Simon42ViewRoomStrategy {
       // === SENSOREN FÜR BADGES ===
       if (domain === 'sensor') {
         // Batterie (nur niedrige Werte < 20%) - ZUERST prüfen, bevor % für Humidity matcht!
-        if (entityId.includes('battery') || deviceClass === 'battery') {
+        // Enhanced battery detection (case-insensitive, multiple patterns)
+        const entityIdLower = entityId.toLowerCase();
+        const unitOfMeasurement = state.attributes?.unit_of_measurement;
+        const isBatterySensor = 
+          entityIdLower.includes('battery') ||
+          deviceClass === 'battery' ||
+          (deviceClass === null && unitOfMeasurement === '%' && 
+           (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
+        
+        if (isBatterySensor) {
           const batteryLevel = parseFloat(state.state);
           if (!isNaN(batteryLevel) && batteryLevel < 20) {
             sensorEntities.battery.push(entityId);
@@ -416,6 +470,9 @@ class Simon42ViewRoomStrategy {
         const cameraState = hass.states[cameraId];
         if (!cameraState) return;
         
+        // Prüfe ob der Stream verfügbar ist (z.B. nicht im Privacy-Modus)
+        if (!isCameraStreamAvailable(cameraId, hass)) return;
+        
         // Finde Device-ID der Kamera
         const cameraEntity = entities.find(e => e.entity_id === cameraId);
         const deviceId = cameraEntity?.device_id;
@@ -466,7 +523,7 @@ class Simon42ViewRoomStrategy {
             camera_image: cameraId,
             camera_view: "auto",
             fit_mode: "cover",
-            title: stripAreaName(cameraId, area, hass),
+            title: getEntityName(cameraId),
             entities: glanceEntities
           });
         } else {
@@ -476,7 +533,7 @@ class Simon42ViewRoomStrategy {
             entity: cameraId,
             camera_image: cameraId,
             camera_view: "auto",
-            name: stripAreaName(cameraId, area, hass),
+            name: getEntityName(cameraId),
             show_name: true,
             show_state: false
           });
@@ -489,7 +546,7 @@ class Simon42ViewRoomStrategy {
           cards: [
             {
               type: "heading",
-              heading: "Kameras",
+              heading: t('cameras'),
               heading_style: "title",
               icon: "mdi:cctv"
             },
@@ -511,14 +568,14 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Beleuchtung",
+            heading: t('lighting'),
             heading_style: "title",
             icon: "mdi:lightbulb"
           },
           ...roomEntities.lights.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             features: [{ type: "light-brightness" }],
             vertical: false,
             features_position: "inline",
@@ -530,28 +587,93 @@ class Simon42ViewRoomStrategy {
 
     // Klima-Section
     if (roomEntities.climate.length > 0) {
-      sections.push({
-        type: "grid",
-        cards: [
-          {
-            type: "heading",
-            heading: "Klima",
-            heading_style: "title",
-            icon: "mdi:thermostat"
-          },
-          ...roomEntities.climate.map(entity => ({
-            type: "tile",
-            entity: entity,
-            name: stripAreaName(entity, area, hass),
-            features: [
-              { type: "climate-hvac-modes" }
-            ],
-            features_position: "inline",
-            vertical: false,
-            state_content: ["hvac_action", "current_temperature"]
-          }))
-        ]
-      });
+      // Prüfe ob Better Thermostat aktiviert ist
+      const showBetterThermostat = dashboardConfig.show_better_thermostat === true;
+      
+      // Wenn Better Thermostat aktiviert ist, trenne Better Thermostat und Standard-Thermostate
+      if (showBetterThermostat) {
+        const betterThermostatEntities = [];
+        const standardThermostatEntities = [];
+        
+        roomEntities.climate.forEach(entityId => {
+          const isBT = isBetterThermostatEntity(entityId, hass);
+          if (isBT) {
+            betterThermostatEntities.push(entityId);
+          } else {
+            standardThermostatEntities.push(entityId);
+          }
+        });
+        
+        // Better Thermostat Cards
+        if (betterThermostatEntities.length > 0) {
+          sections.push({
+            type: "grid",
+            cards: [
+              {
+                type: "heading",
+                heading: t('climate'),
+                heading_style: "title",
+                icon: "mdi:thermostat"
+              },
+              ...betterThermostatEntities.map(entityId => ({
+                type: "custom:better-thermostat-ui-card",
+                entity: entityId,
+                name: getEntityName(entityId)
+              }))
+            ]
+          });
+        }
+        
+        // Standard Thermostat Cards (nur wenn es auch Standard-Thermostate gibt)
+        if (standardThermostatEntities.length > 0) {
+          sections.push({
+            type: "grid",
+            cards: [
+              ...(betterThermostatEntities.length === 0 ? [{
+                type: "heading",
+                heading: t('climate'),
+                heading_style: "title",
+                icon: "mdi:thermostat"
+              }] : []),
+              ...standardThermostatEntities.map(entity => ({
+                type: "tile",
+                entity: entity,
+                name: getEntityName(entity),
+                features: [
+                  { type: "climate-hvac-modes" }
+                ],
+                features_position: "inline",
+                vertical: false,
+                state_content: ["hvac_action", "current_temperature"]
+              }))
+            ]
+          });
+        }
+      } else {
+        // Standard-Verhalten: Alle Thermostate als Standard-Cards
+        sections.push({
+          type: "grid",
+          cards: [
+            {
+              type: "heading",
+              heading: "Klima",
+              heading_style: "title",
+              icon: "mdi:thermostat"
+            },
+            ...roomEntities.climate.map(entity => ({
+              type: "tile",
+              entity: entity,
+              name: getEntityName(entity),
+              features: [
+                { type: "climate-hvac-modes" }
+              ],
+              features_position: "inline",
+              vertical: false,
+              state_content: ["hvac_action", "current_temperature"]
+            }))
+          ]
+        });
+      }
     }
 
     // Rollos/Jalousien
@@ -561,14 +683,14 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Rollos & Jalousien",
+            heading: t('blinds'),
             heading_style: "title",
             icon: "mdi:window-shutter"
           },
           ...roomEntities.covers.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             features: [{ type: "cover-open-close" }],
             vertical: false,
             features_position: "inline",
@@ -585,14 +707,14 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Vorhänge",
+            heading: t('curtains'),
             heading_style: "title",
             icon: "mdi:curtains"
           },
           ...roomEntities.covers_curtain.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             features: [{ type: "cover-open-close" }],
             vertical: false,
             features_position: "inline",
@@ -609,14 +731,14 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Medien",
+            heading: t('media'),
             heading_style: "title",
             icon: "mdi:speaker"
           },
           ...roomEntities.media_player.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             vertical: false,
             features: [{ type: "media-player-playback" }],
             features_position: "inline",
@@ -633,14 +755,14 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Szenen",
+            heading: t('scenes'),
             heading_style: "title",
             icon: "mdi:palette"
           },
           ...roomEntities.scenes.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             vertical: false,
             state_content: "last_changed"
           }))
@@ -656,7 +778,7 @@ class Simon42ViewRoomStrategy {
       miscCards.push({
         type: "tile",
         entity: entity,
-        name: stripAreaName(entity, area, hass),
+                name: getEntityName(entity),
         features: [{ type: "vacuum-commands" }],
         features_position: "inline",
         vertical: false,
@@ -669,7 +791,7 @@ class Simon42ViewRoomStrategy {
       miscCards.push({
         type: "tile",
         entity: entity,
-        name: stripAreaName(entity, area, hass),
+                name: getEntityName(entity),
         features: [{ type: "fan-speed" }],
         features_position: "inline",
         vertical: false,
@@ -682,7 +804,7 @@ class Simon42ViewRoomStrategy {
       miscCards.push({
         type: "tile",
         entity: entity,
-        name: stripAreaName(entity, area, hass),
+                name: getEntityName(entity),
         vertical: false,
         state_content: "last_changed"
       });
@@ -704,7 +826,7 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Sonstiges",
+            heading: t('misc'),
             heading_style: "title",
             icon: "mdi:dots-horizontal"
           },
@@ -735,14 +857,14 @@ class Simon42ViewRoomStrategy {
         cards: [
           {
             type: "heading",
-            heading: "Raum-Pins",
+            heading: t('roomPins'),
             heading_style: "title",
             icon: "mdi:pin"
           },
           ...roomPinsForThisArea.map(entity => ({
             type: "tile",
             entity: entity,
-            name: stripAreaName(entity, area, hass),
+            name: getEntityName(entity),
             vertical: false,
             state_content: "last_changed"
           }))

@@ -1,57 +1,70 @@
 // ====================================================================
-// VIEW STRATEGY - BATTERIEN (Batterie-Übersicht) - OPTIMIERT
+// VIEW STRATEGY - BATTERIEN (Batterie-Übersicht) - REFACTORED
 // ====================================================================
-// KEIN unnötiges Map-Caching mehr - nutzt direkt hass.entities[entityId]
+// Uses centralized filtering utilities for consistency
 // ====================================================================
 
-import { getExcludedLabels } from '../utils/simon42-helpers.js';
+import { getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
+import { t, initLanguage } from '../utils/i18n/simon42-i18n.js';
+import { filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
 
 class Simon42ViewBatteriesStrategy {
   static async generate(config, hass) {
+    // Initialisiere Sprache (falls noch nicht geschehen)
+    if (config.config) {
+      initLanguage(config.config, hass);
+    }
+    
     const { entities } = config;
     
     const excludeLabels = getExcludedLabels(entities);
     const excludeSet = new Set(excludeLabels);
     
-    // Hole hidden entities aus areas_options (wenn config übergeben wurde)
-    // Batterien könnten in verschiedenen Gruppen sein, daher alle durchsuchen
-    const hiddenFromConfig = new Set();
-    if (config.config?.areas_options) {
-      for (const areaOptions of Object.values(config.config.areas_options)) {
-        if (areaOptions.groups_options) {
-          // Durchsuche alle Gruppen nach versteckten Entities
-          for (const groupOptions of Object.values(areaOptions.groups_options)) {
-            if (groupOptions.hidden) {
-              groupOptions.hidden.forEach(id => hiddenFromConfig.add(id));
-            }
-          }
-        }
-      }
-    }
+    // Use centralized hidden entities extraction
+    const hiddenFromConfig = getHiddenEntitiesFromConfig(config.config || {});
 
-    // OPTIMIERT: Filter-Reihenfolge - KEIN Map-Caching mehr!
-    const batteryEntities = Object.keys(hass.states)
-      .filter(entityId => {
+    // REFACTORED: Use centralized filterEntities utility with battery-specific custom filter
+    // Battery filtering has special requirements: ignore hidden_by (integration), but respect manual hidden
+    const batteryEntities = filterEntities(entities, {
+      excludeLabels: excludeSet,
+      hiddenFromConfig,
+      hass,
+      checkRegistry: false, // Handle manually in customFilter for battery-specific registry handling
+      checkState: true,
+      customFilter: (entity, hass) => {
+        const entityId = entity.entity_id;
         const state = hass.states[entityId];
         if (!state) return false;
         
-        // 1. Battery-Check zuerst (String-includes ist schnell)
-        const isBattery = entityId.includes('battery') || 
-                         state.attributes?.device_class === 'battery';
+        // Enhanced battery detection (case-insensitive, multiple patterns)
+        const entityIdLower = entityId.toLowerCase();
+        const deviceClass = state.attributes?.device_class;
+        const unitOfMeasurement = state.attributes?.unit_of_measurement;
+        
+        const isBattery = 
+          entityIdLower.includes('battery') ||
+          deviceClass === 'battery' ||
+          (deviceClass === null && unitOfMeasurement === '%' && 
+           (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
+        
         if (!isBattery) return false;
         
-        // 2. Registry-Check - DIREKT aus hass.entities (O(1) Lookup)
-        const registryEntry = hass.entities?.[entityId];
-        if (registryEntry?.hidden === true) return false;
+        // Battery-specific registry check: only exclude manually hidden (ignore hidden_by)
+        // Note: Battery sensors are often marked as 'diagnostic', but we still want to show them
+        if (entity.hidden === true) return false;
+        if (entity.disabled_by) return false;
+        // Only exclude config category, NOT diagnostic (batteries are often diagnostic)
+        if (entity.entity_category === 'config') return false;
         
-        // 3. Exclude-Checks (Set-Lookup = O(1))
-        if (excludeSet.has(entityId)) return false;
-        if (hiddenFromConfig.has(entityId)) return false;
+        // Check state attributes entity_category too (only exclude config, not diagnostic)
+        if (state.attributes?.entity_category === 'config') return false;
         
-        // 4. Value-Check am Ende
+        // Value check: only numeric values
         const value = parseFloat(state.state);
-        return !isNaN(value); // Nur numerische Werte
-      });
+        return !isNaN(value);
+      }
+    });
 
     // Gruppiere nach Batteriestatus
     const critical = []; // < 20%
@@ -80,7 +93,7 @@ class Simon42ViewBatteriesStrategy {
         cards: [
           {
             type: "heading",
-            heading: `🔴 Kritisch (< 20%) - ${critical.length} ${critical.length === 1 ? 'Batterie' : 'Batterien'}`,
+            heading: `🔴 ${t('batteriesCritical')} - ${critical.length} ${critical.length === 1 ? t('battery') : t('batteriesPlural')}`,
             heading_style: "title"
           },
           ...critical.map(entity => ({
@@ -101,7 +114,7 @@ class Simon42ViewBatteriesStrategy {
         cards: [
           {
             type: "heading",
-            heading: `🟡 Niedrig (20-50%) - ${low.length} ${low.length === 1 ? 'Batterie' : 'Batterien'}`,
+            heading: `🟡 ${t('batteriesLow')} - ${low.length} ${low.length === 1 ? t('battery') : t('batteriesPlural')}`,
             heading_style: "title"
           },
           ...low.map(entity => ({
@@ -122,7 +135,7 @@ class Simon42ViewBatteriesStrategy {
         cards: [
           {
             type: "heading",
-            heading: `🟢 Gut (> 50%) - ${good.length} ${good.length === 1 ? 'Batterie' : 'Batterien'}`,
+            heading: `🟢 ${t('batteriesGood')} - ${good.length} ${good.length === 1 ? t('battery') : t('batteriesPlural')}`,
             heading_style: "title"
           },
           ...good.map(entity => ({

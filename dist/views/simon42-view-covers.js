@@ -3,7 +3,7 @@
 // ====================================================================
 // Nutzt zwei reaktive Group-Cards (open/closed) die sich automatisch aktualisieren
 // ====================================================================
-import { getExcludedLabels, stripCoverType } from '../utils/simon42-helpers.js';
+import { getExcludedLabels, stripCoverType } from '../utils/helpers/simon42-helpers.js';
 
 class Simon42ViewCoversStrategy {
   static async generate(config, hass) {
@@ -41,4 +41,3 @@ class Simon42ViewCoversStrategy {
 // Registriere Custom Element
 customElements.define("ll-strategy-simon42-view-covers", Simon42ViewCoversStrategy);
 
-console.log('✅ Simon42 View Covers Strategy (with reactive group cards) loaded');
