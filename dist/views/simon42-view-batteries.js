@@ -36,8 +36,10 @@ class Simon42ViewBatteriesStrategy {
         if (!state) return false;
         
         // 1. Battery-Check zuerst (String-includes ist schnell)
-        const isBattery = entityId.includes('battery') || 
-                         state.attributes?.device_class === 'battery';
+        const isBattery = (entityId.includes('battery') || 
+                         state.attributes?.device_class === 'battery') &&
+                         state.attributes?.unit_of_measurement === '%';
+
         if (!isBattery) return false;
         
         // 2. Registry-Check - DIREKT aus hass.entities (O(1) Lookup)

@@ -176,6 +176,10 @@ class Simon42SummaryCard extends HTMLElement {
               state.attributes?.device_class !== 'battery') {
             return false;
           }
+
+          if (state.attributes?.unit_of_measurement !== '%') {
+            return false;
+          }
           
           // Exclude-Checks
           if (this._excludeLabelsSet.has(id)) return false;
