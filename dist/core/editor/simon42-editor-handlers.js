@@ -59,6 +59,15 @@ export function attachGroupByFloorsCheckboxListener(element, callback) {
   }
 }
 
+export function attachAreaSortingDefaultCheckboxListener(element, callback) {
+  const areaSortingDefaultCheckbox = element.querySelector('#area-sorting-default');
+  if (areaSortingDefaultCheckbox) {
+    areaSortingDefaultCheckbox.addEventListener('change', (e) => {
+      callback(e.target.checked);
+    });
+  }
+}
+
 export function attachCoversSummaryCheckboxListener(element, callback) {
   const coversSummaryCheckbox = element.querySelector('#show-covers-summary');
   if (coversSummaryCheckbox) {

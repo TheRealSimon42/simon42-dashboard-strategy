@@ -3,7 +3,7 @@
 // ====================================================================
 // HTML-Template für den Dashboard Strategy Editor
 
-export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary }) {
+export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy, showWeather, showSummaryViews, showRoomViews, showSearchCard, hasSearchCardDeps, summariesColumns, alarmEntity, alarmEntities, favoriteEntities, roomPinEntities, allEntities, groupByFloors, showCoversSummary, areaSortingDefault}) {
   return `
     <div class="card-config">
       <div class="section">
@@ -201,6 +201,14 @@ export function renderEditorHTML({ allAreas, hiddenAreas, areaOrder, showEnergy,
         <div class="section-title">Bereiche</div>
         <div class="description" style="margin-left: 0; margin-bottom: 12px;">
           Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten.
+        </div>
+        <div class="form-row">
+          <input 
+            type="checkbox" 
+            id="area-sorting-default" 
+            ${areaSortingDefault ? "checked" : ""}
+          />
+          <label for="area-sorting-default">Sortierung der Bereiche von Homeassistant verwenden</label>
         </div>
         <div class="area-list" id="area-list">
           ${renderAreaItems(allAreas, hiddenAreas, areaOrder)}

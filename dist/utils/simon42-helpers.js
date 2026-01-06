@@ -11,13 +11,17 @@
  * @param {Object} displayConfig - Anzeige-Konfiguration (hidden, order)
  * @returns {Array} Gefilterte und sortierte Bereiche
  */
-export function getVisibleAreas(areas, displayConfig) {
+export function getVisibleAreas(areas, displayConfig, areaSortingDefault = false) {
   const hiddenAreas = displayConfig?.hidden || [];
   const orderConfig = displayConfig?.order || [];
   
   // Filtere versteckte Areale
   let visibleAreas = areas.filter(area => !hiddenAreas.includes(area.area_id));
   
+  if (areaSortingDefault) {
+    return visibleAreas
+  }
+
   // Sortiere nach Konfiguration
   if (orderConfig.length > 0) {
     visibleAreas.sort((a, b) => {
