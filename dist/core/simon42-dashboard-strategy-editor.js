@@ -10,6 +10,7 @@ import {
   attachSummaryViewsCheckboxListener,
   attachRoomViewsCheckboxListener,
   attachGroupByFloorsCheckboxListener, // NEU
+  attachAreaSortingDefaultCheckboxListener,
   attachCoversSummaryCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
@@ -68,6 +69,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showSummaryViews = this._config.show_summary_views === true; // Standard: false
     const showRoomViews = this._config.show_room_views === true; // Standard: false
     const groupByFloors = this._config.group_by_floors === true; // NEU
+    const areaSortingDefault = this._config.area_sorting_default === false;
     const showCoversSummary = this._config.show_covers_summary !== false;
     const summariesColumns = this._config.summaries_columns || 2;
     const alarmEntity = this._config.alarm_entity || '';
@@ -117,7 +119,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         roomPinEntities,
         allEntities,
         groupByFloors, // NEU
-        showCoversSummary
+        showCoversSummary,
+        areaSortingDefault
       })}
     `;
 
@@ -128,6 +131,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachSummaryViewsCheckboxListener(this, (showSummaryViews) => this._showSummaryViewsChanged(showSummaryViews));
     attachRoomViewsCheckboxListener(this, (showRoomViews) => this._showRoomViewsChanged(showRoomViews));
     attachGroupByFloorsCheckboxListener(this, (groupByFloors) => this._groupByFloorsChanged(groupByFloors)); // NEU
+    attachAreaSortingDefaultCheckboxListener(this, (areaSortingDefault) => this._areaSortingDefaultChanged(areaSortingDefault));
     attachCoversSummaryCheckboxListener(this, (showCoversSummary) => this._showCoversSummaryChanged(showCoversSummary));
     this._attachSummariesColumnsListener();
     this._attachAlarmEntityListener();

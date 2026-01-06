@@ -43,7 +43,7 @@ class Simon42DashboardStrategy {
       .map(e => e.entity_id);
 
     // Filtere und sortiere Areale basierend auf Config
-    const visibleAreas = getVisibleAreas(areas, config.areas_display);
+    const visibleAreas = getVisibleAreas(areas, config.areas_display, config.area_sorting_default);
 
     // Sammle alle benötigten Daten (übergebe config für areas_options Filterung)
     const persons = collectPersons(hass, excludeLabels, config);
@@ -74,6 +74,9 @@ class Simon42DashboardStrategy {
 
     // Prüfe ob Bereiche nach Etagen gruppiert werden sollen (Standard: false)
     const groupByFloors = config.group_by_floors === true;
+
+    // Prüfe ob Bereiche die Homassistant Sortierung verwenden sollen (Standard: false)
+    const areaSortingDefault = config.area_sorting_default === true;
 
     // Erstelle Bereiche-Section(s)
     const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
