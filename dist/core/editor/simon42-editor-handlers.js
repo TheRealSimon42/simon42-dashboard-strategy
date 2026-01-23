@@ -102,10 +102,10 @@ export function attachAreaCheckboxListeners(element, callback) {
     // #endregion
     
     // Toggle: Calculate the NEW visibility state after clicking
-    // If currently hidden, clicking should SHOW it (remove from hidden list) → isVisible = true
-    // If currently visible, clicking should HIDE it (add to hidden list) → isVisible = false
-    // The new state is the opposite of the current hidden state
-    const isVisible = !isCurrentlyHidden;
+    // If currently hidden (isCurrentlyHidden = true), clicking should SHOW it → isVisible = true
+    // If currently visible (isCurrentlyHidden = false), clicking should HIDE it → isVisible = false
+    // The new visibility state equals the current hidden state (toggle: hidden→visible, visible→hidden)
+    const isVisible = isCurrentlyHidden;
     
     // #region agent log
     debugLog('simon42-editor-handlers.js:96', 'New visibility state calculated', {areaId,isVisible}, 'A');
@@ -472,7 +472,11 @@ export function attachEntityExpandButtonListeners(element, editorElement) {
 
 export function sortAreaItems(element) {
   // #region agent log
-  debugLog('simon42-editor-handlers.js:451', 'sortAreaItems called', {}, 'C');
+  const stackTrace = new Error().stack;
+  debugLog('simon42-editor-handlers.js:451', 'sortAreaItems called', {
+    dragDropActive: element._dragDropActive,
+    caller: stackTrace.split('\n')[2]?.trim() || 'unknown'
+  }, 'C');
   // #endregion
   const areaList = element.querySelector('ha-md-list');
   if (!areaList) return;
@@ -480,8 +484,33 @@ export function sortAreaItems(element) {
   const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
   
   // #region agent log
-  debugLog('simon42-editor-handlers.js:456', 'Items before sort', {itemCount:items.length,itemIds:items.map(i=>i.dataset.areaId),itemOrders:items.map(i=>i.dataset.order)}, 'C');
+  debugLog('simon42-editor-handlers.js:456', 'Items before sort', {itemCount:items.length,itemIds:items.map(i=>i.dataset.areaId),itemOrders:items.map(i=>i.dataset.order),domOrder:items.map((i,idx)=>idx)}, 'C');
   // #endregion
+  
+  // If drag-and-drop is active, check if items are already in correct order
+  // This prevents resetting order after user drags items
+  if (element._dragDropActive) {
+    let needsSorting = false;
+    for (let i = 0; i < items.length; i++) {
+      const expectedOrder = parseInt(items[i].dataset.order);
+      if (expectedOrder !== i) {
+        needsSorting = true;
+        break;
+      }
+    }
+    
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:470', 'Sort check (drag-drop active)', {needsSorting}, 'C');
+    // #endregion
+    
+    if (!needsSorting) {
+      // Items are already in correct order, don't re-sort
+      // #region agent log
+      debugLog('simon42-editor-handlers.js:474', 'Skipping sort - items already in order', {}, 'C');
+      // #endregion
+      return;
+    }
+  }
   
   items.sort((a, b) => {
     const orderA = parseInt(a.dataset.order);
@@ -522,6 +551,11 @@ export function attachDragAndDropListeners(element, onOrderChange) {
     return;
   }
   
+  // Mark that drag-and-drop is active to prevent sortAreaItems from interfering
+  if (!element._dragDropActive) {
+    element._dragDropActive = true;
+  }
+  
   // #region agent log
   debugLog('simon42-editor-handlers.js:487', 'Attaching item-moved listener', {}, 'B');
   // #endregion
@@ -551,12 +585,31 @@ export function attachDragAndDropListeners(element, onOrderChange) {
     
     // CRITICAL FIX: Update data-order attributes to match new DOM order
     // This prevents sortAreaItems from resetting the order on next render
+    // Store the new order immediately to prevent any race conditions
+    const newOrderMap = new Map();
     items.forEach((item, index) => {
+      const areaId = item.dataset.areaId;
       item.dataset.order = index.toString();
+      newOrderMap.set(areaId, index);
     });
     
     // #region agent log
-    debugLog('simon42-editor-handlers.js:540', 'Updated data-order attributes', {newOrders:items.map((i,idx)=>idx)}, 'B');
+    debugLog('simon42-editor-handlers.js:540', 'Updated data-order attributes', {
+      newOrders: items.map((i,idx) => ({areaId: i.dataset.areaId, order: idx})),
+      itemIds: items.map(i => i.dataset.areaId)
+    }, 'B');
+    // #endregion
+    
+    // Verify the update worked
+    const verifyItems = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
+    const verification = verifyItems.map((item, idx) => ({
+      areaId: item.dataset.areaId,
+      expectedOrder: idx,
+      actualOrder: parseInt(item.dataset.order),
+      matches: parseInt(item.dataset.order) === idx
+    }));
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:555', 'Verification after data-order update', {verification}, 'B');
     // #endregion
     
     // For each item, ensure its content div is positioned right after it
