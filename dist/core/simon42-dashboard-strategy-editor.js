@@ -1413,8 +1413,23 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
     
     // Build new areas_display structure with area IDs as keys
+    // Filter out old format properties (hidden/order arrays) if present
     const currentAreasDisplay = this._config.areas_display || {};
-    const newAreasDisplay = { ...currentAreasDisplay };
+    const newAreasDisplay = {};
+    
+    // Only copy valid area ID keys (not 'hidden' or 'order' arrays)
+    if (currentAreasDisplay && typeof currentAreasDisplay === 'object' && !Array.isArray(currentAreasDisplay)) {
+      Object.entries(currentAreasDisplay).forEach(([key, value]) => {
+        // Skip old format properties
+        if (key === 'hidden' || key === 'order') {
+          return;
+        }
+        // Only copy if it's a valid area config object
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          newAreasDisplay[key] = { ...value };
+        }
+      });
+    }
     
     // Update order for each area based on DOM position
     items.forEach((item, index) => {
@@ -1662,15 +1677,32 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return;
     }
 
+    // Build clean areas_display, filtering out old format properties
     const currentAreasDisplay = this._config.areas_display || {};
-    const areaConfig = currentAreasDisplay[areaId] || {};
+    const cleanAreasDisplay = {};
+    
+    // Only copy valid area ID keys (not 'hidden' or 'order' arrays)
+    if (currentAreasDisplay && typeof currentAreasDisplay === 'object' && !Array.isArray(currentAreasDisplay)) {
+      Object.entries(currentAreasDisplay).forEach(([key, value]) => {
+        // Skip old format properties
+        if (key === 'hidden' || key === 'order') {
+          return;
+        }
+        // Only copy if it's a valid area config object
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          cleanAreasDisplay[key] = { ...value };
+        }
+      });
+    }
+    
+    const areaConfig = cleanAreasDisplay[areaId] || {};
     
     // Preserve existing order or assign a default high value
     const existingOrder = areaConfig.order !== undefined ? areaConfig.order : 9999;
     
     // Update the area's hidden state
     const newAreasDisplay = {
-      ...currentAreasDisplay,
+      ...cleanAreasDisplay,
       [areaId]: {
         hidden: !isVisible, // isVisible = true means hidden = false
         order: existingOrder
@@ -2636,43 +2668,60 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._configManager.updateProperty('ha_departures_time_style', timeStyle, 'dynamic');
   }
 
+  /**
+   * Cleans config for serialization - removes internal fields and invalid structures
+   * @param {Object} config - Config to clean
+   * @returns {Object} Cleaned config safe for YAML serialization
+   */
+  _cleanConfigForSerialization(config) {
+    if (!config || typeof config !== 'object') {
+      return {};
+    }
+
+    const cleanConfig = { ...config };
+    
+    // Remove internal tracking fields
+    delete cleanConfig._migrations;
+    delete cleanConfig._version;
+    
+    // Clean up areas_display
+    if (cleanConfig.areas_display !== undefined) {
+      // If it's not an object or is an array, remove it (invalid structure)
+      if (typeof cleanConfig.areas_display !== 'object' || Array.isArray(cleanConfig.areas_display)) {
+        delete cleanConfig.areas_display;
+      } else {
+        const areasDisplay = cleanConfig.areas_display;
+        
+        // Remove old format properties if present
+        if (Array.isArray(areasDisplay.hidden) || Array.isArray(areasDisplay.order)) {
+          const cleaned = { ...areasDisplay };
+          delete cleaned.hidden;
+          delete cleaned.order;
+          
+          // If empty after cleanup, remove it
+          if (Object.keys(cleaned).length === 0) {
+            delete cleanConfig.areas_display;
+          } else {
+            cleanConfig.areas_display = cleaned;
+          }
+        }
+        // If areas_display is an empty object, remove it
+        else if (Object.keys(areasDisplay).length === 0) {
+          delete cleanConfig.areas_display;
+        }
+      }
+    }
+    
+    return cleanConfig;
+  }
+
   _fireConfigChanged(config) {
     // Setze Flag, damit setConfig() nicht erneut rendert
     this._isUpdatingConfig = true;
     this._config = config;
     
-    // Create a clean config without internal fields for saving
-    // _migrations and _version are internal tracking fields and should not be saved to YAML
-    const cleanConfig = { ...config };
-    
-    // Remove internal tracking fields
-    if (cleanConfig._migrations) {
-      delete cleanConfig._migrations;
-    }
-    if (cleanConfig._version) {
-      delete cleanConfig._version;
-    }
-    
-    // Ensure areas_display doesn't have old format properties (hidden/order arrays)
-    // These should have been migrated, but clean up just in case
-    if (cleanConfig.areas_display && typeof cleanConfig.areas_display === 'object') {
-      const areasDisplay = cleanConfig.areas_display;
-      // Check if it still has old format properties
-      if (Array.isArray(areasDisplay.hidden) || Array.isArray(areasDisplay.order)) {
-        // Old format detected - this shouldn't happen if migration ran correctly
-        // But clean it up to prevent errors
-        const cleanedAreasDisplay = { ...areasDisplay };
-        delete cleanedAreasDisplay.hidden;
-        delete cleanedAreasDisplay.order;
-        
-        // If areas_display is now empty, remove it
-        if (Object.keys(cleanedAreasDisplay).length === 0) {
-          delete cleanConfig.areas_display;
-        } else {
-          cleanConfig.areas_display = cleanedAreasDisplay;
-        }
-      }
-    }
+    // Create a clean config safe for YAML serialization
+    const cleanConfig = this._cleanConfigForSerialization(config);
     
     const event = new CustomEvent('config-changed', {
       detail: { config: cleanConfig },
