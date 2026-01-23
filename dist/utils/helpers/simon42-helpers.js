@@ -9,36 +9,89 @@ import { getLanguage } from '../i18n/simon42-i18n.js';
 
 /**
  * Filters and sorts areas based on configuration
+ * Supports both old format (hidden/order arrays) and new format (area objects)
  * @param {Array} areas - All available areas
- * @param {Object} displayConfig - Display configuration (hidden, order)
+ * @param {Object} displayConfig - Display configuration (new format: { areaId: { hidden, order } } or old format: { hidden: [], order: [] })
  * @returns {Array} Filtered and sorted areas
  */
 export function getVisibleAreas(areas, displayConfig) {
-  const hiddenAreas = displayConfig?.hidden || [];
-  const orderConfig = displayConfig?.order || [];
-  
-  let visibleAreas = areas.filter(area => !hiddenAreas.includes(area.area_id));
-  
-  if (orderConfig.length > 0) {
-    visibleAreas.sort((a, b) => {
-      const indexA = orderConfig.indexOf(a.area_id);
-      const indexB = orderConfig.indexOf(b.area_id);
-      
-      // Both in order list: sort by order
-      if (indexA !== -1 && indexB !== -1) {
-        return indexA - indexB;
-      }
-      // Only A in order list: A comes first
-      if (indexA !== -1) return -1;
-      // Only B in order list: B comes first
-      if (indexB !== -1) return 1;
-      // Neither in order list: alphabetical
-      return a.name.localeCompare(b.name);
-    });
-  } else {
+  if (!displayConfig) {
     // Default alphabetical sorting
-    visibleAreas.sort((a, b) => a.name.localeCompare(b.name));
+    return [...areas].sort((a, b) => a.name.localeCompare(b.name));
   }
+
+  // Check if old format (has hidden/order arrays)
+  const isOldFormat = (displayConfig.hidden && Array.isArray(displayConfig.hidden)) || 
+                     (displayConfig.order && Array.isArray(displayConfig.order));
+  
+  if (isOldFormat) {
+    // Old format: migrate on-the-fly for backward compatibility
+    const hiddenAreas = displayConfig.hidden || [];
+    const orderConfig = displayConfig.order || [];
+    
+    let visibleAreas = areas.filter(area => !hiddenAreas.includes(area.area_id));
+    
+    if (orderConfig.length > 0) {
+      visibleAreas.sort((a, b) => {
+        const indexA = orderConfig.indexOf(a.area_id);
+        const indexB = orderConfig.indexOf(b.area_id);
+        
+        // Both in order list: sort by order
+        if (indexA !== -1 && indexB !== -1) {
+          return indexA - indexB;
+        }
+        // Only A in order list: A comes first
+        if (indexA !== -1) return -1;
+        // Only B in order list: B comes first
+        if (indexB !== -1) return 1;
+        // Neither in order list: alphabetical
+        return a.name.localeCompare(b.name);
+      });
+    } else {
+      // Default alphabetical sorting
+      visibleAreas.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    return visibleAreas;
+  }
+
+  // New format: areas_display is an object with area IDs as keys
+  // Each area has { hidden: boolean, order: number }
+  const areaConfigs = displayConfig;
+  
+  // Filter visible areas and attach order info
+  const areasWithOrder = areas.map(area => {
+    const areaConfig = areaConfigs[area.area_id];
+    const isHidden = areaConfig?.hidden === true;
+    const order = areaConfig?.order !== undefined ? areaConfig.order : 9999;
+    
+    return {
+      area,
+      isHidden,
+      order,
+      area_id: area.area_id
+    };
+  });
+
+  // Filter out hidden areas
+  const visibleAreas = areasWithOrder
+    .filter(item => !item.isHidden)
+    .map(item => item.area);
+
+  // Sort by order, then alphabetically for same order
+  visibleAreas.sort((a, b) => {
+    const configA = areaConfigs[a.area_id];
+    const configB = areaConfigs[b.area_id];
+    const orderA = configA?.order !== undefined ? configA.order : 9999;
+    const orderB = configB?.order !== undefined ? configB.order : 9999;
+    
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    
+    // Same order: alphabetical
+    return a.name.localeCompare(b.name);
+  });
   
   return visibleAreas;
 }

@@ -21,7 +21,8 @@ import { VERSION } from '../utils/system/simon42-version.js';
 import { 
   getAllIntegrationProperties,
   updateNestedConfig,
-  getEntitiesFromDOM
+  getEntitiesFromDOM,
+  migrateAreasDisplay
 } from './editor/simon42-editor-config-helpers.js';
 import { 
   attachWeatherCheckboxListener,
@@ -61,7 +62,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   setConfig(config) {
-    this._config = config || {};
+    // Migrate areas_display from old format to new format if needed
+    const migratedConfig = migrateAreasDisplay(config || {});
+    this._config = migratedConfig;
     // Nur rendern wenn wir nicht gerade selbst die Config ändern
     if (!this._isUpdatingConfig) {
       this._render();
@@ -270,8 +273,27 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     
     // FEHLENDE VARIABLEN - HIER WAR DAS PROBLEM
     const allAreas = this._getSortedAreas();
-    const hiddenAreas = this._config.areas_display?.hidden || [];
-    const areaOrder = this._config.areas_display?.order || [];
+    
+    // Extract hidden areas and order from new format (area objects)
+    const areasDisplay = this._config.areas_display || {};
+    const hiddenAreas = [];
+    const areaOrder = [];
+    
+    // Build arrays from new format for backward compatibility with template
+    Object.entries(areasDisplay).forEach(([areaId, config]) => {
+      if (config && typeof config === 'object') {
+        if (config.hidden === true) {
+          hiddenAreas.push(areaId);
+        }
+        if (config.order !== undefined) {
+          areaOrder.push({ areaId, order: config.order });
+        }
+      }
+    });
+    
+    // Sort areaOrder by order value
+    areaOrder.sort((a, b) => a.order - b.order);
+    const sortedAreaOrder = areaOrder.map(item => item.areaId);
     
     // Extract properties that need explicit values
     const entityNamePatterns = this._config.entity_name_patterns || [];
@@ -284,7 +306,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const editorConfig = { 
       allAreas, 
       hiddenAreas, 
-      areaOrder, 
+      areaOrder: sortedAreaOrder, 
       showWeather,
       showEnergy,
       showPersonBadges,
@@ -1385,14 +1407,35 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     }
     
     const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
-    const newOrder = items.map(item => item.dataset.areaId);
+    
+    // Build new areas_display structure with area IDs as keys
+    const currentAreasDisplay = this._config.areas_display || {};
+    const newAreasDisplay = { ...currentAreasDisplay };
+    
+    // Update order for each area based on DOM position
+    items.forEach((item, index) => {
+      const areaId = item.dataset.areaId;
+      if (areaId) {
+        // Preserve existing hidden state or default to false
+        const isHidden = currentAreasDisplay[areaId]?.hidden === true;
+        newAreasDisplay[areaId] = {
+          hidden: isHidden,
+          order: index
+        };
+      }
+    });
+
+    // Clean up: remove areas that are no longer in the list (if any)
+    const currentAreaIds = new Set(items.map(item => item.dataset.areaId).filter(Boolean));
+    Object.keys(newAreasDisplay).forEach(areaId => {
+      if (!currentAreaIds.has(areaId)) {
+        delete newAreasDisplay[areaId];
+      }
+    });
 
     const newConfig = {
       ...this._config,
-      areas_display: {
-        ...this._config.areas_display,
-        order: newOrder
-      }
+      areas_display: Object.keys(newAreasDisplay).length > 0 ? newAreasDisplay : undefined
     };
 
     this._config = newConfig;
@@ -1611,24 +1654,28 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       return;
     }
 
-    let hiddenAreas = [...(this._config.areas_display?.hidden || [])];
+    const currentAreasDisplay = this._config.areas_display || {};
+    const areaConfig = currentAreasDisplay[areaId] || {};
     
-    if (isVisible) {
-      // Entferne aus hidden
-      hiddenAreas = hiddenAreas.filter(id => id !== areaId);
-    } else {
-      // Füge zu hidden hinzu
-      if (!hiddenAreas.includes(areaId)) {
-        hiddenAreas.push(areaId);
+    // Preserve existing order or assign a default high value
+    const existingOrder = areaConfig.order !== undefined ? areaConfig.order : 9999;
+    
+    // Update the area's hidden state
+    const newAreasDisplay = {
+      ...currentAreasDisplay,
+      [areaId]: {
+        hidden: !isVisible, // isVisible = true means hidden = false
+        order: existingOrder
       }
-    }
+    };
 
-    // Use updateNestedConfig for consistent handling and automatic cleanup
-    const newConfig = updateNestedConfig(
-      this._config,
-      ['areas_display', 'hidden'],
-      hiddenAreas.length > 0 ? hiddenAreas : undefined
-    );
+    // If area is visible and has default order, we might want to clean it up
+    // But for now, keep it to preserve user's order preferences
+    
+    const newConfig = {
+      ...this._config,
+      areas_display: Object.keys(newAreasDisplay).length > 0 ? newAreasDisplay : undefined
+    };
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
