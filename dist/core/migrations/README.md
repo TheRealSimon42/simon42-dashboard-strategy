@@ -4,23 +4,26 @@ This folder contains migration scripts that transform configuration from older f
 
 ## How Migrations Work
 
-1. **Migration Runner** (`migration-runner.js`): Centralized system that tracks and runs migrations
+1. **Migration Runner** (`migration-runner.js`): Centralized system that runs migrations based on version comparison
 2. **Individual Migrations**: Each migration is a separate file (e.g., `001-migrate-areas-display.js`)
-3. **One-Time Execution**: Migrations are tracked in `config._migrations` and only run once per config
+3. **Version-Based Execution**: Migrations run when the current version is higher than the config version
 
-## Migration State
+## Version Tracking
 
-Migrations are tracked using a `_migrations` object in the config:
+The config stores the current version in `_version` field:
 ```javascript
 {
-  _migrations: {
-    '001-migrate-areas-display': true,
-    '002-another-migration': true
-  }
+  _version: '2.1.15'
 }
 ```
 
-This ensures each migration only runs once, even if the config is loaded multiple times.
+Migrations are run automatically when:
+- Config has no version (treated as very old, runs all migrations)
+- Current version > Config version (runs migrations for versions between config version and current version)
+- Current version === Config version (skips migrations)
+- Current version < Config version (skips migrations, logs warning - downgrade scenario)
+
+The `_version` field is automatically updated to the current version after migrations complete.
 
 ## Creating a New Migration
 
@@ -44,11 +47,20 @@ const MIGRATIONS = [
 
 ## Migration Guidelines
 
-- **Idempotent**: Migrations should be safe to run multiple times (though they only run once)
+- **Version-Based**: Each migration is associated with a version (e.g., '2.1.15')
+- **Idempotent**: Migrations should be safe to run multiple times
 - **Backward Compatible**: Old configs should continue to work
 - **Non-Destructive**: Preserve all user settings
 - **Validated**: Check if migration is needed before running
 - **Logged**: Use migration logging for debugging
+
+## Version Format
+
+Versions use semantic versioning (MAJOR.MINOR.PATCH):
+- Stable: `2.1.15`
+- Dev: `2.1.15-dev` (suffix is ignored for comparison, base version is used)
+
+The migration system compares base versions (without dev/prerelease suffixes) to determine which migrations to run.
 
 ## Current Migrations
 

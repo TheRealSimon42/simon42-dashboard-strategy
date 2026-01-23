@@ -33,14 +33,38 @@ export function migrateAreasDisplay(config) {
   
   if (!hasOldFormat) {
     // Already in new format or no migration needed
-    // Verify it's actually new format by checking if any key looks like an area ID
-    // (area IDs are strings, not 'hidden' or 'order')
+    // Verify it's actually new format by checking structure:
+    // - Keys should be strings (area IDs), not 'hidden' or 'order'
+    // - Values should be objects with { hidden: boolean, order: number }
     const keys = Object.keys(areasDisplay);
-    const hasAreaIdKeys = keys.some(key => key !== 'hidden' && key !== 'order');
     
-    if (hasAreaIdKeys) {
-      // Confirmed new format
-      return config;
+    // Check if we have any keys that aren't 'hidden' or 'order'
+    const areaIdKeys = keys.filter(key => key !== 'hidden' && key !== 'order');
+    
+    if (areaIdKeys.length > 0) {
+      // Verify structure: all area ID keys should have proper value objects
+      const isValidNewFormat = areaIdKeys.every(key => {
+        const value = areasDisplay[key];
+        // Value must be an object (not array, not primitive)
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+          return false;
+        }
+        // Value should have hidden (boolean) and order (number) properties
+        // Allow missing properties (will use defaults), but if present they must be correct types
+        if ('hidden' in value && typeof value.hidden !== 'boolean') {
+          return false;
+        }
+        if ('order' in value && typeof value.order !== 'number') {
+          return false;
+        }
+        return true;
+      });
+      
+      if (isValidNewFormat) {
+        // Confirmed new format with proper structure
+        return config;
+      }
+      // Invalid structure - might be corrupted, but return as-is to avoid breaking
     }
     
     // Empty or unknown format - return as-is
@@ -92,13 +116,15 @@ export function migrateAreasDisplay(config) {
   });
 
   // Return new config with migrated structure
+  // Create a clean copy without the old areas_display structure
   const migratedConfig = { ...config };
   
-  // Only set areas_display if it has entries, otherwise remove it
+  // Remove old areas_display structure completely
+  delete migratedConfig.areas_display;
+  
+  // Only set new areas_display if it has entries
   if (Object.keys(newAreasDisplay).length > 0) {
     migratedConfig.areas_display = newAreasDisplay;
-  } else {
-    delete migratedConfig.areas_display;
   }
   
   return migratedConfig;

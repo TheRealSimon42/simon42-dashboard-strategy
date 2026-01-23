@@ -2642,10 +2642,36 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._config = config;
     
     // Create a clean config without internal fields for saving
-    // _migrations is an internal tracking field and should not be saved to YAML
+    // _migrations and _version are internal tracking fields and should not be saved to YAML
     const cleanConfig = { ...config };
+    
+    // Remove internal tracking fields
     if (cleanConfig._migrations) {
       delete cleanConfig._migrations;
+    }
+    if (cleanConfig._version) {
+      delete cleanConfig._version;
+    }
+    
+    // Ensure areas_display doesn't have old format properties (hidden/order arrays)
+    // These should have been migrated, but clean up just in case
+    if (cleanConfig.areas_display && typeof cleanConfig.areas_display === 'object') {
+      const areasDisplay = cleanConfig.areas_display;
+      // Check if it still has old format properties
+      if (Array.isArray(areasDisplay.hidden) || Array.isArray(areasDisplay.order)) {
+        // Old format detected - this shouldn't happen if migration ran correctly
+        // But clean it up to prevent errors
+        const cleanedAreasDisplay = { ...areasDisplay };
+        delete cleanedAreasDisplay.hidden;
+        delete cleanedAreasDisplay.order;
+        
+        // If areas_display is now empty, remove it
+        if (Object.keys(cleanedAreasDisplay).length === 0) {
+          delete cleanConfig.areas_display;
+        } else {
+          cleanConfig.areas_display = cleanedAreasDisplay;
+        }
+      }
     }
     
     const event = new CustomEvent('config-changed', {
