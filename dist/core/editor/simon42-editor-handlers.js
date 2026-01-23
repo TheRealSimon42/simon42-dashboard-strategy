@@ -7,6 +7,11 @@ import { renderAreaEntitiesHTML } from './template/simon42-editor-area-renderers
 import { t } from '../../utils/i18n/simon42-i18n.js';
 import { getExcludedLabels } from '../../utils/helpers/simon42-helpers.js';
 
+// Debug logging helper
+function debugLog(location, message, data, hypothesisId) {
+  console.log(`[DEBUG ${hypothesisId}] ${location}: ${message}`, data || {});
+}
+
 /**
  * Creates a checkbox listener attachment function
  * @param {string} selector - CSS selector for the checkbox
@@ -79,6 +84,9 @@ export function attachAreaCheckboxListeners(element, callback) {
   // Handle icon-button clicks for hide/show (replaces checkbox functionality)
   // Attach listeners directly to each visibility toggle button to avoid delegation issues
   const handleVisibilityToggle = (button, listItem) => {
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:82', 'handleVisibilityToggle called', {areaId:button.dataset.areaId}, 'A');
+    // #endregion
     const areaId = button.dataset.areaId;
     
     // Determine current visibility state from multiple sources for reliability
@@ -89,11 +97,19 @@ export function attachAreaCheckboxListeners(element, callback) {
     // If any indicator says it's hidden, treat it as hidden
     const isCurrentlyHidden = iconState || dataState || classState;
     
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:90', 'Current visibility state determined', {areaId,iconState,dataState,classState,isCurrentlyHidden}, 'A');
+    // #endregion
+    
     // Toggle: Calculate the NEW visibility state after clicking
     // If currently hidden, clicking should SHOW it (remove from hidden list) → isVisible = true
     // If currently visible, clicking should HIDE it (add to hidden list) → isVisible = false
     // The new state is the opposite of the current hidden state
     const isVisible = !isCurrentlyHidden;
+    
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:96', 'New visibility state calculated', {areaId,isVisible}, 'A');
+    // #endregion
     
     // Update icon
     const icon = button.querySelector('ha-icon');
@@ -129,7 +145,13 @@ export function attachAreaCheckboxListeners(element, callback) {
       content.style.display = 'none';
     }
     
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:132', 'About to call callback', {areaId,isVisible}, 'A');
+    // #endregion
     callback(areaId, isVisible);
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:133', 'Callback completed', {areaId,isVisible}, 'A');
+    // #endregion
   };
   
   // Attach listeners to existing buttons
@@ -449,15 +471,27 @@ export function attachEntityExpandButtonListeners(element, editorElement) {
 }
 
 export function sortAreaItems(element) {
+  // #region agent log
+  debugLog('simon42-editor-handlers.js:451', 'sortAreaItems called', {}, 'C');
+  // #endregion
   const areaList = element.querySelector('ha-md-list');
   if (!areaList) return;
 
   const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
+  
+  // #region agent log
+  debugLog('simon42-editor-handlers.js:456', 'Items before sort', {itemCount:items.length,itemIds:items.map(i=>i.dataset.areaId),itemOrders:items.map(i=>i.dataset.order)}, 'C');
+  // #endregion
+  
   items.sort((a, b) => {
     const orderA = parseInt(a.dataset.order);
     const orderB = parseInt(b.dataset.order);
     return orderA - orderB;
   });
+
+  // #region agent log
+  debugLog('simon42-editor-handlers.js:462', 'Items after sort', {itemIds:items.map(i=>i.dataset.areaId)}, 'C');
+  // #endregion
 
   items.forEach(item => {
     const areaId = item.dataset.areaId;
@@ -481,20 +515,49 @@ export function sortAreaItems(element) {
 export function attachDragAndDropListeners(element, onOrderChange) {
   // Use ha-sortable's built-in event system
   const sortable = element.querySelector('ha-sortable');
-  if (!sortable) return;
+  if (!sortable) {
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:483', 'ha-sortable not found', {}, 'B');
+    // #endregion
+    return;
+  }
+  
+  // #region agent log
+  debugLog('simon42-editor-handlers.js:487', 'Attaching item-moved listener', {}, 'B');
+  // #endregion
   
   // Listen for item-moved event from ha-sortable
   sortable.addEventListener('item-moved', () => {
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:488', 'item-moved event fired', {}, 'B');
+    // #endregion
     // After items are moved, ensure all area-content divs are positioned correctly
     // This ensures content stays with its item even if ha-sortable only moves the items
     const areaList = element.querySelector('ha-md-list');
     if (!areaList) {
+      // #region agent log
+      debugLog('simon42-editor-handlers.js:491', 'areaList not found, calling onOrderChange', {}, 'B');
+      // #endregion
       onOrderChange();
       return;
     }
     
     // Get all items in their current order
     const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
+    
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:497', 'Items after drag', {itemCount:items.length,itemIds:items.map(i=>i.dataset.areaId),itemOrders:items.map(i=>i.dataset.order)}, 'B');
+    // #endregion
+    
+    // CRITICAL FIX: Update data-order attributes to match new DOM order
+    // This prevents sortAreaItems from resetting the order on next render
+    items.forEach((item, index) => {
+      item.dataset.order = index.toString();
+    });
+    
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:540', 'Updated data-order attributes', {newOrders:items.map((i,idx)=>idx)}, 'B');
+    // #endregion
     
     // For each item, ensure its content div is positioned right after it
     items.forEach(item => {
@@ -520,8 +583,14 @@ export function attachDragAndDropListeners(element, onOrderChange) {
       areaList.insertBefore(content, nextSibling);
     });
     
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:524', 'About to call onOrderChange', {}, 'B');
+    // #endregion
     // Update order when items are moved
     onOrderChange();
+    // #region agent log
+    debugLog('simon42-editor-handlers.js:525', 'onOrderChange completed', {}, 'B');
+    // #endregion
   });
 }
 

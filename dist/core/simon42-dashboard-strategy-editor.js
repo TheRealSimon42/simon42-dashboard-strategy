@@ -23,6 +23,11 @@ import {
   updateNestedConfig,
   getEntitiesFromDOM
 } from './editor/simon42-editor-config-helpers.js';
+
+// Debug logging helper
+function debugLog(location, message, data, hypothesisId) {
+  console.log(`[DEBUG ${hypothesisId}] ${location}: ${message}`, data || {});
+}
 import { 
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
@@ -61,10 +66,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   setConfig(config) {
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:63', 'setConfig called', {isUpdatingConfig:this._isUpdatingConfig,newHidden:config?.areas_display?.hidden,newOrder:config?.areas_display?.order,oldHidden:this._config?.areas_display?.hidden,oldOrder:this._config?.areas_display?.order}, 'D');
+    // #endregion
     this._config = config || {};
     // Nur rendern wenn wir nicht gerade selbst die Config ändern
     if (!this._isUpdatingConfig) {
+      // #region agent log
+      debugLog('simon42-dashboard-strategy-editor.js:67', 'Calling _render from setConfig', {}, 'D');
+      // #endregion
       this._render();
+    } else {
+      // #region agent log
+      debugLog('simon42-dashboard-strategy-editor.js:69', 'Skipping render (isUpdatingConfig)', {}, 'D');
+      // #endregion
     }
   }
 
@@ -1378,12 +1393,24 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _updateAreaOrder() {
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:1380', '_updateAreaOrder called', {currentOrder:this._config?.areas_display?.order}, 'B');
+    // #endregion
     // Get items from ha-md-list (Home Assistant's official structure)
     const areaList = this.querySelector('ha-md-list');
-    if (!areaList) return;
+    if (!areaList) {
+      // #region agent log
+      debugLog('simon42-dashboard-strategy-editor.js:1383', 'areaList not found', {}, 'B');
+      // #endregion
+      return;
+    }
     
     const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
     const newOrder = items.map(item => item.dataset.areaId);
+
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:1386', 'New order extracted from DOM', {newOrder,itemCount:items.length}, 'B');
+    // #endregion
 
     const newConfig = {
       ...this._config,
@@ -1393,8 +1420,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       }
     };
 
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:1397', 'About to fire config changed', {newOrder}, 'B');
+    // #endregion
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:1398', 'Config changed fired', {}, 'B');
+    // #endregion
   }
 
   _showWeatherChanged(showWeather) {
@@ -1605,7 +1638,13 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _areaVisibilityChanged(areaId, isVisible) {
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:1635', '_areaVisibilityChanged called', {areaId,isVisible,currentHidden:this._config?.areas_display?.hidden}, 'A');
+    // #endregion
     if (!this._config || !this._hass) {
+      // #region agent log
+      debugLog('simon42-dashboard-strategy-editor.js:1639', 'Early return: no config or hass', {hasConfig:!!this._config,hasHass:!!this._hass}, 'A');
+      // #endregion
       return;
     }
 
@@ -1621,26 +1660,25 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       }
     }
 
-    const newConfig = {
-      ...this._config,
-      areas_display: {
-        ...this._config.areas_display,
-        hidden: hiddenAreas
-      }
-    };
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:1657', 'New hiddenAreas calculated', {hiddenAreas}, 'A');
+    // #endregion
 
-    // Entferne hidden array wenn leer
-    if (newConfig.areas_display.hidden.length === 0) {
-      delete newConfig.areas_display.hidden;
-    }
+    // Use updateNestedConfig for consistent handling and automatic cleanup
+    const newConfig = updateNestedConfig(
+      this._config,
+      ['areas_display', 'hidden'],
+      hiddenAreas.length > 0 ? hiddenAreas : undefined
+    );
 
-    // Entferne areas_display wenn leer
-    if (Object.keys(newConfig.areas_display).length === 0) {
-      delete newConfig.areas_display;
-    }
-
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:1665', 'About to fire config changed', {newConfigHidden:newConfig.areas_display?.hidden}, 'A');
+    // #endregion
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:1668', 'Config changed fired', {}, 'A');
+    // #endregion
   }
 
   _entityVisibilityChanged(areaId, group, entityId, isVisible) {
@@ -2590,6 +2628,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _fireConfigChanged(config) {
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:2592', '_fireConfigChanged called', {hidden:config?.areas_display?.hidden,order:config?.areas_display?.order}, 'E');
+    // #endregion
     // Setze Flag, damit setConfig() nicht erneut rendert
     this._isUpdatingConfig = true;
     this._config = config;
@@ -2601,8 +2642,15 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     });
     this.dispatchEvent(event);
     
+    // #region agent log
+    debugLog('simon42-dashboard-strategy-editor.js:2602', 'config-changed event dispatched', {}, 'E');
+    // #endregion
+    
     // Reset Flag nach einem Tick
     setTimeout(() => {
+      // #region agent log
+      debugLog('simon42-dashboard-strategy-editor.js:2606', 'Resetting _isUpdatingConfig flag', {}, 'E');
+      // #endregion
       this._isUpdatingConfig = false;
     }, 0);
   }
