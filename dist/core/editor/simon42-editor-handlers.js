@@ -589,7 +589,6 @@ export function attachDragAndDropListeners(element, onOrderChange) {
   // Attach the listener
   sortable.addEventListener('item-moved', itemMovedHandler);
 }
-}
 
 // Helper-Funktionen
 
