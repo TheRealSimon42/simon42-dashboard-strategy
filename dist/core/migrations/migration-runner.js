@@ -66,11 +66,13 @@ function hasMigrationRun(config, migrationId) {
  * @returns {Object} Updated config
  */
 function markMigrationRun(config, migrationId) {
-  const state = getMigrationState(config);
+  // Ensure _migrations exists
+  const migrations = config._migrations || {};
+  
   return {
-    ...state,
+    ...config,
     _migrations: {
-      ...state._migrations,
+      ...migrations,
       [migrationId]: true
     }
   };

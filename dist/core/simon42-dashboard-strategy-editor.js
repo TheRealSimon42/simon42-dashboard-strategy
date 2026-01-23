@@ -2641,8 +2641,15 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._isUpdatingConfig = true;
     this._config = config;
     
+    // Create a clean config without internal fields for saving
+    // _migrations is an internal tracking field and should not be saved to YAML
+    const cleanConfig = { ...config };
+    if (cleanConfig._migrations) {
+      delete cleanConfig._migrations;
+    }
+    
     const event = new CustomEvent('config-changed', {
-      detail: { config },
+      detail: { config: cleanConfig },
       bubbles: true,
       composed: true
     });
