@@ -2706,7 +2706,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
           }
         }
         // If areas_display is an empty object, remove it
-        else if (Object.keys(areasDisplay).length === 0) {
+        if (Object.keys(areasDisplay).length === 0) {
           delete cleanConfig.areas_display;
         }
       }
