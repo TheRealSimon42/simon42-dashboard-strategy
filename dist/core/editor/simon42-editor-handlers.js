@@ -7,11 +7,6 @@ import { renderAreaEntitiesHTML } from './template/simon42-editor-area-renderers
 import { t } from '../../utils/i18n/simon42-i18n.js';
 import { getExcludedLabels } from '../../utils/helpers/simon42-helpers.js';
 
-// Debug logging helper
-function debugLog(location, message, data, hypothesisId) {
-  console.log(`[DEBUG ${hypothesisId}] ${location}: ${message}`, data || {});
-}
-
 /**
  * Creates a checkbox listener attachment function
  * @param {string} selector - CSS selector for the checkbox
@@ -84,9 +79,6 @@ export function attachAreaCheckboxListeners(element, callback) {
   // Handle icon-button clicks for hide/show (replaces checkbox functionality)
   // Attach listeners directly to each visibility toggle button to avoid delegation issues
   const handleVisibilityToggle = (button, listItem) => {
-    // #region agent log
-    debugLog('simon42-editor-handlers.js:82', 'handleVisibilityToggle called', {areaId:button.dataset.areaId}, 'A');
-    // #endregion
     const areaId = button.dataset.areaId;
     
     // Determine current visibility state from multiple sources for reliability
@@ -97,19 +89,11 @@ export function attachAreaCheckboxListeners(element, callback) {
     // If any indicator says it's hidden, treat it as hidden
     const isCurrentlyHidden = iconState || dataState || classState;
     
-    // #region agent log
-    debugLog('simon42-editor-handlers.js:90', 'Current visibility state determined', {areaId,iconState,dataState,classState,isCurrentlyHidden}, 'A');
-    // #endregion
-    
     // Toggle: Calculate the NEW visibility state after clicking
     // If currently hidden (isCurrentlyHidden = true), clicking should SHOW it → isVisible = true
     // If currently visible (isCurrentlyHidden = false), clicking should HIDE it → isVisible = false
     // The new visibility state equals the current hidden state (toggle: hidden→visible, visible→hidden)
     const isVisible = isCurrentlyHidden;
-    
-    // #region agent log
-    debugLog('simon42-editor-handlers.js:96', 'New visibility state calculated', {areaId,isVisible}, 'A');
-    // #endregion
     
     // Update icon
     const icon = button.querySelector('ha-icon');
@@ -145,13 +129,7 @@ export function attachAreaCheckboxListeners(element, callback) {
       content.style.display = 'none';
     }
     
-    // #region agent log
-    debugLog('simon42-editor-handlers.js:132', 'About to call callback', {areaId,isVisible}, 'A');
-    // #endregion
     callback(areaId, isVisible);
-    // #region agent log
-    debugLog('simon42-editor-handlers.js:133', 'Callback completed', {areaId,isVisible}, 'A');
-    // #endregion
   };
   
   // Attach listeners to existing buttons
@@ -471,21 +449,10 @@ export function attachEntityExpandButtonListeners(element, editorElement) {
 }
 
 export function sortAreaItems(element) {
-  // #region agent log
-  const stackTrace = new Error().stack;
-  debugLog('simon42-editor-handlers.js:451', 'sortAreaItems called', {
-    dragDropActive: element._dragDropActive,
-    caller: stackTrace.split('\n')[2]?.trim() || 'unknown'
-  }, 'C');
-  // #endregion
   const areaList = element.querySelector('ha-md-list');
   if (!areaList) return;
 
   const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
-  
-  // #region agent log
-  debugLog('simon42-editor-handlers.js:456', 'Items before sort', {itemCount:items.length,itemIds:items.map(i=>i.dataset.areaId),itemOrders:items.map(i=>i.dataset.order),domOrder:items.map((i,idx)=>idx)}, 'C');
-  // #endregion
   
   // If drag-and-drop is active, check if items are already in correct order
   // This prevents resetting order after user drags items
@@ -499,15 +466,8 @@ export function sortAreaItems(element) {
       }
     }
     
-    // #region agent log
-    debugLog('simon42-editor-handlers.js:470', 'Sort check (drag-drop active)', {needsSorting}, 'C');
-    // #endregion
-    
     if (!needsSorting) {
       // Items are already in correct order, don't re-sort
-      // #region agent log
-      debugLog('simon42-editor-handlers.js:474', 'Skipping sort - items already in order', {}, 'C');
-      // #endregion
       return;
     }
   }
@@ -517,10 +477,6 @@ export function sortAreaItems(element) {
     const orderB = parseInt(b.dataset.order);
     return orderA - orderB;
   });
-
-  // #region agent log
-  debugLog('simon42-editor-handlers.js:462', 'Items after sort', {itemIds:items.map(i=>i.dataset.areaId)}, 'C');
-  // #endregion
 
   items.forEach(item => {
     const areaId = item.dataset.areaId;
@@ -545,79 +501,45 @@ export function attachDragAndDropListeners(element, onOrderChange) {
   // Use ha-sortable's built-in event system
   const sortable = element.querySelector('ha-sortable');
   if (!sortable) {
-    // #region agent log
-    debugLog('simon42-editor-handlers.js:483', 'ha-sortable not found', {}, 'B');
-    // #endregion
     return;
   }
   
   // Mark that drag-and-drop is active to prevent sortAreaItems from interfering
   element._dragDropActive = true;
   
-  // #region agent log
-  debugLog('simon42-editor-handlers.js:487', 'Attaching item-moved listener', {dragDropActiveSet: element._dragDropActive}, 'B');
-  // #endregion
-  
-  // Add MutationObserver to detect if DOM order changes after our update
-  const areaList = element.querySelector('ha-md-list');
-  if (areaList && !areaList._orderObserver) {
-    const observer = new MutationObserver((mutations) => {
-      const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
-      const currentOrder = items.map(i => i.dataset.areaId);
-      const dataOrders = items.map(i => parseInt(i.dataset.order));
-      
-      // Check if order changed unexpectedly
-      const orderChanged = items.some((item, idx) => {
-        const expectedOrder = parseInt(item.dataset.order);
-        return expectedOrder !== idx;
-      });
-      
-      if (orderChanged) {
-        // #region agent log
-        debugLog('simon42-editor-handlers.js:500', 'DOM order changed unexpectedly!', {
-          currentOrder,
-          dataOrders,
-          itemIds: items.map(i => i.dataset.areaId)
-        }, 'B');
-        // #endregion
-      }
-    });
-    
-    observer.observe(areaList, {
-      childList: true,
-      subtree: false
-    });
-    
-    areaList._orderObserver = observer;
+  // Store timer on element to persist across re-renders
+  if (!element._orderUpdateTimer) {
+    element._orderUpdateTimer = null;
   }
   
-  // Debounce timer for order updates (only update after drag ends)
-  let orderUpdateTimer = null;
+  // Remove any existing listener to prevent duplicates
+  const existingListener = sortable._itemMovedListener;
+  if (existingListener) {
+    sortable.removeEventListener('item-moved', existingListener);
+  }
   
-  // Listen for item-moved event from ha-sortable
-  sortable.addEventListener('item-moved', (e) => {
-    // #region agent log
-    debugLog('simon42-editor-handlers.js:488', 'item-moved event fired', {
-      detail: e.detail,
-      target: e.target?.tagName,
-      currentTarget: e.currentTarget?.tagName
-    }, 'B');
-    // #endregion
-    
-    // Clear any pending update
-    if (orderUpdateTimer) {
-      clearTimeout(orderUpdateTimer);
+  // Create new listener function
+  const itemMovedHandler = (e) => {
+    // Update data-order IMMEDIATELY to prevent ha-sortable from resetting
+    const areaList = element.querySelector('ha-md-list');
+    if (areaList) {
+      const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
+      items.forEach((item, index) => {
+        item.dataset.order = index.toString();
+      });
     }
     
-    // Debounce: Only update order after drag has settled (300ms after last move)
-    orderUpdateTimer = setTimeout(() => {
+    // Clear any pending debounced update
+    if (element._orderUpdateTimer) {
+      clearTimeout(element._orderUpdateTimer);
+    }
+    
+    // Debounce: Only update config after drag has settled (300ms after last move)
+    element._orderUpdateTimer = setTimeout(() => {
       // After items are moved, ensure all area-content divs are positioned correctly
       // This ensures content stays with its item even if ha-sortable only moves the items
       const areaList = element.querySelector('ha-md-list');
       if (!areaList) {
-        // #region agent log
-        debugLog('simon42-editor-handlers.js:491', 'areaList not found, calling onOrderChange', {}, 'B');
-        // #endregion
         onOrderChange();
         return;
       }
@@ -625,52 +547,12 @@ export function attachDragAndDropListeners(element, onOrderChange) {
       // Get all items in their current order
       const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
       
-      // #region agent log
-      debugLog('simon42-editor-handlers.js:497', 'Items after drag (debounced)', {
-        itemCount: items.length,
-        itemIds: items.map(i=>i.dataset.areaId),
-        itemOrders: items.map(i=>i.dataset.order),
-        domPositions: items.map((i,idx) => ({areaId: i.dataset.areaId, domIndex: idx}))
-      }, 'B');
-      // #endregion
-      
       // CRITICAL FIX: Update data-order attributes to match new DOM order
       // This prevents sortAreaItems from resetting the order on next render
       items.forEach((item, index) => {
         const areaId = item.dataset.areaId;
         item.dataset.order = index.toString();
       });
-      
-      // #region agent log
-      debugLog('simon42-editor-handlers.js:540', 'Updated data-order attributes (debounced)', {
-        newOrders: items.map((i,idx) => ({areaId: i.dataset.areaId, order: idx})),
-        itemIds: items.map(i => i.dataset.areaId)
-      }, 'B');
-      // #endregion
-      
-      // Verify the update worked
-      const verifyItems = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
-      const verification = verifyItems.map((item, idx) => ({
-        areaId: item.dataset.areaId,
-        expectedOrder: idx,
-        actualOrder: parseInt(item.dataset.order),
-        matches: parseInt(item.dataset.order) === idx
-      }));
-      const allMatch = verification.every(v => v.matches);
-      
-      // #region agent log
-      debugLog('simon42-editor-handlers.js:555', 'Verification after data-order update (debounced)', {
-        verification,
-        allMatch,
-        mismatches: verification.filter(v => !v.matches)
-      }, 'B');
-      // #endregion
-      
-      if (!allMatch) {
-        // #region agent log
-        debugLog('simon42-editor-handlers.js:562', 'ERROR: data-order update verification failed!', {verification}, 'B');
-        // #endregion
-      }
       
       // For each item, ensure its content div is positioned correctly
       items.forEach(item => {
@@ -696,16 +578,17 @@ export function attachDragAndDropListeners(element, onOrderChange) {
         areaList.insertBefore(content, nextSibling);
       });
       
-      // #region agent log
-      debugLog('simon42-editor-handlers.js:524', 'About to call onOrderChange (debounced)', {}, 'B');
-      // #endregion
       // Update order when items are moved
       onOrderChange();
-      // #region agent log
-      debugLog('simon42-editor-handlers.js:525', 'onOrderChange completed (debounced)', {}, 'B');
-      // #endregion
     }, 300); // 300ms debounce - wait for drag to settle
-  }););
+  };
+  
+  // Store reference to listener for cleanup
+  sortable._itemMovedListener = itemMovedHandler;
+  
+  // Attach the listener
+  sortable.addEventListener('item-moved', itemMovedHandler);
+}
 }
 
 // Helper-Funktionen
