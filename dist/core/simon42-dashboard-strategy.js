@@ -31,7 +31,8 @@ import {
   createAreaViews 
 } from '../utils/builders/views/simon42-view-builder.js';
 import { initLanguage, t, getLanguage } from '../utils/i18n/simon42-i18n.js';
-import { initLogger, logDebug, logInfo } from '../utils/system/simon42-logger.js';
+import { initLogger, logDebug, logInfo, logWarn } from '../utils/system/simon42-logger.js';
+import { runMigrations } from './migrations/migration-runner.js';
 
 // Cache for last generation state to avoid unnecessary logs
 let lastGenerationState = null;
@@ -71,8 +72,14 @@ class Simon42DashboardStrategy {
   static async generate(config, hass) {
     initLogger(config);
     
+    // Run all pending migrations once on config load
+    // Migrations are tracked in config._migrations to ensure they only run once
+    const logLevel = config?.log_level || 'warn';
+    const logMigration = logLevel === 'debug' || logLevel === 'info';
+    const migratedConfig = runMigrations(config || {}, { logMigration });
+    
     // Initialize language - must happen BEFORE all t() calls
-    initLanguage(config, hass);
+    initLanguage(migratedConfig, hass);
     
     // Convert registry objects to arrays for processing
     const areas = Object.values(hass.areas || {});
@@ -83,16 +90,17 @@ class Simon42DashboardStrategy {
     // Get entities with "no_dboard" label for exclusion
     const excludeLabels = getExcludedLabels(entities);
 
-    const visibleAreas = getVisibleAreas(areas, config.areas_display);
+    const visibleAreas = getVisibleAreas(areas, migratedConfig.areas_display);
 
     // Collect all required data (config passed for areas_options filtering)
-    const persons = collectPersons(hass, excludeLabels, config);
-    const lightsOn = collectLights(hass, excludeLabels, config);
-    const coversOpen = collectCovers(hass, excludeLabels, config);
-    const securityUnsafe = collectSecurityUnsafe(hass, excludeLabels, config);
-    const batteriesCritical = collectBatteriesCritical(hass, excludeLabels, config);
-    const weatherEntity = findWeatherEntity(hass, excludeLabels, config);
-    const someSensorId = findDummySensor(hass, excludeLabels, config);
+    // Use migratedConfig to ensure we're working with the latest format
+    const persons = collectPersons(hass, excludeLabels, migratedConfig);
+    const lightsOn = collectLights(hass, excludeLabels, migratedConfig);
+    const coversOpen = collectCovers(hass, excludeLabels, migratedConfig);
+    const securityUnsafe = collectSecurityUnsafe(hass, excludeLabels, migratedConfig);
+    const batteriesCritical = collectBatteriesCritical(hass, excludeLabels, migratedConfig);
+    const weatherEntity = findWeatherEntity(hass, excludeLabels, migratedConfig);
+    const someSensorId = findDummySensor(hass, excludeLabels, migratedConfig);
     
     // Check if anything changed to avoid unnecessary logging
     const currentKey = getGenerationKey(entities, areas, persons, lightsOn, coversOpen, securityUnsafe, batteriesCritical, weatherEntity);
@@ -125,31 +133,32 @@ class Simon42DashboardStrategy {
     }
 
     // Read config flags (defaults shown in comments)
-    const showPersonBadges = config.show_person_badges !== false;
-    const showWeather = config.show_weather !== false;
-    const showEnergy = config.show_energy !== false;
-    const showSearchCard = config.show_search_card === true;
-    const showClockCard = config.show_clock_card === true;
-    const showSummaryViews = config.show_summary_views === true;
-    const showRoomViews = config.show_room_views === true;
-    const groupByFloors = config.group_by_floors === true;
+    // Use migratedConfig to ensure we're working with migrated areas_display
+    const showPersonBadges = migratedConfig.show_person_badges !== false;
+    const showWeather = migratedConfig.show_weather !== false;
+    const showEnergy = migratedConfig.show_energy !== false;
+    const showSearchCard = migratedConfig.show_search_card === true;
+    const showClockCard = migratedConfig.show_clock_card === true;
+    const showSummaryViews = migratedConfig.show_summary_views === true;
+    const showRoomViews = migratedConfig.show_room_views === true;
+    const groupByFloors = migratedConfig.group_by_floors === true;
 
     const personBadges = createPersonBadges(persons, hass, showPersonBadges);
 
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating areas section...');
     }
-    const areasSections = createAreasSection(visibleAreas, groupByFloors, hass, config);
+    const areasSections = createAreasSection(visibleAreas, groupByFloors, hass, migratedConfig);
 
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating additional sections...');
     }
-    const weatherSection = createWeatherSection(weatherEntity, showWeather, config, hass);
-    const publicTransportSection = createPublicTransportSection(config, hass);
+    const weatherSection = createWeatherSection(weatherEntity, showWeather, migratedConfig, hass);
+    const publicTransportSection = createPublicTransportSection(migratedConfig, hass);
     const energySection = createEnergySection(showEnergy);
-    const schedulerCardSection = createSchedulerCardSection(config, hass);
-    const calendarCardSection = createCalendarCardSection(config, hass);
-    const todoSwipeCardSection = createTodoSwipeCardSection(config, hass);
+    const schedulerCardSection = createSchedulerCardSection(migratedConfig, hass);
+    const calendarCardSection = createCalendarCardSection(migratedConfig, hass);
+    const todoSwipeCardSection = createTodoSwipeCardSection(migratedConfig, hass);
     
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating overview section...');
@@ -165,7 +174,7 @@ class Simon42DashboardStrategy {
         someSensorId,
         showSearchCard,
         showClockCard,
-        config,
+        config: migratedConfig,
         hass
       }),
       ...(Array.isArray(areasSections) ? areasSections : [areasSections]),
@@ -185,10 +194,10 @@ class Simon42DashboardStrategy {
     if (hasChanged || lastGenerationState === null) {
       logDebug('[Strategy] Creating views...');
     }
-    const utilityViews = createUtilityViews(entities, showSummaryViews, config);
-    const areaViews = createAreaViews(visibleAreas, devices, entities, showRoomViews, config.areas_options || {}, config);
+    const utilityViews = createUtilityViews(entities, showSummaryViews, migratedConfig);
+    const areaViews = createAreaViews(visibleAreas, devices, entities, showRoomViews, migratedConfig.areas_options || {}, migratedConfig);
     const views = [
-      createOverviewView(overviewSections, personBadges, config, hass),
+      createOverviewView(overviewSections, personBadges, migratedConfig, hass),
       ...utilityViews,
       ...areaViews
     ];

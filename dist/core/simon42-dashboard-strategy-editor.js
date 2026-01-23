@@ -14,16 +14,16 @@ import {
 } from './editor/simon42-editor-template.js';
 import { initLanguage, t } from '../utils/i18n/simon42-i18n.js';
 import { ConfigManager } from './editor/simon42-config-manager.js';
-import { logWarn, initLogger } from '../utils/system/simon42-logger.js';
+import { logWarn, logInfo, initLogger } from '../utils/system/simon42-logger.js';
 import { checkDependency, checkPublicTransportDependencies } from '../utils/system/simon42-dependency-checker.js';
 import { PUBLIC_TRANSPORT_MAPPING } from '../utils/builders/cards/simon42-public-transport-builders.js';
 import { VERSION } from '../utils/system/simon42-version.js';
 import { 
   getAllIntegrationProperties,
   updateNestedConfig,
-  getEntitiesFromDOM,
-  migrateAreasDisplay
+  getEntitiesFromDOM
 } from './editor/simon42-editor-config-helpers.js';
+import { runMigrations } from './migrations/migration-runner.js';
 import { 
   attachWeatherCheckboxListener,
   attachEnergyCheckboxListener,
@@ -62,8 +62,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   setConfig(config) {
-    // Migrate areas_display from old format to new format if needed
-    const migratedConfig = migrateAreasDisplay(config || {});
+    // Run all pending migrations once on config load
+    // Migrations are tracked in config._migrations to ensure they only run once
+    const logLevel = config?.log_level || 'warn';
+    const logMigration = logLevel === 'debug' || logLevel === 'info';
+    const migratedConfig = runMigrations(config || {}, { logMigration });
+    
     this._config = migratedConfig;
     // Nur rendern wenn wir nicht gerade selbst die Config ändern
     if (!this._isUpdatingConfig) {
@@ -1415,7 +1419,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Update order for each area based on DOM position
     items.forEach((item, index) => {
       const areaId = item.dataset.areaId;
-      if (areaId) {
+      if (areaId && typeof areaId === 'string' && areaId.trim().length > 0) {
         // Preserve existing hidden state or default to false
         const isHidden = currentAreasDisplay[areaId]?.hidden === true;
         newAreasDisplay[areaId] = {
@@ -1433,10 +1437,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       }
     });
 
-    const newConfig = {
-      ...this._config,
-      areas_display: Object.keys(newAreasDisplay).length > 0 ? newAreasDisplay : undefined
-    };
+    const newConfig = { ...this._config };
+    
+    // Only set areas_display if it has entries, otherwise remove it
+    if (Object.keys(newAreasDisplay).length > 0) {
+      newConfig.areas_display = newAreasDisplay;
+    } else {
+      delete newConfig.areas_display;
+    }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
@@ -1650,7 +1658,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _areaVisibilityChanged(areaId, isVisible) {
-    if (!this._config || !this._hass) {
+    if (!this._config || !this._hass || !areaId || typeof areaId !== 'string') {
       return;
     }
 
@@ -1669,13 +1677,14 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       }
     };
 
-    // If area is visible and has default order, we might want to clean it up
-    // But for now, keep it to preserve user's order preferences
+    const newConfig = { ...this._config };
     
-    const newConfig = {
-      ...this._config,
-      areas_display: Object.keys(newAreasDisplay).length > 0 ? newAreasDisplay : undefined
-    };
+    // Only set areas_display if it has entries, otherwise remove it
+    if (Object.keys(newAreasDisplay).length > 0) {
+      newConfig.areas_display = newAreasDisplay;
+    } else {
+      delete newConfig.areas_display;
+    }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);

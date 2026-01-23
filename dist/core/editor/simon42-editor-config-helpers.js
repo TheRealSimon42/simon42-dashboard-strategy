@@ -147,62 +147,6 @@ export function cleanupEmptyNestedObjects(obj, path = []) {
 }
 
 /**
- * Migrates areas_display from old format to new format.
- * Old format: { hidden: [area1, area2], order: [area3, area1, area2] }
- * New format: { area1: { hidden: true, order: 1 }, area2: { hidden: true, order: 2 }, area3: { hidden: false, order: 0 } }
- * @param {Object} config - Config object that may contain old format areas_display
- * @returns {Object} Config with migrated areas_display (if needed)
- */
-export function migrateAreasDisplay(config) {
-  if (!config || !config.areas_display) {
-    return config;
-  }
-
-  const areasDisplay = config.areas_display;
-  
-  // Check if already in new format (has area IDs as keys with hidden/order properties)
-  const hasOldFormat = (areasDisplay.hidden && Array.isArray(areasDisplay.hidden)) || 
-                       (areasDisplay.order && Array.isArray(areasDisplay.order));
-  
-  if (!hasOldFormat) {
-    // Already in new format or no migration needed
-    return config;
-  }
-
-  // Migrate to new format
-  const newAreasDisplay = {};
-  const hiddenAreas = new Set(areasDisplay.hidden || []);
-  const orderArray = areasDisplay.order || [];
-
-  // Process all areas from order array first (to preserve order)
-  orderArray.forEach((areaId, index) => {
-    if (areaId) {
-      newAreasDisplay[areaId] = {
-        hidden: hiddenAreas.has(areaId),
-        order: index
-      };
-    }
-  });
-
-  // Add any hidden areas that weren't in the order array
-  hiddenAreas.forEach(areaId => {
-    if (!newAreasDisplay[areaId]) {
-      // Assign a high order number so they appear at the end
-      newAreasDisplay[areaId] = {
-        hidden: true,
-        order: 9999 + Object.keys(newAreasDisplay).length
-      };
-    }
-  });
-
-  // Return new config with migrated structure
-  return {
-    ...config,
-    areas_display: Object.keys(newAreasDisplay).length > 0 ? newAreasDisplay : undefined
-  };
-}
-
-/**
  * Gets entities from DOM for a specific area and group.
  * @param {HTMLElement} editorElement - The editor element
  * @param {string} areaId - Area ID
