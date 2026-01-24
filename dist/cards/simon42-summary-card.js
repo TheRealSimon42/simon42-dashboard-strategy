@@ -6,6 +6,78 @@
 // KEIN redundantes Caching von Registry-Daten mehr!
 // ====================================================================
 
+import { t, initLanguage } from '../utils/i18n/simon42-i18n.js';
+import { filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { logWarn } from '../utils/system/simon42-logger.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
+
+/**
+ * Configuration for summary types
+ * Defines domain, filtering logic, counting logic, and relevant groups for each summary type
+ */
+const SUMMARY_TYPE_CONFIG = {
+  lights: {
+    domain: 'light',
+    countFilter: (state) => state === 'on',
+    relevantGroups: ['lights']
+  },
+  covers: {
+    domain: 'cover',
+    countFilter: (state) => ['open', 'opening'].includes(state),
+    relevantGroups: ['covers', 'covers_curtain']
+  },
+  security: {
+    domains: ['lock', 'cover', 'binary_sensor'],
+    countFilter: (id, state) => {
+      if (id.startsWith('lock.') && state === 'unlocked') return true;
+      if (id.startsWith('cover.') && state === 'open') return true;
+      if (id.startsWith('binary_sensor.') && state === 'on') return true;
+      return false;
+    },
+    deviceClassFilter: (entityId, deviceClass, domain) => {
+      // Locks: no device class filter needed
+      if (domain === 'lock') return true;
+      
+      // Covers: only door, garage, gate
+      if (domain === 'cover') {
+        return ['door', 'garage', 'gate'].includes(deviceClass);
+      }
+      
+      // Binary sensors: only door, window, garage_door, opening
+      if (domain === 'binary_sensor') {
+        return ['door', 'window', 'garage_door', 'opening'].includes(deviceClass);
+      }
+      
+      return false;
+    },
+    relevantGroups: ['covers', 'covers_curtain', 'switches']
+  },
+  batteries: {
+    domain: null, // Special case - checks for 'battery' in ID or device_class
+    countFilter: (state) => {
+      const value = parseFloat(state);
+      return !isNaN(value) && value < 20;
+    },
+    customFilter: (entity, hass) => {
+      const entityId = entity.entity_id;
+      const state = hass.states[entityId];
+      if (!state) return false;
+      
+      // Enhanced battery detection (case-insensitive, multiple patterns)
+      const entityIdLower = entityId.toLowerCase();
+      const deviceClass = state.attributes?.device_class;
+      const unitOfMeasurement = state.attributes?.unit_of_measurement;
+      
+      return entityIdLower.includes('battery') ||
+             deviceClass === 'battery' ||
+             (deviceClass === null && unitOfMeasurement === '%' && 
+              (entityIdLower.includes('battery') || entityIdLower.includes('charge') || entityIdLower.includes('level')));
+    },
+    relevantGroups: ['lights', 'covers', 'covers_curtain', 'climate', 
+                    'media_player', 'vacuum', 'fan', 'switches']
+  }
+};
+
 class Simon42SummaryCard extends HTMLElement {
   constructor() {
     super();
@@ -28,6 +100,13 @@ class Simon42SummaryCard extends HTMLElement {
   set hass(hass) {
     const oldHass = this._hass;
     this._hass = hass;
+    
+    // Initialisiere Sprache aus hass-Einstellungen (falls noch nicht geschehen)
+    if (hass && this.config) {
+      // Versuche Sprache aus config zu lesen, sonst aus hass
+      const languageConfig = { language: this.config.language || hass.language };
+      initLanguage(languageConfig, hass);
+    }
     
     // Beim ersten Mal oder wenn sich Entities geändert haben: Lade excluded Labels
     if (!oldHass || oldHass.entities !== hass.entities) {
@@ -53,7 +132,7 @@ class Simon42SummaryCard extends HTMLElement {
     this._excludeLabelsSet = new Set();
     
     if (!this._hass.entities) {
-      console.warn('[Simon42 Summary Card] hass.entities not available');
+      logWarn('[Summary Card] hass.entities not available');
       return;
     }
 
@@ -66,230 +145,84 @@ class Simon42SummaryCard extends HTMLElement {
   }
 
   _getRelevantEntities(hass) {
+    const typeConfig = SUMMARY_TYPE_CONFIG[this.config.summary_type];
+    if (!typeConfig) {
+      return [];
+    }
+    
     // Cache hidden entities (nur 1x berechnen pro hass-Update)
     if (this._hiddenFromConfigCache === null) {
       this._hiddenFromConfigCache = this._getHiddenFromConfig();
     }
     
     const hiddenFromConfig = this._hiddenFromConfigCache;
-    const allEntityIds = Object.keys(hass.states);
+    const entities = Object.values(hass.entities || {});
     
-    // OPTIMIERT: Reihenfolge der Filter für maximale Performance
-    // 1. Domain-Filter (reduziert drastisch die Entity-Anzahl)
-    // 2. State-Existence-Check (schnell)
-    // 3. Exclude-Checks (Set-Lookup ist O(1))
-    // 4. Registry-Checks direkt aus hass.entities
-    // 5. Komplexere Attribute-Checks am Ende
+    // Build filter options
+    const filterOptions = {
+      domain: typeConfig.domain || typeConfig.domains,
+      excludeLabels: this._excludeLabelsSet,
+      hiddenFromConfig,
+      hass,
+      checkRegistry: true,
+      checkState: true
+    };
     
-    switch (this.config.summary_type) {
-      case 'lights':
-        return allEntityIds.filter(id => {
-          // 1. Domain-Check (z.B. 500 → 30 Entities)
-          if (!id.startsWith('light.')) return false;
-          
-          // 2. State-Check (verhindert undefined-Zugriffe)
-          const state = hass.states[id];
-          if (!state) return false;
-          
-          // 3. Exclude-Checks (Set-Lookup = O(1))
-          if (this._excludeLabelsSet.has(id)) return false;
-          if (hiddenFromConfig.has(id)) return false;
-          
-          // 4. Registry-Check - DIREKT aus hass.entities
-          const registryEntry = hass.entities?.[id];
-          if (registryEntry?.hidden === true) return false;
-          
-          // 5. Category-Checks
-          if (state.attributes?.entity_category === 'config') return false;
-          if (state.attributes?.entity_category === 'diagnostic') return false;
-          
-          return true;
-        });
-      
-      case 'covers':
-        return allEntityIds.filter(id => {
-          // Domain-Check
-          if (!id.startsWith('cover.')) return false;
-          
-          // State-Check
-          const state = hass.states[id];
-          if (!state) return false;
-          
-          // Exclude-Checks
-          if (this._excludeLabelsSet.has(id)) return false;
-          if (hiddenFromConfig.has(id)) return false;
-          
-          // Registry-Check
-          const registryEntry = hass.entities?.[id];
-          if (registryEntry?.hidden === true) return false;
-          
-          // Category-Checks
-          if (state.attributes?.entity_category === 'config') return false;
-          if (state.attributes?.entity_category === 'diagnostic') return false;
-          
-          return true;
-        });
-      
-      case 'security':
-        return allEntityIds.filter(id => {
-          const state = hass.states[id];
-          if (!state) return false;
-          
-          // Domain-Pre-Filter (nur relevante Domains)
-          const isLock = id.startsWith('lock.');
-          const isCover = id.startsWith('cover.');
-          const isBinarySensor = id.startsWith('binary_sensor.');
-          
-          if (!isLock && !isCover && !isBinarySensor) return false;
-          
-          // Exclude-Checks
-          if (this._excludeLabelsSet.has(id)) return false;
-          if (hiddenFromConfig.has(id)) return false;
-          
-          // Registry-Check
-          const registryEntry = hass.entities?.[id];
-          if (registryEntry?.hidden === true) return false;
-          
-          // Device-Class-Check nur für relevante Domains
-          if (isLock) return true;
-          
-          if (isCover) {
-            const deviceClass = state.attributes?.device_class;
-            return ['door', 'garage', 'gate'].includes(deviceClass);
-          }
-          
-          if (isBinarySensor) {
-            const deviceClass = state.attributes?.device_class;
-            return ['door', 'window', 'garage_door', 'opening'].includes(deviceClass);
-          }
-          
-          return false;
-        });
-      
-      case 'batteries':
-        return allEntityIds.filter(id => {
-          const state = hass.states[id];
-          if (!state) return false;
-          
-          // Battery-Check (String-includes ist schneller als Attribute-Lookup)
-          if (!id.includes('battery') && 
-              state.attributes?.device_class !== 'battery') {
-            return false;
-          }
-          
-          // Exclude-Checks
-          if (this._excludeLabelsSet.has(id)) return false;
-          if (hiddenFromConfig.has(id)) return false;
-          
-          // Registry-Check
-          const registryEntry = hass.entities?.[id];
-          if (registryEntry?.hidden === true) return false;
-          
-          return true;
-        });
-      
-      default:
-        return [];
+    // Add custom filter for special cases (batteries, security device classes)
+    if (typeConfig.customFilter) {
+      filterOptions.customFilter = typeConfig.customFilter;
+    } else if (typeConfig.deviceClassFilter) {
+      // Security: filter by device class
+      filterOptions.customFilter = (entity, hass) => {
+        const entityId = entity.entity_id;
+        const state = hass.states[entityId];
+        if (!state) return false;
+        
+        const domain = entityId.split('.')[0];
+        const deviceClass = state.attributes?.device_class;
+        
+        return typeConfig.deviceClassFilter(entityId, deviceClass, domain);
+      };
     }
+    
+    // Use centralized filter utility
+    return filterEntities(entities, filterOptions);
   }
 
   _getHiddenFromConfig() {
-    const hiddenEntities = new Set();
-    
-    if (!this.config.areas_options) {
-      return hiddenEntities;
-    }
-    
-    // Welche Gruppen sind für diesen Summary-Type relevant?
-    const relevantGroups = this._getRelevantGroupsForSummary();
-    
-    // Durchlaufe alle Bereiche und sammle versteckte Entities
-    for (const areaOptions of Object.values(this.config.areas_options)) {
-      if (!areaOptions.groups_options) continue;
-      
-      for (const groupKey of relevantGroups) {
-        const groupOptions = areaOptions.groups_options[groupKey];
-        if (groupOptions?.hidden && Array.isArray(groupOptions.hidden)) {
-          groupOptions.hidden.forEach(entityId => hiddenEntities.add(entityId));
-        }
-      }
-    }
-    
-    return hiddenEntities;
+    // Use centralized hidden entities extraction
+    // Gets all hidden entities from all groups (if entity is hidden in any group, exclude it)
+    return getHiddenEntitiesFromConfig(this.config);
   }
 
   _getRelevantGroupsForSummary() {
-    // Welche Gruppen sind für welchen Summary-Type relevant?
-    switch (this.config.summary_type) {
-      case 'lights':
-        return ['lights'];
-      
-      case 'covers':
-        return ['covers', 'covers_curtain'];
-      
-      case 'security':
-        // Security kann aus verschiedenen Gruppen kommen
-        return ['covers', 'covers_curtain', 'switches'];
-      
-      case 'batteries':
-        // Batterien können theoretisch in jeder Gruppe sein
-        return ['lights', 'covers', 'covers_curtain', 'climate', 
-                'media_player', 'vacuum', 'fan', 'switches'];
-      
-      default:
-        return [];
-    }
+    const typeConfig = SUMMARY_TYPE_CONFIG[this.config.summary_type];
+    return typeConfig?.relevantGroups || [];
   }
 
   _calculateCount() {
     if (!this.hass) return 0;
     
     const relevantEntities = this._getRelevantEntities(this.hass);
+    const typeConfig = SUMMARY_TYPE_CONFIG[this.config.summary_type];
     
-    switch (this.config.summary_type) {
-      case 'lights':
-        // Zähle eingeschaltete Lichter
-        return relevantEntities.filter(id => 
-          this.hass.states[id]?.state === 'on'
-        ).length;
-      
-      case 'covers':
-        // Zähle offene Covers
-        return relevantEntities.filter(id => 
-          ['open', 'opening'].includes(this.hass.states[id]?.state)
-        ).length;
-      
-      case 'security':
-        // Zähle unsichere Items
-        return relevantEntities.filter(id => {
-          const state = this.hass.states[id];
-          if (!state) return false;
-          
-          // Locks (unlocked)
-          if (id.startsWith('lock.') && state.state === 'unlocked') return true;
-          
-          // Covers (open)
-          if (id.startsWith('cover.') && state.state === 'open') return true;
-          
-          // Binary sensors (on)
-          if (id.startsWith('binary_sensor.') && state.state === 'on') return true;
-          
-          return false;
-        }).length;
-      
-      case 'batteries':
-        // Zähle kritische Batterien (< 20%)
-        return relevantEntities.filter(id => {
-          const state = this.hass.states[id];
-          if (!state) return false;
-          
-          const value = parseFloat(state.state);
-          return !isNaN(value) && value < 20;
-        }).length;
-      
-      default:
-        return 0;
+    if (!typeConfig || !typeConfig.countFilter) {
+      return 0;
     }
+    
+    // Use configuration-based count filter
+    return relevantEntities.filter(entityId => {
+      const state = this.hass.states[entityId]?.state;
+      if (state === undefined || state === null) return false;
+      
+      // For security, countFilter needs entityId as well
+      if (this.config.summary_type === 'security') {
+        return typeConfig.countFilter(entityId, state);
+      }
+      
+      // For others, countFilter only needs state
+      return typeConfig.countFilter(state);
+    }).length;
   }
 
   _getDisplayConfig() {
@@ -299,25 +232,25 @@ class Simon42SummaryCard extends HTMLElement {
     const configs = {
       lights: {
         icon: 'mdi:lamps',
-        name: hasItems ? `${count} ${count === 1 ? 'Licht an' : 'Lichter an'}` : 'Alle Lichter aus',
+        name: hasItems ? `${count} ${count === 1 ? t('summaryLightOn') : t('summaryLightsOn')}` : t('summaryAllLightsOff'),
         color: hasItems ? 'orange' : 'grey',
         path: 'lights'
       },
       covers: {
         icon: 'mdi:blinds-horizontal',
-        name: hasItems ? `${count} ${count === 1 ? 'Rollo offen' : 'Rollos offen'}` : 'Alle Rollos geschlossen',
+        name: hasItems ? `${count} ${count === 1 ? t('summaryCoverOpen') : t('summaryCoversOpen')}` : t('summaryAllCoversClosed'),
         color: hasItems ? 'purple' : 'grey',
         path: 'covers'
       },
       security: {
         icon: 'mdi:security',
-        name: hasItems ? `${count} unsicher` : 'Alles gesichert',
+        name: hasItems ? `${count} ${t('summaryInsecure')}` : t('summaryAllSecure'),
         color: hasItems ? 'yellow' : 'grey',
         path: 'security'
       },
       batteries: {
         icon: hasItems ? 'mdi:battery-alert' : 'mdi:battery-charging',
-        name: hasItems ? `${count} ${count === 1 ? 'Batterie' : 'Batterien'} kritisch` : 'Alle Batterien OK',
+        name: hasItems ? `${count} ${count === 1 ? t('battery') : t('batteriesPlural')} ${t('summaryBatteryCritical')}` : t('summaryAllBatteriesOK'),
         color: hasItems ? 'red' : 'grey',
         path: 'batteries'
       }

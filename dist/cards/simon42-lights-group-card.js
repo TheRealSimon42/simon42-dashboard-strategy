@@ -5,6 +5,11 @@
 // und aktualisiert sich automatisch bei State-Änderungen
 // ====================================================================
 
+import { t, initLanguage } from '../utils/i18n/simon42-i18n.js';
+import { filterEntities } from '../utils/filters/simon42-entity-filter.js';
+import { getExcludedLabels } from '../utils/helpers/simon42-helpers.js';
+import { getHiddenEntitiesFromConfig } from '../utils/data/simon42-data-collectors.js';
+
 class Simon42LightsGroupCard extends HTMLElement {
   constructor() {
     super();
@@ -33,6 +38,11 @@ class Simon42LightsGroupCard extends HTMLElement {
     const oldHass = this._hass;
     this._hass = hass;
     
+    // Initialisiere Sprache aus hass-Einstellungen (falls noch nicht geschehen)
+    if (hass && this._config?.config) {
+      initLanguage(this._config.config, hass);
+    }
+    
     // Beim ersten Mal: Entity Registry hat sich möglicherweise geändert
     if (!oldHass || oldHass.entities !== hass.entities) {
       this._calculateExcludeSets();
@@ -50,46 +60,26 @@ class Simon42LightsGroupCard extends HTMLElement {
   }
 
   _calculateExcludeSets() {
-    // no_dboard Label
-    this._excludeSet = new Set();
-    this._entities.forEach(e => {
-      if (e.labels?.includes("no_dboard")) {
-        this._excludeSet.add(e.entity_id);
-      }
-    });
+    // Use centralized utilities
+    const excludeLabels = getExcludedLabels(this._entities);
+    this._excludeSet = new Set(excludeLabels);
     
-    // Hidden from config
-    this._hiddenFromConfigSet = new Set();
-    if (this._config.config?.areas_options) {
-      for (const areaOptions of Object.values(this._config.config.areas_options)) {
-        if (areaOptions.groups_options?.lights?.hidden) {
-          areaOptions.groups_options.lights.hidden.forEach(id => 
-            this._hiddenFromConfigSet.add(id)
-          );
-        }
-      }
-    }
+    // Use centralized hidden entities extraction
+    this._hiddenFromConfigSet = getHiddenEntitiesFromConfig(this._config.config || {});
   }
 
   _getFilteredLightEntities() {
     if (!this._hass) return [];
     
-    return this._entities
-      .filter(e => {
-        const id = e.entity_id;
-        
-        if (!id.startsWith('light.')) return false;
-        if (e.hidden === true) return false;
-        if (e.hidden_by) return false;
-        if (e.disabled_by) return false;
-        if (e.entity_category === 'config' || e.entity_category === 'diagnostic') return false;
-        if (this._hass.states[id] === undefined) return false;
-        if (this._excludeSet.has(id)) return false;
-        if (this._hiddenFromConfigSet.has(id)) return false;
-        
-        return true;
-      })
-      .map(e => e.entity_id);
+    // REFACTORED: Use centralized filterEntities utility
+    return filterEntities(this._entities, {
+      domain: 'light',
+      excludeLabels: this._excludeSet,
+      hiddenFromConfig: this._hiddenFromConfigSet,
+      hass: this._hass,
+      checkRegistry: true,
+      checkState: true
+    });
   }
 
   _getRelevantLights() {
@@ -126,7 +116,7 @@ class Simon42LightsGroupCard extends HTMLElement {
     this.style.display = 'block';
     
     const icon = isOn ? '💡' : '🌙';
-    const title = isOn ? 'Eingeschaltete Lichter' : 'Ausgeschaltete Lichter';
+    const title = isOn ? t('lightsOn') : t('lightsOff');
     const headingStyle = isOn ? 'title' : 'subtitle';
     const actionIcon = isOn ? 'mdi:lightbulb-off' : 'mdi:lightbulb-on';
     const actionService = isOn ? 'light.turn_off' : 'light.turn_on';
@@ -185,7 +175,7 @@ class Simon42LightsGroupCard extends HTMLElement {
           </h${isOn ? '2' : '3'}>
           <button class="batch-button" id="batch-action">
             <ha-icon icon="${actionIcon}"></ha-icon>
-            Alle ${isOn ? 'ausschalten' : 'einschalten'}
+            ${isOn ? t('turnAllOff') : t('turnAllOn')}
           </button>
         </div>
         <div class="light-grid" id="light-grid"></div>
@@ -234,4 +224,3 @@ class Simon42LightsGroupCard extends HTMLElement {
 // Registriere Custom Element
 customElements.define("simon42-lights-group-card", Simon42LightsGroupCard);
 
-console.log('✅ Simon42 Lights Group Card loaded');

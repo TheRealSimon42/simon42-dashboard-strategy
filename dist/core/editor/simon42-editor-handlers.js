@@ -3,133 +3,277 @@
 // ====================================================================
 // Event-Handler für den Dashboard Strategy Editor
 
-import { renderAreaEntitiesHTML } from './simon42-editor-template.js';
+import { renderAreaEntitiesHTML } from './template/simon42-editor-area-renderers.js';
+import { t } from '../../utils/i18n/simon42-i18n.js';
+import { getExcludedLabels } from '../../utils/helpers/simon42-helpers.js';
 
-export function attachWeatherCheckboxListener(element, callback) {
-  const weatherCheckbox = element.querySelector('#show-weather');
-  if (weatherCheckbox) {
-    weatherCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
+/**
+ * Creates a checkbox listener attachment function
+ * @param {string} selector - CSS selector for the checkbox
+ * @returns {Function} Function that attaches listener to element
+ */
+function createCheckboxListener(selector) {
+  return function attachCheckboxListener(element, callback) {
+    const switchElement = element.querySelector(selector);
+    if (switchElement) {
+      // Handle both ha-switch and regular checkboxes
+      if (switchElement.tagName === 'HA-SWITCH') {
+        switchElement.addEventListener('change', (e) => {
+          // Check if switch is disabled
+          const isDisabled = switchElement.disabled === true;
+          const newValue = e.target.checked;
+          
+          // If disabled and trying to enable (set to true), prevent the change
+          if (isDisabled && newValue === true) {
+            // Reset switch to false immediately
+            switchElement.checked = false;
+            return;
+          }
+          
+          // Allow disabling even if switch is disabled (always safe)
+          // Allow all changes if switch is not disabled
+          callback(newValue);
+        });
+      } else {
+        switchElement.addEventListener('change', (e) => {
+          // Check if switch is disabled
+          const isDisabled = switchElement.disabled === true;
+          const newValue = e.target.checked;
+          
+          // If disabled and trying to enable (set to true), prevent the change
+          if (isDisabled && newValue === true) {
+            // Reset switch to false immediately
+            switchElement.checked = false;
+            return;
+          }
+          
+          // Allow disabling even if switch is disabled (always safe)
+          // Allow all changes if switch is not disabled
+          callback(newValue);
+        });
+      }
+    }
+  };
 }
 
-export function attachEnergyCheckboxListener(element, callback) {
-  const energyCheckbox = element.querySelector('#show-energy');
-  if (energyCheckbox) {
-    energyCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachSearchCardCheckboxListener(element, callback) {
-  const searchCardCheckbox = element.querySelector('#show-search-card');
-  if (searchCardCheckbox) {
-    searchCardCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachSummaryViewsCheckboxListener(element, callback) {
-  const summaryViewsCheckbox = element.querySelector('#show-summary-views');
-  if (summaryViewsCheckbox) {
-    summaryViewsCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachRoomViewsCheckboxListener(element, callback) {
-  const roomViewsCheckbox = element.querySelector('#show-room-views');
-  if (roomViewsCheckbox) {
-    roomViewsCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachGroupByFloorsCheckboxListener(element, callback) {
-  const groupByFloorsCheckbox = element.querySelector('#group-by-floors');
-  if (groupByFloorsCheckbox) {
-    groupByFloorsCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
-
-export function attachCoversSummaryCheckboxListener(element, callback) {
-  const coversSummaryCheckbox = element.querySelector('#show-covers-summary');
-  if (coversSummaryCheckbox) {
-    coversSummaryCheckbox.addEventListener('change', (e) => {
-      callback(e.target.checked);
-    });
-  }
-}
+// Create all checkbox listeners using factory
+export const attachWeatherCheckboxListener = createCheckboxListener('#show-weather');
+export const attachEnergyCheckboxListener = createCheckboxListener('#show-energy');
+export const attachPersonBadgesCheckboxListener = createCheckboxListener('#show-person-badges');
+export const attachSearchCardCheckboxListener = createCheckboxListener('#show-search-card');
+export const attachClockCardCheckboxListener = createCheckboxListener('#show-clock-card');
+export const attachRoomViewsCheckboxListener = createCheckboxListener('#show-room-views');
+export const attachGroupByFloorsCheckboxListener = createCheckboxListener('#group-by-floors');
+export const attachSummariesCheckboxListener = createCheckboxListener('#show-summaries');
+export const attachCoversSummaryCheckboxListener = createCheckboxListener('#show-covers-summary');
+export const attachSecuritySummaryCheckboxListener = createCheckboxListener('#show-security-summary');
+export const attachLightSummaryCheckboxListener = createCheckboxListener('#show-light-summary');
+export const attachBatterySummaryCheckboxListener = createCheckboxListener('#show-battery-summary');
+export const attachBetterThermostatCheckboxListener = createCheckboxListener('#show-better-thermostat');
+export const attachHorizonCardCheckboxListener = createCheckboxListener('#show-horizon-card');
+export const attachHorizonCardExtendedCheckboxListener = createCheckboxListener('#horizon-card-extended');
+export const attachClockWeatherCardCheckboxListener = createCheckboxListener('#use-clock-weather-card');
+export const attachPublicTransportCheckboxListener = createCheckboxListener('#show-public-transport');
 
 export function attachAreaCheckboxListeners(element, callback) {
-  const areaCheckboxes = element.querySelectorAll('.area-checkbox');
-  areaCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', (e) => {
-      const areaId = e.target.dataset.areaId;
-      const isVisible = e.target.checked;
-      callback(areaId, isVisible);
+  // Handle icon-button clicks for hide/show (replaces checkbox functionality)
+  // Attach listeners directly to each visibility toggle button to avoid delegation issues
+  const handleVisibilityToggle = (button, listItem) => {
+    const areaId = button.dataset.areaId;
+    
+    // Determine current visibility state from multiple sources for reliability
+    const iconElement = button.querySelector('ha-icon');
+    const iconState = iconElement?.getAttribute('icon') === 'mdi:eye-off';
+    const dataState = listItem.dataset.areaHidden === 'true';
+    const classState = listItem.classList.contains('area-hidden');
+    // If any indicator says it's hidden, treat it as hidden
+    const isCurrentlyHidden = iconState || dataState || classState;
+    
+    // Toggle: Calculate the NEW visibility state after clicking
+    // If currently hidden (isCurrentlyHidden = true), clicking should SHOW it → isVisible = true
+    // If currently visible (isCurrentlyHidden = false), clicking should HIDE it → isVisible = false
+    // The new visibility state equals the current hidden state (toggle: hidden→visible, visible→hidden)
+    const isVisible = isCurrentlyHidden;
+    
+    // Update icon
+    const icon = button.querySelector('ha-icon');
+    if (icon) {
+      icon.setAttribute('icon', isVisible ? 'mdi:eye' : 'mdi:eye-off');
+    }
+    
+    // Update list item classes and data attributes
+    if (isVisible) {
+      listItem.classList.remove('area-hidden');
+      listItem.dataset.areaHidden = 'false';
+      // Remove hint text if present
+      const hint = listItem.querySelector('span.area-hidden-hint');
+      if (hint) {
+        hint.remove();
+      }
+    } else {
+      listItem.classList.add('area-hidden');
+      listItem.dataset.areaHidden = 'true';
+      // Remove hint text if present (no longer needed since hidden areas can be expanded)
+      const hint = listItem.querySelector('span.area-hidden-hint');
+      if (hint) {
+        hint.remove();
+      }
+    }
+    
+    // Update aria-label
+    button.setAttribute('aria-label', `${listItem.querySelector('span[slot="headline"]')?.textContent || areaId} ${isVisible ? t('show') : t('hide')}`);
+    
+    // Hide/show area content if expanded
+    const content = element.querySelector(`.area-content[data-area-id="${areaId}"]`);
+    if (content && !isVisible) {
+      content.style.display = 'none';
+    }
+    
+    callback(areaId, isVisible);
+  };
+  
+  // Attach listeners to existing buttons
+  const buttons = element.querySelectorAll('ha-icon-button.area-visibility-toggle[data-area-id]');
+  buttons.forEach(button => {
+    // Skip if already has listener attached (marked with data attribute)
+    if (button.dataset.visibilityListenerAttached === 'true') {
+      return;
+    }
+    
+    const listItem = button.closest('ha-md-list-item[data-area-id]');
+    if (!listItem) return;
+    
+    // Attach listener to button - clicks on icon inside will bubble to button
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      handleVisibilityToggle(button, listItem);
+    });
+    
+    // Mark as having listener attached
+    button.dataset.visibilityListenerAttached = 'true';
+  });
+  
+  // Also use event delegation as fallback for dynamically added buttons
+  // This handles clicks on the button itself or the icon inside it
+  const areaList = element.querySelector('ha-md-list');
+  if (areaList) {
+    areaList.addEventListener('click', (e) => {
+      // Check if click is on the button or icon inside it
+      const button = e.target.closest('ha-icon-button.area-visibility-toggle[data-area-id]');
+      if (!button) return;
       
-      // Disable/Enable expand button
-      const areaItem = e.target.closest('.area-item');
-      const expandButton = areaItem.querySelector('.expand-button');
-      if (expandButton) {
-        expandButton.disabled = !isVisible;
+      const listItem = button.closest('ha-md-list-item[data-area-id]');
+      if (!listItem) return;
+      
+      // Always handle the click via delegation to ensure it works
+      // Stop propagation to prevent list item expansion
+      e.stopPropagation();
+      e.preventDefault();
+      handleVisibilityToggle(button, listItem);
+      
+      // Attach direct listener for future clicks if not already attached
+      if (button.dataset.visibilityListenerAttached !== 'true') {
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          handleVisibilityToggle(button, listItem);
+        });
+        button.dataset.visibilityListenerAttached = 'true';
       }
     });
-  });
+  }
 }
 
 export function attachExpandButtonListeners(element, hass, config, onEntitiesLoad) {
-  const expandButtons = element.querySelectorAll('.expand-button');
+  // Handle clicks on ha-md-list-item for expansion
+  const areaItems = element.querySelectorAll('ha-md-list-item[data-area-id]');
   
-  expandButtons.forEach(button => {
-    button.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const areaId = button.dataset.areaId;
-      const areaItem = button.closest('.area-item');
-      const content = areaItem.querySelector(`.area-content[data-area-id="${areaId}"]`);
-      const icon = button.querySelector('.expand-icon');
+  areaItems.forEach(item => {
+    item.addEventListener('click', async (e) => {
+      // Don't expand if clicking on visibility toggle button or handle
+      // This allows the button's own click handler to work
+      if (e.target.closest('ha-icon-button.area-visibility-toggle') || e.target.closest('.handle')) {
+        return; // Return early without stopPropagation to allow event to bubble to delegation handler
+      }
       
-      if (content.style.display === 'none') {
-        // Expand
-        content.style.display = 'block';
-        button.classList.add('expanded');
-        
-        // Track expanded state
-        if (element._expandedAreas) {
-          element._expandedAreas.add(areaId);
+      e.stopPropagation();
+      const areaId = item.dataset.areaId;
+      
+      const areaList = item.closest('ha-md-list');
+      if (!areaList) return;
+      
+      let content = areaList.querySelector(`.area-content[data-area-id="${areaId}"]`);
+      
+      if (!content) {
+        // Create content container if it doesn't exist
+        // Place it as sibling after the list item (ha-sortable will ignore it since it's not draggable)
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'area-content';
+        contentDiv.setAttribute('data-area-id', areaId);
+        contentDiv.innerHTML = `<div class="loading-placeholder">${t('loadingEntities')}</div>`;
+        // Insert right after the item within the list
+        areaList.insertBefore(contentDiv, item.nextSibling);
+        content = contentDiv;
+      } else {
+        // Ensure content is positioned right after the item
+        if (content.parentNode !== areaList || content.previousSibling !== item) {
+          // Remove from current position
+          if (content.parentNode) {
+            content.parentNode.removeChild(content);
+          }
+          // Insert right after the item
+          areaList.insertBefore(content, item.nextSibling);
+        }
+      }
+      
+      const finalContent = content;
+      
+      // Toggle visibility
+      if (finalContent.style.display === 'none' || !finalContent.style.display) {
+        finalContent.style.display = 'block';
+      } else {
+        finalContent.style.display = 'none';
+        return;
+      }
+      
+      // Track expanded state
+      if (element._expandedAreas) {
+        element._expandedAreas.add(areaId);
+      }
+      
+      // Load entities if not already loaded
+      const loadingPlaceholder = finalContent.querySelector('.loading-placeholder');
+      const hasEntities = finalContent.querySelector('.entity-groups');
+      
+      if (loadingPlaceholder || (!hasEntities && finalContent.children.length === 0)) {
+        // Show loading state
+        if (loadingPlaceholder) {
+          loadingPlaceholder.textContent = t('loadingEntities');
+        } else {
+          finalContent.innerHTML = `<div class="loading-placeholder">${t('loadingEntities')}</div>`;
         }
         
-        // Lade Entitäten, falls noch nicht geladen
-        if (content.querySelector('.loading-placeholder')) {
+        try {
           const groupedEntities = await getAreaGroupedEntities(areaId, hass);
           const hiddenEntities = getHiddenEntitiesForArea(areaId, config);
           const entityOrders = getEntityOrdersForArea(areaId, config);
           
           const entitiesHTML = renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, entityOrders, hass);
-          content.innerHTML = entitiesHTML;
+          finalContent.innerHTML = entitiesHTML;
           
-          // Attach listeners für die neuen Entity-Checkboxen
-          attachEntityCheckboxListeners(content, onEntitiesLoad);
-          attachGroupCheckboxListeners(content, onEntitiesLoad);
-          attachEntityExpandButtonListeners(content, element);
-        }
-      } else {
-        // Collapse
-        content.style.display = 'none';
-        button.classList.remove('expanded');
-        
-        // Track collapsed state
-        if (element._expandedAreas) {
-          element._expandedAreas.delete(areaId);
-          element._expandedGroups?.delete(areaId);
+          // Attach listeners for the new entity checkboxes
+          attachEntityCheckboxListeners(finalContent, onEntitiesLoad);
+          attachGroupCheckboxListeners(finalContent, onEntitiesLoad);
+          attachEntityExpandButtonListeners(finalContent, element);
+          
+          // Initialize MDC switches in the newly loaded content
+          if (element._initializeMDCSwitches) {
+            element._initializeMDCSwitches();
+          }
+        } catch (error) {
+          console.error('Error loading area entities:', error);
+          finalContent.innerHTML = `<div class="empty-state">${t('errorLoadingEntities')}</div>`;
         }
       }
     });
@@ -145,10 +289,30 @@ export function attachGroupCheckboxListeners(element, callback) {
       checkbox.indeterminate = true;
     }
     
+    // Sync ha-switch with hidden checkbox
+    const areaId = checkbox.dataset.areaId;
+    const group = checkbox.dataset.group;
+    const haSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`);
+    if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+      // Initialize switch state from checkbox
+      haSwitch.checked = checkbox.checked;
+      
+      haSwitch.addEventListener('change', (e) => {
+        checkbox.checked = e.target.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      });
+    }
+    
     checkbox.addEventListener('change', (e) => {
       const areaId = e.target.dataset.areaId;
       const group = e.target.dataset.group;
       const isVisible = e.target.checked;
+      
+      // Update ha-switch
+      const haSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`);
+      if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+        haSwitch.checked = isVisible;
+      }
       
       callback(areaId, group, null, isVisible); // null = alle Entities in der Gruppe
       
@@ -158,6 +322,12 @@ export function attachGroupCheckboxListeners(element, callback) {
         const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
         entityCheckboxes.forEach(cb => {
           cb.checked = isVisible;
+          // Update corresponding ha-switch
+          const entityId = cb.dataset.entityId;
+          const entityHaSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`);
+          if (entityHaSwitch && entityHaSwitch.tagName === 'HA-SWITCH') {
+            entityHaSwitch.checked = isVisible;
+          }
         });
       }
       
@@ -172,11 +342,32 @@ export function attachEntityCheckboxListeners(element, callback) {
   const entityCheckboxes = element.querySelectorAll('.entity-checkbox');
   
   entityCheckboxes.forEach(checkbox => {
+    // Sync ha-switch with hidden checkbox
+    const entityId = checkbox.dataset.entityId;
+    const areaId = checkbox.dataset.areaId;
+    const group = checkbox.dataset.group;
+    const haSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`);
+    if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+      // Initialize switch state from checkbox
+      haSwitch.checked = checkbox.checked;
+      
+      haSwitch.addEventListener('change', (e) => {
+        checkbox.checked = e.target.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      });
+    }
+    
     checkbox.addEventListener('change', (e) => {
       const areaId = e.target.dataset.areaId;
       const group = e.target.dataset.group;
       const entityId = e.target.dataset.entityId;
       const isVisible = e.target.checked;
+      
+      // Update ha-switch
+      const haSwitch = element.querySelector(`#entity-checkbox-${areaId}-${group}-${entityId}`);
+      if (haSwitch && haSwitch.tagName === 'HA-SWITCH') {
+        haSwitch.checked = isVisible;
+      }
       
       callback(areaId, group, entityId, isVisible);
       
@@ -188,18 +379,30 @@ export function attachEntityCheckboxListeners(element, callback) {
         const allCheckboxes = Array.from(entityList.querySelectorAll('.entity-checkbox'));
         const checkedCount = allCheckboxes.filter(cb => cb.checked).length;
         
+        const groupHaSwitch = element.querySelector(`#group-checkbox-${areaId}-${group}`);
+        
         if (checkedCount === 0) {
           groupCheckbox.checked = false;
           groupCheckbox.indeterminate = false;
           groupCheckbox.removeAttribute('data-indeterminate');
+          if (groupHaSwitch && groupHaSwitch.tagName === 'HA-SWITCH') {
+            groupHaSwitch.checked = false;
+          }
         } else if (checkedCount === allCheckboxes.length) {
           groupCheckbox.checked = true;
           groupCheckbox.indeterminate = false;
           groupCheckbox.removeAttribute('data-indeterminate');
+          if (groupHaSwitch && groupHaSwitch.tagName === 'HA-SWITCH') {
+            groupHaSwitch.checked = true;
+          }
         } else {
           groupCheckbox.checked = false;
           groupCheckbox.indeterminate = true;
           groupCheckbox.setAttribute('data-indeterminate', 'true');
+          if (groupHaSwitch && groupHaSwitch.tagName === 'HA-SWITCH') {
+            // ha-switch doesn't support indeterminate state, so we'll leave it unchecked
+            groupHaSwitch.checked = false;
+          }
         }
       }
     });
@@ -217,145 +420,217 @@ export function attachEntityExpandButtonListeners(element, editorElement) {
       const entityList = element.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
       
       if (entityList) {
-        if (entityList.style.display === 'none') {
-          entityList.style.display = 'block';
-          button.classList.add('expanded');
-          
-          // Track expanded state
-          if (editorElement._expandedGroups) {
-            if (!editorElement._expandedGroups.has(areaId)) {
-              editorElement._expandedGroups.set(areaId, new Set());
-            }
-            editorElement._expandedGroups.get(areaId).add(group);
+      if (!entityList.classList.contains('expanded')) {
+        entityList.classList.add('expanded');
+        button.classList.add('expanded');
+        
+        // Track expanded state
+        if (editorElement._expandedGroups) {
+          if (!editorElement._expandedGroups.has(areaId)) {
+            editorElement._expandedGroups.set(areaId, new Set());
           }
-        } else {
-          entityList.style.display = 'none';
-          button.classList.remove('expanded');
-          
-          // Track collapsed state
-          if (editorElement._expandedGroups) {
-            const areaGroups = editorElement._expandedGroups.get(areaId);
-            if (areaGroups) {
-              areaGroups.delete(group);
-            }
+          editorElement._expandedGroups.get(areaId).add(group);
+        }
+      } else {
+        entityList.classList.remove('expanded');
+        button.classList.remove('expanded');
+        
+        // Track collapsed state
+        if (editorElement._expandedGroups) {
+          const areaGroups = editorElement._expandedGroups.get(areaId);
+          if (areaGroups) {
+            areaGroups.delete(group);
           }
         }
+      }
       }
     });
   });
 }
 
 export function sortAreaItems(element) {
-  const areaList = element.querySelector('#area-list');
+  const areaList = element.querySelector('ha-md-list');
   if (!areaList) return;
 
-  const items = Array.from(areaList.querySelectorAll('.area-item'));
+  const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
+  
+  // If drag-and-drop is active, check if items are already in correct order
+  // This prevents resetting order after user drags items
+  if (element._dragDropActive) {
+    let needsSorting = false;
+    for (let i = 0; i < items.length; i++) {
+      const expectedOrder = parseInt(items[i].dataset.order);
+      if (expectedOrder !== i) {
+        needsSorting = true;
+        break;
+      }
+    }
+    
+    if (!needsSorting) {
+      // Items are already in correct order, don't re-sort
+      return;
+    }
+  }
+  
   items.sort((a, b) => {
     const orderA = parseInt(a.dataset.order);
     const orderB = parseInt(b.dataset.order);
     return orderA - orderB;
   });
 
-  items.forEach(item => areaList.appendChild(item));
-}
-
-export function attachDragAndDropListeners(element, onOrderChange) {
-  const areaList = element.querySelector('#area-list');
-  if (!areaList) return;
-  
-  const areaItems = areaList.querySelectorAll('.area-item');
-  
-  let draggedElement = null;
-
-  const handleDragStart = (ev) => {
-    // Nur auf dem Header draggable machen
-    const dragHandle = ev.target.closest('.drag-handle');
-    if (!dragHandle) {
-      ev.preventDefault();
-      return;
-    }
+  items.forEach(item => {
+    const areaId = item.dataset.areaId;
+    const content = areaList.querySelector(`.area-content[data-area-id="${areaId}"]`);
     
-    const areaItem = ev.target.closest('.area-item');
-    if (!areaItem) {
-      ev.preventDefault();
-      return;
-    }
+    // Move the item
+    areaList.appendChild(item);
     
-    areaItem.classList.add('dragging');
-    ev.dataTransfer.effectAllowed = 'move';
-    ev.dataTransfer.setData('text/html', areaItem.innerHTML);
-    draggedElement = areaItem;
-  };
-
-  const handleDragEnd = (ev) => {
-    const areaItem = ev.target.closest('.area-item');
-    if (areaItem) {
-      areaItem.classList.remove('dragging');
-    }
-    
-    // Entferne alle drag-over Klassen
-    const items = areaList.querySelectorAll('.area-item');
-    items.forEach(item => item.classList.remove('drag-over'));
-  };
-
-  const handleDragOver = (ev) => {
-    if (ev.preventDefault) {
-      ev.preventDefault();
-    }
-    ev.dataTransfer.dropEffect = 'move';
-    
-    const item = ev.currentTarget;
-    if (item !== draggedElement) {
-      item.classList.add('drag-over');
-    }
-    
-    return false;
-  };
-
-  const handleDragLeave = (ev) => {
-    ev.currentTarget.classList.remove('drag-over');
-  };
-
-  const handleDrop = (ev) => {
-    if (ev.stopPropagation) {
-      ev.stopPropagation();
-    }
-    if (ev.preventDefault) {
-      ev.preventDefault();
-    }
-
-    const dropTarget = ev.currentTarget;
-    dropTarget.classList.remove('drag-over');
-
-    if (draggedElement && draggedElement !== dropTarget) {
-      const allItems = Array.from(areaList.querySelectorAll('.area-item'));
-      const draggedIndex = allItems.indexOf(draggedElement);
-      const dropIndex = allItems.indexOf(dropTarget);
-
-      if (draggedIndex < dropIndex) {
-        dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
-      } else {
-        dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+    // Move the associated content div right after the item within the list
+    if (content) {
+      // Remove from current position if it exists
+      if (content.parentNode) {
+        content.parentNode.removeChild(content);
       }
-
-      // Update die Reihenfolge in der Config
-      onOrderChange();
+      // Insert right after the item within the list
+      areaList.insertBefore(content, item.nextSibling);
     }
-
-    return false;
-  };
-
-  areaItems.forEach(item => {
-    item.setAttribute('draggable', 'true');
-    item.addEventListener('dragstart', handleDragStart);
-    item.addEventListener('dragend', handleDragEnd);
-    item.addEventListener('dragover', handleDragOver);
-    item.addEventListener('drop', handleDrop);
-    item.addEventListener('dragleave', handleDragLeave);
   });
 }
 
+export function attachDragAndDropListeners(element, onOrderChange) {
+  // Use ha-sortable's built-in event system
+  const sortable = element.querySelector('ha-sortable');
+  if (!sortable) {
+    return;
+  }
+  
+  // Mark that drag-and-drop is active to prevent sortAreaItems from interfering
+  element._dragDropActive = true;
+  
+  // Store timer on element to persist across re-renders
+  if (!element._orderUpdateTimer) {
+    element._orderUpdateTimer = null;
+  }
+  
+  // Remove any existing listener to prevent duplicates
+  const existingListener = sortable._itemMovedListener;
+  if (existingListener) {
+    sortable.removeEventListener('item-moved', existingListener);
+  }
+  
+  // Create new listener function
+  const itemMovedHandler = (e) => {
+    // Update data-order IMMEDIATELY to prevent ha-sortable from resetting
+    const areaList = element.querySelector('ha-md-list');
+    if (areaList) {
+      const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
+      items.forEach((item, index) => {
+        item.dataset.order = index.toString();
+      });
+    }
+    
+    // Clear any pending debounced update
+    if (element._orderUpdateTimer) {
+      clearTimeout(element._orderUpdateTimer);
+    }
+    
+    // Debounce: Only update config after drag has settled (300ms after last move)
+    element._orderUpdateTimer = setTimeout(() => {
+      // After items are moved, ensure all area-content divs are positioned correctly
+      // This ensures content stays with its item even if ha-sortable only moves the items
+      const areaList = element.querySelector('ha-md-list');
+      if (!areaList) {
+        onOrderChange();
+        return;
+      }
+      
+      // Get all items in their current order
+      const items = Array.from(areaList.querySelectorAll('ha-md-list-item[data-area-id]'));
+      
+      // CRITICAL FIX: Update data-order attributes to match new DOM order
+      // This prevents sortAreaItems from resetting the order on next render
+      items.forEach((item, index) => {
+        const areaId = item.dataset.areaId;
+        item.dataset.order = index.toString();
+      });
+      
+      // For each item, ensure its content div is positioned correctly
+      items.forEach(item => {
+        const areaId = item.dataset.areaId;
+        if (!areaId) return;
+        
+        const content = areaList.querySelector(`.area-content[data-area-id="${areaId}"]`);
+        if (!content) return;
+        
+        // Check if content is already in the right position
+        if (content.previousSibling === item && content.parentNode === areaList) {
+          // Already in correct position
+          return;
+        }
+        
+        // Remove content from current position
+        if (content.parentNode) {
+          content.parentNode.removeChild(content);
+        }
+        
+        // Insert content right after the item
+        const nextSibling = item.nextSibling;
+        areaList.insertBefore(content, nextSibling);
+      });
+      
+      // Update order when items are moved
+      onOrderChange();
+    }, 300); // 300ms debounce - wait for drag to settle
+  };
+  
+  // Store reference to listener for cleanup
+  sortable._itemMovedListener = itemMovedHandler;
+  
+  // Attach the listener
+  sortable.addEventListener('item-moved', itemMovedHandler);
+}
+
 // Helper-Funktionen
+
+/**
+ * Domain categorization configuration for entity grouping.
+ * Only defines exceptions where domain name differs from group name or special logic is needed.
+ * Domains not listed here default to using the domain name as the group key.
+ */
+const DOMAIN_GROUP_MAPPING = {
+  'light': 'lights',      // Exception: plural form
+  'switch': 'switches',   // Exception: plural form
+  'scene': 'scenes',      // Exception: plural form
+  'cover': {
+    group: (deviceClass) => {
+      // Special handling for covers: curtain/blind go to covers_curtain, others to covers
+      return (deviceClass === 'curtain' || deviceClass === 'blind') ? 'covers_curtain' : 'covers';
+    }
+  }
+};
+
+/**
+ * Gets the group key for an entity based on its domain and device class.
+ * @param {string} domain - Entity domain (e.g., 'light', 'cover', 'climate')
+ * @param {string} deviceClass - Device class (optional, for covers)
+ * @returns {string|null} Group key or null if domain is not supported
+ */
+function getGroupKeyForEntity(domain, deviceClass) {
+  const mapping = DOMAIN_GROUP_MAPPING[domain];
+  
+  // Handle object with group function (for covers with device class logic)
+  if (mapping && typeof mapping === 'object' && mapping.group) {
+    return mapping.group(deviceClass);
+  }
+  
+  // Handle explicit string mapping (exceptions like 'light' -> 'lights')
+  if (mapping && typeof mapping === 'string') {
+    return mapping;
+  }
+  
+  // Default: use domain name as group key (for climate, media_player, vacuum, fan, etc.)
+  return mapping === undefined ? domain : null;
+}
 
 async function getAreaGroupedEntities(areaId, hass) {
   // NEUES CACHING: Nutze hass.devices und hass.entities (Standard Home Assistant Objects)
@@ -373,7 +648,7 @@ async function getAreaGroupedEntities(areaId, hass) {
     }
   }
   
-  // Gruppiere Entitäten
+  // Initialize grouped entities structure
   const roomEntities = {
     lights: [],
     covers: [],
@@ -386,13 +661,12 @@ async function getAreaGroupedEntities(areaId, hass) {
     switches: []
   };
   
-  // Labels für Filterung
-  const excludeLabels = entities
-    .filter(e => e.labels?.includes("no_dboard"))
-    .map(e => e.entity_id);
+  // Build exclude labels set for O(1) lookup
+  const excludeLabels = new Set(getExcludedLabels(entities));
   
+  // Filter and categorize entities
   for (const entity of entities) {
-    // Prüfe ob Entität zum Raum gehört
+    // Check if entity belongs to area
     let belongsToArea = false;
     
     if (entity.area_id) {
@@ -402,66 +676,28 @@ async function getAreaGroupedEntities(areaId, hass) {
     }
     
     if (!belongsToArea) continue;
-    if (excludeLabels.includes(entity.entity_id)) continue;
+    if (excludeLabels.has(entity.entity_id)) continue;
     if (!hass.states[entity.entity_id]) continue;
     if (entity.hidden_by || entity.disabled_by) continue;
     
     const entityRegistry = hass.entities?.[entity.entity_id];
     if (entityRegistry && (entityRegistry.hidden_by || entityRegistry.disabled_by)) continue;
     
+    // Categorize by domain
     const domain = entity.entity_id.split('.')[0];
     const state = hass.states[entity.entity_id];
     const deviceClass = state.attributes?.device_class;
     
-    // Kategorisiere nach Domain
-    if (domain === 'light') {
-      roomEntities.lights.push(entity.entity_id);
-    } 
-    else if (domain === 'cover') {
-      if (deviceClass === 'curtain' || deviceClass === 'blind') {
-        roomEntities.covers_curtain.push(entity.entity_id);
-      } else {
-        roomEntities.covers.push(entity.entity_id);
-      }
-    }
-    else if (domain === 'scene') {
-      roomEntities.scenes.push(entity.entity_id);
-    }
-    else if (domain === 'climate') {
-      roomEntities.climate.push(entity.entity_id);
-    }
-    else if (domain === 'media_player') {
-      roomEntities.media_player.push(entity.entity_id);
-    }
-    else if (domain === 'vacuum') {
-      roomEntities.vacuum.push(entity.entity_id);
-    }
-    else if (domain === 'fan') {
-      roomEntities.fan.push(entity.entity_id);
-    }
-    else if (domain === 'switch') {
-      roomEntities.switches.push(entity.entity_id);
+    const groupKey = getGroupKeyForEntity(domain, deviceClass);
+    if (groupKey && roomEntities[groupKey]) {
+      roomEntities[groupKey].push(entity.entity_id);
     }
   }
   
   return roomEntities;
 }
 
-function getHiddenEntitiesForArea(areaId, config) {
-  const areaOptions = config.areas_options?.[areaId];
-  if (!areaOptions || !areaOptions.groups_options) {
-    return {};
-  }
-  
-  const hidden = {};
-  for (const [group, options] of Object.entries(areaOptions.groups_options)) {
-    if (options.hidden) {
-      hidden[group] = options.hidden;
-    }
-  }
-  
-  return hidden;
-}
+// getHiddenEntitiesForArea is now imported from config extractors
 
 function getEntityOrdersForArea(areaId, config) {
   const areaOptions = config.areas_options?.[areaId];

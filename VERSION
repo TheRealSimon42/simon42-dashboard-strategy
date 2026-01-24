@@ -1,0 +1,9 @@
+# Version file for simon42-dashboard-strategy
+# Format: Use semantic versioning (MAJOR.MINOR.PATCH)
+# For dev/prerelease versions, append suffix: -dev, -beta, -alpha, or -rc
+# Examples:
+#   - Stable: 1.0.0
+#   - Dev: 1.0.0-dev
+#   - Beta: 1.0.0-beta
+# The GitHub workflow reads this file and creates releases automatically
+2.1.17-dev
