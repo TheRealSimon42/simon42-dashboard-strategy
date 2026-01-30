@@ -131,7 +131,7 @@ export function createOverviewSection(data) {
         entity: entityId,
         show_entity_picture: true,
         vertical: false,
-        state_content: "last_changed"
+        features_position: "bottom"
       });
     });
   }
