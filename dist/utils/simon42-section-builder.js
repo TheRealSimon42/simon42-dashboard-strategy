@@ -122,7 +122,7 @@ export function createOverviewSection(data) {
   if (favoriteEntities.length > 0) {
     cards.push({
       type: "heading",
-      heading: "Favoriten"
+      heading: "Müllabfuhr"
     });
     
     favoriteEntities.forEach(entityId => {
@@ -131,7 +131,7 @@ export function createOverviewSection(data) {
         entity: entityId,
         show_entity_picture: true,
         vertical: false,
-        features_position: "bottom"
+        features_position: bottom
       });
     });
   }
