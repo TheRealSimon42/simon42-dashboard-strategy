@@ -128,6 +128,16 @@ export function createOverviewSection(data) {
     favoriteEntities.forEach(entityId => {
       cards.push({
         type: "tile",
+        visibility:
+        - condition: or
+          conditions:
+          - condition: state
+            entity: entityId
+            state: "Morgen"
+          - condition: state
+            entity: entityId
+            state: "Heute"
+        
         entity: entityId,
         show_entity_picture: true,
         vertical: false,
