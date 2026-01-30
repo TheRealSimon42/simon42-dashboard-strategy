@@ -131,6 +131,9 @@ export function createOverviewSection(data) {
         entity: entityId,
         show_entity_picture: true,
         vertical: false,
+        if (entityId == sensor.gelbetonne) {
+          color: yellow,
+        }
         features_position: "bottom"
       });
     });
