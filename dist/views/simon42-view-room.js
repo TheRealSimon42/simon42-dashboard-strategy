@@ -431,8 +431,20 @@ class Simon42ViewRoomStrategy {
             isReolink = manufacturer.includes('reolink') || model.includes('reolink');
           }
         }
+		
+        // Prüfe ob es ein Aqara-Gerät ist
+        let isAqara = false;
+        if (deviceId) {
+          const device = devices.find(d => d.id === deviceId);
+          if (device) {
+            // Prüfe Manufacturer oder Model
+            const manufacturer = device.manufacturer?.toLowerCase() || '';
+            const model = device.model?.toLowerCase() || '';
+            isAqara = manufacturer.includes('aqara') || model.includes('aqara');
+          }
+        }
         
-        if (isReolink && deviceId) {
+        if (isReolink || isAqara && deviceId) {
           // Reolink: picture-glance mit zusätzlichen Entitäten
           const deviceEntities = entityDeviceMap.get(deviceId) || [];
           
@@ -454,13 +466,28 @@ class Simon42ViewRoomStrategy {
             hass.states[id] &&
             !excludeLabels.has(id)
           );
+		  
+         const batteryEntity = deviceEntities.find(id => 
+            id.startsWith('sensor.') && 
+            hass.states[id]?.attributes?.device_class === 'battery' &&
+            !excludeLabels.has(id)
+          );
+		  
+        const doorbellEntity = deviceEntities.find(id => 
+            id.startsWith('event.') && 
+            hass.states[id]?.attributes?.device_class === 'doorbell' &&
+            !excludeLabels.has(id)
+          );
           
           // Baue entities-Array (nur verfügbare Entities)
           const glanceEntities = [];
           if (spotlightEntity) glanceEntities.push({ entity: spotlightEntity });
           if (motionEntity) glanceEntities.push({ entity: motionEntity });
           if (sirenEntity) glanceEntities.push({ entity: sirenEntity });
+          if (batteryEntity) glanceEntities.push({ entity: batteryEntity });
+          if (doorbellEntity) glanceEntities.push({ entity: doorbellEntity });
           
+		  if(isReolink) {
           cameraCards.push({
             type: "picture-glance",
             camera_image: cameraId,
@@ -469,6 +496,18 @@ class Simon42ViewRoomStrategy {
             title: stripAreaName(cameraId, area, hass),
             entities: glanceEntities
           });
+		  
+		  } else if (isAqara) {
+          cameraCards.push({
+            type: "picture-glance",
+            camera_image: cameraId,
+            camera_view: "live",
+            fit_mode: "cover",
+            title: stripAreaName(cameraId, area, hass),
+            entities: glanceEntities
+          });
+		  }
+		  
         } else {
           // Standard-Kamera: picture-entity
           cameraCards.push({
