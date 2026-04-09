@@ -11,18 +11,31 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
     // Ensure Registry is initialized (idempotent — no-op if already done)
     Registry.initialize(hass, config.config || {});
 
-    // Use raw (unfiltered) domain maps — battery sensors are often entity_category
-    // "diagnostic" which getVisibleEntityIdsForDomain() would exclude.
-    // We still filter out no_dboard and config-hidden below.
+    const strategyConfig = config.config || {};
+    const criticalThreshold = strategyConfig.battery_critical_threshold ?? 20;
+    const lowThreshold = strategyConfig.battery_low_threshold ?? 50;
+
+    const isBatteryCheckLabel = (value: any) =>
+      /batterie[-_\s]?che?ck|battery[-_\s]?che?ck/i.test(String(value || ''));
+
+    // 🔧 NEU: Batterie-Check aus config.entities (alte Logik)
+    const batteryCheckSet = new Set(
+      (config.entities || [])
+        .filter((e: any) =>
+          Array.isArray(e.labels) &&
+          e.labels.some((l: any) => isBatteryCheckLabel(l))
+        )
+        .map((e: any) => e.entity_id)
+    );
+
+    // Use raw (unfiltered) domain maps
     const sensorIds = Registry.getEntityIdsForDomain('sensor');
     const binarySensorIds = Registry.getEntityIdsForDomain('binary_sensor');
 
-    // Filter battery entities — exclude hidden/no_dboard but keep diagnostic
     const batteryEntities = [...sensorIds, ...binarySensorIds].filter((entityId) => {
       const state = hass.states[entityId];
       if (!state) return false;
 
-      // Exclude hidden and no_dboard entities (but NOT diagnostic — batteries are often diagnostic)
       if (Registry.isExcludedByLabel(entityId)) return false;
       if (Registry.isHiddenByConfig(entityId)) return false;
       const entry = Registry.getEntity(entityId);
@@ -31,20 +44,21 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
       const isBattery = entityId.includes('battery') || state.attributes?.device_class === 'battery';
       if (!isBattery) return false;
 
-      // Platform-specific filter: hide mobile_app batteries if configured
       if (config.config?.hide_mobile_app_batteries) {
         const registryEntry = Registry.getEntity(entityId);
         if (registryEntry?.platform === 'mobile_app') return false;
       }
 
       if (entityId.startsWith('binary_sensor.')) return true;
+
       const stateVal = state.state;
       if (stateVal === 'unavailable' || stateVal === 'unknown') return true;
+
       const value = parseFloat(stateVal);
       return !isNaN(value);
     });
 
-    // Deduplication: remove binary_sensor if %-sensor exists on same device
+    // Deduplication
     const sensorDeviceIds = new Set<string>();
     for (const id of batteryEntities) {
       if (id.startsWith('sensor.')) {
@@ -52,6 +66,7 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
         if (deviceId) sensorDeviceIds.add(deviceId);
       }
     }
+
     const dedupedEntities = batteryEntities.filter((id) => {
       if (!id.startsWith('binary_sensor.')) return true;
       const deviceId = Registry.getEntity(id)?.device_id;
@@ -59,30 +74,60 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
     });
 
     // Group by status
-    const strategyConfig = config.config || {};
-    const criticalThreshold = strategyConfig.battery_critical_threshold ?? 20;
-    const lowThreshold = strategyConfig.battery_low_threshold ?? 50;
     const critical: string[] = [];
     const low: string[] = [];
     const good: string[] = [];
 
     for (const entityId of dedupedEntities) {
       const state = hass.states[entityId];
-      if (entityId.startsWith('binary_sensor.')) {
-        (state.state === 'on' ? critical : good).push(entityId);
-        continue;
-      }
+
+      const raw = String(state.state || '').toLowerCase();
+      const registryLabel = Registry.getRegistryLabel(entityId)?.toLowerCase?.() || '';
+
+      const isBatteryCheck =
+        isBatteryCheckLabel(registryLabel) ||
+        batteryCheckSet.has(entityId);
+
       const value = parseFloat(state.state);
       const unit = state.attributes?.unit_of_measurement;
-      // Only apply percentage thresholds to %-based sensors.
-      // Voltage sensors (V, mV) have device-specific ranges and cannot be
-      // meaningfully compared against percentage thresholds (e.g. 3V would
-      // be "critical" at < 20 which is wrong). Skip them entirely.
-      if (unit && unit !== '%') continue;
-      if (isNaN(value)) critical.push(entityId);
-      else if (value < criticalThreshold) critical.push(entityId);
-      else if (value <= lowThreshold) low.push(entityId);
-      else good.push(entityId);
+
+      // 🔴 KRITISCH
+
+      if (raw === 'unavailable' || raw === 'unknown') {
+        critical.push(entityId);
+        continue;
+      }
+
+      if (isBatteryCheck && raw === 'low') {
+        critical.push(entityId);
+        continue;
+      }
+
+      if (entityId.startsWith('binary_sensor.') && raw === 'on') {
+        critical.push(entityId);
+        continue;
+      }
+
+      if (unit === '%' && !isNaN(value) && value < criticalThreshold) {
+        critical.push(entityId);
+        continue;
+      }
+
+      // 🟡 LOW
+
+      if (isBatteryCheck && (raw === 'middle' || raw === 'medium')) {
+        low.push(entityId);
+        continue;
+      }
+
+      if (unit === '%' && !isNaN(value) && value <= lowThreshold) {
+        low.push(entityId);
+        continue;
+      }
+
+      // 🟢 GOOD
+
+      good.push(entityId);
     }
 
     const sections: LovelaceSectionConfig[] = [];
