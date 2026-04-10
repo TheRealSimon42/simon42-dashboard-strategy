@@ -134,7 +134,9 @@ class Simon42LightsGroupCard extends LitElement {
   `;
 
   setConfig(config: LightsGroupConfig): void {
-    if (!config.group_type) throw new Error('You need to define group_type (on/off/all)');
+    if (!['on', 'off', 'all'].includes(config.group_type)) {
+      throw new Error('You need to define group_type (on/off/all)');
+    }
     this._config = config;
   }
 
@@ -152,7 +154,7 @@ class Simon42LightsGroupCard extends LitElement {
     // Build cache if needed
     if (!this._cachedSourceIds) {
       if (!Registry.initialized) return;
-      this._cachedSourceIds = new Set(this._getSourceLightEntities(this.hass));
+      this._cachedSourceIds = new Set(this._getSourceLightEntities());
     }
 
     // Always propagate hass to child cards
@@ -166,11 +168,17 @@ class Simon42LightsGroupCard extends LitElement {
     }
   }
 
-  private _getSourceLightEntities(hass: HomeAssistant): string[] {
+  private _getState(entityId: string) {
+    if (!this.hass) return undefined;
+    if (!Object.prototype.hasOwnProperty.call(this.hass.states, entityId)) return undefined;
+    return this.hass.states[entityId];
+  }
+
+  private _getSourceLightEntities(): string[] {
     if (Array.isArray(this._config.entities) && this._config.entities.length > 0) {
-      return this._config.entities.filter((id) => id.startsWith('light.') && hass.states[id] !== undefined);
+      return this._config.entities.filter((id) => id.startsWith('light.') && this._getState(id) !== undefined);
     }
-    return Registry.getVisibleEntityIdsForDomain('light').filter((id) => hass.states[id] !== undefined);
+    return Registry.getVisibleEntityIdsForDomain('light').filter((id) => this._getState(id) !== undefined);
   }
 
   private _getRelevantLights(lightIds?: Iterable<string>): string[] {
@@ -186,7 +194,7 @@ class Simon42LightsGroupCard extends LitElement {
 
     const relevant: string[] = [];
     for (const id of sourceIds) {
-      const state = this.hass.states[id];
+      const state = this._getState(id);
       if (state && state.state === targetState) relevant.push(id);
     }
 
@@ -194,8 +202,8 @@ class Simon42LightsGroupCard extends LitElement {
   }
 
   private _sortByLastChanged(a: string, b: string): number {
-    const stateA = this.hass!.states[a];
-    const stateB = this.hass!.states[b];
+    const stateA = this._getState(a);
+    const stateB = this._getState(b);
     if (!stateA || !stateB) return 0;
     return new Date(stateB.last_changed).getTime() - new Date(stateA.last_changed).getTime();
   }
@@ -226,7 +234,8 @@ class Simon42LightsGroupCard extends LitElement {
   }
 
   private _getGroupChildIds(entityId: string, candidateSet: Set<string>): string[] {
-    const members = this.hass?.states[entityId]?.attributes?.entity_id;
+    const entityState = this._getState(entityId);
+    const members = entityState?.attributes?.entity_id;
     if (!Array.isArray(members)) return [];
 
     const childIds = members.filter(
@@ -355,7 +364,7 @@ class Simon42LightsGroupCard extends LitElement {
     }
     if (isOn) {
       // Only add brightness slider if the light actually supports it
-      const state = this.hass?.states[entityId];
+      const state = this._getState(entityId);
       const modes = state?.attributes?.supported_color_modes as string[] | undefined;
       const hasBrightness = modes?.some((m: string) =>
         ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white'].includes(m)
@@ -382,23 +391,35 @@ class Simon42LightsGroupCard extends LitElement {
     container = document.createElement('div');
     container.className = 'group-block';
     container.dataset.entityId = entityId;
-    container.innerHTML = `
-      <div class="group-header">
-        <button class="group-toggle" type="button" aria-expanded="false">
-          <span class="group-toggle-icon">▶</span>
-        </button>
-        <div class="group-card-slot"></div>
-      </div>
-      <div class="group-children" hidden></div>
-    `;
+    const groupHeader = document.createElement('div');
+    groupHeader.className = 'group-header';
 
-    const toggle = container.querySelector('.group-toggle') as HTMLButtonElement;
-    const children = container.querySelector('.group-children') as HTMLElement;
-    toggle.addEventListener('click', () => {
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'group-toggle';
+    toggleButton.type = 'button';
+    toggleButton.setAttribute('aria-expanded', 'false');
+
+    const toggleIcon = document.createElement('span');
+    toggleIcon.className = 'group-toggle-icon';
+    toggleIcon.textContent = '▶';
+    toggleButton.appendChild(toggleIcon);
+
+    const groupCardHost = document.createElement('div');
+    groupCardHost.className = 'group-card-slot';
+
+    groupHeader.append(toggleButton, groupCardHost);
+
+    const childContainer = document.createElement('div');
+    childContainer.className = 'group-children';
+    childContainer.hidden = true;
+
+    container.append(groupHeader, childContainer);
+
+    toggleButton.addEventListener('click', () => {
       const expanded = !this._isExpanded(entityId);
       this._groupExpansion.set(entityId, expanded);
-      toggle.setAttribute('aria-expanded', String(expanded));
-      children.hidden = !expanded;
+      toggleButton.setAttribute('aria-expanded', String(expanded));
+      childContainer.hidden = !expanded;
     });
 
     this._groupContainers.set(entityId, container);
@@ -411,28 +432,28 @@ class Simon42LightsGroupCard extends LitElement {
     for (const entityId of nodeIds) {
       const node = nodes.get(entityId);
       const childIds = node?.childIds || [];
-      const nextDomNode =
+      const nodeElement: HTMLElement =
         childIds.length > 0 ? this._getOrCreateGroupContainer(entityId) : (this._getOrCreateTileCard(entityId) as HTMLElement);
 
       const nextSibling: ChildNode | null = prevNode ? prevNode.nextSibling : container.firstChild;
-      if (nextDomNode !== nextSibling) {
-        container.insertBefore(nextDomNode, nextSibling);
+      if (nodeElement !== nextSibling) {
+        container.insertBefore(nodeElement, nextSibling);
       }
-      prevNode = nextDomNode;
+      prevNode = nodeElement;
 
       if (childIds.length > 0) {
-        const groupCardSlot = nextDomNode.querySelector('.group-card-slot') as HTMLElement;
+        const groupCardHost = nodeElement.querySelector('.group-card-slot') as HTMLElement;
         const groupCard = this._getOrCreateTileCard(entityId);
-        if (groupCard.parentNode !== groupCardSlot) {
-          groupCardSlot.replaceChildren(groupCard);
+        if (groupCard.parentNode !== groupCardHost) {
+          groupCardHost.replaceChildren(groupCard);
         }
 
-        const childGrid = nextDomNode.querySelector('.group-children') as HTMLElement;
+        const childContainer = nodeElement.querySelector('.group-children') as HTMLElement;
         const expanded = this._isExpanded(entityId);
-        const toggle = nextDomNode.querySelector('.group-toggle') as HTMLButtonElement;
-        toggle.setAttribute('aria-expanded', String(expanded));
-        childGrid.hidden = !expanded;
-        this._reconcileHierarchy(childGrid, childIds, nodes);
+        const toggleButton = nodeElement.querySelector('.group-toggle') as HTMLButtonElement;
+        toggleButton.setAttribute('aria-expanded', String(expanded));
+        childContainer.hidden = !expanded;
+        this._reconcileHierarchy(childContainer, childIds, nodes);
       }
     }
 
