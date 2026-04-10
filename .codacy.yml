@@ -1,45 +1,42 @@
 ---
 engines:
+  # Modern Linting & Security
+  eslint9:
+    enabled: true
+  opengrep:
+    enabled: true
+
+  # Logic & Quality Metrics
+  lizard:
+    enabled: true
+
+  # Dependency Scanning
+  trivy:
+    enabled: true
+
+  # Explicitly disable Legacy engines (replaced by eslint9/opengrep)
   eslint:
-    enabled: true
-    exclude_paths:
-      - "dist/**"
-      - "node_modules/**"
+    enabled: false
   semgrep:
-    enabled: true
-    exclude_paths:
-      - "dist/**"
-      - "node_modules/**"
+    enabled: false
+  tslint:
+    enabled: false
+  csslint:
+    enabled: false
+  pmd:
+    enabled: false
+  checkov:
+    enabled: false
 
 exclude_paths:
   - "dist/**"
   - "node_modules/**"
+  - "src/types/**"
   - "*.config.ts"
   - ".github/**"
+  - "package-lock.json"
 
 languages:
   typescript:
     extensions:
       - ".ts"
-
-engines_overrides:
-  eslint:
-    exclude_checks:
-      # HA's hass object uses Record types accessed by dynamic entity IDs — this is standard HA pattern
-      - "security/detect-object-injection"
-      # HA type definitions often use `any` — we match upstream HA types
-      - "@typescript-eslint/no-explicit-any"
-      # Non-null assertions are a deliberate trade-off in HA code where we know values exist
-      - "@typescript-eslint/no-non-null-assertion"
-  semgrep:
-    exclude_checks:
-      # Generic Object Injection Sink — hass.states[entityId] is standard HA pattern
-      - "javascript.lang.security.audit.code-string-concat.code-string-concat"
-      - "javascript.lang.security.detect-object-injection.detect-object-injection"
-      # innerHTML — Editor generates HTML internally from trusted data, no user input
-      - "javascript.browser.security.insecure-document-method.insecure-document-method"
-      - "javascript.browser.security.dom-xss.dom-xss"
-      # Non-literal RegExp — we build regexes from area names (trusted HA data)
-      - "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp"
-      # Non-HTML variable storing HTML — editor template functions return HTML strings by design
-      - "javascript.express.security.audit.xss.mustache.var-in-href.var-in-href"

@@ -2,7 +2,7 @@
 // SUMMARY CARD — Reactive summary tile for lights/covers/security/batteries (LitElement)
 // ====================================================================
 
-import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
+import { LitElement, html, css, type PropertyValues } from 'lit';
 import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import { Registry } from '../Registry';
 import { trackHassUpdate, debugLog, timeStart, timeEnd } from '../utils/debug';

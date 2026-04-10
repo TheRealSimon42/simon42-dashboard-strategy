@@ -673,7 +673,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Add button
     const addBtn = this.querySelector('#add-custom-view-btn');
     if (addBtn) {
-      addBtn.addEventListener('click', () => this._addCustomView());
+      addBtn.addEventListener('click', () => { this._addCustomView(); });
     }
 
     // Remove buttons
@@ -777,7 +777,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
           updated.parsed_config = undefined;
         }
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message?.split('\n')[0] : 'Ungültiges YAML';
+        const message = e instanceof Error ? e.message.split('\n')[0] : 'Ungültiges YAML';
         updated._yaml_error = message || 'Ungültiges YAML';
         updated.parsed_config = undefined;
       }
@@ -820,7 +820,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   _attachCustomCardsListeners(): void {
     const addBtn = this.querySelector('#add-custom-card-btn');
     if (addBtn) {
-      addBtn.addEventListener('click', () => this._addCustomCard());
+      addBtn.addEventListener('click', () => { this._addCustomCard(); });
     }
 
     const headingInput = this.querySelector('#custom-cards-heading') as HTMLInputElement | null;
@@ -942,7 +942,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
           updated.parsed_config = undefined;
         }
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message?.split('\n')[0] : 'Ungültiges YAML';
+        const message = e instanceof Error ? e.message.split('\n')[0] : 'Ungültiges YAML';
         updated._yaml_error = message || 'Ungültiges YAML';
         updated.parsed_config = undefined;
       }
@@ -984,7 +984,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   _attachCustomBadgesListeners(): void {
     const addBtn = this.querySelector('#add-custom-badge-btn');
     if (addBtn) {
-      addBtn.addEventListener('click', () => this._addCustomBadge());
+      addBtn.addEventListener('click', () => { this._addCustomBadge(); });
     }
 
     this.querySelectorAll('.remove-custom-badge-btn').forEach((btn) => {
@@ -1055,7 +1055,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
           updated.parsed_config = undefined;
         }
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message?.split('\n')[0] : 'Ungültiges YAML';
+        const message = e instanceof Error ? e.message.split('\n')[0] : 'Ungültiges YAML';
         updated._yaml_error = message || 'Ungültiges YAML';
         updated.parsed_config = undefined;
       }
