@@ -3,7 +3,7 @@
 // ====================================================================
 
 import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
-import type { HomeAssistant } from '../types/homeassistant';
+import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { trackHassUpdate } from '../utils/debug';
@@ -40,6 +40,11 @@ interface LightHierarchyNode {
   childIds: string[];
 }
 
+interface LovelaceCardElement extends HTMLElement {
+  hass?: HomeAssistant;
+  setConfig(config: Record<string, unknown>): void;
+}
+
 const LIGHT_BRIGHTNESS_MODES = ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white'];
 
 class Simon42LightsGroupCard extends LitElement {
@@ -54,9 +59,9 @@ class Simon42LightsGroupCard extends LitElement {
   private _lastLightsList = '';
 
   // Reusable tile card pool (keyed by entity_id)
-  private _tileCards: Map<string, any> = new Map();
-  private _headingCard: any = null;
-  private _floorHeadingCards: Map<string, any> = new Map();
+  private _tileCards: Map<string, LovelaceCardElement> = new Map();
+  private _headingCard: LovelaceCardElement | null = null;
+  private _floorHeadingCards: Map<string, LovelaceCardElement> = new Map();
   private _groupContainers: Map<string, HTMLElement> = new Map();
   private _groupExpansion: Map<string, boolean> = new Map();
 
@@ -169,10 +174,10 @@ class Simon42LightsGroupCard extends LitElement {
     }
   }
 
-  private _getState(entityId: string) {
+  private _getState(entityId: string): HassEntity | undefined {
     if (!this.hass) return undefined;
-    if (!Object.prototype.hasOwnProperty.call(this.hass.states, entityId)) return undefined;
-    return this.hass.states[entityId];
+    const state = Reflect.get(this.hass.states as Record<string, unknown>, entityId);
+    return state as HassEntity | undefined;
   }
 
   private _getSourceLightEntities(): string[] {
@@ -331,6 +336,10 @@ class Simon42LightsGroupCard extends LitElement {
     });
   }
 
+  private _getFloorDomKey(floorId: string | null): string {
+    return floorId ?? '_none';
+  }
+
   private _buildHeadingConfig(lights: string[], label?: string, icon?: string): any {
     const isOn = this._config.group_type === 'on';
     const isAll = this._config.group_type === 'all';
@@ -377,11 +386,11 @@ class Simon42LightsGroupCard extends LitElement {
     };
   }
 
-  private _getOrCreateTileCard(entityId: string): any {
+  private _getOrCreateTileCard(entityId: string): LovelaceCardElement {
     const existingCard = this._tileCards.get(entityId);
     if (existingCard) return existingCard;
 
-    const card: any = document.createElement('hui-tile-card');
+    const card = document.createElement('hui-tile-card') as LovelaceCardElement;
     card.hass = this.hass;
     const cardConfig: any = { type: 'tile', entity: entityId, vertical: false, state_content: 'last_changed' };
     const displayName = this._getDisplayName(entityId);
@@ -454,28 +463,30 @@ class Simon42LightsGroupCard extends LitElement {
     for (const entityId of nodeIds) {
       const node = nodes.get(entityId);
       const childIds = node?.childIds || [];
-      const nodeElement: HTMLElement =
-        childIds.length > 0 ? this._getOrCreateGroupContainer(entityId) : (this._getOrCreateTileCard(entityId) as HTMLElement);
+      const nodeContainer =
+        childIds.length > 0
+          ? this._getOrCreateGroupContainer(entityId)
+          : (this._getOrCreateTileCard(entityId) as unknown as HTMLElement);
 
       const nextSibling: ChildNode | null = prevNode ? prevNode.nextSibling : container.firstChild;
-      if (nodeElement !== nextSibling) {
-        container.insertBefore(nodeElement, nextSibling);
+      if (nodeContainer !== nextSibling) {
+        container.insertBefore(nodeContainer, nextSibling);
       }
-      prevNode = nodeElement;
+      prevNode = nodeContainer;
 
       if (childIds.length > 0) {
-        const groupCardHost = nodeElement.querySelector('.group-card-slot') as HTMLElement;
+        const groupCardHostElement = nodeContainer.querySelector('.group-card-slot') as HTMLElement;
         const groupCard = this._getOrCreateTileCard(entityId);
-        if (groupCard.parentNode !== groupCardHost) {
-          groupCardHost.replaceChildren(groupCard);
+        if (groupCard.parentNode !== groupCardHostElement) {
+          groupCardHostElement.replaceChildren(groupCard);
         }
 
-        const childContainer = nodeElement.querySelector('.group-children') as HTMLElement;
+        const childContainerElement = nodeContainer.querySelector('.group-children') as HTMLElement;
         const expanded = this._isExpanded(entityId);
-        const toggleButton = nodeElement.querySelector('.group-toggle') as HTMLButtonElement;
-        toggleButton.setAttribute('aria-expanded', String(expanded));
-        childContainer.hidden = !expanded;
-        this._reconcileHierarchy(childContainer, childIds, nodes);
+        const toggleButtonElement = nodeContainer.querySelector('.group-toggle') as HTMLButtonElement;
+        toggleButtonElement.setAttribute('aria-expanded', String(expanded));
+        childContainerElement.hidden = !expanded;
+        this._reconcileHierarchy(childContainerElement, childIds, nodes);
       }
     }
 
@@ -500,12 +511,15 @@ class Simon42LightsGroupCard extends LitElement {
         <div class="lights-section">
           <div id="heading"></div>
           ${floorGroups.map(
-            (group) => html`
+            (group) => {
+              const floorKey = this._getFloorDomKey(group.floorId);
+              return html`
               <div class="floor-section">
-                <div id="floor-heading-${group.floorId || '_none'}"></div>
-                <div class="light-grid" id="floor-grid-${group.floorId || '_none'}"></div>
+                <div id=${`floor-heading-${floorKey}`}></div>
+                <div class="light-grid" id=${`floor-grid-${floorKey}`}></div>
               </div>
-            `
+            `;
+            }
           )}
         </div>
       `;
@@ -519,10 +533,10 @@ class Simon42LightsGroupCard extends LitElement {
     `;
   }
 
-  private _getOrCreateFloorHeadingCard(key: string): any {
+  private _getOrCreateFloorHeadingCard(key: string): LovelaceCardElement {
     let card = this._floorHeadingCards.get(key);
     if (card) return card;
-    card = document.createElement('hui-heading-card');
+    card = document.createElement('hui-heading-card') as LovelaceCardElement;
     this._floorHeadingCards.set(key, card);
     return card;
   }
@@ -545,11 +559,12 @@ class Simon42LightsGroupCard extends LitElement {
       const headingSlot = this.shadowRoot!.getElementById('heading');
       if (headingSlot) {
         if (!this._headingCard) {
-          this._headingCard = document.createElement('hui-heading-card');
-          headingSlot.appendChild(this._headingCard);
+          this._headingCard = document.createElement('hui-heading-card') as LovelaceCardElement;
         }
-        this._headingCard.hass = this.hass;
-        this._headingCard.setConfig(this._buildHeadingConfig(lights));
+        const mainHeadingCard = this._headingCard;
+        headingSlot.appendChild(mainHeadingCard);
+        mainHeadingCard.hass = this.hass;
+        mainHeadingCard.setConfig(this._buildHeadingConfig(lights));
       }
 
       // Reconcile per-floor sections
@@ -591,11 +606,12 @@ class Simon42LightsGroupCard extends LitElement {
     const headingSlot = this.shadowRoot!.getElementById('heading');
     if (headingSlot) {
       if (!this._headingCard) {
-        this._headingCard = document.createElement('hui-heading-card');
-        headingSlot.appendChild(this._headingCard);
+        this._headingCard = document.createElement('hui-heading-card') as LovelaceCardElement;
       }
-      this._headingCard.hass = this.hass;
-      this._headingCard.setConfig(this._buildHeadingConfig(lights));
+      const mainHeadingCard = this._headingCard;
+      headingSlot.appendChild(mainHeadingCard);
+      mainHeadingCard.hass = this.hass;
+      mainHeadingCard.setConfig(this._buildHeadingConfig(lights));
     }
 
     const grid = this.shadowRoot!.getElementById('grid');
