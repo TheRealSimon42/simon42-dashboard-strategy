@@ -1,0 +1,33 @@
+style: github
+template: RELEASE.tpl.md
+info:
+  repository_url: https://github.com/TheRealSimon42/simon42-dashboard-strategy
+options:
+  # tag_filter_pattern: '^v[^012]' # For release notes ignore versions below v3 to that we always compare the _last v3+_ tag with the current release
+  commits:
+    sort_by: Author.date
+    filters:
+      Type:
+        - chore
+        - fix
+        - feat
+        - docs
+  commit_groups:
+    sort_by: Custom
+    title_order:
+        - feat
+        - fix
+        - chore
+        - docs
+    title_maps:
+      feat: Features
+      fix: Bugfixes
+      chore: Chores
+      docs: Documentation
+  header:
+    pattern: "^(\\w+):\\s(.*)$"
+    pattern_maps:
+      - Type
+      - Subject
+    prefix:
+      - "#"

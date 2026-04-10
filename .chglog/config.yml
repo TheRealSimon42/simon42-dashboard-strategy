@@ -1,0 +1,34 @@
+style: github
+template: CHANGELOG.tpl.md
+info:
+  title: CHANGELOG
+  repository_url: https://github.com/TheRealSimon42/simon42-dashboard-strategy
+options:
+  tag_filter_pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+  commits:
+    sort_by: Author.date
+    filters:
+      Type:
+        - chore
+        - fix
+        - feat
+        - docs
+  commit_groups:
+    sort_by: Custom
+    title_order:
+        - feat
+        - fix
+        - chore
+        - docs
+    title_maps:
+      feat: Features
+      fix: Bugfixes
+      chore: Chores
+      docs: Documentation
+  header:
+    pattern: "^(\\w+):\\s(.*)$"
+    pattern_maps:
+      - Type
+      - Subject
+    prefix:
+      - "#"
