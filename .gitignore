@@ -1,6 +1,7 @@
 PERFORMANCE-AUDIT.md
 Session-Summary.md
 node_modules/
+.idea/
 dist/simon42-dashboard-strategy.js
 dist/simon42-dashboard-strategy.js.map
 .DS_Store
