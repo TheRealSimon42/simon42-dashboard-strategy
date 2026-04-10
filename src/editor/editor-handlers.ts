@@ -533,7 +533,7 @@ export function sortAreaItems(element: HTMLElement): void {
     return orderA - orderB;
   });
 
-  items.forEach((item) => areaList.appendChild(item));
+  items.forEach((item) => { areaList.appendChild(item); });
 }
 
 // -- Drag-and-Drop Area Reordering ------------------------------------
@@ -574,7 +574,7 @@ export function attachDragAndDropListeners(element: HTMLElement, onOrderChange: 
 
     // Remove all drag-over classes
     const items = areaList.querySelectorAll('.area-item');
-    items.forEach((item) => item.classList.remove('drag-over'));
+    items.forEach((item) => { item.classList.remove('drag-over'); });
   };
 
   const handleDragOver = (ev: DragEvent): boolean => {
