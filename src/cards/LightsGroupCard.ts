@@ -259,20 +259,21 @@ class Simon42LightsGroupCard extends LitElement {
     }
 
     const descendantCache = new Map<string, Set<string>>();
-    const getDescendants = (entityId: string, visiting: Set<string> = new Set()): Set<string> => {
+    const getDescendants = (entityId: string, visiting?: Set<string>): Set<string> => {
+      const activeVisitSet = visiting ?? new Set<string>();
       const cached = descendantCache.get(entityId);
       if (cached) return cached;
-      if (visiting.has(entityId)) return new Set();
+      if (activeVisitSet.has(entityId)) return new Set();
 
-      visiting.add(entityId);
+      activeVisitSet.add(entityId);
       const descendants = new Set<string>();
       for (const childId of rawChildren.get(entityId) || []) {
         descendants.add(childId);
-        for (const nestedId of getDescendants(childId, visiting)) {
+        for (const nestedId of getDescendants(childId, activeVisitSet)) {
           descendants.add(nestedId);
         }
       }
-      visiting.delete(entityId);
+      activeVisitSet.delete(entityId);
       descendantCache.set(entityId, descendants);
       return descendants;
     };
@@ -463,30 +464,32 @@ class Simon42LightsGroupCard extends LitElement {
     for (const entityId of nodeIds) {
       const node = nodes.get(entityId);
       const childIds = node?.childIds || [];
-      const nodeContainer =
-        childIds.length > 0
-          ? this._getOrCreateGroupContainer(entityId)
-          : (this._getOrCreateTileCard(entityId) as unknown as HTMLElement);
+      let nodeHtmlElement: HTMLElement;
+      if (childIds.length > 0) {
+        nodeHtmlElement = this._getOrCreateGroupContainer(entityId);
+      } else {
+        nodeHtmlElement = this._getOrCreateTileCard(entityId) as unknown as HTMLElement;
+      }
 
       const nextSibling: ChildNode | null = prevNode ? prevNode.nextSibling : container.firstChild;
-      if (nodeContainer !== nextSibling) {
-        container.insertBefore(nodeContainer, nextSibling);
+      if (nodeHtmlElement !== nextSibling) {
+        container.insertBefore(nodeHtmlElement, nextSibling);
       }
-      prevNode = nodeContainer;
+      prevNode = nodeHtmlElement;
 
       if (childIds.length > 0) {
-        const groupCardHostElement = nodeContainer.querySelector('.group-card-slot') as HTMLElement;
+        const groupCardHostHtmlElement = nodeHtmlElement.querySelector('.group-card-slot') as HTMLElement;
         const groupCard = this._getOrCreateTileCard(entityId);
-        if (groupCard.parentNode !== groupCardHostElement) {
-          groupCardHostElement.replaceChildren(groupCard);
+        if (groupCard.parentNode !== groupCardHostHtmlElement) {
+          groupCardHostHtmlElement.replaceChildren(groupCard);
         }
 
-        const childContainerElement = nodeContainer.querySelector('.group-children') as HTMLElement;
+        const childContainerHtmlElement = nodeHtmlElement.querySelector('.group-children') as HTMLElement;
         const expanded = this._isExpanded(entityId);
-        const toggleButtonElement = nodeContainer.querySelector('.group-toggle') as HTMLButtonElement;
-        toggleButtonElement.setAttribute('aria-expanded', String(expanded));
-        childContainerElement.hidden = !expanded;
-        this._reconcileHierarchy(childContainerElement, childIds, nodes);
+        const toggleButtonHtmlElement = nodeHtmlElement.querySelector('.group-toggle') as HTMLButtonElement;
+        toggleButtonHtmlElement.setAttribute('aria-expanded', String(expanded));
+        childContainerHtmlElement.hidden = !expanded;
+        this._reconcileHierarchy(childContainerHtmlElement, childIds, nodes);
       }
     }
 
