@@ -40,6 +40,8 @@ interface LightHierarchyNode {
   childIds: string[];
 }
 
+const LIGHT_BRIGHTNESS_MODES = ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white'];
+
 class Simon42LightsGroupCard extends LitElement {
   static properties = {
     hass: { attribute: false },
@@ -114,12 +116,11 @@ class Simon42LightsGroupCard extends LitElement {
     .group-toggle:hover {
       background: color-mix(in srgb, var(--secondary-background-color) 75%, var(--primary-color) 25%);
     }
-    .group-toggle-icon {
-      display: inline-block;
-      font-size: 16px;
+    .group-toggle ha-icon {
+      --mdc-icon-size: 18px;
       transition: transform 0.2s ease;
     }
-    .group-toggle[aria-expanded='true'] .group-toggle-icon {
+    .group-toggle[aria-expanded='true'] ha-icon {
       transform: rotate(90deg);
     }
     .group-children {
@@ -247,19 +248,45 @@ class Simon42LightsGroupCard extends LitElement {
 
   private _buildHierarchy(lightIds: string[]): { topLevelIds: string[]; nodes: Map<string, LightHierarchyNode> } {
     const candidateSet = new Set(lightIds);
-    const nodes = new Map<string, LightHierarchyNode>();
-    const childIds = new Set<string>();
-
+    const rawChildren = new Map<string, string[]>();
     for (const entityId of lightIds) {
-      const groupChildIds = this._getGroupChildIds(entityId, candidateSet);
-      nodes.set(entityId, { entityId, childIds: groupChildIds });
-      for (const childId of groupChildIds) {
-        childIds.add(childId);
+      rawChildren.set(entityId, this._getGroupChildIds(entityId, candidateSet));
+    }
+
+    const descendantCache = new Map<string, Set<string>>();
+    const getDescendants = (entityId: string, visiting: Set<string> = new Set()): Set<string> => {
+      const cached = descendantCache.get(entityId);
+      if (cached) return cached;
+      if (visiting.has(entityId)) return new Set();
+
+      visiting.add(entityId);
+      const descendants = new Set<string>();
+      for (const childId of rawChildren.get(entityId) || []) {
+        descendants.add(childId);
+        for (const nestedId of getDescendants(childId, visiting)) {
+          descendants.add(nestedId);
+        }
+      }
+      visiting.delete(entityId);
+      descendantCache.set(entityId, descendants);
+      return descendants;
+    };
+
+    const nodes = new Map<string, LightHierarchyNode>();
+    const allNestedChildIds = new Set<string>();
+    for (const entityId of lightIds) {
+      const directChildIds = rawChildren.get(entityId) || [];
+      const prunedChildIds = directChildIds.filter((childId) => {
+        return !directChildIds.some((siblingId) => siblingId !== childId && getDescendants(siblingId).has(childId));
+      });
+      nodes.set(entityId, { entityId, childIds: prunedChildIds });
+      for (const childId of prunedChildIds) {
+        allNestedChildIds.add(childId);
       }
     }
 
     const topLevelIds = lightIds
-      .filter((entityId) => !childIds.has(entityId))
+      .filter((entityId) => !allNestedChildIds.has(entityId))
       .sort((a, b) => this._sortByLastChanged(a, b));
 
     return { topLevelIds, nodes };
@@ -351,28 +378,24 @@ class Simon42LightsGroupCard extends LitElement {
   }
 
   private _getOrCreateTileCard(entityId: string): any {
-    let card = this._tileCards.get(entityId);
-    if (card) return card;
+    const existingCard = this._tileCards.get(entityId);
+    if (existingCard) return existingCard;
 
-    const isOn = this._config.group_type === 'on';
-    card = document.createElement('hui-tile-card');
+    const card: any = document.createElement('hui-tile-card');
     card.hass = this.hass;
     const cardConfig: any = { type: 'tile', entity: entityId, vertical: false, state_content: 'last_changed' };
     const displayName = this._getDisplayName(entityId);
     if (displayName) {
       cardConfig.name = displayName;
     }
-    if (isOn) {
-      // Only add brightness slider if the light actually supports it
-      const state = this._getState(entityId);
-      const modes = state?.attributes?.supported_color_modes as string[] | undefined;
-      const hasBrightness = modes?.some((m: string) =>
-        ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white'].includes(m)
-      );
-      if (hasBrightness) {
-        cardConfig.features = [{ type: 'light-brightness' }];
-        cardConfig.features_position = 'inline';
-      }
+    const state = this._getState(entityId);
+    const modes = state?.attributes?.supported_color_modes as string[] | undefined;
+    const hasBrightness = modes?.some((m: string) => LIGHT_BRIGHTNESS_MODES.includes(m)) || false;
+    if (this._config.group_type !== 'off' && hasBrightness) {
+      // Keep the slider on supported lights in all interactive views.
+      // HA handles disabled/irrelevant controls for unsupported runtime states.
+      cardConfig.features = [{ type: 'light-brightness' }];
+      cardConfig.features_position = 'inline';
     }
     card.setConfig(cardConfig);
     card.dataset.entityId = entityId;
@@ -399,9 +422,8 @@ class Simon42LightsGroupCard extends LitElement {
     toggleButton.type = 'button';
     toggleButton.setAttribute('aria-expanded', 'false');
 
-    const toggleIcon = document.createElement('span');
-    toggleIcon.className = 'group-toggle-icon';
-    toggleIcon.textContent = '▶';
+    const toggleIcon = document.createElement('ha-icon');
+    toggleIcon.setAttribute('icon', 'mdi:chevron-right');
     toggleButton.appendChild(toggleIcon);
 
     const groupCardHost = document.createElement('div');
@@ -497,33 +519,6 @@ class Simon42LightsGroupCard extends LitElement {
     `;
   }
 
-  private _reconcileGrid(grid: HTMLElement, lights: string[]): void {
-    const activeIds = new Set(lights);
-
-    // Remove cards for entities no longer in the list
-    for (const [id, card] of this._tileCards) {
-      if (!activeIds.has(id) && card.parentNode === grid) {
-        grid.removeChild(card);
-      }
-    }
-
-    // Add/reorder cards to match the desired order
-    let prevNode: Node | null = null;
-    for (const entityId of lights) {
-      const card = this._getOrCreateTileCard(entityId);
-      const nextSibling = prevNode ? prevNode.nextSibling : grid.firstChild;
-      if (card !== nextSibling) {
-        grid.insertBefore(card, nextSibling);
-      }
-      prevNode = card;
-    }
-
-    // Remove trailing stale nodes
-    while (prevNode && prevNode.nextSibling) {
-      grid.removeChild(prevNode.nextSibling);
-    }
-  }
-
   private _getOrCreateFloorHeadingCard(key: string): any {
     let card = this._floorHeadingCards.get(key);
     if (card) return card;
@@ -581,6 +576,12 @@ class Simon42LightsGroupCard extends LitElement {
         if (!allActiveIds.has(id)) {
           if (card.parentNode) card.parentNode.removeChild(card);
           this._tileCards.delete(id);
+        }
+      }
+      for (const [id, container] of this._groupContainers) {
+        if (!allActiveIds.has(id)) {
+          if (container.parentNode) container.parentNode.removeChild(container);
+          this._groupContainers.delete(id);
         }
       }
       return;
