@@ -99,12 +99,12 @@ class Simon42SummaryCard extends LitElement {
   protected willUpdate(changedProps: PropertyValues): void {
     if (!changedProps.has('hass') || !this.hass) return;
 
-    trackHassUpdate(`summary-${this._config?.summary_type || 'unknown'}`);
+    trackHassUpdate(`summary-${this._config.summary_type}`);
     const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
 
     if (!oldHass || oldHass.entities !== this.hass.entities) {
       this._relevantEntityIds = null;
-      debugLog(`summary-${this._config?.summary_type}: cache invalidated (registry changed)`);
+      debugLog(`summary-${this._config.summary_type}: cache invalidated (registry changed)`);
     }
 
     const newCount = this._calculateCount();
@@ -195,14 +195,14 @@ class Simon42SummaryCard extends LitElement {
         const sensorDeviceIds = new Set<string>();
         for (const id of batteryEntities) {
           if (id.startsWith('sensor.')) {
-            const deviceId = hass.entities?.[id]?.device_id;
+            const deviceId = hass.entities[id]?.device_id;
             if (deviceId) sensorDeviceIds.add(deviceId);
           }
         }
 
         result = batteryEntities.filter((id) => {
           if (!id.startsWith('binary_sensor.')) return true;
-          const deviceId = hass.entities?.[id]?.device_id;
+          const deviceId = hass.entities[id]?.device_id;
           return !deviceId || !sensorDeviceIds.has(deviceId);
         });
         break;
@@ -327,7 +327,7 @@ class Simon42SummaryCard extends LitElement {
   }
 
   private _handleClick(): void {
-    if (!this.hass || !this._config) return;
+    if (!this.hass) return;
     const displayConfig = this._getDisplayConfig();
     this.dispatchEvent(
       new CustomEvent('hass-action', {
@@ -347,7 +347,6 @@ class Simon42SummaryCard extends LitElement {
   }
 
   protected render() {
-    if (!this._config) return nothing;
 
     const display = this._getDisplayConfig();
     const colorCss = COLOR_MAP[display.color] || COLOR_MAP.grey;

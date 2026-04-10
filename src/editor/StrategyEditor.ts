@@ -73,12 +73,11 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   private _isUpdatingConfig = false;
   _expandedAreas: Set<string> = new Set();
   _expandedGroups: Map<string, Set<string>> = new Map();
-  private _isRendering = false;
 
   // -- Lifecycle --------------------------------------------------------
 
   setConfig(config: Simon42StrategyConfig): void {
-    this._config = config || {};
+    this._config = config;
     // Only render if we are not currently pushing a config update ourselves
     if (!this._isUpdatingConfig) {
       this._render();
@@ -106,8 +105,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   _getAllEntitiesForSelect(): EntitySelectOption[] {
     if (!this._hass) return [];
 
-    const entities = Object.values(this._hass.entities || {});
-    const devices = Object.values(this._hass.devices || {});
+    const entities = Object.values(this._hass.entities);
+    const devices = Object.values(this._hass.devices);
 
     // Build device-to-area lookup
     const deviceAreaMap = new Map<string, string>();
@@ -141,7 +140,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   // -- Main render ------------------------------------------------------
 
   _render(): void {
-    if (!this._hass || !this._config) {
+    if (!this._hass) {
       return;
     }
 
@@ -257,34 +256,34 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     `;
 
     // Bind event listeners
-    attachWeatherCheckboxListener(this, (val: boolean) => this._showWeatherChanged(val));
-    attachEnergyCheckboxListener(this, (val: boolean) => this._showEnergyChanged(val));
-    attachSearchCardCheckboxListener(this, (val: boolean) => this._showSearchCardChanged(val));
-    attachSummaryViewsCheckboxListener(this, (val: boolean) => this._showSummaryViewsChanged(val));
-    attachRoomViewsCheckboxListener(this, (val: boolean) => this._showRoomViewsChanged(val));
-    attachGroupByFloorsCheckboxListener(this, (val: boolean) => this._groupByFloorsChanged(val));
-    attachClockCardCheckboxListener(this, (val: boolean) => this._showClockCardChanged(val));
-    attachLightSummaryCheckboxListener(this, (val: boolean) => this._showLightSummaryChanged(val));
-    attachGroupLightsByFloorsCheckboxListener(this, (val: boolean) => this._groupLightsByFloorsChanged(val));
-    attachFavoritesShowStateCheckboxListener(this, (val: boolean) => this._favoritesShowStateChanged(val));
-    attachFavoritesHideLastChangedCheckboxListener(this, (val: boolean) => this._favoritesHideLastChangedChanged(val));
-    attachCoversSummaryCheckboxListener(this, (val: boolean) => this._showCoversSummaryChanged(val));
-    attachPartiallyOpenCoversCheckboxListener(this, (val: boolean) => this._showPartiallyOpenCoversChanged(val));
-    attachSecuritySummaryCheckboxListener(this, (val: boolean) => this._showSecuritySummaryChanged(val));
-    attachBatterySummaryCheckboxListener(this, (val: boolean) => this._showBatterySummaryChanged(val));
-    attachClimateSummaryCheckboxListener(this, (val: boolean) => this._showClimateSummaryChanged(val));
-    attachHideMobileAppBatteriesCheckboxListener(this, (hide: boolean) => this._hideMobileAppBatteriesChanged(hide));
+    attachWeatherCheckboxListener(this, (val: boolean) => { this._showWeatherChanged(val); });
+    attachEnergyCheckboxListener(this, (val: boolean) => { this._showEnergyChanged(val); });
+    attachSearchCardCheckboxListener(this, (val: boolean) => { this._showSearchCardChanged(val); });
+    attachSummaryViewsCheckboxListener(this, (val: boolean) => { this._showSummaryViewsChanged(val); });
+    attachRoomViewsCheckboxListener(this, (val: boolean) => { this._showRoomViewsChanged(val); });
+    attachGroupByFloorsCheckboxListener(this, (val: boolean) => { this._groupByFloorsChanged(val); });
+    attachClockCardCheckboxListener(this, (val: boolean) => { this._showClockCardChanged(val); });
+    attachLightSummaryCheckboxListener(this, (val: boolean) => { this._showLightSummaryChanged(val); });
+    attachGroupLightsByFloorsCheckboxListener(this, (val: boolean) => { this._groupLightsByFloorsChanged(val); });
+    attachFavoritesShowStateCheckboxListener(this, (val: boolean) => { this._favoritesShowStateChanged(val); });
+    attachFavoritesHideLastChangedCheckboxListener(this, (val: boolean) => { this._favoritesHideLastChangedChanged(val); });
+    attachCoversSummaryCheckboxListener(this, (val: boolean) => { this._showCoversSummaryChanged(val); });
+    attachPartiallyOpenCoversCheckboxListener(this, (val: boolean) => { this._showPartiallyOpenCoversChanged(val); });
+    attachSecuritySummaryCheckboxListener(this, (val: boolean) => { this._showSecuritySummaryChanged(val); });
+    attachBatterySummaryCheckboxListener(this, (val: boolean) => { this._showBatterySummaryChanged(val); });
+    attachClimateSummaryCheckboxListener(this, (val: boolean) => { this._showClimateSummaryChanged(val); });
+    attachHideMobileAppBatteriesCheckboxListener(this, (hide: boolean) => { this._hideMobileAppBatteriesChanged(hide); });
     this._attachBatteryThresholdListeners();
-    attachRoomPinsShowStateCheckboxListener(this, (val: boolean) => this._roomPinsShowStateChanged(val));
-    attachRoomPinsHideLastChangedCheckboxListener(this, (val: boolean) => this._roomPinsHideLastChangedChanged(val));
-    attachShowSwitchesOnAreasCheckboxListener(this, (show: boolean) => this._showSwitchesOnAreasChanged(show));
-    attachShowAlertsOnAreasCheckboxListener(this, (show: boolean) => this._showAlertsOnAreasChanged(show));
-    attachShowLocksInRoomsCheckboxListener(this, (show: boolean) => this._showLocksInRoomsChanged(show));
-    attachShowAutomationsInRoomsCheckboxListener(this, (show: boolean) => this._showAutomationsInRoomsChanged(show));
-    attachShowScriptsInRoomsCheckboxListener(this, (show: boolean) => this._showScriptsInRoomsChanged(show));
-    attachShowWindowContactsInRoomsCheckboxListener(this, (show: boolean) => this._showWindowContactsInRoomsChanged(show));
-    attachShowDoorContactsInRoomsCheckboxListener(this, (show: boolean) => this._showDoorContactsInRoomsChanged(show));
-    attachUseDefaultAreaSortCheckboxListener(this, (val: boolean) => this._useDefaultAreaSortChanged(val));
+    attachRoomPinsShowStateCheckboxListener(this, (val: boolean) => { this._roomPinsShowStateChanged(val); });
+    attachRoomPinsHideLastChangedCheckboxListener(this, (val: boolean) => { this._roomPinsHideLastChangedChanged(val); });
+    attachShowSwitchesOnAreasCheckboxListener(this, (show: boolean) => { this._showSwitchesOnAreasChanged(show); });
+    attachShowAlertsOnAreasCheckboxListener(this, (show: boolean) => { this._showAlertsOnAreasChanged(show); });
+    attachShowLocksInRoomsCheckboxListener(this, (show: boolean) => { this._showLocksInRoomsChanged(show); });
+    attachShowAutomationsInRoomsCheckboxListener(this, (show: boolean) => { this._showAutomationsInRoomsChanged(show); });
+    attachShowScriptsInRoomsCheckboxListener(this, (show: boolean) => { this._showScriptsInRoomsChanged(show); });
+    attachShowWindowContactsInRoomsCheckboxListener(this, (show: boolean) => { this._showWindowContactsInRoomsChanged(show); });
+    attachShowDoorContactsInRoomsCheckboxListener(this, (show: boolean) => { this._showDoorContactsInRoomsChanged(show); });
+    attachUseDefaultAreaSortCheckboxListener(this, (val: boolean) => { this._useDefaultAreaSortChanged(val); });
     this._attachCustomViewsListeners();
     this._attachCustomCardsListeners();
     this._attachCustomBadgesListeners();
@@ -292,23 +291,24 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._attachAlarmEntityListener();
     this._attachFavoritesListeners();
     this._attachRoomPinsListeners();
-    attachAreaCheckboxListeners(this, (areaId: string, isVisible: boolean) =>
-      this._areaVisibilityChanged(areaId, isVisible)
-    );
+    attachAreaCheckboxListeners(this, (areaId: string, isVisible: boolean) => {
+      this._areaVisibilityChanged(areaId, isVisible);
+    });
 
     // Sort area items by displayOrder
     sortAreaItems(this);
 
     // Drag & Drop event listeners
-    attachDragAndDropListeners(this, () => this._updateAreaOrder());
+    attachDragAndDropListeners(this, () => { this._updateAreaOrder(); });
 
     // Expand button listeners
     attachExpandButtonListeners(
       this,
       this._hass,
       this._config,
-      (areaId: string, group: string, entityId: string | null, isVisible: boolean) =>
-        this._entityVisibilityChanged(areaId, group, entityId, isVisible)
+      (areaId: string, group: string, entityId: string | null, isVisible: boolean) => {
+        this._entityVisibilityChanged(areaId, group, entityId, isVisible);
+      }
     );
 
     // Restore expanded state
@@ -339,7 +339,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _summariesColumnsChanged(columns: 2 | 4): void {
-    if (!this._config || !this._hass) {
+    if (!this._hass) {
       return;
     }
 
@@ -492,7 +492,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   private _renderFavoritesListFallback(favoriteEntities: string[], allEntities: EntitySelectOption[]): string {
-    if (!favoriteEntities || favoriteEntities.length === 0) {
+    if (favoriteEntities.length === 0) {
       return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Favoriten hinzugefügt</div>';
     }
 

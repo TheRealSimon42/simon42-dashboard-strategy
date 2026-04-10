@@ -280,7 +280,7 @@ class Registry {
     // no_dboard label exclusion
     Registry._excludeSet = new Set();
     for (const e of Registry._fetchedEntities) {
-      if (e.labels?.includes('no_dboard')) {
+      if (e.labels.includes('no_dboard')) {
         Registry._excludeSet.add(e.entity_id);
       }
     }
@@ -398,7 +398,7 @@ class Registry {
 
   /** All floor registry entries (from hass — no WS endpoint needed). */
   static get floors(): FloorRegistryEntry[] {
-    return Object.values(Registry._hass.floors || {});
+    return Object.values(Registry._hass.floors);
   }
 
   // =====================================================================

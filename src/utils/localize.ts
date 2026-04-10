@@ -28,7 +28,7 @@ let _localize: ((key: string) => string) | undefined;
  * Must be called once before localize() is used (typically in Registry.initialize).
  */
 export function setupLocalize(hass?: HomeAssistant): void {
-  const lang = hass?.locale?.language ?? hass?.language ?? DEFAULT_LANG;
+  const lang = hass?.locale.language ?? hass?.language ?? DEFAULT_LANG;
   _localize = (key: string) => getTranslatedString(key, lang) ?? getTranslatedString(key, DEFAULT_LANG) ?? key;
 }
 
