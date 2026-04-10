@@ -8,6 +8,7 @@ import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { trackHassUpdate } from '../utils/debug';
 import { localize } from '../utils/localize';
+import { stripAreaName } from '../utils/name-utils';
 
 declare global {
   interface Window {
@@ -18,8 +19,13 @@ declare global {
 
 interface LightsGroupConfig {
   config?: any;
-  group_type: 'on' | 'off';
+  entities?: string[];
+  group_type: 'on' | 'off' | 'all';
   group_by_floors?: boolean;
+  heading_label?: string;
+  heading_icon?: string;
+  area?: AreaRegistryEntry;
+  default_expanded?: boolean;
 }
 
 interface FloorGroup {
@@ -29,6 +35,11 @@ interface FloorGroup {
   lights: string[];
 }
 
+interface LightHierarchyNode {
+  entityId: string;
+  childIds: string[];
+}
+
 class Simon42LightsGroupCard extends LitElement {
   static properties = {
     hass: { attribute: false },
@@ -36,7 +47,7 @@ class Simon42LightsGroupCard extends LitElement {
 
   public hass?: HomeAssistant;
   private _config!: LightsGroupConfig;
-  private _cachedFilteredIds: Set<string> | null = null;
+  private _cachedSourceIds: Set<string> | null = null;
   private _cachedAreaForEntity: Map<string, string | null> | null = null;
   private _lastLightsList = '';
 
@@ -44,6 +55,8 @@ class Simon42LightsGroupCard extends LitElement {
   private _tileCards: Map<string, any> = new Map();
   private _headingCard: any = null;
   private _floorHeadingCards: Map<string, any> = new Map();
+  private _groupContainers: Map<string, HTMLElement> = new Map();
+  private _groupExpansion: Map<string, boolean> = new Map();
 
   static styles = css`
     :host {
@@ -68,10 +81,60 @@ class Simon42LightsGroupCard extends LitElement {
       flex-direction: column;
       gap: 8px;
     }
+    .group-block {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--divider-color);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--card-background-color) 92%, var(--primary-color) 8%);
+    }
+    .group-header {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+    .group-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 999px;
+      background: var(--secondary-background-color);
+      color: var(--primary-text-color);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .group-toggle:hover {
+      background: color-mix(in srgb, var(--secondary-background-color) 75%, var(--primary-color) 25%);
+    }
+    .group-toggle-icon {
+      display: inline-block;
+      font-size: 16px;
+      transition: transform 0.2s ease;
+    }
+    .group-toggle[aria-expanded='true'] .group-toggle-icon {
+      transform: rotate(90deg);
+    }
+    .group-children {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 8px;
+      padding-left: 44px;
+    }
+    .group-children[hidden] {
+      display: none;
+    }
   `;
 
   setConfig(config: LightsGroupConfig): void {
-    if (!config.group_type) throw new Error('You need to define group_type (on/off)');
+    if (!config.group_type) throw new Error('You need to define group_type (on/off/all)');
     this._config = config;
   }
 
@@ -82,14 +145,14 @@ class Simon42LightsGroupCard extends LitElement {
     const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
 
     if (!oldHass || oldHass.entities !== this.hass.entities) {
-      this._cachedFilteredIds = null;
+      this._cachedSourceIds = null;
       this._cachedAreaForEntity = null;
     }
 
     // Build cache if needed
-    if (!this._cachedFilteredIds) {
+    if (!this._cachedSourceIds) {
       if (!Registry.initialized) return;
-      this._cachedFilteredIds = new Set(this._getFilteredLightEntities(this.hass));
+      this._cachedSourceIds = new Set(this._getSourceLightEntities(this.hass));
     }
 
     // Always propagate hass to child cards
@@ -103,28 +166,38 @@ class Simon42LightsGroupCard extends LitElement {
     }
   }
 
-  private _getFilteredLightEntities(hass: HomeAssistant): string[] {
+  private _getSourceLightEntities(hass: HomeAssistant): string[] {
+    if (Array.isArray(this._config.entities) && this._config.entities.length > 0) {
+      return this._config.entities.filter((id) => id.startsWith('light.') && hass.states[id] !== undefined);
+    }
     return Registry.getVisibleEntityIdsForDomain('light').filter((id) => hass.states[id] !== undefined);
   }
 
-  private _getRelevantLights(): string[] {
-    if (!this.hass || !this._cachedFilteredIds) return [];
+  private _getRelevantLights(lightIds?: Iterable<string>): string[] {
+    if (!this.hass) return [];
+    const sourceIds = lightIds ? Array.from(lightIds) : Array.from(this._cachedSourceIds || []);
+    if (sourceIds.length === 0) return [];
+
+    if (this._config.group_type === 'all') {
+      return [...sourceIds].sort((a, b) => this._sortByLastChanged(a, b));
+    }
+
     const targetState = this._config.group_type === 'on' ? 'on' : 'off';
 
     const relevant: string[] = [];
-    for (const id of this._cachedFilteredIds) {
+    for (const id of sourceIds) {
       const state = this.hass.states[id];
       if (state && state.state === targetState) relevant.push(id);
     }
 
-    relevant.sort((a, b) => {
-      const stateA = this.hass!.states[a];
-      const stateB = this.hass!.states[b];
-      if (!stateA || !stateB) return 0;
-      return new Date(stateB.last_changed).getTime() - new Date(stateA.last_changed).getTime();
-    });
+    return relevant.sort((a, b) => this._sortByLastChanged(a, b));
+  }
 
-    return relevant;
+  private _sortByLastChanged(a: string, b: string): number {
+    const stateA = this.hass!.states[a];
+    const stateB = this.hass!.states[b];
+    if (!stateA || !stateB) return 0;
+    return new Date(stateB.last_changed).getTime() - new Date(stateA.last_changed).getTime();
   }
 
   private _getAreaForEntity(entityId: string): string | null {
@@ -142,6 +215,45 @@ class Simon42LightsGroupCard extends LitElement {
     }
     this._cachedAreaForEntity.set(entityId, areaId);
     return areaId;
+  }
+
+  private _getDisplayName(entityId: string): string | undefined {
+    if (!this.hass) return undefined;
+    if (this._config.area) {
+      return stripAreaName(entityId, this._config.area, this.hass);
+    }
+    return undefined;
+  }
+
+  private _getGroupChildIds(entityId: string, candidateSet: Set<string>): string[] {
+    const members = this.hass?.states[entityId]?.attributes?.entity_id;
+    if (!Array.isArray(members)) return [];
+
+    const childIds = members.filter(
+      (id): id is string => typeof id === 'string' && id.startsWith('light.') && id !== entityId && candidateSet.has(id)
+    );
+
+    return [...new Set(childIds)].sort((a, b) => this._sortByLastChanged(a, b));
+  }
+
+  private _buildHierarchy(lightIds: string[]): { topLevelIds: string[]; nodes: Map<string, LightHierarchyNode> } {
+    const candidateSet = new Set(lightIds);
+    const nodes = new Map<string, LightHierarchyNode>();
+    const childIds = new Set<string>();
+
+    for (const entityId of lightIds) {
+      const groupChildIds = this._getGroupChildIds(entityId, candidateSet);
+      nodes.set(entityId, { entityId, childIds: groupChildIds });
+      for (const childId of groupChildIds) {
+        childIds.add(childId);
+      }
+    }
+
+    const topLevelIds = lightIds
+      .filter((entityId) => !childIds.has(entityId))
+      .sort((a, b) => this._sortByLastChanged(a, b));
+
+    return { topLevelIds, nodes };
   }
 
   private _groupByFloors(lights: string[]): FloorGroup[] {
@@ -185,25 +297,47 @@ class Simon42LightsGroupCard extends LitElement {
 
   private _buildHeadingConfig(lights: string[], label?: string, icon?: string): any {
     const isOn = this._config.group_type === 'on';
+    const isAll = this._config.group_type === 'all';
     const heading = label
       ? `${label} (${lights.length})`
-      : `${isOn ? localize('lights.on') : localize('lights.off')} (${lights.length})`;
+      : `${isAll ? (this._config.heading_label || localize('room.lighting')) : (isOn ? localize('lights.on') : localize('lights.off'))} (${lights.length})`;
+
+    const badges =
+      lights.length === 0
+        ? []
+        : [
+            {
+              type: 'button',
+              icon: 'mdi:lightbulb-on',
+              text: localize('lights.all_on'),
+              tap_action: {
+                action: 'perform-action',
+                perform_action: 'light.turn_on',
+                target: { entity_id: lights },
+              },
+              visibility: [{ condition: 'or', conditions: lights.map((entity) => ({ condition: 'state', entity, state: 'off' })) }],
+            },
+            {
+              type: 'button',
+              icon: 'mdi:lightbulb-off',
+              text: localize('lights.all_off'),
+              tap_action: {
+                action: 'perform-action',
+                perform_action: 'light.turn_off',
+                target: { entity_id: lights },
+              },
+              visibility: [{ condition: 'or', conditions: lights.map((entity) => ({ condition: 'state', entity, state: 'on' })) }],
+            },
+          ];
+
     return {
       type: 'heading',
       heading,
-      icon: icon || (isOn ? 'mdi:lightbulb-group' : 'mdi:lightbulb-group-off'),
-      badges: [
-        {
-          type: 'button',
-          icon: isOn ? 'mdi:lightbulb-off' : 'mdi:lightbulb-on',
-          text: isOn ? localize('lights.all_off') : localize('lights.all_on'),
-          tap_action: {
-            action: 'perform-action',
-            perform_action: isOn ? 'light.turn_off' : 'light.turn_on',
-            target: { entity_id: lights },
-          },
-        },
-      ],
+      icon:
+        icon ||
+        this._config.heading_icon ||
+        (isAll ? 'mdi:lightbulb-group' : isOn ? 'mdi:lightbulb-group' : 'mdi:lightbulb-group-off'),
+      badges,
     };
   }
 
@@ -215,6 +349,10 @@ class Simon42LightsGroupCard extends LitElement {
     card = document.createElement('hui-tile-card');
     card.hass = this.hass;
     const cardConfig: any = { type: 'tile', entity: entityId, vertical: false, state_content: 'last_changed' };
+    const displayName = this._getDisplayName(entityId);
+    if (displayName) {
+      cardConfig.name = displayName;
+    }
     if (isOn) {
       // Only add brightness slider if the light actually supports it
       const state = this.hass?.states[entityId];
@@ -228,12 +366,83 @@ class Simon42LightsGroupCard extends LitElement {
       }
     }
     card.setConfig(cardConfig);
+    card.dataset.entityId = entityId;
     this._tileCards.set(entityId, card);
     return card;
   }
 
+  private _isExpanded(entityId: string): boolean {
+    return this._groupExpansion.get(entityId) ?? (this._config.default_expanded === true);
+  }
+
+  private _getOrCreateGroupContainer(entityId: string): HTMLElement {
+    let container = this._groupContainers.get(entityId);
+    if (container) return container;
+
+    container = document.createElement('div');
+    container.className = 'group-block';
+    container.dataset.entityId = entityId;
+    container.innerHTML = `
+      <div class="group-header">
+        <button class="group-toggle" type="button" aria-expanded="false">
+          <span class="group-toggle-icon">▶</span>
+        </button>
+        <div class="group-card-slot"></div>
+      </div>
+      <div class="group-children" hidden></div>
+    `;
+
+    const toggle = container.querySelector('.group-toggle') as HTMLButtonElement;
+    const children = container.querySelector('.group-children') as HTMLElement;
+    toggle.addEventListener('click', () => {
+      const expanded = !this._isExpanded(entityId);
+      this._groupExpansion.set(entityId, expanded);
+      toggle.setAttribute('aria-expanded', String(expanded));
+      children.hidden = !expanded;
+    });
+
+    this._groupContainers.set(entityId, container);
+    return container;
+  }
+
+  private _reconcileHierarchy(container: HTMLElement, nodeIds: string[], nodes: Map<string, LightHierarchyNode>): void {
+    let prevNode: Node | null = null;
+
+    for (const entityId of nodeIds) {
+      const node = nodes.get(entityId);
+      const childIds = node?.childIds || [];
+      const nextDomNode =
+        childIds.length > 0 ? this._getOrCreateGroupContainer(entityId) : (this._getOrCreateTileCard(entityId) as HTMLElement);
+
+      const nextSibling: ChildNode | null = prevNode ? prevNode.nextSibling : container.firstChild;
+      if (nextDomNode !== nextSibling) {
+        container.insertBefore(nextDomNode, nextSibling);
+      }
+      prevNode = nextDomNode;
+
+      if (childIds.length > 0) {
+        const groupCardSlot = nextDomNode.querySelector('.group-card-slot') as HTMLElement;
+        const groupCard = this._getOrCreateTileCard(entityId);
+        if (groupCard.parentNode !== groupCardSlot) {
+          groupCardSlot.replaceChildren(groupCard);
+        }
+
+        const childGrid = nextDomNode.querySelector('.group-children') as HTMLElement;
+        const expanded = this._isExpanded(entityId);
+        const toggle = nextDomNode.querySelector('.group-toggle') as HTMLButtonElement;
+        toggle.setAttribute('aria-expanded', String(expanded));
+        childGrid.hidden = !expanded;
+        this._reconcileHierarchy(childGrid, childIds, nodes);
+      }
+    }
+
+    while (prevNode && prevNode.nextSibling) {
+      container.removeChild(prevNode.nextSibling);
+    }
+  }
+
   protected render() {
-    if (!this.hass || !this._cachedFilteredIds) return nothing;
+    if (!this.hass || !this._cachedSourceIds) return nothing;
 
     const lights = this._getRelevantLights();
     if (lights.length === 0) {
@@ -304,7 +513,7 @@ class Simon42LightsGroupCard extends LitElement {
 
   protected updated(changedProps: PropertyValues): void {
     super.updated(changedProps);
-    if (!this.hass || !this._cachedFilteredIds) return;
+    if (!this.hass || !this._cachedSourceIds) return;
 
     const lights = this._getRelevantLights();
     const lightsKey = lights.join(',');
@@ -340,7 +549,10 @@ class Simon42LightsGroupCard extends LitElement {
         }
 
         const grid = this.shadowRoot!.getElementById(`floor-grid-${key}`);
-        if (grid) this._reconcileGrid(grid, group.lights);
+        if (grid) {
+          const hierarchy = this._buildHierarchy(group.lights);
+          this._reconcileHierarchy(grid, hierarchy.topLevelIds, hierarchy.nodes);
+        }
       }
 
       // Clean up stale pool entries
@@ -367,16 +579,25 @@ class Simon42LightsGroupCard extends LitElement {
     const grid = this.shadowRoot!.getElementById('grid');
     if (!grid) return;
 
+    const hierarchy = this._buildHierarchy(lights);
+
     // Clean up stale pool entries
     const activeIds = new Set(lights);
     for (const [id, card] of this._tileCards) {
       if (!activeIds.has(id)) {
-        if (card.parentNode === grid) grid.removeChild(card);
+        if (card.parentNode) card.parentNode.removeChild(card);
         this._tileCards.delete(id);
       }
     }
 
-    this._reconcileGrid(grid, lights);
+    for (const [id, container] of this._groupContainers) {
+      if (!activeIds.has(id)) {
+        if (container.parentNode) container.parentNode.removeChild(container);
+        this._groupContainers.delete(id);
+      }
+    }
+
+    this._reconcileHierarchy(grid, hierarchy.topLevelIds, hierarchy.nodes);
   }
 
   getCardSize(): number {

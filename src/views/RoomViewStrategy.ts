@@ -17,17 +17,10 @@ import { timeStart, timeEnd, debugLog } from '../utils/debug';
 import { localize } from '../utils/localize';
 
 // HA supported_features bitmask values
-const LIGHT_BRIGHTNESS_MODES = ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white'];
 const FAN_SET_SPEED = 1;
 const MEDIA_PAUSE = 1;
 const MEDIA_PLAY = 16384;
 const MEDIA_STOP = 4096;
-
-/** Check if a light supports brightness (based on supported_color_modes) */
-function lightSupportsBrightness(state: HassEntity): boolean {
-  const modes = state.attributes?.supported_color_modes as string[] | undefined;
-  return modes?.some((m) => LIGHT_BRIGHTNESS_MODES.includes(m)) || false;
-}
 
 /** Check if a fan supports speed control */
 function fanSupportsSpeed(state: HassEntity): boolean {
@@ -393,54 +386,19 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       });
     };
 
-    // Lights section with batch on/off badges (visibility-based, evaluated by HA frontend)
     if (roomEntities.lights.length > 0) {
-      const lightsOffConditions = roomEntities.lights.map((e) => ({
-        condition: 'state' as const, entity: e, state: 'off',
-      }));
-      const lightsOnConditions = roomEntities.lights.map((e) => ({
-        condition: 'state' as const, entity: e, state: 'on',
-      }));
-      const badges = [
-        {
-          type: 'button',
-          icon: 'mdi:lightbulb-on',
-          text: localize('room.all_on'),
-          tap_action: {
-            action: 'perform-action',
-            perform_action: 'light.turn_on',
-            target: { entity_id: roomEntities.lights },
-          },
-          visibility: [{ condition: 'or', conditions: lightsOffConditions }],
-        },
-        {
-          type: 'button',
-          icon: 'mdi:lightbulb-off',
-          text: localize('room.all_off'),
-          tap_action: {
-            action: 'perform-action',
-            perform_action: 'light.turn_off',
-            target: { entity_id: roomEntities.lights },
-          },
-          visibility: [{ condition: 'or', conditions: lightsOnConditions }],
-        },
-      ];
       sections.push({
         type: 'grid',
         cards: [
-          { type: 'heading', heading: localize('room.lighting'), heading_style: 'title', icon: 'mdi:lightbulb', badges },
-          ...roomEntities.lights.map((e) => {
-            const state = hass.states[e];
-            const hasBrightness = state && lightSupportsBrightness(state);
-            return {
-              type: 'tile',
-              entity: e,
-              name: stripAreaName(e, area, hass),
-              ...(hasBrightness ? { features: [{ type: 'light-brightness' }], features_position: 'inline' } : {}),
-              vertical: false,
-              state_content: 'last_changed',
-            };
-          }),
+          {
+            type: 'custom:simon42-lights-group-card',
+            entities: roomEntities.lights,
+            group_type: 'all',
+            heading_label: localize('room.lighting'),
+            heading_icon: 'mdi:lightbulb',
+            area,
+            default_expanded: true,
+          },
         ],
       });
     }
