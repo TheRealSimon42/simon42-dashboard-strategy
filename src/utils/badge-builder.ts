@@ -25,7 +25,7 @@ export function createPersonBadges(persons: PersonData[], hass: HomeAssistant): 
     if (!state) continue;
 
     // Registry check: skip if entity is hidden
-    const registryEntry = hass.entities?.[person.entity_id];
+    const registryEntry = hass.entities[person.entity_id];
     if (registryEntry?.hidden === true) continue;
 
     const firstName = person.name.split(' ')[0];

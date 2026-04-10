@@ -627,7 +627,7 @@ export function renderEditorHTML({
 // ====================================================================
 
 function renderFavoritesList(favoriteEntities: string[], allEntities: EditorEntity[]): string {
-  if (!favoriteEntities || favoriteEntities.length === 0) {
+  if (favoriteEntities.length === 0) {
     return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">' + localize('editor.no_favorites') + '</div>';
   }
 
@@ -662,7 +662,7 @@ export function renderRoomPinsList(
   allEntities: EditorEntity[],
   allAreas: AreaRegistryEntry[]
 ): string {
-  if (!roomPinEntities || roomPinEntities.length === 0) {
+  if (roomPinEntities.length === 0) {
     return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">' + localize('editor.no_room_pins') + '</div>';
   }
 
@@ -700,7 +700,7 @@ export function renderRoomPinsList(
 }
 
 export function renderCustomViewsList(customViews: CustomView[]): string {
-  if (!customViews || customViews.length === 0) {
+  if (customViews.length === 0) {
     return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">' + localize('editor.no_custom_views') + '</div>';
   }
 
@@ -736,7 +736,7 @@ export function renderCustomViewsList(customViews: CustomView[]): string {
 }
 
 export function renderCustomCardsList(customCards: CustomCard[]): string {
-  if (!customCards || customCards.length === 0) {
+  if (customCards.length === 0) {
     return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">' + localize('editor.no_custom_cards') + '</div>';
   }
 
@@ -768,7 +768,7 @@ export function renderCustomCardsList(customCards: CustomCard[]): string {
 }
 
 export function renderCustomBadgesList(customBadges: CustomBadge[]): string {
-  if (!customBadges || customBadges.length === 0) {
+  if (customBadges.length === 0) {
     return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">' + localize('editor.no_custom_badges') + '</div>';
   }
 
@@ -894,7 +894,7 @@ export function renderAreaEntitiesHTML(
           ${entities
             .map((entityId: string) => {
               const state = hass.states[entityId];
-              const name = state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+              const name = state?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
               const isHidden = hiddenInGroup.includes(entityId);
 
               return `

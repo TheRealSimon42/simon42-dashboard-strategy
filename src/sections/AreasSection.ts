@@ -38,7 +38,7 @@ type ControlDomain = (typeof CONTROL_DOMAINS)[number];
  */
 function getAreaControls(areaId: string, hass: HomeAssistant): ControlDomain[] {
   const areaEntities = Registry.getVisibleEntitiesForArea(areaId);
-  if (!areaEntities || areaEntities.length === 0) return [];
+  if (areaEntities.length === 0) return [];
 
   const found = new Set<ControlDomain>();
 
@@ -76,7 +76,7 @@ const ALERT_DEVICE_CLASSES = new Set([
  */
 function getAreaAlertClasses(areaId: string, hass: HomeAssistant): string[] {
   const areaEntities = Registry.getVisibleEntitiesForArea(areaId);
-  if (!areaEntities || areaEntities.length === 0) return [];
+  if (areaEntities.length === 0) return [];
 
   const found = new Set<string>();
 
@@ -176,12 +176,12 @@ export function createAreasSection(
   // Use HA's floor order from the registry. The hass.floors object preserves
   // the user-defined order from HA's "Reorder areas and floors" dialog via
   // Object.keys() insertion order — no separate sort_order field needed.
-  const floorOrder = Object.keys(hass.floors || {});
+  const floorOrder = Object.keys(hass.floors);
   const sortedFloors = floorOrder.filter((id) => areasByFloor.has(id));
 
   for (const floorId of sortedFloors) {
     const areas = areasByFloor.get(floorId)!;
-    const floor = hass.floors?.[floorId];
+    const floor = hass.floors[floorId];
     const floorName = floor?.name || floorId;
     const floorIcon = floor?.icon || 'mdi:floor-plan';
 

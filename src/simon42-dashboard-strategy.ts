@@ -10,7 +10,7 @@ import type { HomeAssistant } from './types/homeassistant';
 import type { Simon42StrategyConfig } from './types/strategy';
 import type { LovelaceConfig, LovelaceViewConfig } from './types/lovelace';
 
-const STRATEGY_VERSION = '1.3.3';
+const STRATEGY_VERSION = '1.3.4-beta.1';
 
 const DEBUG = new URLSearchParams(window.location.search).has('s42_debug');
 const T0 = performance.now();
@@ -33,7 +33,7 @@ const modulesPromise = Promise.all([
   import('./views/RoomViewStrategy'),
 ]);
 
-modulesPromise.then(() => t('all chunks loaded'));
+modulesPromise.then(() => { t('all chunks loaded'); });
 
 class Simon42DashboardStrategy extends HTMLElement {
   static async generate(config: Simon42StrategyConfig, hass: HomeAssistant): Promise<LovelaceConfig> {
