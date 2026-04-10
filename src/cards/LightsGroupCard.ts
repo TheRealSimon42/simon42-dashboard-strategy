@@ -251,6 +251,29 @@ class Simon42LightsGroupCard extends LitElement {
     return [...new Set(childIds)].sort((a, b) => this._sortByLastChanged(a, b));
   }
 
+  private _collectDescendants(
+    entityId: string,
+    rawChildren: Map<string, string[]>,
+    descendantCache: Map<string, Set<string>>,
+    visiting: Set<string>
+  ): Set<string> {
+    const cached = descendantCache.get(entityId);
+    if (cached) return cached;
+    if (visiting.has(entityId)) return new Set();
+
+    visiting.add(entityId);
+    const descendants = new Set<string>();
+    for (const childId of rawChildren.get(entityId) || []) {
+      descendants.add(childId);
+      for (const nestedId of this._collectDescendants(childId, rawChildren, descendantCache, visiting)) {
+        descendants.add(nestedId);
+      }
+    }
+    visiting.delete(entityId);
+    descendantCache.set(entityId, descendants);
+    return descendants;
+  }
+
   private _buildHierarchy(lightIds: string[]): { topLevelIds: string[]; nodes: Map<string, LightHierarchyNode> } {
     const candidateSet = new Set(lightIds);
     const rawChildren = new Map<string, string[]>();
@@ -259,31 +282,15 @@ class Simon42LightsGroupCard extends LitElement {
     }
 
     const descendantCache = new Map<string, Set<string>>();
-    const getDescendants = (entityId: string, visiting?: Set<string>): Set<string> => {
-      const activeVisitSet = visiting ?? new Set<string>();
-      const cached = descendantCache.get(entityId);
-      if (cached) return cached;
-      if (activeVisitSet.has(entityId)) return new Set();
-
-      activeVisitSet.add(entityId);
-      const descendants = new Set<string>();
-      for (const childId of rawChildren.get(entityId) || []) {
-        descendants.add(childId);
-        for (const nestedId of getDescendants(childId, activeVisitSet)) {
-          descendants.add(nestedId);
-        }
-      }
-      activeVisitSet.delete(entityId);
-      descendantCache.set(entityId, descendants);
-      return descendants;
-    };
-
     const nodes = new Map<string, LightHierarchyNode>();
     const allNestedChildIds = new Set<string>();
     for (const entityId of lightIds) {
       const directChildIds = rawChildren.get(entityId) || [];
       const prunedChildIds = directChildIds.filter((childId) => {
-        return !directChildIds.some((siblingId) => siblingId !== childId && getDescendants(siblingId).has(childId));
+        return !directChildIds.some((siblingId) => {
+          if (siblingId === childId) return false;
+          return this._collectDescendants(siblingId, rawChildren, descendantCache, new Set<string>()).has(childId);
+        });
       });
       nodes.set(entityId, { entityId, childIds: prunedChildIds });
       for (const childId of prunedChildIds) {
@@ -458,43 +465,57 @@ class Simon42LightsGroupCard extends LitElement {
     return container;
   }
 
+  private _resolveHierarchyContainer(entityId: string, hasChildren: boolean): HTMLElement {
+    if (hasChildren) {
+      return this._getOrCreateGroupContainer(entityId);
+    }
+    return this._getOrCreateTileCard(entityId) as unknown as HTMLElement;
+  }
+
+  private _placeHierarchyNode(parentElement: HTMLElement, childElement: HTMLElement, referenceNode: ChildNode | null): void {
+    if (childElement !== referenceNode) {
+      parentElement.insertBefore(childElement, referenceNode);
+    }
+  }
+
+  private _syncGroupContainer(
+    groupContainerElement: HTMLElement,
+    entityId: string,
+    childIds: string[],
+    nodes: Map<string, LightHierarchyNode>
+  ): void {
+    const groupCardHostElement = groupContainerElement.querySelector('.group-card-slot') as HTMLElement;
+    const groupCard = this._getOrCreateTileCard(entityId);
+    if (groupCard.parentNode !== groupCardHostElement) {
+      groupCardHostElement.replaceChildren(groupCard);
+    }
+
+    const childContainerElement = groupContainerElement.querySelector('.group-children') as HTMLElement;
+    const expanded = this._isExpanded(entityId);
+    const toggleButtonElement = groupContainerElement.querySelector('.group-toggle') as HTMLButtonElement;
+    toggleButtonElement.setAttribute('aria-expanded', String(expanded));
+    childContainerElement.hidden = !expanded;
+    this._reconcileHierarchy(childContainerElement, childIds, nodes);
+  }
+
   private _reconcileHierarchy(container: HTMLElement, nodeIds: string[], nodes: Map<string, LightHierarchyNode>): void {
-    let prevNode: Node | null = null;
+    let previousNode: ChildNode | null = null;
 
     for (const entityId of nodeIds) {
       const node = nodes.get(entityId);
       const childIds = node?.childIds || [];
-      let nodeHtmlElement: HTMLElement;
-      if (childIds.length > 0) {
-        nodeHtmlElement = this._getOrCreateGroupContainer(entityId);
-      } else {
-        nodeHtmlElement = this._getOrCreateTileCard(entityId) as unknown as HTMLElement;
-      }
-
-      const nextSibling: ChildNode | null = prevNode ? prevNode.nextSibling : container.firstChild;
-      if (nodeHtmlElement !== nextSibling) {
-        container.insertBefore(nodeHtmlElement, nextSibling);
-      }
-      prevNode = nodeHtmlElement;
+      const hierarchyContainerElement = this._resolveHierarchyContainer(entityId, childIds.length > 0);
+      const nextSibling: ChildNode | null = previousNode ? previousNode.nextSibling : container.firstChild;
+      this._placeHierarchyNode(container, hierarchyContainerElement, nextSibling);
+      previousNode = hierarchyContainerElement;
 
       if (childIds.length > 0) {
-        const groupCardHostHtmlElement = nodeHtmlElement.querySelector('.group-card-slot') as HTMLElement;
-        const groupCard = this._getOrCreateTileCard(entityId);
-        if (groupCard.parentNode !== groupCardHostHtmlElement) {
-          groupCardHostHtmlElement.replaceChildren(groupCard);
-        }
-
-        const childContainerHtmlElement = nodeHtmlElement.querySelector('.group-children') as HTMLElement;
-        const expanded = this._isExpanded(entityId);
-        const toggleButtonHtmlElement = nodeHtmlElement.querySelector('.group-toggle') as HTMLButtonElement;
-        toggleButtonHtmlElement.setAttribute('aria-expanded', String(expanded));
-        childContainerHtmlElement.hidden = !expanded;
-        this._reconcileHierarchy(childContainerHtmlElement, childIds, nodes);
+        this._syncGroupContainer(hierarchyContainerElement, entityId, childIds, nodes);
       }
     }
 
-    while (prevNode && prevNode.nextSibling) {
-      container.removeChild(prevNode.nextSibling);
+    while (previousNode && previousNode.nextSibling) {
+      container.removeChild(previousNode.nextSibling);
     }
   }
 
