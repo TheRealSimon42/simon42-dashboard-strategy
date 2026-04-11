@@ -43,6 +43,7 @@ export interface EditorHTMLParams {
   showClockCard: boolean;
   showLightSummary: boolean;
   groupLightsByFloors: boolean;
+  nestedLightGroups: boolean;
   favoritesShowState: boolean;
   favoritesHideLastChanged: boolean;
   showCoversSummary: boolean;
@@ -100,6 +101,7 @@ export function renderEditorHTML({
   showClockCard,
   showLightSummary,
   groupLightsByFloors,
+  nestedLightGroups,
   favoritesShowState,
   favoritesHideLastChanged,
   showCoversSummary,
@@ -223,6 +225,17 @@ export function renderEditorHTML({
         </div>
         <div class="description">
           ${localize('editor.group_lights_by_floors_desc')}
+        </div>
+        <div class="form-row">
+          <input
+            type="checkbox"
+            id="nested-light-groups"
+            ${nestedLightGroups ? 'checked' : ''}
+          />
+          <label for="nested-light-groups">${localize('editor.nested_light_groups')}</label>
+        </div>
+        <div class="description">
+          ${localize('editor.nested_light_groups_desc')}
         </div>
         <div class="form-row">
           <input

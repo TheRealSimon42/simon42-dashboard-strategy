@@ -102,6 +102,18 @@ export function attachGroupLightsByFloorsCheckboxListener(
   }
 }
 
+export function attachNestedLightGroupsCheckboxListener(
+  element: HTMLElement,
+  callback: (checked: boolean) => void
+): void {
+  const checkbox = element.querySelector('#nested-light-groups') as HTMLInputElement | null;
+  if (checkbox) {
+    checkbox.addEventListener('change', (e: Event) => {
+      callback((e.target as HTMLInputElement).checked);
+    });
+  }
+}
+
 export function attachFavoritesShowStateCheckboxListener(
   element: HTMLElement,
   callback: (checked: boolean) => void

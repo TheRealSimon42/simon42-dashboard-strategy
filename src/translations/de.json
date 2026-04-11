@@ -113,6 +113,8 @@
     "show_light_summary": "Licht-Zusammenfassung anzeigen",
     "group_lights_by_floors": "Lichter nach Etagen gruppieren",
     "group_lights_by_floors_desc": "Gruppiert die Lichter in der Lichter-Ansicht nach Etagen. Jede Etage erhält einen eigenen Bereich mit Ein-/Ausschalt-Button.",
+    "nested_light_groups": "Verschachtelte Lichtgruppen anzeigen",
+    "nested_light_groups_desc": "Zeigt Lichtgruppen als aufklappbare Container mit den enthaltenen Lampen darunter an. Standardmäßig deaktiviert, damit das bisherige flache Verhalten unverändert bleibt.",
     "show_covers_summary": "Rollo-Zusammenfassung anzeigen",
     "show_partially_open_covers": "Teiloffene Rollos separat anzeigen",
     "show_partially_open_covers_desc": "Zeigt teiloffene Rollos (weder ganz offen noch geschlossen) in einer eigenen Gruppe an.",

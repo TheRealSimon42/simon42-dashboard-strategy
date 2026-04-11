@@ -15,6 +15,7 @@ import {
   attachClockCardCheckboxListener,
   attachLightSummaryCheckboxListener,
   attachGroupLightsByFloorsCheckboxListener,
+  attachNestedLightGroupsCheckboxListener,
   attachFavoritesShowStateCheckboxListener,
   attachFavoritesHideLastChangedCheckboxListener,
   attachCoversSummaryCheckboxListener,
@@ -153,6 +154,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showClockCard = this._config.show_clock_card !== false;
     const showLightSummary = this._config.show_light_summary !== false;
     const groupLightsByFloors = this._config.group_lights_by_floors === true;
+    const nestedLightGroups = this._config.nested_light_groups === true;
     const favoritesShowState = this._config.favorites_show_state === true;
     const favoritesHideLastChanged = this._config.favorites_hide_last_changed === true;
     const showCoversSummary = this._config.show_covers_summary !== false;
@@ -227,6 +229,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showClockCard,
         showLightSummary,
         groupLightsByFloors,
+        nestedLightGroups,
         favoritesShowState,
         favoritesHideLastChanged,
         showCoversSummary,
@@ -265,6 +268,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachClockCardCheckboxListener(this, (val: boolean) => { this._showClockCardChanged(val); });
     attachLightSummaryCheckboxListener(this, (val: boolean) => { this._showLightSummaryChanged(val); });
     attachGroupLightsByFloorsCheckboxListener(this, (val: boolean) => { this._groupLightsByFloorsChanged(val); });
+    attachNestedLightGroupsCheckboxListener(this, (val: boolean) => { this._nestedLightGroupsChanged(val); });
     attachFavoritesShowStateCheckboxListener(this, (val: boolean) => { this._favoritesShowStateChanged(val); });
     attachFavoritesHideLastChangedCheckboxListener(this, (val: boolean) => { this._favoritesHideLastChangedChanged(val); });
     attachCoversSummaryCheckboxListener(this, (val: boolean) => { this._showCoversSummaryChanged(val); });
@@ -1234,6 +1238,22 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     if (group === false) {
       delete newConfig.group_lights_by_floors;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _nestedLightGroupsChanged(show: boolean): void {
+    if (!this._config || !this._hass) return;
+
+    const newConfig: Simon42StrategyConfig = {
+      ...this._config,
+      nested_light_groups: show,
+    };
+
+    if (show === false) {
+      delete newConfig.nested_light_groups;
     }
 
     this._config = newConfig;

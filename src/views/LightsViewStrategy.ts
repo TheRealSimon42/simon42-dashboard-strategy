@@ -8,6 +8,7 @@ class Simon42ViewLightsStrategy extends HTMLElement {
   static async generate(config: any, _hass: any): Promise<LovelaceViewConfig> {
     const dashboardConfig = config.dashboardConfig || config.config || {};
     const groupByFloors = dashboardConfig.group_lights_by_floors === true;
+    const nestedGroups = dashboardConfig.nested_light_groups === true;
 
     return {
       type: 'sections',
@@ -21,6 +22,7 @@ class Simon42ViewLightsStrategy extends HTMLElement {
               config: config.config,
               group_type: 'on',
               group_by_floors: groupByFloors,
+              nested_groups: nestedGroups,
             },
             {
               type: 'custom:simon42-lights-group-card',
@@ -28,6 +30,7 @@ class Simon42ViewLightsStrategy extends HTMLElement {
               config: config.config,
               group_type: 'off',
               group_by_floors: groupByFloors,
+              nested_groups: nestedGroups,
             },
           ],
         },

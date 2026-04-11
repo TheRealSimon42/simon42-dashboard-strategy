@@ -398,6 +398,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
             heading_icon: 'mdi:lightbulb',
             area,
             default_expanded: true,
+            nested_groups: dashboardConfig.nested_light_groups === true,
           },
         ],
       });

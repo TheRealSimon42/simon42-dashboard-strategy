@@ -113,6 +113,8 @@
     "show_light_summary": "Show light summary",
     "group_lights_by_floors": "Group lights by floors",
     "group_lights_by_floors_desc": "Groups lights in the lights view by floors. Each floor gets its own section with on/off buttons.",
+    "nested_light_groups": "Show nested light groups",
+    "nested_light_groups_desc": "Shows light groups as expandable containers with their member lights underneath. Disabled by default to preserve the existing flat list behavior.",
     "show_covers_summary": "Show cover summary",
     "show_partially_open_covers": "Show partially open covers separately",
     "show_partially_open_covers_desc": "Shows partially open covers (neither fully open nor closed) in a separate group.",

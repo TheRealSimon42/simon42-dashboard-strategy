@@ -22,6 +22,7 @@ interface LightsGroupConfig {
   entities?: string[];
   group_type: 'on' | 'off' | 'all';
   group_by_floors?: boolean;
+  nested_groups?: boolean;
   heading_label?: string;
   heading_icon?: string;
   area?: AreaRegistryEntry;
@@ -275,6 +276,14 @@ class Simon42LightsGroupCard extends LitElement {
   }
 
   private _buildHierarchy(lightIds: string[]): { topLevelIds: string[]; nodes: Map<string, LightHierarchyNode> } {
+    if (this._config.nested_groups !== true) {
+      const nodes = new Map<string, LightHierarchyNode>();
+      for (const entityId of lightIds) {
+        nodes.set(entityId, { entityId, childIds: [] });
+      }
+      return { topLevelIds: [...lightIds], nodes };
+    }
+
     const candidateSet = new Set(lightIds);
     const rawChildren = new Map<string, string[]>();
     for (const entityId of lightIds) {
