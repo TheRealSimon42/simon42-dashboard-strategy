@@ -86,6 +86,18 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
       else good.push(entityId);
     }
 
+    // Sort each group by battery level (lowest first)
+    const sortByLevel = (a: string, b: string): number => {
+      const valA = parseFloat(hass.states[a]?.state);
+      const valB = parseFloat(hass.states[b]?.state);
+      if (isNaN(valA)) return -1;
+      if (isNaN(valB)) return 1;
+      return valA - valB;
+    };
+    critical.sort(sortByLevel);
+    low.sort(sortByLevel);
+    good.sort(sortByLevel);
+
     const sections: LovelaceSectionConfig[] = [];
 
     if (critical.length > 0) {
