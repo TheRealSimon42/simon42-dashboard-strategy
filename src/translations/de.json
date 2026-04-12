@@ -205,6 +205,13 @@
     "domain_vacuum": "Staubsauger",
     "domain_fan": "Ventilatoren",
     "domain_switches": "Schalter",
-    "domain_locks": "Schlösser"
+    "domain_locks": "Schlösser",
+    "domain_badges": "Raum-Badges",
+    "badges_additional": "Zusätzliche Badges",
+    "badges_add": "Hinzufügen",
+    "badges_select_entity": "Entity auswählen...",
+    "badges_remove": "Entfernen",
+    "badges_show_name": "Entity-Name auf Badge anzeigen",
+    "badges_name_short": "Name"
   }
 }

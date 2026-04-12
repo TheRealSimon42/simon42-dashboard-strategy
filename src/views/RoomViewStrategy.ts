@@ -15,6 +15,7 @@ import { stripAreaName, sortByLastChanged } from '../utils/name-utils';
 import { Registry } from '../Registry';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
 import { localize } from '../utils/localize';
+import { BADGE_COLOR_MAP, getColorForEntity, isBadgeCandidate, isDefaultShowName } from '../utils/badge-utils';
 
 // HA supported_features bitmask values
 const FAN_SET_SPEED = 1;
@@ -190,11 +191,11 @@ class Simon42ViewRoomStrategy extends HTMLElement {
           sensorEntities.occupancy.push(entityId);
           continue;
         }
-        if (deviceClass === 'window' && dashboardConfig.show_window_contacts_in_rooms) {
+        if (deviceClass === 'window') {
           sensorEntities.window.push(entityId);
           continue;
         }
-        if (deviceClass === 'door' && dashboardConfig.show_door_contacts_in_rooms) {
+        if (deviceClass === 'door') {
           sensorEntities.door.push(entityId);
           continue;
         }
@@ -230,9 +231,8 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     }
 
     // === BADGES ===
-    const badges: LovelaceBadgeConfig[] = [];
 
-    // Primary temp/humidity from area config
+    // Primary temp/humidity from area config (always shown, not filterable)
     let primaryTemp: string | null = null;
     let primaryHumidity: string | null = null;
 
@@ -251,28 +251,91 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       primaryHumidity = area.humidity_entity_id;
     }
 
-    const badgeConfig = (entity: string, color: string): LovelaceBadgeConfig => ({
-      type: 'entity',
-      entity,
-      color,
-      tap_action: { action: 'more-info' },
-    });
+    // Build auto-detected badge candidates
+    const badgeOpts = groupsOptions.badges;
+    const hasBadgeConfig = !!badgeOpts;
 
-    if (primaryTemp) badges.push(badgeConfig(primaryTemp, 'red'));
-    if (primaryHumidity) badges.push(badgeConfig(primaryHumidity, 'indigo'));
-    if (sensorEntities.pm25[0]) badges.push(badgeConfig(sensorEntities.pm25[0], 'orange'));
-    if (sensorEntities.pm10[0]) badges.push(badgeConfig(sensorEntities.pm10[0], 'orange'));
-    if (sensorEntities.co2[0]) badges.push(badgeConfig(sensorEntities.co2[0], 'green'));
-    if (sensorEntities.voc[0]) badges.push(badgeConfig(sensorEntities.voc[0], 'purple'));
-    if (sensorEntities.illuminance[0]) badges.push(badgeConfig(sensorEntities.illuminance[0], 'amber'));
-    if (sensorEntities.battery[0]) badges.push(badgeConfig(sensorEntities.battery[0], 'red'));
-    if (sensorEntities.motion[0]) badges.push(badgeConfig(sensorEntities.motion[0], 'yellow'));
-    if (sensorEntities.occupancy[0]) badges.push(badgeConfig(sensorEntities.occupancy[0], 'cyan'));
-    if (sensorEntities.absolute_humidity[0]) badges.push(badgeConfig(sensorEntities.absolute_humidity[0], 'blue'));
-    for (const id of sensorEntities.window) badges.push({ ...badgeConfig(id, 'teal'), show_name: true });
-    for (const id of sensorEntities.door) badges.push({ ...badgeConfig(id, 'teal'), show_name: true });
-    if (sensorEntities.smoke[0]) badges.push(badgeConfig(sensorEntities.smoke[0], 'red'));
-    if (sensorEntities.gas[0]) badges.push(badgeConfig(sensorEntities.gas[0], 'red'));
+    interface BadgeCandidate {
+      entity: string;
+      color: string;
+      showName?: boolean;
+    }
+
+    const candidates: BadgeCandidate[] = [];
+
+    // Auto-detected sensors (first match per type, except window/door which show all)
+    // Colors from shared BADGE_COLOR_MAP, show_name from shared isDefaultShowName()
+    const addCandidate = (entityId: string, colorKey: string, dcOverride?: string) => {
+      const dc = dcOverride || (hass.states[entityId]?.attributes?.device_class as string | undefined);
+      candidates.push({
+        entity: entityId,
+        color: BADGE_COLOR_MAP[colorKey] || 'grey',
+        ...(isDefaultShowName(dc) ? { showName: true } : {}),
+      });
+    };
+
+    // Single-match sensor types
+    const singleTypes: Array<[string[], string]> = [
+      [sensorEntities.pm25, 'pm25'],
+      [sensorEntities.pm10, 'pm10'],
+      [sensorEntities.co2, 'carbon_dioxide'],
+      [sensorEntities.voc, 'volatile_organic_compounds'],
+      [sensorEntities.illuminance, 'illuminance'],
+      [sensorEntities.battery, 'battery'],
+      [sensorEntities.motion, 'motion'],
+      [sensorEntities.occupancy, 'occupancy'],
+      [sensorEntities.absolute_humidity, 'moisture'],
+      [sensorEntities.smoke, 'smoke'],
+      [sensorEntities.gas, 'gas'],
+    ];
+    for (const [entities, colorKey] of singleTypes) {
+      if (entities[0]) addCandidate(entities[0], colorKey);
+    }
+
+    // Window/door: show ALL matches (not just first), users control via per-area hidden[]
+    for (const id of sensorEntities.window) addCandidate(id, 'window', 'window');
+    for (const id of sensorEntities.door) addCandidate(id, 'door', 'door');
+
+    // Apply per-area badge config: filter hidden, append additional
+    let filteredCandidates = candidates;
+    if (hasBadgeConfig) {
+      if (badgeOpts.hidden?.length) {
+        const hiddenSet = new Set<string>(badgeOpts.hidden);
+        filteredCandidates = filteredCandidates.filter((b) => !hiddenSet.has(b.entity));
+      }
+      if (badgeOpts.additional?.length) {
+        for (const entityId of badgeOpts.additional) {
+          if (hass.states[entityId] && !filteredCandidates.some((b) => b.entity === entityId)) {
+            filteredCandidates.push({ entity: entityId, color: getColorForEntity(entityId, hass) });
+          }
+        }
+      }
+    }
+
+    // Resolve show_name per badge: default + config overrides
+    const namesVisible = hasBadgeConfig ? new Set<string>(badgeOpts.names_visible || []) : null;
+    const namesHidden = hasBadgeConfig ? new Set<string>(badgeOpts.names_hidden || []) : null;
+
+    const shouldShowName = (entityId: string, defaultShowName: boolean): boolean => {
+      if (namesHidden?.has(entityId)) return false;
+      if (namesVisible?.has(entityId)) return true;
+      return defaultShowName;
+    };
+
+    // Convert to LovelaceBadgeConfig
+    const badges: LovelaceBadgeConfig[] = [];
+    if (primaryTemp) badges.push({ type: 'entity', entity: primaryTemp, color: 'red', tap_action: { action: 'more-info' } });
+    if (primaryHumidity) badges.push({ type: 'entity', entity: primaryHumidity, color: 'indigo', tap_action: { action: 'more-info' } });
+    for (const b of filteredCandidates) {
+      const showName = shouldShowName(b.entity, !!b.showName);
+      badges.push({
+        type: 'entity',
+        entity: b.entity,
+        color: b.color,
+        tap_action: { action: 'more-info' },
+        ...(showName ? { show_name: true } : {}),
+      });
+    }
 
     // === SECTIONS ===
     const sections: LovelaceSectionConfig[] = [];

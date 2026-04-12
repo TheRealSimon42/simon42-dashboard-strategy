@@ -31,8 +31,6 @@ import {
   attachShowLocksInRoomsCheckboxListener,
   attachShowAutomationsInRoomsCheckboxListener,
   attachShowScriptsInRoomsCheckboxListener,
-  attachShowWindowContactsInRoomsCheckboxListener,
-  attachShowDoorContactsInRoomsCheckboxListener,
   attachUseDefaultAreaSortCheckboxListener,
   attachAreaCheckboxListeners,
   attachDragAndDropListeners,
@@ -42,6 +40,7 @@ import {
 
 import type { HomeAssistant } from '../types/homeassistant';
 import type { Simon42StrategyConfig, CustomView, CustomCard, CustomBadge } from '../types/strategy';
+import { isDefaultShowName } from '../utils/badge-utils';
 
 // -- Supporting types for the editor ------------------------------------
 
@@ -69,8 +68,8 @@ declare global {
 // ====================================================================
 
 class Simon42DashboardStrategyEditor extends HTMLElement {
-  private _config: Simon42StrategyConfig = {};
-  private _hass: HomeAssistant | null = null;
+  _config: Simon42StrategyConfig = {};
+  _hass: HomeAssistant | null = null;
   private _isUpdatingConfig = false;
   _expandedAreas: Set<string> = new Set();
   _expandedGroups: Map<string, Set<string>> = new Map();
@@ -172,8 +171,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const showLocksInRooms = this._config.show_locks_in_rooms === true;
     const showAutomationsInRooms = this._config.show_automations_in_rooms === true;
     const showScriptsInRooms = this._config.show_scripts_in_rooms === true;
-    const showWindowContactsInRooms = this._config.show_window_contacts_in_rooms === true;
-    const showDoorContactsInRooms = this._config.show_door_contacts_in_rooms === true;
+    // Window/door contact toggles removed — now controlled per-area via badge config
     const useDefaultAreaSort = this._config.use_default_area_sort === true;
     const customViews = this._config.custom_views || [];
     const customCards = this._config.custom_cards || [];
@@ -247,8 +245,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
         showLocksInRooms,
         showAutomationsInRooms,
         showScriptsInRooms,
-        showWindowContactsInRooms,
-        showDoorContactsInRooms,
         useDefaultAreaSort,
         customViews,
         customCards,
@@ -285,8 +281,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     attachShowLocksInRoomsCheckboxListener(this, (show: boolean) => { this._showLocksInRoomsChanged(show); });
     attachShowAutomationsInRoomsCheckboxListener(this, (show: boolean) => { this._showAutomationsInRoomsChanged(show); });
     attachShowScriptsInRoomsCheckboxListener(this, (show: boolean) => { this._showScriptsInRoomsChanged(show); });
-    attachShowWindowContactsInRoomsCheckboxListener(this, (show: boolean) => { this._showWindowContactsInRoomsChanged(show); });
-    attachShowDoorContactsInRoomsCheckboxListener(this, (show: boolean) => { this._showDoorContactsInRoomsChanged(show); });
+    // Window/door contact checkbox listeners removed — per-area badge config replaces them
     attachUseDefaultAreaSortCheckboxListener(this, (val: boolean) => { this._useDefaultAreaSortChanged(val); });
     this._attachCustomViewsListeners();
     this._attachCustomCardsListeners();
@@ -1470,22 +1465,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._fireConfigChanged(newConfig);
   }
 
-  _showWindowContactsInRoomsChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, show_window_contacts_in_rooms: show };
-    if (show === false) delete newConfig.show_window_contacts_in_rooms;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showDoorContactsInRoomsChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, show_door_contacts_in_rooms: show };
-    if (show === false) delete newConfig.show_door_contacts_in_rooms;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
   _useDefaultAreaSortChanged(useDefault: boolean): void {
     if (!this._config || !this._hass) return;
 
@@ -1562,6 +1541,18 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   _entityVisibilityChanged(areaId: string, group: string, entityId: string | null, isVisible: boolean): void {
     if (!this._config || !this._hass) return;
+
+    // Handle badge additional entities (add/remove from badges.additional[])
+    if (group === 'badges_additional' && entityId) {
+      this._badgeAdditionalChanged(areaId, entityId, isVisible);
+      return;
+    }
+
+    // Handle badge show_name toggle
+    if (group === 'badges_show_name' && entityId) {
+      this._badgeShowNameChanged(areaId, entityId, isVisible);
+      return;
+    }
 
     // Get current groups_options for this area
     const currentAreaOptions = this._config.areas_options?.[areaId] || {};
@@ -1650,6 +1641,120 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     if (newConfig.areas_options && Object.keys(newConfig.areas_options).length === 0) {
       delete newConfig.areas_options;
     }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _badgeAdditionalChanged(areaId: string, entityId: string, isAdd: boolean): void {
+    if (!this._config) return;
+
+    const currentAreaOptions = this._config.areas_options?.[areaId] || {};
+    const currentGroupsOptions = currentAreaOptions.groups_options || {};
+    const currentBadgeOptions = currentGroupsOptions['badges'] || {};
+
+    let additional = [...(currentBadgeOptions.additional || [])];
+
+    if (isAdd) {
+      if (!additional.includes(entityId)) additional.push(entityId);
+    } else {
+      additional = additional.filter((e) => e !== entityId);
+    }
+
+    const newBadgeOptions: Record<string, any> = { ...currentBadgeOptions };
+    if (additional.length > 0) {
+      newBadgeOptions.additional = additional;
+    } else {
+      delete newBadgeOptions.additional;
+    }
+
+    const newGroupsOptions: Record<string, any> = {
+      ...currentGroupsOptions,
+      badges: newBadgeOptions,
+    };
+
+    // Remove badges group when empty
+    if (Object.keys(newGroupsOptions.badges).length === 0) {
+      delete newGroupsOptions.badges;
+    }
+
+    const newAreaOptions: Record<string, any> = {
+      ...currentAreaOptions,
+      groups_options: newGroupsOptions,
+    };
+
+    if (Object.keys(newAreaOptions.groups_options).length === 0) {
+      delete newAreaOptions.groups_options;
+    }
+
+    const newAreasOptions: Record<string, any> = {
+      ...this._config.areas_options,
+      [areaId]: newAreaOptions,
+    };
+
+    if (Object.keys(newAreasOptions[areaId]).length === 0) {
+      delete newAreasOptions[areaId];
+    }
+
+    const newConfig: Simon42StrategyConfig = {
+      ...this._config,
+      areas_options: newAreasOptions,
+    };
+
+    if (newConfig.areas_options && Object.keys(newConfig.areas_options).length === 0) {
+      delete newConfig.areas_options;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  _badgeShowNameChanged(areaId: string, entityId: string, showName: boolean): void {
+    if (!this._config || !this._hass) return;
+
+    const currentAreaOptions = this._config.areas_options?.[areaId] || {};
+    const currentGroupsOptions = currentAreaOptions.groups_options || {};
+    const currentBadgeOptions = currentGroupsOptions['badges'] || {};
+
+    let namesVisible = [...(currentBadgeOptions.names_visible || [])];
+    let namesHidden = [...(currentBadgeOptions.names_hidden || [])];
+
+    // Determine default show_name for this entity (window/door = true)
+    const state = this._hass.states[entityId];
+    const dc = state?.attributes?.device_class as string | undefined;
+    const defaultShowName = isDefaultShowName(dc);
+
+    if (showName === defaultShowName) {
+      // Back to default — remove from both override lists
+      namesVisible = namesVisible.filter((e) => e !== entityId);
+      namesHidden = namesHidden.filter((e) => e !== entityId);
+    } else if (showName) {
+      // Override: show name (was default off)
+      if (!namesVisible.includes(entityId)) namesVisible.push(entityId);
+      namesHidden = namesHidden.filter((e) => e !== entityId);
+    } else {
+      // Override: hide name (was default on)
+      namesVisible = namesVisible.filter((e) => e !== entityId);
+      if (!namesHidden.includes(entityId)) namesHidden.push(entityId);
+    }
+
+    const newBadgeOptions: Record<string, any> = { ...currentBadgeOptions };
+    if (namesVisible.length > 0) newBadgeOptions.names_visible = namesVisible;
+    else delete newBadgeOptions.names_visible;
+    if (namesHidden.length > 0) newBadgeOptions.names_hidden = namesHidden;
+    else delete newBadgeOptions.names_hidden;
+
+    const newGroupsOptions: Record<string, any> = { ...currentGroupsOptions, badges: newBadgeOptions };
+    if (Object.keys(newGroupsOptions.badges).length === 0) delete newGroupsOptions.badges;
+
+    const newAreaOptions: Record<string, any> = { ...currentAreaOptions, groups_options: newGroupsOptions };
+    if (Object.keys(newAreaOptions.groups_options).length === 0) delete newAreaOptions.groups_options;
+
+    const newAreasOptions: Record<string, any> = { ...this._config.areas_options, [areaId]: newAreaOptions };
+    if (Object.keys(newAreasOptions[areaId]).length === 0) delete newAreasOptions[areaId];
+
+    const newConfig: Simon42StrategyConfig = { ...this._config, areas_options: newAreasOptions };
+    if (newConfig.areas_options && Object.keys(newConfig.areas_options).length === 0) delete newConfig.areas_options;
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);

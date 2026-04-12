@@ -4,16 +4,19 @@
 // Event handlers for the Dashboard Strategy Editor.
 // Ported from JavaScript to TypeScript with proper DOM casts.
 
-import { renderAreaEntitiesHTML } from './editor-template';
+import { renderAreaEntitiesHTML, renderBadgeGroupHTML } from './editor-template';
 import { HomeAssistant } from '../types/homeassistant';
 import { Simon42StrategyConfig, RoomEntities } from '../types/strategy';
 import { EntityRegistryEntry } from '../types/registries';
+import { isBadgeCandidate, isDefaultShowName } from '../utils/badge-utils';
 
 // -- Extended element with expand tracking ----------------------------
 
 interface EditorElement extends HTMLElement {
   _expandedAreas?: Set<string>;
   _expandedGroups?: Map<string, Set<string>>;
+  _config?: Simon42StrategyConfig;
+  _hass?: HomeAssistant | null;
 }
 
 // -- Checkbox Listener Functions --------------------------------------
@@ -291,30 +294,6 @@ export function attachShowScriptsInRoomsCheckboxListener(
   }
 }
 
-export function attachShowWindowContactsInRoomsCheckboxListener(
-  element: HTMLElement,
-  callback: (checked: boolean) => void
-): void {
-  const checkbox = element.querySelector('#show-window-contacts-in-rooms') as HTMLInputElement | null;
-  if (checkbox) {
-    checkbox.addEventListener('change', (e: Event) => {
-      callback((e.target as HTMLInputElement).checked);
-    });
-  }
-}
-
-export function attachShowDoorContactsInRoomsCheckboxListener(
-  element: HTMLElement,
-  callback: (checked: boolean) => void
-): void {
-  const checkbox = element.querySelector('#show-door-contacts-in-rooms') as HTMLInputElement | null;
-  if (checkbox) {
-    checkbox.addEventListener('change', (e: Event) => {
-      callback((e.target as HTMLInputElement).checked);
-    });
-  }
-}
-
 export function attachUseDefaultAreaSortCheckboxListener(
   element: HTMLElement,
   callback: (checked: boolean) => void
@@ -381,14 +360,34 @@ export function attachExpandButtonListeners(
           const groupedEntities = await getAreaGroupedEntities(areaId, hass);
           const hiddenEntities = getHiddenEntitiesForArea(areaId, config);
           const entityOrders = getEntityOrdersForArea(areaId, config);
+          const badgeCandidates = getAreaBadgeCandidates(areaId, hass);
+          const additionalBadges = getAdditionalBadgesForArea(areaId, config);
+          const availableEntities = getAvailableBadgeEntities(areaId, hass, badgeCandidates, additionalBadges);
+          const defaultShowNames = getDefaultShowNameEntities(badgeCandidates, hass);
+          const { namesVisible, namesHidden } = getBadgeNamesConfig(areaId, config);
 
-          const entitiesHTML = renderAreaEntitiesHTML(areaId, groupedEntities, hiddenEntities, entityOrders, hass);
+          const entitiesHTML = renderAreaEntitiesHTML(
+            areaId,
+            groupedEntities,
+            hiddenEntities,
+            entityOrders,
+            hass,
+            badgeCandidates,
+            additionalBadges,
+            availableEntities,
+            defaultShowNames,
+            namesVisible,
+            namesHidden
+          );
           content.innerHTML = entitiesHTML;
 
           // Attach listeners for new entity checkboxes
           attachEntityCheckboxListeners(content, onEntitiesLoad);
           attachGroupCheckboxListeners(content, onEntitiesLoad);
           attachEntityExpandButtonListeners(content, element);
+          attachBadgeAddListeners(content, element, onEntitiesLoad);
+          attachBadgeRemoveListeners(content, element, onEntitiesLoad);
+          attachBadgeNameCheckboxListeners(content, onEntitiesLoad);
         }
       } else {
         // Collapse
@@ -731,6 +730,110 @@ export async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant
   return roomEntities;
 }
 
+export function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant): string[] {
+  const devices = Object.values(hass.devices || {});
+  const entities = Object.values(hass.entities || {});
+
+  const areaDevices = new Set<string>();
+  for (const device of devices) {
+    if (device.area_id === areaId) areaDevices.add(device.id);
+  }
+
+  const candidates: string[] = [];
+
+  for (const entity of entities) {
+    let belongsToArea = false;
+    if (entity.area_id) belongsToArea = entity.area_id === areaId;
+    else if (entity.device_id && areaDevices.has(entity.device_id)) belongsToArea = true;
+    if (!belongsToArea) continue;
+    if (entity.hidden) continue;
+    if (entity.labels?.includes('no_dboard')) continue;
+    if (!hass.states[entity.entity_id]) continue;
+
+    const domain = entity.entity_id.split('.')[0];
+    const state = hass.states[entity.entity_id];
+    const dc = state.attributes?.device_class as string | undefined;
+    const unit = state.attributes?.unit_of_measurement as string | undefined;
+
+    if (!isBadgeCandidate(domain, dc, unit, entity.entity_id)) continue;
+
+    // Battery: only include if low
+    if (domain === 'sensor' && (dc === 'battery' || entity.entity_id.includes('battery'))) {
+      const val = parseFloat(state.state);
+      if (!isNaN(val) && val < 20) candidates.push(entity.entity_id);
+      continue;
+    }
+
+    candidates.push(entity.entity_id);
+  }
+
+  return candidates;
+}
+
+export function getAdditionalBadgesForArea(areaId: string, config: Simon42StrategyConfig): string[] {
+  return config.areas_options?.[areaId]?.groups_options?.badges?.additional || [];
+}
+
+export function getAvailableBadgeEntities(
+  areaId: string,
+  hass: HomeAssistant,
+  existingCandidates: string[],
+  existingAdditional: string[]
+): Array<{ entity_id: string; name: string }> {
+  const devices = Object.values(hass.devices || {});
+  const entities = Object.values(hass.entities || {});
+  const excludeSet = new Set([...existingCandidates, ...existingAdditional]);
+
+  const areaDevices = new Set<string>();
+  for (const device of devices) {
+    if (device.area_id === areaId) areaDevices.add(device.id);
+  }
+
+  const available: Array<{ entity_id: string; name: string }> = [];
+
+  for (const entity of entities) {
+    let belongsToArea = false;
+    if (entity.area_id) belongsToArea = entity.area_id === areaId;
+    else if (entity.device_id && areaDevices.has(entity.device_id)) belongsToArea = true;
+    if (!belongsToArea) continue;
+    if (entity.hidden) continue;
+    if (!hass.states[entity.entity_id]) continue;
+
+    const domain = entity.entity_id.split('.')[0];
+    if (domain !== 'sensor' && domain !== 'binary_sensor') continue;
+    if (excludeSet.has(entity.entity_id)) continue;
+
+    const state = hass.states[entity.entity_id];
+    const name = (state.attributes?.friendly_name as string) || entity.entity_id.split('.')[1].replace(/_/g, ' ');
+    available.push({ entity_id: entity.entity_id, name });
+  }
+
+  available.sort((a, b) => a.name.localeCompare(b.name));
+  return available;
+}
+
+export function getDefaultShowNameEntities(badgeCandidates: string[], hass: HomeAssistant): Set<string> {
+  const result = new Set<string>();
+  for (const entityId of badgeCandidates) {
+    const state = hass.states[entityId];
+    if (!state) continue;
+    const dc = state.attributes?.device_class as string | undefined;
+    if (isDefaultShowName(dc)) result.add(entityId);
+  }
+  return result;
+}
+
+export function getBadgeNamesConfig(
+  areaId: string,
+  config: Simon42StrategyConfig
+): { namesVisible: string[]; namesHidden: string[] } {
+  const opts = config.areas_options?.[areaId]?.groups_options?.badges;
+  return {
+    namesVisible: opts?.names_visible || [],
+    namesHidden: opts?.names_hidden || [],
+  };
+}
+
 export function getHiddenEntitiesForArea(areaId: string, config: Simon42StrategyConfig): Record<string, string[]> {
   const areaOptions = config.areas_options?.[areaId];
   if (!areaOptions || !areaOptions.groups_options) {
@@ -761,4 +864,125 @@ export function getEntityOrdersForArea(areaId: string, config: Simon42StrategyCo
   }
 
   return orders;
+}
+
+// -- Badge Add/Remove Handlers ------------------------------------------
+
+function reloadBadgeSection(
+  areaContent: HTMLElement,
+  areaId: string,
+  element: EditorElement,
+  onEntitiesLoad: (areaId: string, group: string, entityId: string | null, isVisible: boolean) => void
+): void {
+  const badgeGroup = areaContent.querySelector(`.entity-group[data-group="badges"]`) as HTMLElement | null;
+  if (!badgeGroup) return;
+
+  // Read CURRENT config and hass from editor element (not stale closure values)
+  const hass = element._hass!;
+  const config = element._config!;
+
+  const badgeCandidates = getAreaBadgeCandidates(areaId, hass);
+  const additionalBadges = getAdditionalBadgesForArea(areaId, config);
+  const available = getAvailableBadgeEntities(areaId, hass, badgeCandidates, additionalBadges);
+  const hiddenEntities = getHiddenEntitiesForArea(areaId, config);
+  const defaultShowNames = getDefaultShowNameEntities(badgeCandidates, hass);
+  const { namesVisible, namesHidden: namesHid } = getBadgeNamesConfig(areaId, config);
+
+  badgeGroup.outerHTML = renderBadgeGroupHTML(
+    areaId, badgeCandidates, additionalBadges, available, hiddenEntities, hass,
+    defaultShowNames, namesVisible, namesHid
+  );
+
+  // Re-query the new badge group element
+  const newBadgeGroup = areaContent.querySelector(`.entity-group[data-group="badges"]`) as HTMLElement;
+  if (newBadgeGroup) {
+    // Keep the entity list expanded after reload
+    const entityList = newBadgeGroup.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="badges"]`) as HTMLElement | null;
+    if (entityList) entityList.style.display = 'block';
+    const expandBtn = newBadgeGroup.querySelector(`.expand-button-small[data-group="badges"]`) as HTMLElement | null;
+    if (expandBtn) expandBtn.classList.add('expanded');
+
+    // Re-attach all listeners
+    attachEntityCheckboxListeners(newBadgeGroup, onEntitiesLoad);
+    attachGroupCheckboxListeners(newBadgeGroup, onEntitiesLoad);
+    attachEntityExpandButtonListeners(newBadgeGroup, element);
+    attachBadgeAddListeners(areaContent, element, onEntitiesLoad);
+    attachBadgeRemoveListeners(areaContent, element, onEntitiesLoad);
+    attachBadgeNameCheckboxListeners(newBadgeGroup, onEntitiesLoad);
+  }
+}
+
+export function attachBadgeAddListeners(
+  element: HTMLElement,
+  editorElement: EditorElement,
+  onEntitiesLoad: (areaId: string, group: string, entityId: string | null, isVisible: boolean) => void
+): void {
+  const addButtons = element.querySelectorAll('.badge-add-button') as NodeListOf<HTMLButtonElement>;
+
+  addButtons.forEach((button) => {
+    button.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      const areaId = button.dataset.areaId!;
+      const picker = element.querySelector(
+        `.badge-entity-picker[data-area-id="${areaId}"]`
+      ) as HTMLSelectElement | null;
+      if (!picker || !picker.value) return;
+
+      const entityId = picker.value;
+
+      // Fire callback to update config (adds to badges.additional)
+      onEntitiesLoad(areaId, 'badges_additional', entityId, true);
+
+      // Reload badge section with current config from editor
+      const areaContent = element.closest(`.area-content[data-area-id="${areaId}"]`) as HTMLElement ||
+        element.querySelector(`.area-content[data-area-id="${areaId}"]`) as HTMLElement ||
+        element;
+      reloadBadgeSection(areaContent, areaId, editorElement, onEntitiesLoad);
+    });
+  });
+}
+
+export function attachBadgeRemoveListeners(
+  element: HTMLElement,
+  editorElement: EditorElement,
+  onEntitiesLoad: (areaId: string, group: string, entityId: string | null, isVisible: boolean) => void
+): void {
+  const removeButtons = element.querySelectorAll('.badge-remove-btn') as NodeListOf<HTMLButtonElement>;
+
+  removeButtons.forEach((button) => {
+    button.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      const areaId = button.dataset.areaId!;
+      const entityId = button.dataset.entityId!;
+
+      // Fire callback to update config (removes from badges.additional)
+      onEntitiesLoad(areaId, 'badges_additional', entityId, false);
+
+      // Reload badge section with current config from editor
+      const areaContent = element.closest(`.area-content[data-area-id="${areaId}"]`) as HTMLElement ||
+        element.querySelector(`.area-content[data-area-id="${areaId}"]`) as HTMLElement ||
+        element;
+      reloadBadgeSection(areaContent, areaId, editorElement, onEntitiesLoad);
+    });
+  });
+}
+
+export function attachBadgeNameCheckboxListeners(
+  element: HTMLElement,
+  callback: (areaId: string, group: string, entityId: string | null, isVisible: boolean) => void
+): void {
+  const checkboxes = element.querySelectorAll('.badge-name-checkbox') as NodeListOf<HTMLInputElement>;
+
+  checkboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', (e: Event) => {
+      e.stopPropagation();
+      const target = e.target as HTMLInputElement;
+      const areaId = target.dataset.areaId!;
+      const entityId = target.dataset.entityId!;
+      const showName = target.checked;
+
+      // Use 'badges_show_name' as group key — StrategyEditor handles this specially
+      callback(areaId, 'badges_show_name', entityId, showName);
+    });
+  });
 }

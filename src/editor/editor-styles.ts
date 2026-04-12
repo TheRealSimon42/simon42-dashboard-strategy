@@ -52,5 +52,15 @@ export function getEditorStyles(): string {
     .entity-name { flex: 1; font-size: 14px; }
     .entity-id { font-size: 11px; color: var(--secondary-text-color); font-family: monospace; margin-left: 8px; }
     .empty-state { padding: 24px; text-align: center; color: var(--secondary-text-color); font-style: italic; }
+    .badge-separator { padding: 8px 0 4px; font-size: 12px; font-weight: 500; color: var(--secondary-text-color); border-top: 1px dashed var(--divider-color); margin-top: 4px; }
+    .badge-additional-item { padding-left: 0; }
+    .badge-remove-btn { background: none; border: none; padding: 2px 6px; cursor: pointer; color: var(--error-color, #db4437); font-size: 14px; margin-left: 8px; border-radius: 4px; }
+    .badge-remove-btn:hover { background: var(--secondary-background-color); }
+    .badge-add-section { display: flex; gap: 8px; padding: 8px 0 4px; align-items: center; }
+    .badge-entity-picker { flex: 1; padding: 6px 8px; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--card-background-color); color: var(--primary-text-color); font-size: 13px; }
+    .badge-add-button { padding: 6px 12px; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--primary-color); color: var(--text-primary-color, #fff); cursor: pointer; font-size: 13px; white-space: nowrap; }
+    .badge-add-button:hover { opacity: 0.9; }
+    .badge-name-checkbox { margin-left: auto; margin-right: 2px; width: 14px; height: 14px; cursor: pointer; }
+    .badge-name-label { font-size: 11px; color: var(--secondary-text-color); margin-right: 8px; white-space: nowrap; }
   `;
 }

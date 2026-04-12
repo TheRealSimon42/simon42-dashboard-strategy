@@ -61,8 +61,6 @@ export interface EditorHTMLParams {
   showLocksInRooms: boolean;
   showAutomationsInRooms: boolean;
   showScriptsInRooms: boolean;
-  showWindowContactsInRooms: boolean;
-  showDoorContactsInRooms: boolean;
   useDefaultAreaSort: boolean;
   customViews: CustomView[];
   customCards: CustomCard[];
@@ -119,8 +117,6 @@ export function renderEditorHTML({
   showLocksInRooms,
   showAutomationsInRooms,
   showScriptsInRooms,
-  showWindowContactsInRooms,
-  showDoorContactsInRooms,
   useDefaultAreaSort,
   customViews,
   customCards,
@@ -462,28 +458,6 @@ export function renderEditorHTML({
         </div>
         <div class="description">
           ${localize('editor.show_scripts_in_rooms_desc')}
-        </div>
-        <div class="form-row">
-          <input
-            type="checkbox"
-            id="show-window-contacts-in-rooms"
-            ${showWindowContactsInRooms ? 'checked' : ''}
-          />
-          <label for="show-window-contacts-in-rooms">${localize('editor.show_window_contacts_in_rooms')}</label>
-        </div>
-        <div class="description">
-          ${localize('editor.show_window_contacts_in_rooms_desc')}
-        </div>
-        <div class="form-row">
-          <input
-            type="checkbox"
-            id="show-door-contacts-in-rooms"
-            ${showDoorContactsInRooms ? 'checked' : ''}
-          />
-          <label for="show-door-contacts-in-rooms">${localize('editor.show_door_contacts_in_rooms')}</label>
-        </div>
-        <div class="description">
-          ${localize('editor.show_door_contacts_in_rooms_desc')}
         </div>
         <div class="form-row">
           <input
@@ -860,7 +834,13 @@ export function renderAreaEntitiesHTML(
   groupedEntities: Record<string, string[]>,
   hiddenEntities: Record<string, string[]>,
   entityOrders: Record<string, string[]>,
-  hass: HassStatesSubset
+  hass: HassStatesSubset,
+  badgeCandidates?: string[],
+  additionalBadges?: string[],
+  availableEntities?: Array<{ entity_id: string; name: string }>,
+  defaultShowNameEntities?: Set<string>,
+  namesVisible?: string[],
+  namesHidden?: string[]
 ): string {
   const domainGroups: DomainGroup[] = [
     { key: 'lights', label: localize('editor.domain_lights'), icon: 'mdi:lightbulb' },
@@ -931,11 +911,150 @@ export function renderAreaEntitiesHTML(
     `;
   });
 
+  // Badge group (after domain groups)
+  if (badgeCandidates && badgeCandidates.length > 0 || additionalBadges && additionalBadges.length > 0) {
+    html += renderBadgeGroupHTML(
+      areaId,
+      badgeCandidates || [],
+      additionalBadges || [],
+      availableEntities || [],
+      hiddenEntities,
+      hass,
+      defaultShowNameEntities,
+      namesVisible,
+      namesHidden
+    );
+  }
+
   html += '</div>';
 
   if (html === '<div class="entity-groups"></div>') {
     return '<div class="empty-state">' + localize('editor.no_entities_in_area') + '</div>';
   }
+
+  return html;
+}
+
+export function renderBadgeGroupHTML(
+  areaId: string,
+  badgeCandidates: string[],
+  additionalBadges: string[],
+  availableEntities: Array<{ entity_id: string; name: string }>,
+  hiddenEntities: Record<string, string[]>,
+  hass: HassStatesSubset,
+  defaultShowNameEntities?: Set<string>,
+  namesVisible?: string[],
+  namesHidden?: string[]
+): string {
+  const totalCount = badgeCandidates.length + additionalBadges.length;
+  if (totalCount === 0) return '';
+
+  const hiddenInBadges = hiddenEntities['badges'] || [];
+  const allHidden = badgeCandidates.length > 0 && badgeCandidates.every((e) => hiddenInBadges.includes(e));
+  const someHidden = badgeCandidates.some((e) => hiddenInBadges.includes(e)) && !allHidden;
+
+  const namesVisibleSet = new Set(namesVisible || []);
+  const namesHiddenSet = new Set(namesHidden || []);
+  const defaultNames = defaultShowNameEntities || new Set<string>();
+
+  const isNameShown = (entityId: string): boolean => {
+    if (namesHiddenSet.has(entityId)) return false;
+    if (namesVisibleSet.has(entityId)) return true;
+    return defaultNames.has(entityId);
+  };
+
+  let html = `
+    <div class="entity-group" data-group="badges">
+      <div class="entity-group-header">
+        <input
+          type="checkbox"
+          class="group-checkbox"
+          data-area-id="${areaId}"
+          data-group="badges"
+          ${!allHidden ? 'checked' : ''}
+          ${someHidden ? 'data-indeterminate="true"' : ''}
+        />
+        <ha-icon icon="mdi:checkbox-multiple-blank-circle"></ha-icon>
+        <span class="group-name">${localize('editor.domain_badges')}</span>
+        <span class="entity-count">(${totalCount})</span>
+        <button class="expand-button-small" data-area-id="${areaId}" data-group="badges">
+          <span class="expand-icon-small">▶</span>
+        </button>
+      </div>
+      <div class="entity-list" data-area-id="${areaId}" data-group="badges" style="display: none;">`;
+
+  // Auto-detected badge candidates
+  for (const entityId of badgeCandidates) {
+    const state = hass.states[entityId];
+    const name = state?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+    const isHidden = hiddenInBadges.includes(entityId);
+    const showName = isNameShown(entityId);
+
+    html += `
+        <div class="entity-item">
+          <input
+            type="checkbox"
+            class="entity-checkbox"
+            data-area-id="${areaId}"
+            data-group="badges"
+            data-entity-id="${entityId}"
+            ${!isHidden ? 'checked' : ''}
+          />
+          <span class="entity-name">${name}</span>
+          <input
+            type="checkbox"
+            class="badge-name-checkbox"
+            data-area-id="${areaId}"
+            data-entity-id="${entityId}"
+            ${showName ? 'checked' : ''}
+            title="${localize('editor.badges_show_name')}"
+          />
+          <span class="badge-name-label">${localize('editor.badges_name_short')}</span>
+          <span class="entity-id">${entityId}</span>
+        </div>`;
+  }
+
+  // Additional (custom) badges
+  if (additionalBadges.length > 0) {
+    html += `<div class="badge-separator">${localize('editor.badges_additional')}</div>`;
+    for (const entityId of additionalBadges) {
+      const state = hass.states[entityId];
+      const name = state?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+      const showName = isNameShown(entityId);
+
+      html += `
+        <div class="entity-item badge-additional-item">
+          <span class="entity-name">${name}</span>
+          <input
+            type="checkbox"
+            class="badge-name-checkbox"
+            data-area-id="${areaId}"
+            data-entity-id="${entityId}"
+            ${showName ? 'checked' : ''}
+            title="${localize('editor.badges_show_name')}"
+          />
+          <span class="badge-name-label">${localize('editor.badges_name_short')}</span>
+          <span class="entity-id">${entityId}</span>
+          <button class="badge-remove-btn" data-area-id="${areaId}" data-entity-id="${entityId}" title="${localize('editor.badges_remove')}">✕</button>
+        </div>`;
+    }
+  }
+
+  // Entity picker for adding new badges
+  if (availableEntities.length > 0) {
+    html += `
+        <div class="badge-add-section">
+          <select class="badge-entity-picker" data-area-id="${areaId}">
+            <option value="">${localize('editor.badges_select_entity')}</option>
+            ${availableEntities.map((e) => `<option value="${e.entity_id}">${e.name} (${e.entity_id})</option>`).join('')}
+          </select>
+          <button class="badge-add-button" data-area-id="${areaId}">${localize('editor.badges_add')}</button>
+        </div>`;
+  }
+
+  html += `
+      </div>
+    </div>`;
 
   return html;
 }

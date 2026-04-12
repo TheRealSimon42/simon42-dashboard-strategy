@@ -81,6 +81,9 @@ export interface AreaOptions {
 export interface GroupOptions {
   hidden?: string[];
   order?: string[];
+  additional?: string[]; // Extra entities to include (used by badges group)
+  names_visible?: string[]; // Override show_name to true (used by badges group)
+  names_hidden?: string[]; // Override show_name to false (used by badges group)
   [key: string]: unknown;
 }
 

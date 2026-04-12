@@ -205,6 +205,13 @@
     "domain_vacuum": "Vacuums",
     "domain_fan": "Fans",
     "domain_switches": "Switches",
-    "domain_locks": "Locks"
+    "domain_locks": "Locks",
+    "domain_badges": "Room Badges",
+    "badges_additional": "Additional Badges",
+    "badges_add": "Add",
+    "badges_select_entity": "Select entity...",
+    "badges_remove": "Remove",
+    "badges_show_name": "Show entity name on badge",
+    "badges_name_short": "Name"
   }
 }
