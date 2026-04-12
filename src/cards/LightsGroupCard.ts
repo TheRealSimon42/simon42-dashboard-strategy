@@ -130,10 +130,11 @@ class Simon42LightsGroupCard extends LitElement {
       transform: rotate(90deg);
     }
     .group-children {
+      --nested-indent: min(calc(var(--group-depth, 1) * 20px), 40px);
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 8px;
-      padding-left: 44px;
+      padding-left: var(--nested-indent);
     }
     .group-children[hidden] {
       display: none;
@@ -429,13 +430,25 @@ class Simon42LightsGroupCard extends LitElement {
     return card;
   }
 
-  private _isExpanded(entityId: string): boolean {
-    return this._groupExpansion.get(entityId) ?? (this._config.default_expanded === true);
+  private _isExpanded(entityId: string, depth: number): boolean {
+    if (this._groupExpansion.has(entityId)) {
+      return this._groupExpansion.get(entityId) === true;
+    }
+    if (depth > 0) {
+      return false;
+    }
+    return this._config.default_expanded === true;
   }
 
-  private _getOrCreateGroupContainer(entityId: string): HTMLElement {
+  private _getOrCreateGroupContainer(entityId: string, depth: number): HTMLElement {
     let container = this._groupContainers.get(entityId);
-    if (container) return container;
+    if (container) {
+      const childContainer = container.querySelector('.group-children') as HTMLElement | null;
+      if (childContainer) {
+        childContainer.style.setProperty('--group-depth', String(depth + 1));
+      }
+      return container;
+    }
 
     container = document.createElement('div');
     container.className = 'group-block';
@@ -459,12 +472,13 @@ class Simon42LightsGroupCard extends LitElement {
 
     const childContainer = document.createElement('div');
     childContainer.className = 'group-children';
+    childContainer.style.setProperty('--group-depth', String(depth + 1));
     childContainer.hidden = true;
 
     container.append(groupHeader, childContainer);
 
     toggleButton.addEventListener('click', () => {
-      const expanded = !this._isExpanded(entityId);
+      const expanded = !this._isExpanded(entityId, depth);
       this._groupExpansion.set(entityId, expanded);
       toggleButton.setAttribute('aria-expanded', String(expanded));
       childContainer.hidden = !expanded;
@@ -474,9 +488,9 @@ class Simon42LightsGroupCard extends LitElement {
     return container;
   }
 
-  private _resolveHierarchyContainer(entityId: string, hasChildren: boolean): HTMLElement {
+  private _resolveHierarchyContainer(entityId: string, hasChildren: boolean, depth: number): HTMLElement {
     if (hasChildren) {
-      return this._getOrCreateGroupContainer(entityId);
+      return this._getOrCreateGroupContainer(entityId, depth);
     }
     return this._getOrCreateTileCard(entityId) as unknown as HTMLElement;
   }
@@ -491,7 +505,8 @@ class Simon42LightsGroupCard extends LitElement {
     groupContainerElement: HTMLElement,
     entityId: string,
     childIds: string[],
-    nodes: Map<string, LightHierarchyNode>
+    nodes: Map<string, LightHierarchyNode>,
+    depth: number
   ): void {
     const groupCardHostElement = groupContainerElement.querySelector('.group-card-slot') as HTMLElement;
     const groupCard = this._getOrCreateTileCard(entityId);
@@ -500,26 +515,32 @@ class Simon42LightsGroupCard extends LitElement {
     }
 
     const childContainerElement = groupContainerElement.querySelector('.group-children') as HTMLElement;
-    const expanded = this._isExpanded(entityId);
+    childContainerElement.style.setProperty('--group-depth', String(depth + 1));
+    const expanded = this._isExpanded(entityId, depth);
     const toggleButtonElement = groupContainerElement.querySelector('.group-toggle') as HTMLButtonElement;
     toggleButtonElement.setAttribute('aria-expanded', String(expanded));
     childContainerElement.hidden = !expanded;
-    this._reconcileHierarchy(childContainerElement, childIds, nodes);
+    this._reconcileHierarchy(childContainerElement, childIds, nodes, depth + 1);
   }
 
-  private _reconcileHierarchy(container: HTMLElement, nodeIds: string[], nodes: Map<string, LightHierarchyNode>): void {
+  private _reconcileHierarchy(
+    container: HTMLElement,
+    nodeIds: string[],
+    nodes: Map<string, LightHierarchyNode>,
+    depth: number = 0
+  ): void {
     let previousNode: ChildNode | null = null;
 
     for (const entityId of nodeIds) {
       const node = nodes.get(entityId);
       const childIds = node?.childIds || [];
-      const hierarchyContainerElement = this._resolveHierarchyContainer(entityId, childIds.length > 0);
+      const hierarchyContainerElement = this._resolveHierarchyContainer(entityId, childIds.length > 0, depth);
       const nextSibling: ChildNode | null = previousNode ? previousNode.nextSibling : container.firstChild;
       this._placeHierarchyNode(container, hierarchyContainerElement, nextSibling);
       previousNode = hierarchyContainerElement;
 
       if (childIds.length > 0) {
-        this._syncGroupContainer(hierarchyContainerElement, entityId, childIds, nodes);
+        this._syncGroupContainer(hierarchyContainerElement, entityId, childIds, nodes, depth);
       }
     }
 
