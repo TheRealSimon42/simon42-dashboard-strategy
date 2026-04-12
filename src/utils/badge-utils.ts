@@ -94,3 +94,17 @@ export function isBadgeCandidate(
 export function isDefaultShowName(deviceClass: string | undefined): boolean {
   return deviceClass === 'window' || deviceClass === 'door';
 }
+
+// -- Show name resolution ---------------------------------------------
+
+/** Resolve whether a badge should show its entity name (config overrides > defaults) */
+export function resolveShowName(
+  entityId: string,
+  defaultShowName: boolean,
+  namesVisible: Set<string> | null | undefined,
+  namesHidden: Set<string> | null | undefined
+): boolean {
+  if (namesHidden?.has(entityId)) return false;
+  if (namesVisible?.has(entityId)) return true;
+  return defaultShowName;
+}

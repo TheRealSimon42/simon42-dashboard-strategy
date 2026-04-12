@@ -512,7 +512,7 @@ export function attachEntityExpandButtonListeners(element: HTMLElement, editorEl
             if (!editorElement._expandedGroups.has(areaId)) {
               editorElement._expandedGroups.set(areaId, new Set());
             }
-            editorElement._expandedGroups.get(areaId)!.add(group);
+            editorElement._expandedGroups.get(areaId)?.add(group);
           }
         } else {
           entityList.style.display = 'none';

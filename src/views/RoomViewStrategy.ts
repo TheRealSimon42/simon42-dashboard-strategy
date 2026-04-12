@@ -15,7 +15,7 @@ import { stripAreaName, sortByLastChanged } from '../utils/name-utils';
 import { Registry } from '../Registry';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
 import { localize } from '../utils/localize';
-import { BADGE_COLOR_MAP, getColorForEntity, isBadgeCandidate, isDefaultShowName } from '../utils/badge-utils';
+import { BADGE_COLOR_MAP, getColorForEntity, isDefaultShowName, resolveShowName } from '../utils/badge-utils';
 
 // HA supported_features bitmask values
 const FAN_SET_SPEED = 1;
@@ -316,18 +316,12 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     const namesVisible = hasBadgeConfig ? new Set<string>(badgeOpts.names_visible || []) : null;
     const namesHidden = hasBadgeConfig ? new Set<string>(badgeOpts.names_hidden || []) : null;
 
-    const shouldShowName = (entityId: string, defaultShowName: boolean): boolean => {
-      if (namesHidden?.has(entityId)) return false;
-      if (namesVisible?.has(entityId)) return true;
-      return defaultShowName;
-    };
-
     // Convert to LovelaceBadgeConfig
     const badges: LovelaceBadgeConfig[] = [];
     if (primaryTemp) badges.push({ type: 'entity', entity: primaryTemp, color: 'red', tap_action: { action: 'more-info' } });
     if (primaryHumidity) badges.push({ type: 'entity', entity: primaryHumidity, color: 'indigo', tap_action: { action: 'more-info' } });
     for (const b of filteredCandidates) {
-      const showName = shouldShowName(b.entity, !!b.showName);
+      const showName = resolveShowName(b.entity, !!b.showName, namesVisible, namesHidden);
       badges.push({
         type: 'entity',
         entity: b.entity,

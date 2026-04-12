@@ -6,6 +6,7 @@
 import type { CustomView, CustomCard, CustomBadge, RoomEntities } from '../types/strategy';
 import type { AreaRegistryEntry } from '../types/registries';
 import { localize } from '../utils/localize';
+import { resolveShowName } from '../utils/badge-utils';
 
 // -- Editor-specific entity shape (enriched for editor UI) ------------
 
@@ -957,11 +958,8 @@ export function renderBadgeGroupHTML(
   const namesHiddenSet = new Set(namesHidden || []);
   const defaultNames = defaultShowNameEntities || new Set<string>();
 
-  const isNameShown = (entityId: string): boolean => {
-    if (namesHiddenSet.has(entityId)) return false;
-    if (namesVisibleSet.has(entityId)) return true;
-    return defaultNames.has(entityId);
-  };
+  const isNameShown = (entityId: string): boolean =>
+    resolveShowName(entityId, defaultNames.has(entityId), namesVisibleSet, namesHiddenSet);
 
   let html = `
     <div class="entity-group" data-group="badges">
