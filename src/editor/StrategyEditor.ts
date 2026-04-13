@@ -166,7 +166,21 @@ class Simon42DashboardStrategyEditor extends LitElement {
       if (filterWithArea && !entity.area_id && !entity.device_area_id) return false;
       return entity.name.toLowerCase().includes(q) || entity.entity_id.toLowerCase().includes(q);
     });
-    return filtered.slice(0, 10);
+    // Prioritize: exact match > starts-with > contains
+    filtered.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aId = a.entity_id.toLowerCase();
+      const bId = b.entity_id.toLowerCase();
+      const aExact = aName === q || aId === q;
+      const bExact = bName === q || bId === q;
+      if (aExact !== bExact) return aExact ? -1 : 1;
+      const aStarts = aName.startsWith(q) || aId.startsWith(q) || aId.split('.')[1]?.startsWith(q);
+      const bStarts = bName.startsWith(q) || bId.startsWith(q) || bId.split('.')[1]?.startsWith(q);
+      if (aStarts !== bStarts) return aStarts ? -1 : 1;
+      return aName.localeCompare(bName);
+    });
+    return filtered.slice(0, 21);
   }
 
   // -- Styles -----------------------------------------------------------
@@ -180,12 +194,19 @@ class Simon42DashboardStrategyEditor extends LitElement {
       color: var(--primary-text-color);
     }
     .section {
-      margin-bottom: 24px;
+      margin-bottom: 16px;
+      background: var(--card-background-color, #fff);
+      border: 1px solid var(--divider-color, #e8e8e8);
+      border-radius: var(--ha-card-border-radius, 12px);
+      padding: 16px;
+      transition: box-shadow 0.2s ease;
     }
     .section-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 500;
-      margin-bottom: 12px;
+      margin: 0 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--divider-color, #e8e8e8);
       color: var(--primary-text-color);
       letter-spacing: 0.01em;
     }
@@ -219,16 +240,14 @@ class Simon42DashboardStrategyEditor extends LitElement {
       cursor: not-allowed;
       opacity: 0.5;
     }
-    .form-row ha-entity-picker {
+    .form-row .alarm-select {
       flex: 1;
       max-width: 300px;
     }
     .description {
       font-size: 12px;
       color: var(--secondary-text-color);
-      margin-top: 4px;
-      margin-left: 26px;
-      margin-bottom: 16px;
+      margin: 2px 0 12px 26px;
       line-height: 1.4;
     }
     .description strong {
@@ -707,6 +726,18 @@ class Simon42DashboardStrategyEditor extends LitElement {
       margin-right: 12px;
       color: var(--secondary-text-color);
       font-size: 16px;
+      cursor: grab;
+      user-select: none;
+      padding: 4px;
+    }
+    .entity-list-item .drag-icon:active {
+      cursor: grabbing;
+    }
+    .entity-list-item.dragging {
+      opacity: 0.5;
+    }
+    .entity-list-item.drag-over {
+      border-top: 2px solid var(--primary-color);
     }
     .entity-list-item .item-info {
       flex: 1;
@@ -764,16 +795,15 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
     /* -- Section dividers ---------------------------------------------- */
     .section-divider {
-      border-top: 2px solid var(--divider-color);
-      margin: 24px 0 16px;
-      padding-top: 16px;
+      margin: 28px 0 12px;
+      padding: 0;
     }
     .section-divider-title {
-      font-size: 18px;
+      font-size: 13px;
       font-weight: 600;
-      color: var(--primary-text-color);
-      margin-bottom: 4px;
-      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--secondary-text-color);
     }
 
     /* -- Mobile responsive --------------------------------------------- */
@@ -1078,7 +1108,13 @@ class Simon42DashboardStrategyEditor extends LitElement {
                 ${favoriteEntities.map((entityId) => {
                   const name = entityMap.get(entityId) || entityId;
                   return html`
-                    <div class="entity-list-item" data-entity-id=${entityId}>
+                    <div class="entity-list-item" data-entity-id=${entityId}
+                      draggable="true"
+                      @dragstart=${(ev: DragEvent) => this._handleEntityDragStart(ev, 'favorites')}
+                      @dragend=${this._handleEntityDragEnd}
+                      @dragover=${this._handleEntityDragOver}
+                      @dragleave=${this._handleEntityDragLeave}
+                      @drop=${(ev: DragEvent) => this._handleEntityDrop(ev, 'favorites')}>
                       <span class="drag-icon">&#x2630;</span>
                       <span class="item-info">
                         <span class="item-name">${name}</span>
@@ -1108,7 +1144,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
                     <span class="entity-search-id">${entity.entity_id}</span>
                   </div>
                 `)
-                : html`<div class="entity-search-no-results">${localize('editor.no_results') || 'No results'}</div>`
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
               }
             </div>
           ` : nothing}
@@ -1207,7 +1243,13 @@ class Simon42DashboardStrategyEditor extends LitElement {
                   const areaName = areaId ? areaMap.get(areaId) || areaId : localize('editor.no_room');
 
                   return html`
-                    <div class="entity-list-item" data-entity-id=${entityId}>
+                    <div class="entity-list-item" data-entity-id=${entityId}
+                      draggable="true"
+                      @dragstart=${(ev: DragEvent) => this._handleEntityDragStart(ev, 'room_pins')}
+                      @dragend=${this._handleEntityDragEnd}
+                      @dragover=${this._handleEntityDragOver}
+                      @dragleave=${this._handleEntityDragLeave}
+                      @drop=${(ev: DragEvent) => this._handleEntityDrop(ev, 'room_pins')}>
                       <span class="drag-icon">&#x2630;</span>
                       <span class="item-info">
                         <span class="item-name">${name}</span>
@@ -1238,7 +1280,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
                     <span class="entity-search-id">${entity.entity_id}</span>
                   </div>
                 `)
-                : html`<div class="entity-search-no-results">${localize('editor.no_results') || 'No results'}</div>`
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
               }
             </div>
           ` : nothing}
@@ -2586,28 +2628,31 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
     if (!this._draggedElement || this._draggedElement === dropTarget) return;
 
-    const areaList = this.shadowRoot!.querySelector('#area-list');
-    if (!areaList) return;
+    const draggedAreaId = this._draggedElement.dataset.areaId;
+    const dropAreaId = dropTarget.dataset.areaId;
+    if (!draggedAreaId || !dropAreaId) return;
 
-    const allItems = Array.from(areaList.querySelectorAll('.area-item')) as HTMLElement[];
-    const draggedIndex = allItems.indexOf(this._draggedElement);
-    const dropIndex = allItems.indexOf(dropTarget);
+    // Compute new order from current config state (NOT from DOM)
+    const currentOrder = this._getAreaOrder();
+    const draggedIndex = currentOrder.indexOf(draggedAreaId);
+    const dropIndex = currentOrder.indexOf(dropAreaId);
+    if (draggedIndex === -1 || dropIndex === -1) return;
 
-    if (draggedIndex < dropIndex) {
-      dropTarget.parentNode!.insertBefore(this._draggedElement, dropTarget.nextSibling);
-    } else {
-      dropTarget.parentNode!.insertBefore(this._draggedElement, dropTarget);
-    }
+    const newOrder = [...currentOrder];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(dropIndex, 0, draggedAreaId);
 
-    this._updateAreaOrder();
+    this._updateAreaOrder(newOrder);
   };
 
-  private _updateAreaOrder(): void {
-    const areaList = this.shadowRoot!.querySelector('#area-list');
-    if (!areaList) return;
+  private _getAreaOrder(): string[] {
+    if (!this._hass) return [];
+    const configOrder = this._config.areas_display?.order;
+    if (configOrder && configOrder.length > 0) return [...configOrder];
+    return Object.keys(this._hass.areas || {});
+  }
 
-    const items = Array.from(areaList.querySelectorAll('.area-item'));
-    const newOrder = items.map((item) => (item as HTMLElement).dataset.areaId ?? '');
+  private _updateAreaOrder(newOrder: string[]): void {
 
     const newConfig: Simon42StrategyConfig = {
       ...this._config,
@@ -2620,6 +2665,71 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
   }
+
+  // ====================================================================
+  // ENTITY LIST DRAG & DROP (Favorites / Room Pins)
+  // ====================================================================
+
+  private _entityDraggedId: string | null = null;
+
+  private _handleEntityDragStart = (ev: DragEvent, _listType: 'favorites' | 'room_pins'): void => {
+    const item = (ev.target as HTMLElement).closest('.entity-list-item') as HTMLElement | null;
+    if (!item) { ev.preventDefault(); return; }
+
+    item.classList.add('dragging');
+    this._entityDraggedId = item.dataset.entityId || null;
+    if (ev.dataTransfer) {
+      ev.dataTransfer.effectAllowed = 'move';
+      ev.dataTransfer.setData('text/plain', this._entityDraggedId || '');
+    }
+  };
+
+  private _handleEntityDragEnd = (ev: DragEvent): void => {
+    const item = (ev.target as HTMLElement).closest('.entity-list-item') as HTMLElement | null;
+    if (item) item.classList.remove('dragging');
+    this._entityDraggedId = null;
+  };
+
+  private _handleEntityDragOver = (ev: DragEvent): void => {
+    ev.preventDefault();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+    const item = (ev.currentTarget as HTMLElement);
+    if (item.dataset.entityId !== this._entityDraggedId) {
+      item.classList.add('drag-over');
+    }
+  };
+
+  private _handleEntityDragLeave = (ev: DragEvent): void => {
+    (ev.currentTarget as HTMLElement).classList.remove('drag-over');
+  };
+
+  private _handleEntityDrop = (ev: DragEvent, listType: 'favorites' | 'room_pins'): void => {
+    ev.stopPropagation();
+    ev.preventDefault();
+
+    const dropTarget = ev.currentTarget as HTMLElement;
+    dropTarget.classList.remove('drag-over');
+
+    const draggedId = this._entityDraggedId;
+    const dropId = dropTarget.dataset.entityId;
+    if (!draggedId || !dropId || draggedId === dropId) return;
+
+    const currentList = listType === 'favorites'
+      ? [...(this._config.favorite_entities || [])]
+      : [...(this._config.room_pin_entities || [])];
+
+    const draggedIndex = currentList.indexOf(draggedId);
+    const dropIndex = currentList.indexOf(dropId);
+    if (draggedIndex === -1 || dropIndex === -1) return;
+
+    currentList.splice(draggedIndex, 1);
+    currentList.splice(dropIndex, 0, draggedId);
+
+    const key = listType === 'favorites' ? 'favorite_entities' : 'room_pin_entities';
+    const newConfig: Simon42StrategyConfig = { ...this._config, [key]: currentList };
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  };
 
   // ====================================================================
   // CONFIG DISPATCH
