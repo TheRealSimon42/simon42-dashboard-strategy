@@ -860,10 +860,10 @@ export function renderAreaEntitiesHTML(
   let html = '<div class="entity-groups">';
 
   domainGroups.forEach((group: DomainGroup) => {
-    const entities = groupedEntities[group.key] || [];
-    if (entities.length === 0) return;
+    const entities = groupedEntities[group.key] as string[] | undefined;
+    if (!entities || entities.length === 0) return;
 
-    const hiddenInGroup = hiddenEntities[group.key] || [];
+    const hiddenInGroup = (hiddenEntities[group.key] || []) as string[];
     const allHidden = entities.every((e) => hiddenInGroup.includes(e));
     const someHidden = entities.some((e) => hiddenInGroup.includes(e)) && !allHidden;
 

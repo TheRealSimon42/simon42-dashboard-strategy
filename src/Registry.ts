@@ -224,7 +224,7 @@ class Registry {
         if (!Registry._entitiesByDevice.has(e.device_id)) {
           Registry._entitiesByDevice.set(e.device_id, []);
         }
-        Registry._entitiesByDevice.get(e.device_id)!.push(e.entity_id);
+        Registry._entitiesByDevice.get(e.device_id)?.push(e.entity_id);
       }
     }
 
@@ -241,14 +241,14 @@ class Registry {
       if (!Registry._entitiesByArea.has(areaId)) {
         Registry._entitiesByArea.set(areaId, []);
       }
-      Registry._entitiesByArea.get(areaId)!.push(e);
+      Registry._entitiesByArea.get(areaId)?.push(e);
 
       // Config/diagnostic map (separate bucket)
       if (Registry._isConfigOrDiagnostic(e)) {
         if (!Registry._configDiagEntitiesByArea.has(areaId)) {
           Registry._configDiagEntitiesByArea.set(areaId, []);
         }
-        Registry._configDiagEntitiesByArea.get(areaId)!.push(e);
+        Registry._configDiagEntitiesByArea.get(areaId)?.push(e);
       }
 
       // Visible map (pre-filtered — excludes hidden/disabled/labeled/category)
@@ -256,7 +256,7 @@ class Registry {
         if (!Registry._visibleEntitiesByArea.has(areaId)) {
           Registry._visibleEntitiesByArea.set(areaId, []);
         }
-        Registry._visibleEntitiesByArea.get(areaId)!.push(e);
+        Registry._visibleEntitiesByArea.get(areaId)?.push(e);
       }
     }
   }
@@ -393,7 +393,7 @@ class Registry {
 
   /** All area registry entries (from hass.areas). */
   static get areas(): AreaRegistryEntry[] {
-    return Registry._fetchedAreas || [];
+    return Registry._fetchedAreas;
   }
 
   /** All floor registry entries (from hass — no WS endpoint needed). */

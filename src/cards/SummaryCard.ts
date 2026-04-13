@@ -90,9 +90,6 @@ class Simon42SummaryCard extends LitElement {
   `;
 
   setConfig(config: SummaryCardConfig): void {
-    if (!config.summary_type) {
-      throw new Error('You need to define a summary_type');
-    }
     this._config = config;
     this._relevantEntityIds = null;
   }
@@ -324,7 +321,7 @@ class Simon42SummaryCard extends LitElement {
     const colorCss = COLOR_MAP[display.color] || COLOR_MAP.grey;
 
     return html`
-      <ha-card @click=${this._handleClick}>
+      <ha-card @click=${() => this._handleClick()}>
         <ha-icon class="icon" .icon=${display.icon} style="color: ${colorCss}"></ha-icon>
         <div class="name">${display.name}</div>
       </ha-card>

@@ -116,9 +116,10 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       }
     });
 
-    return Object.keys(this._hass.states)
+    const hass = this._hass;
+    return Object.keys(hass.states)
       .map((entityId) => {
-        const state = this._hass!.states[entityId];
+        const state = hass.states[entityId];
         const entity = entities.find((e) => e.entity_id === entityId);
 
         // Determine area_id: direct or via device
@@ -416,7 +417,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _addFavoriteEntity(entityId: string): void {
-    if (!this._config || !this._hass) {
+    if (!this._hass) {
       return;
     }
 
@@ -1094,7 +1095,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   // -- Toggle handlers --------------------------------------------------
 
   _showWeatherChanged(showWeather: boolean): void {
-    if (!this._config || !this._hass) return;
+    if (!this._hass) return;
 
     const newConfig: Simon42StrategyConfig = {
       ...this._config,
@@ -1374,7 +1375,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     });
 
     lowInput?.addEventListener('change', () => {
-      if (!this._config) return;
       const value = parseInt(lowInput.value, 10);
       if (isNaN(value) || value < 1 || value > 99) return;
       const newConfig: Simon42StrategyConfig = { ...this._config, battery_low_threshold: value };
@@ -1524,7 +1524,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     if (!areaList) return;
 
     const items = Array.from(areaList.querySelectorAll('.area-item'));
-    const newOrder = items.map((item) => (item as HTMLElement).dataset.areaId!);
+    const newOrder = items.map((item) => (item as HTMLElement).dataset.areaId ?? '');
 
     const newConfig: Simon42StrategyConfig = {
       ...this._config,
@@ -1556,9 +1556,8 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     // Get current groups_options for this area
     const currentAreaOptions = this._config.areas_options?.[areaId] || {};
     const currentGroupsOptions = currentAreaOptions.groups_options || {};
-    const currentGroupOptions = currentGroupsOptions[group] || {};
-
-    let hiddenEntities = [...(currentGroupOptions.hidden || [])];
+    const currentGroupOptions = currentGroupsOptions[group] as Record<string, any> | undefined;
+    let hiddenEntities = [...(currentGroupOptions?.hidden || [])];
 
     if (entityId === null) {
       // All entities in the group

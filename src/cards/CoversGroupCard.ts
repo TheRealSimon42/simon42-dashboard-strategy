@@ -86,7 +86,6 @@ class Simon42CoversGroupCard extends LitElement {
   `;
 
   setConfig(config: CoversGroupConfig): void {
-    if (!config.group_type) throw new Error('You need to define group_type (open/closed)');
     this._config = config;
     this._deviceClasses = config.device_classes || DEFAULT_DEVICE_CLASSES;
   }
@@ -173,8 +172,8 @@ class Simon42CoversGroupCard extends LitElement {
     }
 
     relevant.sort((a, b) => {
-      const stateA = this.hass!.states[a];
-      const stateB = this.hass!.states[b];
+      const stateA = this.hass?.states[a];
+      const stateB = this.hass?.states[b];
       if (!stateA || !stateB) return 0;
       return new Date(stateB.last_changed).getTime() - new Date(stateA.last_changed).getTime();
     });
@@ -183,7 +182,7 @@ class Simon42CoversGroupCard extends LitElement {
   }
 
   private _stripCoverType(entityId: string): string {
-    const state = this.hass!.states[entityId];
+    const state = this.hass?.states[entityId];
     if (!state) return entityId;
 
     let name = state.attributes.friendly_name || entityId;
@@ -277,7 +276,7 @@ class Simon42CoversGroupCard extends LitElement {
   private _calculateRenderKey(covers: string[]): string {
     return covers
       .map((id) => {
-        const state = this.hass!.states[id];
+        const state = this.hass?.states[id];
         if (!state) return id;
         const position = (state.attributes as any)?.current_position;
         if (typeof position === 'number') {
@@ -323,7 +322,7 @@ class Simon42CoversGroupCard extends LitElement {
     }
 
     // Reconcile heading card
-    const headingSlot = this.shadowRoot!.getElementById('heading');
+    const headingSlot = this.shadowRoot?.getElementById('heading');
     if (headingSlot) {
       if (!this._headingCard) {
         this._headingCard = document.createElement('hui-heading-card');
@@ -334,7 +333,7 @@ class Simon42CoversGroupCard extends LitElement {
     }
 
     // Reconcile tile cards in grid
-    const grid = this.shadowRoot!.getElementById('grid');
+    const grid = this.shadowRoot?.getElementById('grid');
     if (!grid) return;
 
     const activeIds = new Set(covers);

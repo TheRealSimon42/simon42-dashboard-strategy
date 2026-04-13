@@ -77,7 +77,7 @@ export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyC
     const entry = Registry.getEntity(entityId);
     if (entry?.hidden) return false;
     // Platform-specific filter: hide mobile_app batteries if configured
-    if (config?.hide_mobile_app_batteries) {
+    if (config.hide_mobile_app_batteries) {
       if (entry?.platform === 'mobile_app') return false;
     }
 

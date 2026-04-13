@@ -150,7 +150,7 @@ export function createAreasSection(
           heading_style: 'title',
           heading: localize('sections.areas'),
         },
-        ...visibleAreas.map((area) => buildAreaCard(area, hass!)),
+        ...visibleAreas.map((area) => buildAreaCard(area, hass as HomeAssistant)),
       ],
     };
   }
@@ -164,7 +164,7 @@ export function createAreasSection(
       if (!areasByFloor.has(area.floor_id)) {
         areasByFloor.set(area.floor_id, []);
       }
-      areasByFloor.get(area.floor_id)!.push(area);
+      areasByFloor.get(area.floor_id)?.push(area);
     } else {
       areasWithoutFloor.push(area);
     }
@@ -182,8 +182,8 @@ export function createAreasSection(
   for (const floorId of sortedFloors) {
     const areas = areasByFloor.get(floorId) ?? [];
     const floor = hass.floors[floorId];
-    const floorName = floor?.name || floorId;
-    const floorIcon = floor?.icon || 'mdi:floor-plan';
+    const floorName = floor.name || floorId;
+    const floorIcon = floor.icon || 'mdi:floor-plan';
 
     sections.push({
       type: 'grid',
@@ -194,7 +194,7 @@ export function createAreasSection(
           heading: floorName,
           icon: floorIcon,
         },
-        ...areas.map((area) => buildAreaCard(area, hass!)),
+        ...areas.map((area) => buildAreaCard(area, hass)),
       ],
     });
   }
@@ -210,7 +210,7 @@ export function createAreasSection(
           heading: localize('sections.areas_other'),
           icon: 'mdi:home-outline',
         },
-        ...areasWithoutFloor.map((area) => buildAreaCard(area, hass!)),
+        ...areasWithoutFloor.map((area) => buildAreaCard(area, hass)),
       ],
     });
   }

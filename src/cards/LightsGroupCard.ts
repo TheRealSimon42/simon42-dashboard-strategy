@@ -220,7 +220,7 @@ class Simon42LightsGroupCard extends LitElement {
       this._cachedAreaForEntity = new Map();
     }
     if (this._cachedAreaForEntity.has(entityId)) {
-      return this._cachedAreaForEntity.get(entityId)!;
+      return this._cachedAreaForEntity.get(entityId) ?? null;
     }
     const entity = Registry.getEntity(entityId);
     let areaId: string | null = entity?.area_id ?? null;
@@ -329,7 +329,7 @@ class Simon42LightsGroupCard extends LitElement {
       const areaId = this._getAreaForEntity(id);
       const floorId = areaId ? (areaFloorMap.get(areaId) ?? null) : null;
       if (!floorMap.has(floorId)) floorMap.set(floorId, []);
-      floorMap.get(floorId)!.push(id);
+      floorMap.get(floorId)?.push(id);
     }
 
     // Use HA's floor order from the registry. The hass.floors object preserves
@@ -348,7 +348,7 @@ class Simon42LightsGroupCard extends LitElement {
         floorId,
         floorName: floor?.name || localize('lights.floor_other'),
         floorIcon: floor?.icon || 'mdi:home-outline',
-        lights: floorMap.get(floorId)!,
+        lights: floorMap.get(floorId) ?? [],
       };
     });
   }
@@ -589,7 +589,7 @@ class Simon42LightsGroupCard extends LitElement {
       const floorGroups = this._groupByFloors(lights);
 
       // Reconcile main heading (total count)
-      const headingSlot = this.shadowRoot!.getElementById('heading');
+      const headingSlot = this.shadowRoot?.getElementById('heading');
       if (headingSlot) {
         if (!this._headingCard) {
           this._headingCard = document.createElement('hui-heading-card') as LovelaceCardElement;
@@ -604,7 +604,7 @@ class Simon42LightsGroupCard extends LitElement {
       const allActiveIds = new Set(lights);
       for (const group of floorGroups) {
         const key = group.floorId || '_none';
-        const floorHeadingSlot = this.shadowRoot!.getElementById(`floor-heading-${key}`);
+        const floorHeadingSlot = this.shadowRoot?.getElementById(`floor-heading-${key}`);
         if (floorHeadingSlot) {
           const headingCard = this._getOrCreateFloorHeadingCard(key);
           if (!headingCard.parentNode) floorHeadingSlot.appendChild(headingCard);
@@ -636,7 +636,7 @@ class Simon42LightsGroupCard extends LitElement {
     }
 
     // Flat mode (no floor grouping)
-    const headingSlot = this.shadowRoot!.getElementById('heading');
+    const headingSlot = this.shadowRoot?.getElementById('heading');
     if (headingSlot) {
       if (!this._headingCard) {
         this._headingCard = document.createElement('hui-heading-card') as LovelaceCardElement;
@@ -647,7 +647,7 @@ class Simon42LightsGroupCard extends LitElement {
       mainHeadingCard.setConfig(this._buildHeadingConfig(lights));
     }
 
-    const grid = this.shadowRoot!.getElementById('grid');
+    const grid = this.shadowRoot?.getElementById('grid');
     if (!grid) return;
 
     const hierarchy = this._buildHierarchy(lights);

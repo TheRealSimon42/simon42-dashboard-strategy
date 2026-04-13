@@ -76,7 +76,8 @@ export function stripAreaName(entityId: string, area: AreaRegistryEntry, hass: H
     });
   }
 
-  const re = _areaRegExpCache.get(areaName)!;
+  const re = _areaRegExpCache.get(areaName);
+  if (!re) return name;
   const cleanName = name.replace(re.start, '').replace(re.end, '').replace(re.middle, ' ').trim();
 
   // Only use cleaned name if something meaningful remains

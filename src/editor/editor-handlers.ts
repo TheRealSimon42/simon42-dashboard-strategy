@@ -316,7 +316,7 @@ export function attachAreaCheckboxListeners(
   areaCheckboxes.forEach((checkbox) => {
     checkbox.addEventListener('change', (e: Event) => {
       const target = e.target as HTMLInputElement;
-      const areaId = target.dataset.areaId!;
+      const areaId = target.dataset.areaId ?? '';
       const isVisible = target.checked;
       callback(areaId, isVisible);
 
@@ -455,9 +455,9 @@ export function attachEntityCheckboxListeners(
   entityCheckboxes.forEach((checkbox) => {
     checkbox.addEventListener('change', (e: Event) => {
       const target = e.target as HTMLInputElement;
-      const areaId = target.dataset.areaId!;
-      const group = target.dataset.group!;
-      const entityId = target.dataset.entityId!;
+      const areaId = target.dataset.areaId ?? '';
+      const group = target.dataset.group ?? '';
+      const entityId = target.dataset.entityId ?? '';
       const isVisible = target.checked;
 
       callback(areaId, group, entityId, isVisible);
@@ -498,8 +498,8 @@ export function attachEntityExpandButtonListeners(element: HTMLElement, editorEl
   expandButtons.forEach((button) => {
     button.addEventListener('click', (e: Event) => {
       e.stopPropagation();
-      const areaId = button.dataset.areaId!;
-      const group = button.dataset.group!;
+      const areaId = button.dataset.areaId ?? '';
+      const group = button.dataset.group ?? '';
       const entityList = element.querySelector(
         `.entity-list[data-area-id="${areaId}"][data-group="${group}"]`
       ) as HTMLElement | null;
@@ -574,8 +574,10 @@ export function attachDragAndDropListeners(element: HTMLElement, onOrderChange: 
     }
 
     areaItem.classList.add('dragging');
-    ev.dataTransfer!.effectAllowed = 'move';
-    ev.dataTransfer!.setData('text/html', areaItem.innerHTML);
+    if (ev.dataTransfer) {
+      ev.dataTransfer.effectAllowed = 'move';
+      ev.dataTransfer.setData('text/html', areaItem.innerHTML);
+    }
     draggedElement = areaItem;
   };
 

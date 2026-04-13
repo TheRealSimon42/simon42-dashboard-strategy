@@ -92,11 +92,11 @@ class Simon42DashboardStrategy extends HTMLElement {
     const roomStrategy = getStrategy('ll-strategy-simon42-view-room');
     const roomConfigs = await Promise.all(
       visibleAreas.map((area) => {
-        const areaOptions = (config.areas_options || {})[area.area_id] || {};
+        const areaOptions = config.areas_options?.[area.area_id];
         return roomStrategy.generate(
           {
             area,
-            groups_options: areaOptions.groups_options || {},
+            groups_options: areaOptions?.groups_options || {},
             dashboardConfig: config,
           },
           hass
