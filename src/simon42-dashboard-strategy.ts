@@ -33,7 +33,7 @@ const modulesPromise = Promise.all([
   import('./views/RoomViewStrategy'),
 ]);
 
-modulesPromise.then(() => { t('all chunks loaded'); });
+void modulesPromise.then(() => { t('all chunks loaded'); });
 
 class Simon42DashboardStrategy extends HTMLElement {
   static async generate(config: Simon42StrategyConfig, hass: HomeAssistant): Promise<LovelaceConfig> {

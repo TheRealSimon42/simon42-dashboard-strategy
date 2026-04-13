@@ -180,7 +180,7 @@ export function createAreasSection(
   const sortedFloors = floorOrder.filter((id) => areasByFloor.has(id));
 
   for (const floorId of sortedFloors) {
-    const areas = areasByFloor.get(floorId)!;
+    const areas = areasByFloor.get(floorId) ?? [];
     const floor = hass.floors[floorId];
     const floorName = floor?.name || floorId;
     const floorIcon = floor?.icon || 'mdi:floor-plan';

@@ -206,14 +206,14 @@ class Registry {
       if (!Registry._entitiesByDomain.has(domain)) {
         Registry._entitiesByDomain.set(domain, []);
       }
-      Registry._entitiesByDomain.get(domain)!.push(e.entity_id);
+      Registry._entitiesByDomain.get(domain)?.push(e.entity_id);
 
       // Visible map (pre-filtered)
       if (Registry._isEntityVisible(e)) {
         if (!Registry._visibleEntitiesByDomain.has(domain)) {
           Registry._visibleEntitiesByDomain.set(domain, []);
         }
-        Registry._visibleEntitiesByDomain.get(domain)!.push(e.entity_id);
+        Registry._visibleEntitiesByDomain.get(domain)?.push(e.entity_id);
       }
     }
 

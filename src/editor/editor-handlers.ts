@@ -339,9 +339,9 @@ export function attachExpandButtonListeners(
   const expandButtons = element.querySelectorAll('.expand-button') as NodeListOf<HTMLButtonElement>;
 
   expandButtons.forEach((button) => {
-    button.addEventListener('click', async (e: Event) => {
+    button.addEventListener('click', (e: Event) => {
       e.stopPropagation();
-      const areaId = button.dataset.areaId!;
+      const areaId = button.dataset.areaId ?? '';
       const areaItem = button.closest('.area-item') as HTMLElement;
       const content = areaItem.querySelector(`.area-content[data-area-id="${areaId}"]`) as HTMLElement;
 
@@ -357,6 +357,7 @@ export function attachExpandButtonListeners(
 
         // Load entities if not yet loaded
         if (content.querySelector('.loading-placeholder')) {
+          void (async () => {
           const groupedEntities = await getAreaGroupedEntities(areaId, hass);
           const hiddenEntities = getHiddenEntitiesForArea(areaId, config);
           const entityOrders = getEntityOrdersForArea(areaId, config);
@@ -388,6 +389,7 @@ export function attachExpandButtonListeners(
           attachBadgeAddListeners(content, element, onEntitiesLoad);
           attachBadgeRemoveListeners(content, element, onEntitiesLoad);
           attachBadgeNameCheckboxListeners(content, onEntitiesLoad);
+          })();
         }
       } else {
         // Collapse
@@ -420,8 +422,8 @@ export function attachGroupCheckboxListeners(
 
     checkbox.addEventListener('change', (e: Event) => {
       const target = e.target as HTMLInputElement;
-      const areaId = target.dataset.areaId!;
-      const group = target.dataset.group!;
+      const areaId = target.dataset.areaId ?? '';
+      const group = target.dataset.group ?? '';
       const isVisible = target.checked;
 
       callback(areaId, group, null, isVisible); // null = all entities in group
