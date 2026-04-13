@@ -1,46 +1,24 @@
 // ====================================================================
-// SIMON42 DASHBOARD STRATEGY - EDITOR
+// SIMON42 DASHBOARD STRATEGY - EDITOR (LitElement)
+// ====================================================================
+// Single-file LitElement editor replacing the previous 4-file
+// vanilla HTMLElement + innerHTML pattern.
 // ====================================================================
 
+import { LitElement, html, css, nothing, type TemplateResult, type PropertyValues } from 'lit';
 import yaml from 'js-yaml';
-import { getEditorStyles } from './editor-styles';
-import { renderEditorHTML, renderCustomViewsList, renderCustomCardsList, renderCustomBadgesList } from './editor-template';
-import {
-  attachWeatherCheckboxListener,
-  attachEnergyCheckboxListener,
-  attachSearchCardCheckboxListener,
-  attachSummaryViewsCheckboxListener,
-  attachRoomViewsCheckboxListener,
-  attachGroupByFloorsCheckboxListener,
-  attachClockCardCheckboxListener,
-  attachLightSummaryCheckboxListener,
-  attachGroupLightsByFloorsCheckboxListener,
-  attachNestedLightGroupsCheckboxListener,
-  attachFavoritesShowStateCheckboxListener,
-  attachFavoritesHideLastChangedCheckboxListener,
-  attachCoversSummaryCheckboxListener,
-  attachPartiallyOpenCoversCheckboxListener,
-  attachSecuritySummaryCheckboxListener,
-  attachBatterySummaryCheckboxListener,
-  attachClimateSummaryCheckboxListener,
-  attachHideMobileAppBatteriesCheckboxListener,
-  attachRoomPinsShowStateCheckboxListener,
-  attachRoomPinsHideLastChangedCheckboxListener,
-  attachShowSwitchesOnAreasCheckboxListener,
-  attachShowAlertsOnAreasCheckboxListener,
-  attachShowLocksInRoomsCheckboxListener,
-  attachShowAutomationsInRoomsCheckboxListener,
-  attachShowScriptsInRoomsCheckboxListener,
-  attachUseDefaultAreaSortCheckboxListener,
-  attachAreaCheckboxListeners,
-  attachDragAndDropListeners,
-  attachExpandButtonListeners,
-  sortAreaItems,
-} from './editor-handlers';
 
 import type { HomeAssistant } from '../types/homeassistant';
-import type { Simon42StrategyConfig, CustomView, CustomCard, CustomBadge } from '../types/strategy';
-import { isDefaultShowName } from '../utils/badge-utils';
+import type {
+  Simon42StrategyConfig,
+  CustomView,
+  CustomCard,
+  CustomBadge,
+  RoomEntities,
+} from '../types/strategy';
+import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
+import { localize } from '../utils/localize';
+import { isBadgeCandidate, isDefaultShowName, resolveShowName } from '../utils/badge-utils';
 
 // -- Supporting types for the editor ------------------------------------
 
@@ -56,6 +34,12 @@ interface EntitySelectOption {
   device_area_id?: string | null;
 }
 
+interface DomainGroup {
+  key: string;
+  label: string;
+  icon: string;
+}
+
 declare global {
   interface Window {
     customCards?: Array<{ type: string; name: string; description: string }>;
@@ -67,34 +51,53 @@ declare global {
 // Editor Class
 // ====================================================================
 
-class Simon42DashboardStrategyEditor extends HTMLElement {
-  _config: Simon42StrategyConfig = {};
-  _hass: HomeAssistant | null = null;
+class Simon42DashboardStrategyEditor extends LitElement {
+  static properties = {
+    _config: { state: true },
+    _expandedAreas: { state: true },
+    _expandedGroups: { state: true },
+  };
+
+  // hass is set externally by HA — use a setter, not a Lit property
+  private _hass: HomeAssistant | null = null;
   private _isUpdatingConfig = false;
-  _expandedAreas: Set<string> = new Set();
-  _expandedGroups: Map<string, Set<string>> = new Map();
+
+  _config: Simon42StrategyConfig = {};
+  _expandedAreas = new Set<string>();
+  _expandedGroups = new Map<string, Set<string>>();
+
+  // Cache for loaded area entities (avoid re-fetching on every render)
+  private _areaEntitiesCache = new Map<string, {
+    groupedEntities: Record<string, string[]>;
+    hiddenEntities: Record<string, string[]>;
+    entityOrders: Record<string, string[]>;
+    badgeCandidates: string[];
+    additionalBadges: string[];
+    availableEntities: Array<{ entity_id: string; name: string }>;
+    defaultShowNames: Set<string>;
+    namesVisible: string[];
+    namesHidden: string[];
+  }>();
+
+  // Drag state (not reactive — no render needed)
+  private _draggedElement: HTMLElement | null = null;
 
   // -- Lifecycle --------------------------------------------------------
 
-  setConfig(config: Simon42StrategyConfig): void {
-    this._config = config;
-    // Only render if we are not currently pushing a config update ourselves
-    if (!this._isUpdatingConfig) {
-      this._render();
-    }
+  set hass(hass: HomeAssistant) {
+    const oldHass = this._hass;
+    this._hass = hass;
+    if (!oldHass) this.requestUpdate();
   }
 
-  set hass(hass: HomeAssistant) {
-    const shouldRender = !this._hass; // Only render on first assignment
-    this._hass = hass;
-    if (shouldRender) {
-      this._render();
-    }
+  setConfig(config: Simon42StrategyConfig): void {
+    if (this._isUpdatingConfig) return;
+    this._config = config;
   }
 
   // -- Dependency check -------------------------------------------------
 
-  _checkSearchCardDependencies(): boolean {
+  private _checkSearchCardDependencies(): boolean {
     const hasSearchCard = customElements.get('search-card') !== undefined;
     const hasCardTools = customElements.get('card-tools') !== undefined;
     return hasSearchCard && hasCardTools;
@@ -102,7 +105,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
   // -- Entity helpers ---------------------------------------------------
 
-  _getAllEntitiesForSelect(): EntitySelectOption[] {
+  private _getAllEntitiesForSelect(): EntitySelectOption[] {
     if (!this._hass) return [];
 
     const entities = Object.values(this._hass.entities);
@@ -119,10 +122,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const hass = this._hass;
     return Object.keys(hass.states)
       .map((entityId) => {
-        const state = hass.states[entityId];
+        const stateObj = hass.states[entityId];
         const entity = entities.find((e) => e.entity_id === entityId);
 
-        // Determine area_id: direct or via device
         let areaId = entity?.area_id;
         if (!areaId && entity?.device_id) {
           areaId = deviceAreaMap.get(entity.device_id) ?? null;
@@ -130,225 +132,1083 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
         return {
           entity_id: entityId,
-          name: state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+          name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
           area_id: areaId,
-          device_area_id: areaId, // backward compat
+          device_area_id: areaId,
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  private _getAlarmEntities(): AlarmEntityOption[] {
+    if (!this._hass) return [];
+    return Object.keys(this._hass.states)
+      .filter((entityId) => entityId.startsWith('alarm_control_panel.'))
+      .map((entityId) => {
+        const stateObj = this._hass!.states[entityId];
+        return {
+          entity_id: entityId,
+          name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  // -- Styles -----------------------------------------------------------
+
+  static styles = css`
+    .card-config { padding: 16px; }
+    .section { margin-bottom: 24px; }
+    .section-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: var(--primary-text-color); }
+    .form-row { display: flex; align-items: center; margin-bottom: 8px; }
+    .form-row input[type="checkbox"], .form-row input[type="radio"] { margin-right: 8px; width: 18px; height: 18px; cursor: pointer; }
+    .form-row input[type="checkbox"]:disabled, .form-row input[type="radio"]:disabled { cursor: not-allowed; opacity: 0.5; }
+    .form-row label { cursor: pointer; user-select: none; }
+    .form-row label.disabled-label { cursor: not-allowed; opacity: 0.5; }
+    .form-row ha-entity-picker { flex: 1; max-width: 300px; }
+    .form-row select { cursor: pointer; font-family: inherit; font-size: 14px; }
+    .form-row select:focus { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+    .description { font-size: 12px; color: var(--secondary-text-color); margin-top: 4px; margin-left: 26px; margin-bottom: 16px; }
+    .description strong { font-weight: 600; color: var(--primary-text-color); }
+    .area-list { border: 1px solid var(--divider-color); border-radius: 8px; overflow: hidden; }
+    .area-item { border-bottom: 1px solid var(--divider-color); background: var(--card-background-color); }
+    .area-item:last-child { border-bottom: none; }
+    .area-item.dragging { opacity: 0.5; }
+    .area-item.drag-over { border-top: 2px solid var(--primary-color); }
+    .area-header { display: flex; align-items: center; padding: 12px; }
+    .drag-handle { margin-right: 12px; color: var(--secondary-text-color); cursor: grab; user-select: none; padding: 4px; }
+    .drag-handle:active { cursor: grabbing; }
+    .area-checkbox { margin-right: 12px; }
+    .area-name { flex: 1; }
+    .area-icon { margin-left: 8px; margin-right: 12px; color: var(--secondary-text-color); }
+    .expand-button { background: none; border: none; padding: 4px 8px; cursor: pointer; color: var(--secondary-text-color); transition: transform 0.2s; }
+    .expand-button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .expand-button.expanded .expand-icon { transform: rotate(90deg); }
+    .expand-icon { display: inline-block; transition: transform 0.2s; }
+    .area-content { padding: 0 12px 12px 48px; background: var(--secondary-background-color); }
+    .loading-placeholder { padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic; }
+    .entity-groups { padding-top: 8px; }
+    .entity-group { margin-bottom: 8px; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--card-background-color); }
+    .entity-group-header { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; user-select: none; }
+    .entity-group-header:hover { background: var(--secondary-background-color); }
+    .group-checkbox { margin-right: 8px; width: 16px; height: 16px; cursor: pointer; }
+    .group-checkbox[data-indeterminate="true"] { opacity: 0.6; }
+    .entity-group-header ha-icon { margin-right: 8px; --mdc-icon-size: 18px; color: var(--secondary-text-color); }
+    .group-name { flex: 1; font-weight: 500; }
+    .entity-count { color: var(--secondary-text-color); font-size: 12px; margin-right: 8px; }
+    .expand-button-small { background: none; border: none; padding: 4px; cursor: pointer; color: var(--secondary-text-color); }
+    .expand-button-small.expanded .expand-icon-small { transform: rotate(90deg); }
+    .expand-icon-small { display: inline-block; font-size: 12px; transition: transform 0.2s; }
+    .entity-list { padding: 8px 12px 8px 36px; border-top: 1px solid var(--divider-color); }
+    .entity-item { display: flex; align-items: center; padding: 6px 0; }
+    .entity-checkbox { margin-right: 8px; width: 16px; height: 16px; cursor: pointer; }
+    .entity-name { flex: 1; font-size: 14px; }
+    .entity-id { font-size: 11px; color: var(--secondary-text-color); font-family: monospace; margin-left: 8px; }
+    .empty-state { padding: 24px; text-align: center; color: var(--secondary-text-color); font-style: italic; }
+    .badge-separator { padding: 8px 0 4px; font-size: 12px; font-weight: 500; color: var(--secondary-text-color); border-top: 1px dashed var(--divider-color); margin-top: 4px; }
+    .badge-additional-item { padding-left: 0; }
+    .badge-remove-btn { background: none; border: none; padding: 2px 6px; cursor: pointer; color: var(--error-color, #db4437); font-size: 14px; margin-left: 8px; border-radius: 4px; }
+    .badge-remove-btn:hover { background: var(--secondary-background-color); }
+    .badge-add-section { display: flex; gap: 8px; padding: 8px 0 4px; align-items: center; }
+    .badge-entity-picker { flex: 1; padding: 6px 8px; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--card-background-color); color: var(--primary-text-color); font-size: 13px; }
+    .badge-add-button { padding: 6px 12px; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--primary-color); color: var(--text-primary-color, #fff); cursor: pointer; font-size: 13px; white-space: nowrap; }
+    .badge-add-button:hover { opacity: 0.9; }
+    .badge-name-checkbox { margin-left: auto; margin-right: 2px; width: 14px; height: 14px; cursor: pointer; }
+    .badge-name-label { font-size: 11px; color: var(--secondary-text-color); margin-right: 8px; white-space: nowrap; }
+  `;
+
   // -- Main render ------------------------------------------------------
 
-  _render(): void {
-    if (!this._hass) {
-      return;
-    }
+  protected render() {
+    if (!this._hass) return nothing;
 
-    const showWeather = this._config.show_weather !== false;
-    const showEnergy = this._config.show_energy !== false;
-    const showSearchCard = this._config.show_search_card === true;
-    const showSummaryViews = this._config.show_summary_views === true;
-    const showRoomViews = this._config.show_room_views === true;
-    const groupByFloors = this._config.group_by_floors === true;
+    return html`
+      <div class="card-config">
+        ${this._renderOverviewSection()}
+        ${this._renderSummariesSection()}
+        ${this._renderInfoCardsSection()}
+        ${this._renderFavoritesSection()}
+
+        <div style="border-top: 2px solid var(--divider-color); margin: 24px 0 16px; padding-top: 16px;">
+          <div style="font-size: 16px; font-weight: 600; color: var(--primary-text-color); margin-bottom: 4px;">
+            ${localize('editor.section_areas_rooms')}
+          </div>
+        </div>
+
+        ${this._renderAreasSection()}
+        ${this._renderRoomPinsSection()}
+        ${this._renderViewsSection()}
+
+        <div style="border-top: 2px solid var(--divider-color); margin: 24px 0 16px; padding-top: 16px;">
+          <div style="font-size: 16px; font-weight: 600; color: var(--primary-text-color); margin-bottom: 4px;">
+            ${localize('editor.section_advanced')}
+          </div>
+        </div>
+
+        ${this._renderCustomCardsSection()}
+        ${this._renderCustomBadgesSection()}
+        ${this._renderCustomViewsSection()}
+      </div>
+    `;
+  }
+
+  // ====================================================================
+  // SECTION RENDERERS
+  // ====================================================================
+
+  private _renderOverviewSection(): TemplateResult {
     const showClockCard = this._config.show_clock_card !== false;
+    const showSearchCard = this._config.show_search_card === true;
+    const hasSearchCardDeps = this._checkSearchCardDependencies();
+    const alarmEntity = this._config.alarm_entity || '';
+    const alarmEntities = this._getAlarmEntities();
+
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_overview')}</div>
+
+        ${this._renderCheckbox('show-clock-card', localize('editor.show_clock_card'), showClockCard,
+          (checked) => this._toggleChanged('show_clock_card', checked, true))}
+        <div class="description">${localize('editor.show_clock_card_desc')}</div>
+
+        <div class="form-row">
+          <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${localize('editor.alarm_entity')}</label>
+          <select id="alarm-entity"
+            style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            @change=${this._alarmEntityChanged}>
+            <option value="" ?selected=${!alarmEntity}>${localize('editor.alarm_none')}</option>
+            ${alarmEntities.map((entity) => html`
+              <option value=${entity.entity_id} ?selected=${entity.entity_id === alarmEntity}>
+                ${entity.name}
+              </option>
+            `)}
+          </select>
+        </div>
+        <div class="description">${localize('editor.alarm_desc')}</div>
+
+        ${this._renderCheckbox('show-search-card', localize('editor.show_search_card'), showSearchCard,
+          (checked) => this._toggleChanged('show_search_card', checked, false),
+          !hasSearchCardDeps)}
+        <div class="description">
+          ${hasSearchCardDeps
+            ? localize('editor.show_search_card_desc')
+            : html`<span>&#x26A0;&#xFE0F; ${localize('editor.show_search_card_missing')}</span>`}
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderSummariesSection(): TemplateResult {
+    const summariesColumns = this._config.summaries_columns || 2;
     const showLightSummary = this._config.show_light_summary !== false;
     const groupLightsByFloors = this._config.group_lights_by_floors === true;
     const nestedLightGroups = this._config.nested_light_groups === true;
-    const favoritesShowState = this._config.favorites_show_state === true;
-    const favoritesHideLastChanged = this._config.favorites_hide_last_changed === true;
     const showCoversSummary = this._config.show_covers_summary !== false;
     const showPartiallyOpenCovers = this._config.show_partially_open_covers === true;
     const showSecuritySummary = this._config.show_security_summary !== false;
-    const showBatterySummary = this._config.show_battery_summary !== false;
     const showClimateSummary = this._config.show_climate_summary === true;
+    const showBatterySummary = this._config.show_battery_summary !== false;
     const hideMobileAppBatteries = this._config.hide_mobile_app_batteries === true;
     const batteryCriticalThreshold = this._config.battery_critical_threshold ?? 20;
     const batteryLowThreshold = this._config.battery_low_threshold ?? 50;
-    const roomPinsShowState = this._config.room_pins_show_state === true;
-    const roomPinsHideLastChanged = this._config.room_pins_hide_last_changed === true;
+
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_summaries')}</div>
+
+        <div class="form-row">
+          <input type="radio" id="summaries-2-columns" name="summaries-columns" value="2"
+            ?checked=${summariesColumns === 2}
+            @change=${() => this._summariesColumnsChanged(2)} />
+          <label for="summaries-2-columns">${localize('editor.columns_2')}</label>
+        </div>
+        <div class="form-row">
+          <input type="radio" id="summaries-4-columns" name="summaries-columns" value="4"
+            ?checked=${summariesColumns === 4}
+            @change=${() => this._summariesColumnsChanged(4)} />
+          <label for="summaries-4-columns">${localize('editor.columns_4')}</label>
+        </div>
+        <div class="description">${localize('editor.columns_desc')}</div>
+
+        ${this._renderCheckbox('show-light-summary', localize('editor.show_light_summary'), showLightSummary,
+          (checked) => this._toggleChanged('show_light_summary', checked, true))}
+
+        ${this._renderCheckbox('group-lights-by-floors', localize('editor.group_lights_by_floors'), groupLightsByFloors,
+          (checked) => this._toggleChanged('group_lights_by_floors', checked, false))}
+        <div class="description">${localize('editor.group_lights_by_floors_desc')}</div>
+
+        ${this._renderCheckbox('nested-light-groups', localize('editor.nested_light_groups'), nestedLightGroups,
+          (checked) => this._toggleChanged('nested_light_groups', checked, false))}
+        <div class="description">${localize('editor.nested_light_groups_desc')}</div>
+
+        ${this._renderCheckbox('show-covers-summary', localize('editor.show_covers_summary'), showCoversSummary,
+          (checked) => this._toggleChanged('show_covers_summary', checked, true))}
+
+        <div style="margin-left: 26px; margin-bottom: 8px;">
+          ${this._renderCheckbox('show-partially-open-covers', localize('editor.show_partially_open_covers'), showPartiallyOpenCovers,
+            (checked) => this._toggleChanged('show_partially_open_covers', checked, false))}
+          <div class="description">${localize('editor.show_partially_open_covers_desc')}</div>
+        </div>
+
+        ${this._renderCheckbox('show-security-summary', localize('editor.show_security_summary'), showSecuritySummary,
+          (checked) => this._toggleChanged('show_security_summary', checked, true))}
+
+        ${this._renderCheckbox('show-climate-summary', localize('editor.show_climate_summary'), showClimateSummary,
+          (checked) => this._toggleChanged('show_climate_summary', checked, false))}
+        <div class="description">${localize('editor.show_climate_summary_desc')}</div>
+
+        ${this._renderCheckbox('show-battery-summary', localize('editor.show_battery_summary'), showBatterySummary,
+          (checked) => this._toggleChanged('show_battery_summary', checked, true))}
+
+        <div style="margin-left: 26px; margin-bottom: 8px;">
+          ${this._renderCheckbox('hide-mobile-app-batteries', localize('editor.hide_mobile_app_batteries'), hideMobileAppBatteries,
+            (checked) => this._toggleChanged('hide_mobile_app_batteries', checked, false))}
+          <div class="description">${localize('editor.hide_mobile_app_batteries_desc')}</div>
+
+          <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
+            ${localize('editor.battery_thresholds')}
+          </div>
+          <div class="form-row">
+            <label for="battery-critical-threshold" style="min-width: 140px;">${localize('editor.battery_critical_below')}</label>
+            <input type="number" id="battery-critical-threshold" min="1" max="99"
+              .value=${String(batteryCriticalThreshold)}
+              style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              @change=${this._batteryCriticalChanged} /> %
+          </div>
+          <div class="form-row">
+            <label for="battery-low-threshold" style="min-width: 140px;">${localize('editor.battery_low_below')}</label>
+            <input type="number" id="battery-low-threshold" min="1" max="99"
+              .value=${String(batteryLowThreshold)}
+              style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              @change=${this._batteryLowChanged} /> %
+          </div>
+          <div class="description">${localize('editor.battery_thresholds_desc')}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderInfoCardsSection(): TemplateResult {
+    const showWeather = this._config.show_weather !== false;
+    const showEnergy = this._config.show_energy !== false;
+
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_info_cards')}</div>
+
+        ${this._renderCheckbox('show-weather', localize('editor.show_weather'), showWeather,
+          (checked) => this._toggleChanged('show_weather', checked, true))}
+        <div class="description">${localize('editor.show_weather_desc')}</div>
+
+        ${this._renderCheckbox('show-energy', localize('editor.show_energy'), showEnergy,
+          (checked) => this._toggleChanged('show_energy', checked, true))}
+        <div class="description">${localize('editor.show_energy_desc')}</div>
+      </div>
+    `;
+  }
+
+  private _renderFavoritesSection(): TemplateResult {
+    const favoriteEntities = this._config.favorite_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+    const favoritesShowState = this._config.favorites_show_state === true;
+    const favoritesHideLastChanged = this._config.favorites_hide_last_changed === true;
+
+    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
+
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_favorites')}</div>
+
+        <div id="favorites-list" style="margin-bottom: 12px;">
+          ${favoriteEntities.length === 0
+            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_favorites')}</div>`
+            : html`
+              <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+                ${favoriteEntities.map((entityId) => {
+                  const name = entityMap.get(entityId) || entityId;
+                  return html`
+                    <div class="favorite-item" data-entity-id=${entityId} style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+                      <span style="margin-right: 12px; color: var(--secondary-text-color);">&#x2630;</span>
+                      <span style="flex: 1; font-size: 14px;">
+                        <strong>${name}</strong>
+                        <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+                      </span>
+                      <button @click=${() => this._removeFavoriteEntity(entityId)}
+                        style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+                        &#x2715;
+                      </button>
+                    </div>
+                  `;
+                })}
+              </div>
+            `}
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <select id="favorite-entity-select"
+            style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">${localize('editor.select_entity')}</option>
+            ${allEntities.map((entity) => html`
+              <option value=${entity.entity_id}>${entity.name}</option>
+            `)}
+          </select>
+          <button @click=${this._addFavoriteFromSelect}
+            style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            ${localize('editor.add')}
+          </button>
+        </div>
+        <div class="description">${localize('editor.favorites_desc')}</div>
+
+        ${this._renderCheckbox('favorites-show-state', localize('editor.show_state'), favoritesShowState,
+          (checked) => this._toggleChanged('favorites_show_state', checked, false))}
+
+        ${this._renderCheckbox('favorites-hide-last-changed', localize('editor.hide_last_changed'), favoritesHideLastChanged,
+          (checked) => this._toggleChanged('favorites_hide_last_changed', checked, false))}
+      </div>
+    `;
+  }
+
+  private _renderAreasSection(): TemplateResult {
+    const groupByFloors = this._config.group_by_floors === true;
     const showSwitchesOnAreas = this._config.show_switches_on_areas === true;
     const showAlertsOnAreas = this._config.show_alerts_on_areas === true;
     const showLocksInRooms = this._config.show_locks_in_rooms === true;
     const showAutomationsInRooms = this._config.show_automations_in_rooms === true;
     const showScriptsInRooms = this._config.show_scripts_in_rooms === true;
-    // Window/door contact toggles removed — now controlled per-area via badge config
     const useDefaultAreaSort = this._config.use_default_area_sort === true;
-    const customViews = this._config.custom_views || [];
-    const customCards = this._config.custom_cards || [];
-    const customCardsHeading = this._config.custom_cards_heading || '';
-    const customCardsIcon = this._config.custom_cards_icon || '';
-    const customBadges = this._config.custom_badges || [];
-    const summariesColumns = this._config.summaries_columns || 2;
-    const alarmEntity = this._config.alarm_entity || '';
-    const favoriteEntities = this._config.favorite_entities || [];
-    const roomPinEntities = this._config.room_pin_entities || [];
-    const hasSearchCardDeps = this._checkSearchCardDependencies();
 
-    // Collect all alarm-control-panel entities
-    const alarmEntities: AlarmEntityOption[] = Object.keys(this._hass.states)
-      .filter((entityId) => entityId.startsWith('alarm_control_panel.'))
-      .map((entityId) => {
-        const state = this._hass!.states[entityId];
-        return {
-          entity_id: entityId,
-          name: state.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    // All entities for favorites / room-pins select
-    const allEntities = this._getAllEntitiesForSelect();
-
-    // Areas
-    const allAreas = Object.values(this._hass.areas).sort((a, b) => a.name.localeCompare(b.name));
+    const allAreas = Object.values(this._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
     const hiddenAreas = this._config.areas_display?.hidden || [];
     const areaOrder = this._config.areas_display?.order || [];
 
-    // Set HTML content with styles and template
-    this.innerHTML = `
-      <style>${getEditorStyles()}</style>
-      ${renderEditorHTML({
-        allAreas,
-        hiddenAreas,
-        areaOrder,
-        showWeather,
-        showEnergy,
-        showSummaryViews,
-        showRoomViews,
-        showSearchCard,
-        hasSearchCardDeps,
-        summariesColumns,
-        alarmEntity,
-        alarmEntities,
-        favoriteEntities,
-        roomPinEntities,
-        allEntities,
-        groupByFloors,
-        showClockCard,
-        showLightSummary,
-        groupLightsByFloors,
-        nestedLightGroups,
-        favoritesShowState,
-        favoritesHideLastChanged,
-        showCoversSummary,
-        showPartiallyOpenCovers,
-        showSecuritySummary,
-        showBatterySummary,
-        showClimateSummary,
-        hideMobileAppBatteries,
-        batteryCriticalThreshold,
-        batteryLowThreshold,
-        roomPinsShowState,
-        roomPinsHideLastChanged,
-        showSwitchesOnAreas,
-        showAlertsOnAreas,
-        showLocksInRooms,
-        showAutomationsInRooms,
-        showScriptsInRooms,
-        useDefaultAreaSort,
-        customViews,
-        customCards,
-        customCardsHeading,
-        customCardsIcon,
-        customBadges,
-      })}
-    `;
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_areas')}</div>
 
-    // Bind event listeners
-    attachWeatherCheckboxListener(this, (val: boolean) => { this._showWeatherChanged(val); });
-    attachEnergyCheckboxListener(this, (val: boolean) => { this._showEnergyChanged(val); });
-    attachSearchCardCheckboxListener(this, (val: boolean) => { this._showSearchCardChanged(val); });
-    attachSummaryViewsCheckboxListener(this, (val: boolean) => { this._showSummaryViewsChanged(val); });
-    attachRoomViewsCheckboxListener(this, (val: boolean) => { this._showRoomViewsChanged(val); });
-    attachGroupByFloorsCheckboxListener(this, (val: boolean) => { this._groupByFloorsChanged(val); });
-    attachClockCardCheckboxListener(this, (val: boolean) => { this._showClockCardChanged(val); });
-    attachLightSummaryCheckboxListener(this, (val: boolean) => { this._showLightSummaryChanged(val); });
-    attachGroupLightsByFloorsCheckboxListener(this, (val: boolean) => { this._groupLightsByFloorsChanged(val); });
-    attachNestedLightGroupsCheckboxListener(this, (val: boolean) => { this._nestedLightGroupsChanged(val); });
-    attachFavoritesShowStateCheckboxListener(this, (val: boolean) => { this._favoritesShowStateChanged(val); });
-    attachFavoritesHideLastChangedCheckboxListener(this, (val: boolean) => { this._favoritesHideLastChangedChanged(val); });
-    attachCoversSummaryCheckboxListener(this, (val: boolean) => { this._showCoversSummaryChanged(val); });
-    attachPartiallyOpenCoversCheckboxListener(this, (val: boolean) => { this._showPartiallyOpenCoversChanged(val); });
-    attachSecuritySummaryCheckboxListener(this, (val: boolean) => { this._showSecuritySummaryChanged(val); });
-    attachBatterySummaryCheckboxListener(this, (val: boolean) => { this._showBatterySummaryChanged(val); });
-    attachClimateSummaryCheckboxListener(this, (val: boolean) => { this._showClimateSummaryChanged(val); });
-    attachHideMobileAppBatteriesCheckboxListener(this, (hide: boolean) => { this._hideMobileAppBatteriesChanged(hide); });
-    this._attachBatteryThresholdListeners();
-    attachRoomPinsShowStateCheckboxListener(this, (val: boolean) => { this._roomPinsShowStateChanged(val); });
-    attachRoomPinsHideLastChangedCheckboxListener(this, (val: boolean) => { this._roomPinsHideLastChangedChanged(val); });
-    attachShowSwitchesOnAreasCheckboxListener(this, (show: boolean) => { this._showSwitchesOnAreasChanged(show); });
-    attachShowAlertsOnAreasCheckboxListener(this, (show: boolean) => { this._showAlertsOnAreasChanged(show); });
-    attachShowLocksInRoomsCheckboxListener(this, (show: boolean) => { this._showLocksInRoomsChanged(show); });
-    attachShowAutomationsInRoomsCheckboxListener(this, (show: boolean) => { this._showAutomationsInRoomsChanged(show); });
-    attachShowScriptsInRoomsCheckboxListener(this, (show: boolean) => { this._showScriptsInRoomsChanged(show); });
-    // Window/door contact checkbox listeners removed — per-area badge config replaces them
-    attachUseDefaultAreaSortCheckboxListener(this, (val: boolean) => { this._useDefaultAreaSortChanged(val); });
-    this._attachCustomViewsListeners();
-    this._attachCustomCardsListeners();
-    this._attachCustomBadgesListeners();
-    this._attachSummariesColumnsListener();
-    this._attachAlarmEntityListener();
-    this._attachFavoritesListeners();
-    this._attachRoomPinsListeners();
-    attachAreaCheckboxListeners(this, (areaId: string, isVisible: boolean) => {
-      this._areaVisibilityChanged(areaId, isVisible);
+        ${this._renderCheckbox('group-by-floors', localize('editor.group_by_floors'), groupByFloors,
+          (checked) => this._toggleChanged('group_by_floors', checked, false))}
+        <div class="description">${localize('editor.group_by_floors_desc')}</div>
+
+        ${this._renderCheckbox('show-switches-on-areas', localize('editor.show_switches_on_areas'), showSwitchesOnAreas,
+          (checked) => this._toggleChanged('show_switches_on_areas', checked, false))}
+        <div class="description">${localize('editor.show_switches_on_areas_desc')}</div>
+
+        ${this._renderCheckbox('show-alerts-on-areas', localize('editor.show_alerts_on_areas'), showAlertsOnAreas,
+          (checked) => this._toggleChanged('show_alerts_on_areas', checked, false))}
+        <div class="description">${localize('editor.show_alerts_on_areas_desc')}</div>
+
+        ${this._renderCheckbox('show-locks-in-rooms', localize('editor.show_locks_in_rooms'), showLocksInRooms,
+          (checked) => this._toggleChanged('show_locks_in_rooms', checked, false))}
+        <div class="description">${localize('editor.show_locks_in_rooms_desc')}</div>
+
+        ${this._renderCheckbox('show-automations-in-rooms', localize('editor.show_automations_in_rooms'), showAutomationsInRooms,
+          (checked) => this._toggleChanged('show_automations_in_rooms', checked, false))}
+        <div class="description">${localize('editor.show_automations_in_rooms_desc')}</div>
+
+        ${this._renderCheckbox('show-scripts-in-rooms', localize('editor.show_scripts_in_rooms'), showScriptsInRooms,
+          (checked) => this._toggleChanged('show_scripts_in_rooms', checked, false))}
+        <div class="description">${localize('editor.show_scripts_in_rooms_desc')}</div>
+
+        ${this._renderCheckbox('use-default-area-sort', localize('editor.use_default_area_sort'), useDefaultAreaSort,
+          (checked) => this._toggleChanged('use_default_area_sort', checked, false))}
+        <div class="description">${localize('editor.use_default_area_sort_desc')}</div>
+
+        <div class="description" style="margin-left: 0; margin-top: 16px; margin-bottom: 12px;">
+          ${localize('editor.areas_manage_desc')}
+        </div>
+
+        <div class="area-list" id="area-list">
+          ${this._renderAreaItems(allAreas, hiddenAreas, areaOrder)}
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderRoomPinsSection(): TemplateResult {
+    const roomPinEntities = this._config.room_pin_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+    const allAreas = Object.values(this._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
+    const roomPinsShowState = this._config.room_pins_show_state === true;
+    const roomPinsHideLastChanged = this._config.room_pins_hide_last_changed === true;
+
+    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e]));
+    const areaMap = new Map(allAreas.map((a) => [a.area_id, a.name]));
+
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_room_pins')}</div>
+
+        <div id="room-pins-list" style="margin-bottom: 12px;">
+          ${roomPinEntities.length === 0
+            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_room_pins')}</div>`
+            : html`
+              <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+                ${roomPinEntities.map((entityId) => {
+                  const entity = entityMap.get(entityId);
+                  const name = entity?.name || entityId;
+                  const areaId = entity?.area_id || entity?.device_area_id;
+                  const areaName = areaId ? areaMap.get(areaId) || areaId : localize('editor.no_room');
+
+                  return html`
+                    <div class="room-pin-item" data-entity-id=${entityId} style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
+                      <span style="margin-right: 12px; color: var(--secondary-text-color);">&#x2630;</span>
+                      <span style="flex: 1; font-size: 14px;">
+                        <strong>${name}</strong>
+                        <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+                        <br>
+                        <span style="font-size: 11px; color: var(--secondary-text-color);">&#x1F4CD; ${areaName}</span>
+                      </span>
+                      <button @click=${() => this._removeRoomPinEntity(entityId)}
+                        style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
+                        &#x2715;
+                      </button>
+                    </div>
+                  `;
+                })}
+              </div>
+            `}
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <select id="room-pin-entity-select"
+            style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+            <option value="">${localize('editor.select_entity')}</option>
+            ${allEntities
+              .filter((entity) => entity.area_id || entity.device_area_id)
+              .map((entity) => html`
+                <option value=${entity.entity_id}>${entity.name}</option>
+              `)}
+          </select>
+          <button @click=${this._addRoomPinFromSelect}
+            style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
+            ${localize('editor.add')}
+          </button>
+        </div>
+        <div class="description">${localize('editor.room_pins_desc')}</div>
+
+        ${this._renderCheckbox('room-pins-show-state', localize('editor.show_state'), roomPinsShowState,
+          (checked) => this._toggleChanged('room_pins_show_state', checked, false))}
+
+        ${this._renderCheckbox('room-pins-hide-last-changed', localize('editor.hide_last_changed'), roomPinsHideLastChanged,
+          (checked) => this._toggleChanged('room_pins_hide_last_changed', checked, false))}
+      </div>
+    `;
+  }
+
+  private _renderViewsSection(): TemplateResult {
+    const showSummaryViews = this._config.show_summary_views === true;
+    const showRoomViews = this._config.show_room_views === true;
+
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_views')}</div>
+
+        ${this._renderCheckbox('show-summary-views', localize('editor.show_summary_views'), showSummaryViews,
+          (checked) => this._toggleChanged('show_summary_views', checked, false))}
+        <div class="description">${localize('editor.show_summary_views_desc')}</div>
+
+        ${this._renderCheckbox('show-room-views', localize('editor.show_room_views'), showRoomViews,
+          (checked) => this._toggleChanged('show_room_views', checked, false))}
+        <div class="description">${localize('editor.show_room_views_desc')}</div>
+      </div>
+    `;
+  }
+
+  private _renderCustomCardsSection(): TemplateResult {
+    const customCards = this._config.custom_cards || [];
+    const customCardsHeading = this._config.custom_cards_heading || '';
+    const customCardsIcon = this._config.custom_cards_icon || '';
+
+    return html`
+      <div class="section">
+        <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
+          ${localize('editor.section_custom_cards')}
+          <a href="https://github.com/TheRealSimon42/simon42-dashboard-strategy/blob/main/assets/Eigene-Karten-hinzufugen.gif"
+            target="_blank" rel="noopener"
+            style="color: var(--primary-color); text-decoration: none; font-size: 18px;"
+            title=${localize('editor.video_tutorial')}>&#x1F3AC;</a>
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <input type="text" id="custom-cards-heading"
+            .value=${customCardsHeading}
+            placeholder=${localize('editor.custom_cards_heading_placeholder')}
+            style="flex: 2; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            @change=${this._customCardsHeadingChanged} />
+          <input type="text" id="custom-cards-icon"
+            .value=${customCardsIcon}
+            placeholder="mdi:cards"
+            style="flex: 1; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            @change=${this._customCardsIconChanged} />
+        </div>
+        <div class="description" style="margin-bottom: 8px;">${localize('editor.custom_cards_desc')}</div>
+
+        <div id="custom-cards-list">
+          ${customCards.length === 0
+            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_custom_cards')}</div>`
+            : customCards.map((card, index) => this._renderCustomCardItem(card, index))}
+        </div>
+
+        <button @click=${this._addCustomCard}
+          style="margin-top: 8px; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer;">
+          ${localize('editor.add_custom_card')}
+        </button>
+        <div class="description">${localize('editor.custom_cards_help')}</div>
+      </div>
+    `;
+  }
+
+  private _renderCustomBadgesSection(): TemplateResult {
+    const customBadges = this._config.custom_badges || [];
+
+    return html`
+      <div class="section">
+        <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
+          ${localize('editor.section_custom_badges')}
+          <a href="https://github.com/TheRealSimon42/simon42-dashboard-strategy/blob/main/assets/Custom-Badges-hinzufugen.gif"
+            target="_blank" rel="noopener"
+            style="color: var(--primary-color); text-decoration: none; font-size: 18px;"
+            title=${localize('editor.video_tutorial')}>&#x1F3AC;</a>
+        </div>
+
+        <div id="custom-badges-list">
+          ${customBadges.length === 0
+            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_custom_badges')}</div>`
+            : customBadges.map((badge, index) => this._renderCustomBadgeItem(badge, index))}
+        </div>
+
+        <button @click=${this._addCustomBadge}
+          style="margin-top: 8px; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer;">
+          ${localize('editor.add_custom_badge')}
+        </button>
+        <div class="description">${localize('editor.custom_badges_help')}</div>
+      </div>
+    `;
+  }
+
+  private _renderCustomViewsSection(): TemplateResult {
+    const customViews = this._config.custom_views || [];
+
+    return html`
+      <div class="section">
+        <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
+          ${localize('editor.section_custom_views')}
+          <a href="https://github.com/TheRealSimon42/simon42-dashboard-strategy/blob/main/assets/Custom-View-hinzufugen.gif"
+            target="_blank" rel="noopener"
+            style="color: var(--primary-color); text-decoration: none; font-size: 18px;"
+            title=${localize('editor.video_tutorial')}>&#x1F3AC;</a>
+        </div>
+
+        <div id="custom-views-list">
+          ${customViews.length === 0
+            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_custom_views')}</div>`
+            : customViews.map((view, index) => this._renderCustomViewItem(view, index))}
+        </div>
+
+        <button @click=${this._addCustomView}
+          style="margin-top: 8px; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer;">
+          ${localize('editor.add_custom_view')}
+        </button>
+        <div class="description">${localize('editor.custom_views_help')}</div>
+      </div>
+    `;
+  }
+
+  // ====================================================================
+  // ITEM RENDERERS
+  // ====================================================================
+
+  private _renderCheckbox(
+    id: string,
+    label: string,
+    checked: boolean,
+    onChange: (checked: boolean) => void,
+    disabled = false
+  ): TemplateResult {
+    return html`
+      <div class="form-row">
+        <input type="checkbox" id=${id}
+          ?checked=${checked}
+          ?disabled=${disabled}
+          @change=${(e: Event) => onChange((e.target as HTMLInputElement).checked)} />
+        <label for=${id} class=${disabled ? 'disabled-label' : ''}>${label}</label>
+      </div>
+    `;
+  }
+
+  private _renderCustomViewItem(view: CustomView, index: number): TemplateResult {
+    const validationMsg = view._yaml_error
+      ? html`<span style="color: var(--error-color);">&#x274C; ${view._yaml_error}</span>`
+      : view.yaml
+        ? html`<span style="color: var(--success-color, green);">&#x2705; ${localize('editor.yaml_valid')}</span>`
+        : nothing;
+
+    return html`
+      <div class="custom-view-item" data-index=${index}
+        style="border: 1px solid var(--divider-color); border-radius: 8px; padding: 12px; margin-bottom: 12px; background: var(--card-background-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <strong style="font-size: 14px;">${view.title || localize('editor.new_view')}</strong>
+          <button @click=${() => this._removeCustomView(index)}
+            style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">&#x2715;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; gap: 8px;">
+            <input type="text" .value=${view.title || ''} placeholder=${localize('editor.title_placeholder')}
+              style="flex: 2; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              @change=${(e: Event) => this._updateCustomViewField(index, 'title', (e.target as HTMLInputElement).value)} />
+            <input type="text" .value=${view.path || ''} placeholder=${localize('editor.path_placeholder')}
+              style="flex: 2; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              @change=${(e: Event) => this._updateCustomViewField(index, 'path', (e.target as HTMLInputElement).value)} />
+            <input type="text" .value=${view.icon || ''} placeholder="mdi:star"
+              style="flex: 1; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              @change=${(e: Event) => this._updateCustomViewField(index, 'icon', (e.target as HTMLInputElement).value)} />
+          </div>
+          <textarea rows="8" placeholder=${localize('editor.yaml_placeholder')}
+            .value=${view.yaml || ''}
+            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"
+            @change=${(e: Event) => this._updateCustomViewYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
+          <div class="custom-view-validation" style="font-size: 12px; min-height: 16px;">
+            ${validationMsg}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderCustomCardItem(card: CustomCard, index: number): TemplateResult {
+    const validationMsg = card._yaml_error
+      ? html`<span style="color: var(--error-color);">&#x274C; ${card._yaml_error}</span>`
+      : card.yaml
+        ? html`<span style="color: var(--success-color, green);">&#x2705; ${localize('editor.yaml_valid')}</span>`
+        : nothing;
+
+    return html`
+      <div class="custom-card-item" data-index=${index}
+        style="border: 1px solid var(--divider-color); border-radius: 8px; padding: 12px; margin-bottom: 12px; background: var(--card-background-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <strong style="font-size: 14px;">${card.title || localize('editor.new_card')}</strong>
+          <button @click=${() => this._removeCustomCard(index)}
+            style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">&#x2715;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <input type="text" .value=${card.title || ''} placeholder=${localize('editor.card_title_placeholder')}
+            style="padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            @change=${(e: Event) => this._updateCustomCardField(index, 'title', (e.target as HTMLInputElement).value)} />
+          <textarea rows="6" placeholder=${localize('editor.yaml_placeholder')}
+            .value=${card.yaml || ''}
+            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"
+            @change=${(e: Event) => this._updateCustomCardYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
+          <div class="custom-card-validation" style="font-size: 12px; min-height: 16px;">
+            ${validationMsg}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderCustomBadgeItem(badge: CustomBadge, index: number): TemplateResult {
+    const validationMsg = badge._yaml_error
+      ? html`<span style="color: var(--error-color);">&#x274C; ${badge._yaml_error}</span>`
+      : badge.yaml
+        ? html`<span style="color: var(--success-color, green);">&#x2705; ${localize('editor.yaml_valid')}</span>`
+        : nothing;
+
+    return html`
+      <div class="custom-badge-item" data-index=${index}
+        style="border: 1px solid var(--divider-color); border-radius: 8px; padding: 12px; margin-bottom: 12px; background: var(--card-background-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <strong style="font-size: 14px;">Badge ${index + 1}</strong>
+          <button @click=${() => this._removeCustomBadge(index)}
+            style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">&#x2715;</button>
+        </div>
+        <textarea rows="4" placeholder="type: entity&#10;entity: sun.sun"
+          .value=${badge.yaml || ''}
+          style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"
+          @change=${(e: Event) => this._updateCustomBadgeYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
+        <div class="custom-badge-validation" style="font-size: 12px; min-height: 16px;">
+          ${validationMsg}
+        </div>
+      </div>
+    `;
+  }
+
+  // ====================================================================
+  // AREA RENDERERS
+  // ====================================================================
+
+  private _renderAreaItems(
+    allAreas: AreaRegistryEntry[],
+    hiddenAreas: string[],
+    areaOrder: string[]
+  ): TemplateResult | TemplateResult[] {
+    if (allAreas.length === 0) {
+      return html`<div class="empty-state">${localize('editor.no_areas')}</div>`;
+    }
+
+    // Sort areas by configured order
+    const sortedAreas = [...allAreas].sort((a, b) => {
+      const orderA = areaOrder.indexOf(a.area_id);
+      const orderB = areaOrder.indexOf(b.area_id);
+      const effectiveA = orderA !== -1 ? orderA : 9999 + allAreas.indexOf(a);
+      const effectiveB = orderB !== -1 ? orderB : 9999 + allAreas.indexOf(b);
+      return effectiveA - effectiveB;
     });
 
-    // Sort area items by displayOrder
-    sortAreaItems(this);
+    return sortedAreas.map((area) => {
+      const isHidden = hiddenAreas.includes(area.area_id);
+      const isExpanded = this._expandedAreas.has(area.area_id);
+      const cachedData = this._areaEntitiesCache.get(area.area_id);
 
-    // Drag & Drop event listeners
-    attachDragAndDropListeners(this, () => { this._updateAreaOrder(); });
-
-    // Expand button listeners
-    attachExpandButtonListeners(
-      this,
-      this._hass,
-      this._config,
-      (areaId: string, group: string, entityId: string | null, isVisible: boolean) => {
-        this._entityVisibilityChanged(areaId, group, entityId, isVisible);
-      }
-    );
-
-    // Restore expanded state
-    this._restoreExpandedState();
+      return html`
+        <div class="area-item"
+          data-area-id=${area.area_id}
+          draggable="true"
+          @dragstart=${this._handleDragStart}
+          @dragend=${this._handleDragEnd}
+          @dragover=${this._handleDragOver}
+          @dragleave=${this._handleDragLeave}
+          @drop=${this._handleDrop}>
+          <div class="area-header">
+            <span class="drag-handle" draggable="true">&#x2630;</span>
+            <input type="checkbox" class="area-checkbox"
+              data-area-id=${area.area_id}
+              ?checked=${!isHidden}
+              @change=${(e: Event) => this._areaVisibilityChanged(area.area_id, (e.target as HTMLInputElement).checked)} />
+            <span class="area-name">${area.name}</span>
+            ${area.icon ? html`<ha-icon class="area-icon" icon=${area.icon}></ha-icon>` : nothing}
+            <button class="expand-button ${isExpanded ? 'expanded' : ''}"
+              data-area-id=${area.area_id}
+              ?disabled=${isHidden}
+              @click=${(e: Event) => this._toggleAreaExpand(e, area.area_id)}>
+              <span class="expand-icon">&#x25B6;</span>
+            </button>
+          </div>
+          ${isExpanded
+            ? html`
+              <div class="area-content" data-area-id=${area.area_id}>
+                ${cachedData
+                  ? this._renderAreaEntities(area.area_id, cachedData)
+                  : html`<div class="loading-placeholder">${localize('editor.loading_entities')}</div>`}
+              </div>
+            `
+            : nothing}
+        </div>
+      `;
+    });
   }
 
-  // -- Summaries columns ------------------------------------------------
+  private _renderAreaEntities(
+    areaId: string,
+    data: NonNullable<ReturnType<typeof this._areaEntitiesCache.get>>
+  ): TemplateResult {
+    const {
+      groupedEntities,
+      hiddenEntities,
+      badgeCandidates,
+      additionalBadges,
+      availableEntities,
+      defaultShowNames,
+      namesVisible,
+      namesHidden,
+    } = data;
 
-  _attachSummariesColumnsListener(): void {
-    const radio2 = this.querySelector('#summaries-2-columns') as HTMLInputElement | null;
-    const radio4 = this.querySelector('#summaries-4-columns') as HTMLInputElement | null;
+    const hass = this._hass!;
 
-    if (radio2) {
-      radio2.addEventListener('change', (e: Event) => {
-        if ((e.target as HTMLInputElement).checked) {
-          this._summariesColumnsChanged(2);
-        }
-      });
+    const domainGroups: DomainGroup[] = [
+      { key: 'lights', label: localize('editor.domain_lights'), icon: 'mdi:lightbulb' },
+      { key: 'climate', label: localize('editor.domain_climate'), icon: 'mdi:thermostat' },
+      { key: 'covers', label: localize('editor.domain_covers'), icon: 'mdi:window-shutter' },
+      { key: 'covers_curtain', label: localize('editor.domain_covers_curtain'), icon: 'mdi:curtains' },
+      { key: 'covers_window', label: localize('editor.domain_covers_window'), icon: 'mdi:window-open-variant' },
+      { key: 'media_player', label: localize('editor.domain_media_player'), icon: 'mdi:speaker' },
+      { key: 'scenes', label: localize('editor.domain_scenes'), icon: 'mdi:palette' },
+      { key: 'vacuum', label: localize('editor.domain_vacuum'), icon: 'mdi:robot-vacuum' },
+      { key: 'fan', label: localize('editor.domain_fan'), icon: 'mdi:fan' },
+      { key: 'switches', label: localize('editor.domain_switches'), icon: 'mdi:light-switch' },
+      { key: 'locks', label: localize('editor.domain_locks'), icon: 'mdi:lock' },
+    ];
+
+    const hasEntities = domainGroups.some((g) => (groupedEntities[g.key]?.length ?? 0) > 0);
+    const hasBadges = (badgeCandidates?.length ?? 0) > 0 || (additionalBadges?.length ?? 0) > 0;
+
+    if (!hasEntities && !hasBadges) {
+      return html`<div class="empty-state">${localize('editor.no_entities_in_area')}</div>`;
     }
 
-    if (radio4) {
-      radio4.addEventListener('change', (e: Event) => {
-        if ((e.target as HTMLInputElement).checked) {
-          this._summariesColumnsChanged(4);
-        }
-      });
-    }
+    const expandedGroups = this._expandedGroups.get(areaId) || new Set<string>();
+
+    return html`
+      <div class="entity-groups">
+        ${domainGroups.map((group) => {
+          const entities = groupedEntities[group.key] as string[] | undefined;
+          if (!entities || entities.length === 0) return nothing;
+
+          const hiddenInGroup = (hiddenEntities[group.key] || []) as string[];
+          const allHidden = entities.every((e) => hiddenInGroup.includes(e));
+          const someHidden = entities.some((e) => hiddenInGroup.includes(e)) && !allHidden;
+          const isGroupExpanded = expandedGroups.has(group.key);
+
+          return html`
+            <div class="entity-group" data-group=${group.key}>
+              <div class="entity-group-header"
+                @click=${() => this._toggleGroupExpand(areaId, group.key)}>
+                <input type="checkbox" class="group-checkbox"
+                  data-area-id=${areaId}
+                  data-group=${group.key}
+                  ?checked=${!allHidden}
+                  .indeterminate=${someHidden}
+                  @click=${(e: Event) => e.stopPropagation()}
+                  @change=${(e: Event) => {
+                    e.stopPropagation();
+                    const checked = (e.target as HTMLInputElement).checked;
+                    this._groupVisibilityChanged(areaId, group.key, checked, entities);
+                  }} />
+                <ha-icon icon=${group.icon}></ha-icon>
+                <span class="group-name">${group.label}</span>
+                <span class="entity-count">(${entities.length})</span>
+                <button class="expand-button-small ${isGroupExpanded ? 'expanded' : ''}"
+                  @click=${(e: Event) => { e.stopPropagation(); this._toggleGroupExpand(areaId, group.key); }}>
+                  <span class="expand-icon-small">&#x25B6;</span>
+                </button>
+              </div>
+              ${isGroupExpanded
+                ? html`
+                  <div class="entity-list" data-area-id=${areaId} data-group=${group.key}>
+                    ${entities.map((entityId) => {
+                      const stateObj = hass.states[entityId];
+                      const name = stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+                      const isEntityHidden = hiddenInGroup.includes(entityId);
+                      return html`
+                        <div class="entity-item">
+                          <input type="checkbox" class="entity-checkbox"
+                            ?checked=${!isEntityHidden}
+                            @change=${(e: Event) => this._entityVisibilityChanged(areaId, group.key, entityId, (e.target as HTMLInputElement).checked)} />
+                          <span class="entity-name">${name}</span>
+                          <span class="entity-id">${entityId}</span>
+                        </div>
+                      `;
+                    })}
+                  </div>
+                `
+                : nothing}
+            </div>
+          `;
+        })}
+        ${hasBadges
+          ? this._renderBadgeGroup(areaId, badgeCandidates, additionalBadges, availableEntities, hiddenEntities, defaultShowNames, namesVisible, namesHidden, expandedGroups)
+          : nothing}
+      </div>
+    `;
   }
 
-  _summariesColumnsChanged(columns: 2 | 4): void {
-    if (!this._hass) {
-      return;
+  private _renderBadgeGroup(
+    areaId: string,
+    badgeCandidates: string[],
+    additionalBadges: string[],
+    availableEntities: Array<{ entity_id: string; name: string }>,
+    hiddenEntities: Record<string, string[]>,
+    defaultShowNames: Set<string>,
+    namesVisible: string[],
+    namesHidden: string[],
+    expandedGroups: Set<string>
+  ): TemplateResult {
+    const hass = this._hass!;
+    const totalCount = badgeCandidates.length + additionalBadges.length;
+    if (totalCount === 0) return html``;
+
+    const hiddenInBadges = hiddenEntities['badges'] || [];
+    const allHidden = badgeCandidates.length > 0 && badgeCandidates.every((e) => hiddenInBadges.includes(e));
+    const someHidden = badgeCandidates.some((e) => hiddenInBadges.includes(e)) && !allHidden;
+
+    const namesVisibleSet = new Set(namesVisible || []);
+    const namesHiddenSet = new Set(namesHidden || []);
+
+    const isNameShown = (entityId: string): boolean =>
+      resolveShowName(entityId, defaultShowNames.has(entityId), namesVisibleSet, namesHiddenSet);
+
+    const isGroupExpanded = expandedGroups.has('badges');
+
+    return html`
+      <div class="entity-group" data-group="badges">
+        <div class="entity-group-header"
+          @click=${() => this._toggleGroupExpand(areaId, 'badges')}>
+          <input type="checkbox" class="group-checkbox"
+            data-area-id=${areaId}
+            data-group="badges"
+            ?checked=${!allHidden}
+            .indeterminate=${someHidden}
+            @click=${(e: Event) => e.stopPropagation()}
+            @change=${(e: Event) => {
+              e.stopPropagation();
+              const checked = (e.target as HTMLInputElement).checked;
+              this._groupVisibilityChanged(areaId, 'badges', checked, badgeCandidates);
+            }} />
+          <ha-icon icon="mdi:checkbox-multiple-blank-circle"></ha-icon>
+          <span class="group-name">${localize('editor.domain_badges')}</span>
+          <span class="entity-count">(${totalCount})</span>
+          <button class="expand-button-small ${isGroupExpanded ? 'expanded' : ''}"
+            @click=${(e: Event) => { e.stopPropagation(); this._toggleGroupExpand(areaId, 'badges'); }}>
+            <span class="expand-icon-small">&#x25B6;</span>
+          </button>
+        </div>
+        ${isGroupExpanded
+          ? html`
+            <div class="entity-list" data-area-id=${areaId} data-group="badges">
+              ${badgeCandidates.map((entityId) => {
+                const stateObj = hass.states[entityId];
+                const name = stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+                const isHidden = hiddenInBadges.includes(entityId);
+                const showName = isNameShown(entityId);
+
+                return html`
+                  <div class="entity-item">
+                    <input type="checkbox" class="entity-checkbox"
+                      ?checked=${!isHidden}
+                      @change=${(e: Event) => this._entityVisibilityChanged(areaId, 'badges', entityId, (e.target as HTMLInputElement).checked)} />
+                    <span class="entity-name">${name}</span>
+                    <input type="checkbox" class="badge-name-checkbox"
+                      ?checked=${showName}
+                      title=${localize('editor.badges_show_name')}
+                      @change=${(e: Event) => this._badgeShowNameChanged(areaId, entityId, (e.target as HTMLInputElement).checked)} />
+                    <span class="badge-name-label">${localize('editor.badges_name_short')}</span>
+                    <span class="entity-id">${entityId}</span>
+                  </div>
+                `;
+              })}
+
+              ${additionalBadges.length > 0
+                ? html`
+                  <div class="badge-separator">${localize('editor.badges_additional')}</div>
+                  ${additionalBadges.map((entityId) => {
+                    const stateObj = hass.states[entityId];
+                    const name = stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+                    const showName = isNameShown(entityId);
+
+                    return html`
+                      <div class="entity-item badge-additional-item">
+                        <span class="entity-name">${name}</span>
+                        <input type="checkbox" class="badge-name-checkbox"
+                          ?checked=${showName}
+                          title=${localize('editor.badges_show_name')}
+                          @change=${(e: Event) => this._badgeShowNameChanged(areaId, entityId, (e.target as HTMLInputElement).checked)} />
+                        <span class="badge-name-label">${localize('editor.badges_name_short')}</span>
+                        <span class="entity-id">${entityId}</span>
+                        <button class="badge-remove-btn"
+                          title=${localize('editor.badges_remove')}
+                          @click=${() => this._badgeAdditionalChanged(areaId, entityId, false)}>&#x2715;</button>
+                      </div>
+                    `;
+                  })}
+                `
+                : nothing}
+
+              ${availableEntities.length > 0
+                ? html`
+                  <div class="badge-add-section">
+                    <select class="badge-entity-picker" data-area-id=${areaId}>
+                      <option value="">${localize('editor.badges_select_entity')}</option>
+                      ${availableEntities.map((e) => html`
+                        <option value=${e.entity_id}>${e.name} (${e.entity_id})</option>
+                      `)}
+                    </select>
+                    <button class="badge-add-button"
+                      @click=${(e: Event) => this._addBadgeFromPicker(e, areaId)}>
+                      ${localize('editor.badges_add')}
+                    </button>
+                  </div>
+                `
+                : nothing}
+            </div>
+          `
+          : nothing}
+      </div>
+    `;
+  }
+
+  // ====================================================================
+  // AREA ENTITY LOADING
+  // ====================================================================
+
+  private async _loadAreaEntities(areaId: string): Promise<void> {
+    if (!this._hass) return;
+
+    const groupedEntities = await getAreaGroupedEntities(areaId, this._hass);
+    const hiddenEntities = getHiddenEntitiesForArea(areaId, this._config);
+    const entityOrders = getEntityOrdersForArea(areaId, this._config);
+    const badgeCandidates = getAreaBadgeCandidates(areaId, this._hass);
+    const additionalBadges = getAdditionalBadgesForArea(areaId, this._config);
+    const availableEntities = getAvailableBadgeEntities(areaId, this._hass, badgeCandidates, additionalBadges);
+    const defaultShowNames = getDefaultShowNameEntities(badgeCandidates, this._hass);
+    const { namesVisible, namesHidden } = getBadgeNamesConfig(areaId, this._config);
+
+    this._areaEntitiesCache.set(areaId, {
+      groupedEntities,
+      hiddenEntities,
+      entityOrders,
+      badgeCandidates,
+      additionalBadges,
+      availableEntities,
+      defaultShowNames,
+      namesVisible,
+      namesHidden,
+    });
+
+    this.requestUpdate();
+  }
+
+  private _refreshAreaCache(areaId: string): void {
+    if (!this._hass || !this._areaEntitiesCache.has(areaId)) return;
+
+    const groupedEntities = this._areaEntitiesCache.get(areaId)!.groupedEntities;
+    const hiddenEntities = getHiddenEntitiesForArea(areaId, this._config);
+    const entityOrders = getEntityOrdersForArea(areaId, this._config);
+    const badgeCandidates = getAreaBadgeCandidates(areaId, this._hass);
+    const additionalBadges = getAdditionalBadgesForArea(areaId, this._config);
+    const availableEntities = getAvailableBadgeEntities(areaId, this._hass, badgeCandidates, additionalBadges);
+    const defaultShowNames = getDefaultShowNameEntities(badgeCandidates, this._hass);
+    const { namesVisible, namesHidden } = getBadgeNamesConfig(areaId, this._config);
+
+    this._areaEntitiesCache.set(areaId, {
+      groupedEntities,
+      hiddenEntities,
+      entityOrders,
+      badgeCandidates,
+      additionalBadges,
+      availableEntities,
+      defaultShowNames,
+      namesVisible,
+      namesHidden,
+    });
+  }
+
+  // ====================================================================
+  // EVENT HANDLERS — Toggle / Config changes
+  // ====================================================================
+
+  private _toggleChanged(key: string, value: boolean, defaultValue: boolean): void {
+    if (!this._hass) return;
+
+    const newConfig: Simon42StrategyConfig = {
+      ...this._config,
+      [key]: value,
+    };
+
+    // Remove property when set to default
+    if (value === defaultValue) {
+      delete (newConfig as any)[key];
     }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  private _summariesColumnsChanged(columns: 2 | 4): void {
+    if (!this._hass) return;
 
     const newConfig: Simon42StrategyConfig = {
       ...this._config,
       summaries_columns: columns,
     };
 
-    // Remove property when set to default (2)
     if (columns === 2) {
       delete newConfig.summaries_columns;
     }
@@ -357,28 +1217,15 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._fireConfigChanged(newConfig);
   }
 
-  // -- Alarm entity -----------------------------------------------------
+  private _alarmEntityChanged(e: Event): void {
+    if (!this._hass) return;
 
-  _attachAlarmEntityListener(): void {
-    const alarmSelect = this.querySelector('#alarm-entity') as HTMLSelectElement | null;
-    if (alarmSelect) {
-      alarmSelect.addEventListener('change', (e: Event) => {
-        this._alarmEntityChanged((e.target as HTMLSelectElement).value);
-      });
-    }
-  }
-
-  _alarmEntityChanged(entityId: string): void {
-    if (!this._hass) {
-      return;
-    }
-
+    const entityId = (e.target as HTMLSelectElement).value;
     const newConfig: Simon42StrategyConfig = {
       ...this._config,
       alarm_entity: entityId,
     };
 
-    // Remove property when empty
     if (!entityId || entityId === '') {
       delete newConfig.alarm_entity;
     }
@@ -387,66 +1234,49 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._fireConfigChanged(newConfig);
   }
 
-  // -- Favorites --------------------------------------------------------
-
-  _attachFavoritesListeners(): void {
-    // Add button
-    const addBtn = this.querySelector('#add-favorite-btn');
-    const select = this.querySelector('#favorite-entity-select') as HTMLSelectElement | null;
-
-    if (addBtn && select) {
-      addBtn.addEventListener('click', () => {
-        const entityId = select.value;
-        if (entityId && entityId !== '') {
-          this._addFavoriteEntity(entityId);
-          select.value = ''; // Reset selection
-        }
-      });
-    }
-
-    // Remove buttons
-    const removeButtons = this.querySelectorAll('.remove-favorite-btn');
-    removeButtons.forEach((btn) => {
-      btn.addEventListener('click', (e: Event) => {
-        const entityId = (e.target as HTMLElement).dataset.entityId;
-        if (entityId) {
-          this._removeFavoriteEntity(entityId);
-        }
-      });
-    });
+  private _batteryCriticalChanged(e: Event): void {
+    const value = parseInt((e.target as HTMLInputElement).value, 10);
+    if (isNaN(value) || value < 1 || value > 99) return;
+    const newConfig: Simon42StrategyConfig = { ...this._config, battery_critical_threshold: value };
+    if (value === 20) delete newConfig.battery_critical_threshold;
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
   }
 
-  _addFavoriteEntity(entityId: string): void {
-    if (!this._hass) {
-      return;
-    }
+  private _batteryLowChanged(e: Event): void {
+    const value = parseInt((e.target as HTMLInputElement).value, 10);
+    if (isNaN(value) || value < 1 || value > 99) return;
+    const newConfig: Simon42StrategyConfig = { ...this._config, battery_low_threshold: value };
+    if (value === 50) delete newConfig.battery_low_threshold;
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
 
+  // -- Favorites --------------------------------------------------------
+
+  private _addFavoriteFromSelect(): void {
+    const select = this.shadowRoot!.querySelector('#favorite-entity-select') as HTMLSelectElement | null;
+    if (!select || !select.value) return;
+    this._addFavoriteEntity(select.value);
+    select.value = '';
+  }
+
+  private _addFavoriteEntity(entityId: string): void {
+    if (!this._hass) return;
     const currentFavorites = this._config.favorite_entities || [];
-
-    // Already present?
-    if (currentFavorites.includes(entityId)) {
-      return;
-    }
-
-    const newFavorites = [...currentFavorites, entityId];
+    if (currentFavorites.includes(entityId)) return;
 
     const newConfig: Simon42StrategyConfig = {
       ...this._config,
-      favorite_entities: newFavorites,
+      favorite_entities: [...currentFavorites, entityId],
     };
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-
-    // Re-render only the favorites list
-    this._updateFavoritesList();
   }
 
-  _removeFavoriteEntity(entityId: string): void {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
+  private _removeFavoriteEntity(entityId: string): void {
+    if (!this._hass) return;
     const currentFavorites = this._config.favorite_entities || [];
     const newFavorites = currentFavorites.filter((id) => id !== entityId);
 
@@ -455,132 +1285,39 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       favorite_entities: newFavorites.length > 0 ? newFavorites : undefined,
     };
 
-    // Remove property when empty
     if (newFavorites.length === 0) {
       delete newConfig.favorite_entities;
     }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-
-    // Re-render only the favorites list
-    this._updateFavoritesList();
-  }
-
-  _updateFavoritesList(): void {
-    const container = this.querySelector('#favorites-list');
-    if (!container) return;
-
-    const favoriteEntities = this._config.favorite_entities || [];
-    const allEntities = this._getAllEntitiesForSelect();
-
-    // Dynamic import of the render function
-    import('./editor-template')
-      .then((module) => {
-        container.innerHTML =
-          (module as any).renderFavoritesList?.(favoriteEntities, allEntities) ||
-          this._renderFavoritesListFallback(favoriteEntities, allEntities);
-
-        // Reattach listeners
-        this._attachFavoritesListeners();
-      })
-      .catch(() => {
-        // Fallback if import fails
-        container.innerHTML = this._renderFavoritesListFallback(favoriteEntities, allEntities);
-        this._attachFavoritesListeners();
-      });
-  }
-
-  private _renderFavoritesListFallback(favoriteEntities: string[], allEntities: EntitySelectOption[]): string {
-    if (favoriteEntities.length === 0) {
-      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Favoriten hinzugefügt</div>';
-    }
-
-    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-
-    return `
-      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
-        ${favoriteEntities
-          .map((entityId) => {
-            const name = entityMap.get(entityId) || entityId;
-            return `
-            <div class="favorite-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
-              <span style="flex: 1; font-size: 14px;">
-                <strong>${name}</strong>
-                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
-              </span>
-              <button class="remove-favorite-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
-                ✕
-              </button>
-            </div>
-          `;
-          })
-          .join('')}
-      </div>
-    `;
   }
 
   // -- Room Pins --------------------------------------------------------
 
-  _attachRoomPinsListeners(): void {
-    // Add button
-    const addBtn = this.querySelector('#add-room-pin-btn');
-    const select = this.querySelector('#room-pin-entity-select') as HTMLSelectElement | null;
-
-    if (addBtn && select) {
-      addBtn.addEventListener('click', () => {
-        const entityId = select.value;
-        if (entityId && entityId !== '') {
-          this._addRoomPinEntity(entityId);
-          select.value = ''; // Reset selection
-        }
-      });
-    }
-
-    // Remove buttons
-    const removeButtons = this.querySelectorAll('.remove-room-pin-btn');
-    removeButtons.forEach((btn) => {
-      btn.addEventListener('click', (e: Event) => {
-        const entityId = (e.target as HTMLElement).dataset.entityId;
-        if (entityId) {
-          this._removeRoomPinEntity(entityId);
-        }
-      });
-    });
+  private _addRoomPinFromSelect(): void {
+    const select = this.shadowRoot!.querySelector('#room-pin-entity-select') as HTMLSelectElement | null;
+    if (!select || !select.value) return;
+    this._addRoomPinEntity(select.value);
+    select.value = '';
   }
 
-  _addRoomPinEntity(entityId: string): void {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
+  private _addRoomPinEntity(entityId: string): void {
+    if (!this._hass) return;
     const currentPins = this._config.room_pin_entities || [];
-
-    // Already present?
-    if (currentPins.includes(entityId)) {
-      return;
-    }
-
-    const newPins = [...currentPins, entityId];
+    if (currentPins.includes(entityId)) return;
 
     const newConfig: Simon42StrategyConfig = {
       ...this._config,
-      room_pin_entities: newPins,
+      room_pin_entities: [...currentPins, entityId],
     };
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-
-    // Re-render only the room-pins list
-    this._updateRoomPinsList();
   }
 
-  _removeRoomPinEntity(entityId: string): void {
-    if (!this._config || !this._hass) {
-      return;
-    }
-
+  private _removeRoomPinEntity(entityId: string): void {
+    if (!this._hass) return;
     const currentPins = this._config.room_pin_entities || [];
     const newPins = currentPins.filter((id) => id !== entityId);
 
@@ -589,126 +1326,17 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       room_pin_entities: newPins.length > 0 ? newPins : undefined,
     };
 
-    // Remove property when empty
     if (newPins.length === 0) {
       delete newConfig.room_pin_entities;
     }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-
-    // Re-render only the room-pins list
-    this._updateRoomPinsList();
-  }
-
-  _updateRoomPinsList(): void {
-    const container = this.querySelector('#room-pins-list');
-    if (!container) return;
-
-    const roomPinEntities = this._config.room_pin_entities || [];
-    const allEntities = this._getAllEntitiesForSelect();
-    const allAreas = Object.values(this._hass?.areas ?? {}).sort((a, b) => a.name.localeCompare(b.name));
-
-    // Dynamic import of the render function
-    import('./editor-template')
-      .then((module) => {
-        container.innerHTML =
-          (module as any).renderRoomPinsList?.(roomPinEntities, allEntities, allAreas) ||
-          this._renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas);
-
-        // Reattach listeners
-        this._attachRoomPinsListeners();
-      })
-      .catch(() => {
-        // Fallback if import fails
-        container.innerHTML = this._renderRoomPinsListFallback(roomPinEntities, allEntities, allAreas);
-        this._attachRoomPinsListeners();
-      });
-  }
-
-  private _renderRoomPinsListFallback(
-    roomPinEntities: string[],
-    allEntities: EntitySelectOption[],
-    allAreas: Array<{ area_id: string; name: string }>
-  ): string {
-    if (roomPinEntities.length === 0) {
-      return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Raum-Pins hinzugefügt</div>';
-    }
-
-    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e]));
-    const areaMap = new Map(allAreas.map((a) => [a.area_id, a.name]));
-
-    return `
-      <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
-        ${roomPinEntities
-          .map((entityId) => {
-            const entity = entityMap.get(entityId);
-            const name = entity?.name || entityId;
-            const areaId = entity?.area_id || entity?.device_area_id;
-            const areaName = areaId ? areaMap.get(areaId) || areaId : 'Kein Raum';
-
-            return `
-            <div class="room-pin-item" data-entity-id="${entityId}" style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-              <span class="drag-handle" style="margin-right: 12px; cursor: grab; color: var(--secondary-text-color);">☰</span>
-              <span style="flex: 1; font-size: 14px;">
-                <strong>${name}</strong>
-                <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
-                <br>
-                <span style="font-size: 11px; color: var(--secondary-text-color);">📍 ${areaName}</span>
-              </span>
-              <button class="remove-room-pin-btn" data-entity-id="${entityId}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
-                ✕
-              </button>
-            </div>
-          `;
-          })
-          .join('')}
-      </div>
-    `;
   }
 
   // -- Custom Views -----------------------------------------------------
 
-  _attachCustomViewsListeners(): void {
-    // Add button
-    const addBtn = this.querySelector('#add-custom-view-btn');
-    if (addBtn) {
-      addBtn.addEventListener('click', () => { this._addCustomView(); });
-    }
-
-    // Remove buttons
-    this.querySelectorAll('.remove-custom-view-btn').forEach((btn) => {
-      btn.addEventListener('click', (e: Event) => {
-        const index = parseInt((e.target as HTMLElement).dataset.index || '0', 10);
-        this._removeCustomView(index);
-      });
-    });
-
-    // Title / Path / Icon inputs
-    this.querySelectorAll('.custom-view-title, .custom-view-path, .custom-view-icon').forEach((input) => {
-      input.addEventListener('change', (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        const index = parseInt(target.dataset.index || '0', 10);
-        const field = target.classList.contains('custom-view-title')
-          ? 'title'
-          : target.classList.contains('custom-view-path')
-            ? 'path'
-            : 'icon';
-        this._updateCustomViewField(index, field, target.value);
-      });
-    });
-
-    // YAML textareas — parse on change
-    this.querySelectorAll('.custom-view-yaml').forEach((textarea) => {
-      textarea.addEventListener('change', (e: Event) => {
-        const target = e.target as HTMLTextAreaElement;
-        const index = parseInt(target.dataset.index || '0', 10);
-        this._updateCustomViewYaml(index, target.value);
-      });
-    });
-  }
-
-  _addCustomView(): void {
+  private _addCustomView(): void {
     const customViews: CustomView[] = [...(this._config.custom_views || [])];
     customViews.push({
       title: 'Neue View',
@@ -718,16 +1346,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       parsed_config: undefined,
     } as CustomView);
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      custom_views: customViews,
-    };
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_views: customViews };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-    this._updateCustomViewsList();
   }
 
-  _removeCustomView(index: number): void {
+  private _removeCustomView(index: number): void {
     const customViews: CustomView[] = [...(this._config.custom_views || [])];
     customViews.splice(index, 1);
 
@@ -740,31 +1364,24 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-    this._updateCustomViewsList();
   }
 
-  _updateCustomViewField(index: number, field: string, value: string): void {
+  private _updateCustomViewField(index: number, field: string, value: string): void {
     const customViews: CustomView[] = [...(this._config.custom_views || [])];
     if (!customViews[index]) return;
 
     customViews[index] = { ...customViews[index], [field]: value };
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      custom_views: customViews,
-    };
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_views: customViews };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
   }
 
-  _updateCustomViewYaml(index: number, yamlString: string): void {
+  private _updateCustomViewYaml(index: number, yamlString: string): void {
     const customViews: CustomView[] = [...(this._config.custom_views || [])];
     if (!customViews[index]) return;
 
-    const updated: CustomView = {
-      ...customViews[index],
-      yaml: yamlString,
-    };
+    const updated: CustomView = { ...customViews[index], yaml: yamlString };
     delete updated._yaml_error;
 
     if (yamlString.trim()) {
@@ -787,112 +1404,47 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     customViews[index] = updated;
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      custom_views: customViews,
-    };
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_views: customViews };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-
-    // Update only the validation display (not the whole list — avoids cursor loss)
-    const validationEl = this.querySelector(`.custom-view-validation[data-index="${index}"]`);
-    if (validationEl) {
-      if (updated._yaml_error) {
-        validationEl.innerHTML = `<span style="color: var(--error-color, red);">❌ ${updated._yaml_error}</span>`;
-      } else if (yamlString.trim()) {
-        validationEl.innerHTML = '<span style="color: var(--success-color, green);">✅ YAML gültig</span>';
-      } else {
-        validationEl.innerHTML = '';
-      }
-    }
   }
 
-  _updateCustomViewsList(): void {
-    const container = this.querySelector('#custom-views-list');
-    if (container) {
-      container.innerHTML = renderCustomViewsList(this._config.custom_views || []);
-      this._attachCustomViewsListeners();
+  // -- Custom Cards -----------------------------------------------------
+
+  private _customCardsHeadingChanged(e: Event): void {
+    const value = (e.target as HTMLInputElement).value.trim();
+    const newConfig: Simon42StrategyConfig = { ...this._config };
+    if (value) {
+      newConfig.custom_cards_heading = value;
+    } else {
+      delete newConfig.custom_cards_heading;
     }
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
   }
 
-  // -- Custom Cards ------------------------------------------------------
-
-  _attachCustomCardsListeners(): void {
-    const addBtn = this.querySelector('#add-custom-card-btn');
-    if (addBtn) {
-      addBtn.addEventListener('click', () => { this._addCustomCard(); });
+  private _customCardsIconChanged(e: Event): void {
+    const value = (e.target as HTMLInputElement).value.trim();
+    const newConfig: Simon42StrategyConfig = { ...this._config };
+    if (value) {
+      newConfig.custom_cards_icon = value;
+    } else {
+      delete newConfig.custom_cards_icon;
     }
-
-    const headingInput = this.querySelector('#custom-cards-heading') as HTMLInputElement | null;
-    if (headingInput) {
-      headingInput.addEventListener('change', () => {
-        const newConfig: Simon42StrategyConfig = { ...this._config };
-        if (headingInput.value.trim()) {
-          newConfig.custom_cards_heading = headingInput.value.trim();
-        } else {
-          delete newConfig.custom_cards_heading;
-        }
-        this._config = newConfig;
-        this._fireConfigChanged(newConfig);
-      });
-    }
-
-    const iconInput = this.querySelector('#custom-cards-icon') as HTMLInputElement | null;
-    if (iconInput) {
-      iconInput.addEventListener('change', () => {
-        const newConfig: Simon42StrategyConfig = { ...this._config };
-        if (iconInput.value.trim()) {
-          newConfig.custom_cards_icon = iconInput.value.trim();
-        } else {
-          delete newConfig.custom_cards_icon;
-        }
-        this._config = newConfig;
-        this._fireConfigChanged(newConfig);
-      });
-    }
-
-    this.querySelectorAll('.remove-custom-card-btn').forEach((btn) => {
-      btn.addEventListener('click', (e: Event) => {
-        const index = parseInt((e.target as HTMLElement).dataset.index || '0', 10);
-        this._removeCustomCard(index);
-      });
-    });
-
-    this.querySelectorAll('.custom-card-title').forEach((input) => {
-      input.addEventListener('change', (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        const index = parseInt(target.dataset.index || '0', 10);
-        this._updateCustomCardField(index, 'title', target.value);
-      });
-    });
-
-    this.querySelectorAll('.custom-card-yaml').forEach((textarea) => {
-      textarea.addEventListener('change', (e: Event) => {
-        const target = e.target as HTMLTextAreaElement;
-        const index = parseInt(target.dataset.index || '0', 10);
-        this._updateCustomCardYaml(index, target.value);
-      });
-    });
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
   }
 
-  _addCustomCard(): void {
+  private _addCustomCard(): void {
     const customCards: CustomCard[] = [...(this._config.custom_cards || [])];
-    customCards.push({
-      title: '',
-      yaml: '',
-      parsed_config: undefined,
-    } as CustomCard);
+    customCards.push({ title: '', yaml: '', parsed_config: undefined } as CustomCard);
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      custom_cards: customCards,
-    };
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_cards: customCards };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-    this._updateCustomCardsList();
   }
 
-  _removeCustomCard(index: number): void {
+  private _removeCustomCard(index: number): void {
     const customCards: CustomCard[] = [...(this._config.custom_cards || [])];
     customCards.splice(index, 1);
 
@@ -905,31 +1457,24 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-    this._updateCustomCardsList();
   }
 
-  _updateCustomCardField(index: number, field: string, value: string): void {
+  private _updateCustomCardField(index: number, field: string, value: string): void {
     const customCards: CustomCard[] = [...(this._config.custom_cards || [])];
     if (!customCards[index]) return;
 
     customCards[index] = { ...customCards[index], [field]: value };
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      custom_cards: customCards,
-    };
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_cards: customCards };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
   }
 
-  _updateCustomCardYaml(index: number, yamlString: string): void {
+  private _updateCustomCardYaml(index: number, yamlString: string): void {
     const customCards: CustomCard[] = [...(this._config.custom_cards || [])];
     if (!customCards[index]) return;
 
-    const updated: CustomCard = {
-      ...customCards[index],
-      yaml: yamlString,
-    };
+    const updated: CustomCard = { ...customCards[index], yaml: yamlString };
     delete updated._yaml_error;
 
     if (yamlString.trim()) {
@@ -952,74 +1497,23 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     customCards[index] = updated;
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      custom_cards: customCards,
-    };
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_cards: customCards };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-
-    const validationEl = this.querySelector(`.custom-card-validation[data-index="${index}"]`);
-    if (validationEl) {
-      if (updated._yaml_error) {
-        validationEl.innerHTML = `<span style="color: var(--error-color, red);">❌ ${updated._yaml_error}</span>`;
-      } else if (yamlString.trim()) {
-        validationEl.innerHTML = '<span style="color: var(--success-color, green);">✅ YAML gültig</span>';
-      } else {
-        validationEl.innerHTML = '';
-      }
-    }
   }
 
-  _updateCustomCardsList(): void {
-    const container = this.querySelector('#custom-cards-list');
-    if (container) {
-      container.innerHTML = renderCustomCardsList(this._config.custom_cards || []);
-      this._attachCustomCardsListeners();
-    }
-  }
+  // -- Custom Badges ----------------------------------------------------
 
-  // -- Custom Badges -----------------------------------------------------
-
-  _attachCustomBadgesListeners(): void {
-    const addBtn = this.querySelector('#add-custom-badge-btn');
-    if (addBtn) {
-      addBtn.addEventListener('click', () => { this._addCustomBadge(); });
-    }
-
-    this.querySelectorAll('.remove-custom-badge-btn').forEach((btn) => {
-      btn.addEventListener('click', (e: Event) => {
-        const index = parseInt((e.target as HTMLElement).dataset.index || '0', 10);
-        this._removeCustomBadge(index);
-      });
-    });
-
-    this.querySelectorAll('.custom-badge-yaml').forEach((textarea) => {
-      textarea.addEventListener('change', (e: Event) => {
-        const target = e.target as HTMLTextAreaElement;
-        const index = parseInt(target.dataset.index || '0', 10);
-        this._updateCustomBadgeYaml(index, target.value);
-      });
-    });
-  }
-
-  _addCustomBadge(): void {
+  private _addCustomBadge(): void {
     const customBadges: CustomBadge[] = [...(this._config.custom_badges || [])];
-    customBadges.push({
-      yaml: '',
-      parsed_config: undefined,
-    } as CustomBadge);
+    customBadges.push({ yaml: '', parsed_config: undefined } as CustomBadge);
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      custom_badges: customBadges,
-    };
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_badges: customBadges };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-    this._updateCustomBadgesList();
   }
 
-  _removeCustomBadge(index: number): void {
+  private _removeCustomBadge(index: number): void {
     const customBadges: CustomBadge[] = [...(this._config.custom_badges || [])];
     customBadges.splice(index, 1);
 
@@ -1032,17 +1526,13 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-    this._updateCustomBadgesList();
   }
 
-  _updateCustomBadgeYaml(index: number, yamlString: string): void {
+  private _updateCustomBadgeYaml(index: number, yamlString: string): void {
     const customBadges: CustomBadge[] = [...(this._config.custom_badges || [])];
     if (!customBadges[index]) return;
 
-    const updated: CustomBadge = {
-      ...customBadges[index],
-      yaml: yamlString,
-    };
+    const updated: CustomBadge = { ...customBadges[index], yaml: yamlString };
     delete updated._yaml_error;
 
     if (yamlString.trim()) {
@@ -1065,436 +1555,30 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     customBadges[index] = updated;
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      custom_badges: customBadges,
-    };
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_badges: customBadges };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
-
-    const validationEl = this.querySelector(`.custom-badge-validation[data-index="${index}"]`);
-    if (validationEl) {
-      if (updated._yaml_error) {
-        validationEl.innerHTML = `<span style="color: var(--error-color, red);">❌ ${updated._yaml_error}</span>`;
-      } else if (yamlString.trim()) {
-        validationEl.innerHTML = '<span style="color: var(--success-color, green);">✅ YAML gültig</span>';
-      } else {
-        validationEl.innerHTML = '';
-      }
-    }
   }
 
-  _updateCustomBadgesList(): void {
-    const container = this.querySelector('#custom-badges-list');
-    if (container) {
-      container.innerHTML = renderCustomBadgesList(this._config.custom_badges || []);
-      this._attachCustomBadgesListeners();
-    }
-  }
+  // ====================================================================
+  // AREA MANAGEMENT
+  // ====================================================================
 
-  // -- Toggle handlers --------------------------------------------------
-
-  _showWeatherChanged(showWeather: boolean): void {
+  private _areaVisibilityChanged(areaId: string, isVisible: boolean): void {
     if (!this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_weather: showWeather,
-    };
-
-    // Remove property when set to default (true)
-    if (showWeather === true) {
-      delete newConfig.show_weather;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showEnergyChanged(showEnergy: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_energy: showEnergy,
-    };
-
-    if (showEnergy === true) {
-      delete newConfig.show_energy;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showSearchCardChanged(showSearchCard: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_search_card: showSearchCard,
-    };
-
-    // Remove property when set to default (false)
-    if (showSearchCard === false) {
-      delete newConfig.show_search_card;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showSummaryViewsChanged(showSummaryViews: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_summary_views: showSummaryViews,
-    };
-
-    if (showSummaryViews === false) {
-      delete newConfig.show_summary_views;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showRoomViewsChanged(showRoomViews: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_room_views: showRoomViews,
-    };
-
-    if (showRoomViews === false) {
-      delete newConfig.show_room_views;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _groupByFloorsChanged(groupByFloors: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      group_by_floors: groupByFloors,
-    };
-
-    if (groupByFloors === false) {
-      delete newConfig.group_by_floors;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showClockCardChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_clock_card: show,
-    };
-
-    if (show === true) {
-      delete newConfig.show_clock_card;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showLightSummaryChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_light_summary: show,
-    };
-
-    if (show === true) {
-      delete newConfig.show_light_summary;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _groupLightsByFloorsChanged(group: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      group_lights_by_floors: group,
-    };
-
-    if (group === false) {
-      delete newConfig.group_lights_by_floors;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _nestedLightGroupsChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      nested_light_groups: show,
-    };
-
-    if (show === false) {
-      delete newConfig.nested_light_groups;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _favoritesShowStateChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, favorites_show_state: show };
-    if (show === false) delete newConfig.favorites_show_state;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _favoritesHideLastChangedChanged(hide: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, favorites_hide_last_changed: hide };
-    if (hide === false) delete newConfig.favorites_hide_last_changed;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showCoversSummaryChanged(showCoversSummary: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_covers_summary: showCoversSummary,
-    };
-
-    // Remove property when set to default (true)
-    if (showCoversSummary === true) {
-      delete newConfig.show_covers_summary;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showPartiallyOpenCoversChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, show_partially_open_covers: show };
-    if (show === false) delete newConfig.show_partially_open_covers;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showSecuritySummaryChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_security_summary: show,
-    };
-
-    if (show === true) {
-      delete newConfig.show_security_summary;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showBatterySummaryChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_battery_summary: show,
-    };
-
-    if (show === true) {
-      delete newConfig.show_battery_summary;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showClimateSummaryChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_climate_summary: show,
-    };
-
-    if (show === false) {
-      delete newConfig.show_climate_summary;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _hideMobileAppBatteriesChanged(hide: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      hide_mobile_app_batteries: hide,
-    };
-
-    if (hide === false) {
-      delete newConfig.hide_mobile_app_batteries;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _attachBatteryThresholdListeners(): void {
-    const criticalInput = this.querySelector('#battery-critical-threshold') as HTMLInputElement | null;
-    const lowInput = this.querySelector('#battery-low-threshold') as HTMLInputElement | null;
-
-    criticalInput?.addEventListener('change', () => {
-      const value = parseInt(criticalInput.value, 10);
-      if (isNaN(value) || value < 1 || value > 99) return;
-      const newConfig: Simon42StrategyConfig = { ...this._config, battery_critical_threshold: value };
-      if (value === 20) delete newConfig.battery_critical_threshold;
-      this._config = newConfig;
-      this._fireConfigChanged(newConfig);
-    });
-
-    lowInput?.addEventListener('change', () => {
-      const value = parseInt(lowInput.value, 10);
-      if (isNaN(value) || value < 1 || value > 99) return;
-      const newConfig: Simon42StrategyConfig = { ...this._config, battery_low_threshold: value };
-      if (value === 50) delete newConfig.battery_low_threshold;
-      this._config = newConfig;
-      this._fireConfigChanged(newConfig);
-    });
-  }
-
-  _roomPinsShowStateChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, room_pins_show_state: show };
-    if (show === false) delete newConfig.room_pins_show_state;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _roomPinsHideLastChangedChanged(hide: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, room_pins_hide_last_changed: hide };
-    if (hide === false) delete newConfig.room_pins_hide_last_changed;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showSwitchesOnAreasChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_switches_on_areas: show,
-    };
-
-    if (show === false) {
-      delete newConfig.show_switches_on_areas;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showAlertsOnAreasChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_alerts_on_areas: show,
-    };
-
-    if (show === false) {
-      delete newConfig.show_alerts_on_areas;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showLocksInRoomsChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      show_locks_in_rooms: show,
-    };
-
-    if (show === false) {
-      delete newConfig.show_locks_in_rooms;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showAutomationsInRoomsChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, show_automations_in_rooms: show };
-    if (show === false) delete newConfig.show_automations_in_rooms;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _showScriptsInRoomsChanged(show: boolean): void {
-    if (!this._config || !this._hass) return;
-    const newConfig: Simon42StrategyConfig = { ...this._config, show_scripts_in_rooms: show };
-    if (show === false) delete newConfig.show_scripts_in_rooms;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  _useDefaultAreaSortChanged(useDefault: boolean): void {
-    if (!this._config || !this._hass) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      use_default_area_sort: useDefault,
-    };
-
-    if (useDefault === false) {
-      delete newConfig.use_default_area_sort;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  // -- Area management --------------------------------------------------
-
-  _areaVisibilityChanged(areaId: string, isVisible: boolean): void {
-    if (!this._config || !this._hass) return;
 
     let hiddenAreas = [...(this._config.areas_display?.hidden || [])];
 
     if (isVisible) {
-      // Remove from hidden
       hiddenAreas = hiddenAreas.filter((id) => id !== areaId);
     } else {
-      // Add to hidden
       if (!hiddenAreas.includes(areaId)) {
         hiddenAreas.push(areaId);
       }
+      // Collapse area when hidden
+      this._expandedAreas.delete(areaId);
+      this._expandedGroups.delete(areaId);
+      this._areaEntitiesCache.delete(areaId);
     }
 
     const newConfig: Simon42StrategyConfig = {
@@ -1505,12 +1589,9 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       },
     };
 
-    // Remove hidden array when empty
     if (newConfig.areas_display?.hidden?.length === 0) {
       delete newConfig.areas_display.hidden;
     }
-
-    // Remove areas_display when empty
     if (newConfig.areas_display && Object.keys(newConfig.areas_display).length === 0) {
       delete newConfig.areas_display;
     }
@@ -1519,83 +1600,104 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     this._fireConfigChanged(newConfig);
   }
 
-  _updateAreaOrder(): void {
-    const areaList = this.querySelector('#area-list');
-    if (!areaList) return;
+  private _toggleAreaExpand(e: Event, areaId: string): void {
+    e.stopPropagation();
 
-    const items = Array.from(areaList.querySelectorAll('.area-item'));
-    const newOrder = items.map((item) => (item as HTMLElement).dataset.areaId ?? '');
+    const newExpandedAreas = new Set(this._expandedAreas);
 
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      areas_display: {
-        ...this._config.areas_display,
-        order: newOrder,
-      },
-    };
+    if (newExpandedAreas.has(areaId)) {
+      newExpandedAreas.delete(areaId);
+      const newExpandedGroups = new Map(this._expandedGroups);
+      newExpandedGroups.delete(areaId);
+      this._expandedGroups = newExpandedGroups;
+    } else {
+      newExpandedAreas.add(areaId);
+      // Load entities if not cached
+      if (!this._areaEntitiesCache.has(areaId)) {
+        void this._loadAreaEntities(areaId);
+      }
+    }
 
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
+    this._expandedAreas = newExpandedAreas;
   }
 
-  _entityVisibilityChanged(areaId: string, group: string, entityId: string | null, isVisible: boolean): void {
-    if (!this._config || !this._hass) return;
+  private _toggleGroupExpand(areaId: string, groupKey: string): void {
+    const newExpandedGroups = new Map(this._expandedGroups);
+    const areaGroups = new Set(newExpandedGroups.get(areaId) || []);
 
-    // Handle badge additional entities (add/remove from badges.additional[])
-    if (group === 'badges_additional' && entityId) {
-      this._badgeAdditionalChanged(areaId, entityId, isVisible);
-      return;
+    if (areaGroups.has(groupKey)) {
+      areaGroups.delete(groupKey);
+    } else {
+      areaGroups.add(groupKey);
     }
 
-    // Handle badge show_name toggle
-    if (group === 'badges_show_name' && entityId) {
-      this._badgeShowNameChanged(areaId, entityId, isVisible);
-      return;
+    if (areaGroups.size > 0) {
+      newExpandedGroups.set(areaId, areaGroups);
+    } else {
+      newExpandedGroups.delete(areaId);
     }
 
-    // Get current groups_options for this area
+    this._expandedGroups = newExpandedGroups;
+  }
+
+  private _groupVisibilityChanged(areaId: string, group: string, isVisible: boolean, entities: string[]): void {
+    if (!this._hass) return;
+
     const currentAreaOptions = this._config.areas_options?.[areaId] || {};
     const currentGroupsOptions = currentAreaOptions.groups_options || {};
     const currentGroupOptions = currentGroupsOptions[group] as Record<string, any> | undefined;
     let hiddenEntities = [...(currentGroupOptions?.hidden || [])];
 
-    if (entityId === null) {
-      // All entities in the group
-      if (!isVisible) {
-        // Add all entities in this group to hidden
-        const entityList = this.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-        if (entityList) {
-          const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
-          const allEntities = Array.from(entityCheckboxes).map((cb) => (cb as HTMLElement).dataset.entityId!);
-          hiddenEntities = [...new Set([...hiddenEntities, ...allEntities])];
-        }
-      } else {
-        // Remove all entities of this group from hidden
-        const entityList = this.querySelector(`.entity-list[data-area-id="${areaId}"][data-group="${group}"]`);
-        if (entityList) {
-          const entityCheckboxes = entityList.querySelectorAll('.entity-checkbox');
-          const allEntities = Array.from(entityCheckboxes).map((cb) => (cb as HTMLElement).dataset.entityId!);
-          hiddenEntities = hiddenEntities.filter((e) => !allEntities.includes(e));
-        }
-      }
+    if (isVisible) {
+      hiddenEntities = hiddenEntities.filter((e) => !entities.includes(e));
     } else {
-      // Single entity
-      if (isVisible) {
-        hiddenEntities = hiddenEntities.filter((e) => e !== entityId);
-      } else {
-        if (!hiddenEntities.includes(entityId)) {
-          hiddenEntities.push(entityId);
-        }
+      hiddenEntities = [...new Set([...hiddenEntities, ...entities])];
+    }
+
+    this._updateEntityConfig(areaId, group, hiddenEntities);
+  }
+
+  private _entityVisibilityChanged(areaId: string, group: string, entityId: string, isVisible: boolean): void {
+    if (!this._hass) return;
+
+    // Handle badge additional entities
+    if (group === 'badges_additional') {
+      this._badgeAdditionalChanged(areaId, entityId, isVisible);
+      return;
+    }
+
+    // Handle badge show_name toggle
+    if (group === 'badges_show_name') {
+      this._badgeShowNameChanged(areaId, entityId, isVisible);
+      return;
+    }
+
+    const currentAreaOptions = this._config.areas_options?.[areaId] || {};
+    const currentGroupsOptions = currentAreaOptions.groups_options || {};
+    const currentGroupOptions = currentGroupsOptions[group] as Record<string, any> | undefined;
+    let hiddenEntities = [...(currentGroupOptions?.hidden || [])];
+
+    if (isVisible) {
+      hiddenEntities = hiddenEntities.filter((e) => e !== entityId);
+    } else {
+      if (!hiddenEntities.includes(entityId)) {
+        hiddenEntities.push(entityId);
       }
     }
 
-    // Build new config
+    this._updateEntityConfig(areaId, group, hiddenEntities);
+  }
+
+  private _updateEntityConfig(areaId: string, group: string, hiddenEntities: string[]): void {
+    const currentAreaOptions = this._config.areas_options?.[areaId] || {};
+    const currentGroupsOptions = currentAreaOptions.groups_options || {};
+    const currentGroupOptions = currentGroupsOptions[group] as Record<string, any> | undefined;
+
     const newGroupOptions: Record<string, any> = {
       ...currentGroupOptions,
       hidden: hiddenEntities,
     };
 
-    // Remove hidden when empty
     if (newGroupOptions.hidden.length === 0) {
       delete newGroupOptions.hidden;
     }
@@ -1605,7 +1707,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       [group]: newGroupOptions,
     };
 
-    // Remove group when empty
     if (Object.keys(newGroupsOptions[group]).length === 0) {
       delete newGroupsOptions[group];
     }
@@ -1615,7 +1716,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       groups_options: newGroupsOptions,
     };
 
-    // Remove groups_options when empty
     if (Object.keys(newAreaOptions.groups_options).length === 0) {
       delete newAreaOptions.groups_options;
     }
@@ -1625,7 +1725,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       [areaId]: newAreaOptions,
     };
 
-    // Remove area when empty
     if (Object.keys(newAreasOptions[areaId]).length === 0) {
       delete newAreasOptions[areaId];
     }
@@ -1635,16 +1734,20 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       areas_options: newAreasOptions,
     };
 
-    // Remove areas_options when empty
     if (newConfig.areas_options && Object.keys(newConfig.areas_options).length === 0) {
       delete newConfig.areas_options;
     }
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+
+    // Refresh cached data so re-render picks up the changes
+    this._refreshAreaCache(areaId);
   }
 
-  _badgeAdditionalChanged(areaId: string, entityId: string, isAdd: boolean): void {
+  // -- Badge additional and show_name -----------------------------------
+
+  private _badgeAdditionalChanged(areaId: string, entityId: string, isAdd: boolean): void {
     if (!this._config) return;
 
     const currentAreaOptions = this._config.areas_options?.[areaId] || {};
@@ -1671,7 +1774,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       badges: newBadgeOptions,
     };
 
-    // Remove badges group when empty
     if (Object.keys(newGroupsOptions.badges).length === 0) {
       delete newGroupsOptions.badges;
     }
@@ -1705,9 +1807,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+
+    // Refresh cached data
+    this._refreshAreaCache(areaId);
   }
 
-  _badgeShowNameChanged(areaId: string, entityId: string, showName: boolean): void {
+  private _badgeShowNameChanged(areaId: string, entityId: string, showName: boolean): void {
     if (!this._config || !this._hass) return;
 
     const currentAreaOptions = this._config.areas_options?.[areaId] || {};
@@ -1717,21 +1822,17 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     let namesVisible = [...(currentBadgeOptions.names_visible || [])];
     let namesHidden = [...(currentBadgeOptions.names_hidden || [])];
 
-    // Determine default show_name for this entity (window/door = true)
-    const state = this._hass.states[entityId];
-    const dc = state?.attributes?.device_class as string | undefined;
+    const stateObj = this._hass.states[entityId];
+    const dc = stateObj?.attributes?.device_class as string | undefined;
     const defaultShowName = isDefaultShowName(dc);
 
     if (showName === defaultShowName) {
-      // Back to default — remove from both override lists
       namesVisible = namesVisible.filter((e) => e !== entityId);
       namesHidden = namesHidden.filter((e) => e !== entityId);
     } else if (showName) {
-      // Override: show name (was default off)
       if (!namesVisible.includes(entityId)) namesVisible.push(entityId);
       namesHidden = namesHidden.filter((e) => e !== entityId);
     } else {
-      // Override: hide name (was default on)
       namesVisible = namesVisible.filter((e) => e !== entityId);
       if (!namesHidden.includes(entityId)) namesHidden.push(entityId);
     }
@@ -1756,48 +1857,129 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+
+    // Refresh cached data
+    this._refreshAreaCache(areaId);
   }
 
-  // -- Expand state persistence -----------------------------------------
+  private _addBadgeFromPicker(e: Event, areaId: string): void {
+    e.stopPropagation();
+    const picker = this.shadowRoot!.querySelector(
+      `.badge-entity-picker[data-area-id="${areaId}"]`
+    ) as HTMLSelectElement | null;
+    if (!picker || !picker.value) return;
 
-  _restoreExpandedState(): void {
-    // Restore expanded areas
-    this._expandedAreas.forEach((areaId) => {
-      const button = this.querySelector(`.expand-button[data-area-id="${areaId}"]`);
-      const content = this.querySelector(`.area-content[data-area-id="${areaId}"]`) as HTMLElement | null;
-
-      if (button && content) {
-        content.style.display = 'block';
-        button.classList.add('expanded');
-
-        // Restore expanded groups for this area
-        const expandedGroups = this._expandedGroups.get(areaId);
-        if (expandedGroups) {
-          expandedGroups.forEach((groupKey) => {
-            const groupButton = content.querySelector(
-              `.expand-button-small[data-area-id="${areaId}"][data-group="${groupKey}"]`
-            );
-            const entityList = content.querySelector(
-              `.entity-list[data-area-id="${areaId}"][data-group="${groupKey}"]`
-            ) as HTMLElement | null;
-
-            if (groupButton && entityList) {
-              entityList.style.display = 'block';
-              groupButton.classList.add('expanded');
-            }
-          });
-        }
-      }
-    });
+    const entityId = picker.value;
+    this._badgeAdditionalChanged(areaId, entityId, true);
+    picker.value = '';
   }
 
-  // -- Config dispatch --------------------------------------------------
+  // ====================================================================
+  // DRAG AND DROP
+  // ====================================================================
 
-  _fireConfigChanged(config: Simon42StrategyConfig): void {
-    // Set flag so setConfig() does not re-render
+  private _handleDragStart = (ev: DragEvent): void => {
+    const dragHandle = (ev.target as HTMLElement).closest('.drag-handle');
+    if (!dragHandle) {
+      ev.preventDefault();
+      return;
+    }
+
+    const areaItem = (ev.target as HTMLElement).closest('.area-item') as HTMLElement | null;
+    if (!areaItem) {
+      ev.preventDefault();
+      return;
+    }
+
+    areaItem.classList.add('dragging');
+    if (ev.dataTransfer) {
+      ev.dataTransfer.effectAllowed = 'move';
+      ev.dataTransfer.setData('text/plain', areaItem.dataset.areaId || '');
+    }
+    this._draggedElement = areaItem;
+  };
+
+  private _handleDragEnd = (ev: DragEvent): void => {
+    const areaItem = (ev.target as HTMLElement).closest('.area-item') as HTMLElement | null;
+    if (areaItem) {
+      areaItem.classList.remove('dragging');
+    }
+
+    // Remove all drag-over classes
+    const areaList = this.shadowRoot!.querySelector('#area-list');
+    if (areaList) {
+      areaList.querySelectorAll('.area-item').forEach((item) => {
+        item.classList.remove('drag-over');
+      });
+    }
+  };
+
+  private _handleDragOver = (ev: DragEvent): void => {
+    ev.preventDefault();
+    ev.dataTransfer!.dropEffect = 'move';
+
+    const item = (ev.currentTarget as HTMLElement);
+    if (item !== this._draggedElement) {
+      item.classList.add('drag-over');
+    }
+  };
+
+  private _handleDragLeave = (ev: DragEvent): void => {
+    (ev.currentTarget as HTMLElement).classList.remove('drag-over');
+  };
+
+  private _handleDrop = (ev: DragEvent): void => {
+    ev.stopPropagation();
+    ev.preventDefault();
+
+    const dropTarget = ev.currentTarget as HTMLElement;
+    dropTarget.classList.remove('drag-over');
+
+    if (!this._draggedElement || this._draggedElement === dropTarget) return;
+
+    const areaList = this.shadowRoot!.querySelector('#area-list');
+    if (!areaList) return;
+
+    const allItems = Array.from(areaList.querySelectorAll('.area-item')) as HTMLElement[];
+    const draggedIndex = allItems.indexOf(this._draggedElement);
+    const dropIndex = allItems.indexOf(dropTarget);
+
+    if (draggedIndex < dropIndex) {
+      dropTarget.parentNode!.insertBefore(this._draggedElement, dropTarget.nextSibling);
+    } else {
+      dropTarget.parentNode!.insertBefore(this._draggedElement, dropTarget);
+    }
+
+    this._updateAreaOrder();
+  };
+
+  private _updateAreaOrder(): void {
+    const areaList = this.shadowRoot!.querySelector('#area-list');
+    if (!areaList) return;
+
+    const items = Array.from(areaList.querySelectorAll('.area-item'));
+    const newOrder = items.map((item) => (item as HTMLElement).dataset.areaId ?? '');
+
+    const newConfig: Simon42StrategyConfig = {
+      ...this._config,
+      areas_display: {
+        ...this._config.areas_display,
+        order: newOrder,
+      },
+    };
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  // ====================================================================
+  // CONFIG DISPATCH
+  // ====================================================================
+
+  private _fireConfigChanged(config: Simon42StrategyConfig): void {
     this._isUpdatingConfig = true;
 
-    // Strip internal fields from custom_views before saving
+    // Strip internal fields before saving
     const cleanConfig: Simon42StrategyConfig = { ...config };
     if (cleanConfig.custom_views) {
       cleanConfig.custom_views = cleanConfig.custom_views.map((cv) => {
@@ -1835,6 +2017,228 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
       this._isUpdatingConfig = false;
     }, 0);
   }
+}
+
+// ====================================================================
+// HELPER FUNCTIONS (local to this module)
+// ====================================================================
+
+async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Promise<RoomEntities> {
+  const devices = Object.values(hass.devices || {});
+  const entities = Object.values(hass.entities || {});
+
+  const areaDevices = new Set<string>();
+  for (const device of devices) {
+    if (device.area_id === areaId) {
+      areaDevices.add(device.id);
+    }
+  }
+
+  const roomEntities: RoomEntities = {
+    lights: [],
+    covers: [],
+    covers_curtain: [],
+    covers_window: [],
+    scenes: [],
+    climate: [],
+    media_player: [],
+    vacuum: [],
+    fan: [],
+    switches: [],
+    locks: [],
+    automations: [],
+    scripts: [],
+    cameras: [],
+  };
+
+  const excludeLabels = entities
+    .filter((e: EntityRegistryEntry) => e.labels?.includes('no_dboard'))
+    .map((e: EntityRegistryEntry) => e.entity_id);
+
+  for (const entity of entities) {
+    let belongsToArea = false;
+
+    if (entity.area_id) {
+      belongsToArea = entity.area_id === areaId;
+    } else if (entity.device_id && areaDevices.has(entity.device_id)) {
+      belongsToArea = true;
+    }
+
+    if (!belongsToArea) continue;
+    if (excludeLabels.includes(entity.entity_id)) continue;
+    if (!hass.states[entity.entity_id]) continue;
+    if (entity.hidden) continue;
+
+    const entityRegistry = hass.entities?.[entity.entity_id];
+    if (entityRegistry?.hidden) continue;
+
+    const domain = entity.entity_id.split('.')[0];
+    const stateObj = hass.states[entity.entity_id];
+    const deviceClass = stateObj.attributes?.device_class;
+
+    if (domain === 'light') {
+      roomEntities.lights.push(entity.entity_id);
+    } else if (domain === 'cover') {
+      if (deviceClass === 'curtain') {
+        roomEntities.covers_curtain.push(entity.entity_id);
+      } else if (deviceClass === 'window' || deviceClass === 'door' || deviceClass === 'gate' || deviceClass === 'garage') {
+        roomEntities.covers_window.push(entity.entity_id);
+      } else {
+        roomEntities.covers.push(entity.entity_id);
+      }
+    } else if (domain === 'scene') {
+      roomEntities.scenes.push(entity.entity_id);
+    } else if (domain === 'climate') {
+      roomEntities.climate.push(entity.entity_id);
+    } else if (domain === 'media_player') {
+      roomEntities.media_player.push(entity.entity_id);
+    } else if (domain === 'vacuum') {
+      roomEntities.vacuum.push(entity.entity_id);
+    } else if (domain === 'fan') {
+      roomEntities.fan.push(entity.entity_id);
+    } else if (domain === 'switch') {
+      roomEntities.switches.push(entity.entity_id);
+    } else if (domain === 'lock') {
+      roomEntities.locks.push(entity.entity_id);
+    }
+  }
+
+  return roomEntities;
+}
+
+function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant): string[] {
+  const devices = Object.values(hass.devices || {});
+  const entities = Object.values(hass.entities || {});
+
+  const areaDevices = new Set<string>();
+  for (const device of devices) {
+    if (device.area_id === areaId) areaDevices.add(device.id);
+  }
+
+  const candidates: string[] = [];
+
+  for (const entity of entities) {
+    let belongsToArea = false;
+    if (entity.area_id) belongsToArea = entity.area_id === areaId;
+    else if (entity.device_id && areaDevices.has(entity.device_id)) belongsToArea = true;
+    if (!belongsToArea) continue;
+    if (entity.hidden) continue;
+    if (entity.labels?.includes('no_dboard')) continue;
+    if (!hass.states[entity.entity_id]) continue;
+
+    const domain = entity.entity_id.split('.')[0];
+    const stateObj = hass.states[entity.entity_id];
+    const dc = stateObj.attributes?.device_class as string | undefined;
+    const unit = stateObj.attributes?.unit_of_measurement as string | undefined;
+
+    if (!isBadgeCandidate(domain, dc, unit, entity.entity_id)) continue;
+
+    if (domain === 'sensor' && (dc === 'battery' || entity.entity_id.includes('battery'))) {
+      const val = parseFloat(stateObj.state);
+      if (!isNaN(val) && val < 20) candidates.push(entity.entity_id);
+      continue;
+    }
+
+    candidates.push(entity.entity_id);
+  }
+
+  return candidates;
+}
+
+function getAdditionalBadgesForArea(areaId: string, config: Simon42StrategyConfig): string[] {
+  return config.areas_options?.[areaId]?.groups_options?.badges?.additional || [];
+}
+
+function getAvailableBadgeEntities(
+  areaId: string,
+  hass: HomeAssistant,
+  existingCandidates: string[],
+  existingAdditional: string[]
+): Array<{ entity_id: string; name: string }> {
+  const devices = Object.values(hass.devices || {});
+  const entities = Object.values(hass.entities || {});
+  const excludeSet = new Set([...existingCandidates, ...existingAdditional]);
+
+  const areaDevices = new Set<string>();
+  for (const device of devices) {
+    if (device.area_id === areaId) areaDevices.add(device.id);
+  }
+
+  const available: Array<{ entity_id: string; name: string }> = [];
+
+  for (const entity of entities) {
+    let belongsToArea = false;
+    if (entity.area_id) belongsToArea = entity.area_id === areaId;
+    else if (entity.device_id && areaDevices.has(entity.device_id)) belongsToArea = true;
+    if (!belongsToArea) continue;
+    if (entity.hidden) continue;
+    if (!hass.states[entity.entity_id]) continue;
+
+    const domain = entity.entity_id.split('.')[0];
+    if (domain !== 'sensor' && domain !== 'binary_sensor') continue;
+    if (excludeSet.has(entity.entity_id)) continue;
+
+    const stateObj = hass.states[entity.entity_id];
+    const name = (stateObj.attributes?.friendly_name as string) || entity.entity_id.split('.')[1].replace(/_/g, ' ');
+    available.push({ entity_id: entity.entity_id, name });
+  }
+
+  available.sort((a, b) => a.name.localeCompare(b.name));
+  return available;
+}
+
+function getDefaultShowNameEntities(badgeCandidates: string[], hass: HomeAssistant): Set<string> {
+  const result = new Set<string>();
+  for (const entityId of badgeCandidates) {
+    const stateObj = hass.states[entityId];
+    if (!stateObj) continue;
+    const dc = stateObj.attributes?.device_class as string | undefined;
+    if (isDefaultShowName(dc)) result.add(entityId);
+  }
+  return result;
+}
+
+function getBadgeNamesConfig(
+  areaId: string,
+  config: Simon42StrategyConfig
+): { namesVisible: string[]; namesHidden: string[] } {
+  const opts = config.areas_options?.[areaId]?.groups_options?.badges;
+  return {
+    namesVisible: opts?.names_visible || [],
+    namesHidden: opts?.names_hidden || [],
+  };
+}
+
+function getHiddenEntitiesForArea(areaId: string, config: Simon42StrategyConfig): Record<string, string[]> {
+  const areaOptions = config.areas_options?.[areaId];
+  if (!areaOptions || !areaOptions.groups_options) {
+    return {};
+  }
+
+  const hidden: Record<string, string[]> = {};
+  for (const [group, options] of Object.entries(areaOptions.groups_options)) {
+    if (options.hidden) {
+      hidden[group] = options.hidden;
+    }
+  }
+
+  return hidden;
+}
+
+function getEntityOrdersForArea(areaId: string, config: Simon42StrategyConfig): Record<string, string[]> {
+  const areaOptions = config.areas_options?.[areaId];
+  if (!areaOptions || !areaOptions.groups_options) {
+    return {};
+  }
+
+  const orders: Record<string, string[]> = {};
+  for (const [group, options] of Object.entries(areaOptions.groups_options)) {
+    if (options.order) {
+      orders[group] = options.order;
+    }
+  }
+
+  return orders;
 }
 
 // Register custom element
