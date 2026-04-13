@@ -32,7 +32,7 @@ interface DisplayConfig {
 
 const COVER_DEVICE_CLASSES = new Set(['awning', 'blind', 'curtain', 'shade', 'shutter', 'window']);
 
-const SECURITY_COVER_CLASSES = new Set(['door', 'garage', 'gate']);
+const SECURITY_COVER_CLASSES = new Set(['door', 'garage', 'gate', 'window']);
 const SECURITY_BINARY_SENSOR_CLASSES = new Set(['door', 'window', 'garage_door', 'opening', 'smoke', 'gas']);
 
 const COLOR_MAP: Record<string, string> = {

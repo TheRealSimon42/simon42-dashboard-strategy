@@ -662,6 +662,7 @@ export async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant
     lights: [],
     covers: [],
     covers_curtain: [],
+    covers_window: [],
     scenes: [],
     climate: [],
     media_player: [],
@@ -705,8 +706,10 @@ export async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant
     if (domain === 'light') {
       roomEntities.lights.push(entity.entity_id);
     } else if (domain === 'cover') {
-      if (deviceClass === 'curtain' || deviceClass === 'blind') {
+      if (deviceClass === 'curtain') {
         roomEntities.covers_curtain.push(entity.entity_id);
+      } else if (deviceClass === 'window' || deviceClass === 'door' || deviceClass === 'gate' || deviceClass === 'garage') {
+        roomEntities.covers_window.push(entity.entity_id);
       } else {
         roomEntities.covers.push(entity.entity_id);
       }

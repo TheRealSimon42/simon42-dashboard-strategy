@@ -10,10 +10,11 @@ class Simon42ViewCoversStrategy extends HTMLElement {
     const strategyConfig = config.config || {};
     const showPartiallyOpen = strategyConfig.show_partially_open_covers === true;
 
-    // Separate awnings from other covers — awnings have inverted open/close semantics
+    // Separate awnings and windows from other covers — they have different semantics
     const allDeviceClasses = config.device_classes || ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'];
-    const coverClasses = allDeviceClasses.filter((dc: string) => dc !== 'awning');
+    const coverClasses = allDeviceClasses.filter((dc: string) => dc !== 'awning' && dc !== 'window');
     const hasAwnings = allDeviceClasses.includes('awning');
+    const hasWindows = allDeviceClasses.includes('window');
 
     const baseConfig = { entities: config.entities, config: config.config };
 
@@ -77,6 +78,42 @@ class Simon42ViewCoversStrategy extends HTMLElement {
       cards.push({
         type: 'custom:simon42-covers-group-card',
         ...awningConfig,
+        group_type: 'closed',
+        show_partially_open: showPartiallyOpen,
+      });
+    }
+
+    // Fenster (separate group — windows are not shading)
+    if (hasWindows) {
+      const windowConfig = {
+        ...baseConfig,
+        device_classes: ['window'],
+        heading_open: localize('covers.windows_open'),
+        heading_closed: localize('covers.windows_closed'),
+        heading_partial: localize('covers.windows_partial'),
+        batch_open_text: localize('covers.windows_open_all'),
+        batch_close_text: localize('covers.windows_close_all'),
+      };
+
+      cards.push({
+        type: 'custom:simon42-covers-group-card',
+        ...windowConfig,
+        group_type: 'open',
+        show_partially_open: showPartiallyOpen,
+      });
+
+      if (showPartiallyOpen) {
+        cards.push({
+          type: 'custom:simon42-covers-group-card',
+          ...windowConfig,
+          group_type: 'partially_open',
+          show_partially_open: true,
+        });
+      }
+
+      cards.push({
+        type: 'custom:simon42-covers-group-card',
+        ...windowConfig,
         group_type: 'closed',
         show_partially_open: showPartiallyOpen,
       });

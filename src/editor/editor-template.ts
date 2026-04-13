@@ -848,6 +848,7 @@ export function renderAreaEntitiesHTML(
     { key: 'climate', label: localize('editor.domain_climate'), icon: 'mdi:thermostat' },
     { key: 'covers', label: localize('editor.domain_covers'), icon: 'mdi:window-shutter' },
     { key: 'covers_curtain', label: localize('editor.domain_covers_curtain'), icon: 'mdi:curtains' },
+    { key: 'covers_window', label: localize('editor.domain_covers_window'), icon: 'mdi:window-open-variant' },
     { key: 'media_player', label: localize('editor.domain_media_player'), icon: 'mdi:speaker' },
     { key: 'scenes', label: localize('editor.domain_scenes'), icon: 'mdi:palette' },
     { key: 'vacuum', label: localize('editor.domain_vacuum'), icon: 'mdi:robot-vacuum' },

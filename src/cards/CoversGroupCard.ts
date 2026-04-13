@@ -123,7 +123,8 @@ class Simon42CoversGroupCard extends LitElement {
       const state = hass.states[id];
       if (!state) return false;
       const deviceClass = (state.attributes as any)?.device_class as string | undefined;
-      return this._deviceClasses.includes(deviceClass!) || !deviceClass;
+      // Covers without device_class only match the main group (multiple classes), not specialized groups like awnings/windows
+      return this._deviceClasses.includes(deviceClass!) || (!deviceClass && this._deviceClasses.length > 1);
     });
   }
 

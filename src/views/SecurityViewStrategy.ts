@@ -37,7 +37,7 @@ class Simon42ViewSecurityStrategy extends HTMLElement {
         locks.push(id);
       } else if (id.startsWith('cover.')) {
         if (deviceClass === 'garage') garages.push(id);
-        else if (deviceClass === 'door' || deviceClass === 'gate') doors.push(id);
+        else if (deviceClass === 'door' || deviceClass === 'gate' || deviceClass === 'window') doors.push(id);
       } else if (id.startsWith('binary_sensor.')) {
         if (deviceClass && ['door', 'window', 'garage_door', 'opening'].includes(deviceClass)) windows.push(id);
         else if (deviceClass && ['smoke', 'gas'].includes(deviceClass)) smokeGas.push(id);

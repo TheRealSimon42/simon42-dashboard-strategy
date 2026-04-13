@@ -134,6 +134,7 @@ export interface RoomEntities {
   lights: string[];
   covers: string[];
   covers_curtain: string[];
+  covers_window: string[];
   scenes: string[];
   climate: string[];
   media_player: string[];

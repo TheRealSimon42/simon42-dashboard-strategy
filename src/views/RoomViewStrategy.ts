@@ -49,6 +49,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       lights: [],
       covers: [],
       covers_curtain: [],
+      covers_window: [],
       scenes: [],
       climate: [],
       media_player: [],
@@ -100,7 +101,8 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         continue;
       }
       if (domain === 'cover') {
-        if (deviceClass === 'curtain' || deviceClass === 'blind') roomEntities.covers_curtain.push(entityId);
+        if (deviceClass === 'curtain') roomEntities.covers_curtain.push(entityId);
+        else if (deviceClass === 'window' || deviceClass === 'door' || deviceClass === 'gate' || deviceClass === 'garage') roomEntities.covers_window.push(entityId);
         else roomEntities.covers.push(entityId);
         continue;
       }
@@ -492,6 +494,16 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     }));
 
     domainSection(roomEntities.covers_curtain, localize('room.curtains'), 'mdi:curtains', (e) => ({
+      type: 'tile',
+      entity: e,
+      name: stripAreaName(e, area, hass),
+      features: [{ type: 'cover-open-close' }],
+      vertical: false,
+      features_position: 'inline',
+      state_content: ['current_position', 'last_changed'],
+    }));
+
+    domainSection(roomEntities.covers_window, localize('room.windows'), 'mdi:window-open-variant', (e) => ({
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
