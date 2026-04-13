@@ -188,6 +188,7 @@
     "custom_views_help": "Create custom views with any cards. Tip: Create the view in a regular dashboard first, copy the YAML code, and paste it here.",
     "no_favorites": "No favorites added",
     "no_room_pins": "No room pins added",
+    "no_results": "No results found",
     "no_room": "No room",
     "no_custom_views": "No custom views created",
     "no_custom_cards": "No custom cards created",

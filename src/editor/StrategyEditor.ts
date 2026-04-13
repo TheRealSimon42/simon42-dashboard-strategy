@@ -66,6 +66,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
   _expandedAreas = new Set<string>();
   _expandedGroups = new Map<string, Set<string>>();
 
+  // Entity search state (NOT @state — we call requestUpdate manually)
+  private _favoriteSearch = '';
+  private _roomPinSearch = '';
+
   // Cache for loaded area entities (avoid re-fetching on every render)
   private _areaEntitiesCache = new Map<string, {
     groupedEntities: Record<string, string[]>;
@@ -154,67 +158,713 @@ class Simon42DashboardStrategyEditor extends LitElement {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  private _getFilteredEntities(query: string, filterWithArea = false): EntitySelectOption[] {
+    if (!this._hass || query.length < 2) return [];
+    const q = query.toLowerCase();
+    const all = this._getAllEntitiesForSelect();
+    const filtered = all.filter((entity) => {
+      if (filterWithArea && !entity.area_id && !entity.device_area_id) return false;
+      return entity.name.toLowerCase().includes(q) || entity.entity_id.toLowerCase().includes(q);
+    });
+    return filtered.slice(0, 10);
+  }
+
   // -- Styles -----------------------------------------------------------
 
   static styles = css`
-    .card-config { padding: 16px; }
-    .section { margin-bottom: 24px; }
-    .section-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: var(--primary-text-color); }
-    .form-row { display: flex; align-items: center; margin-bottom: 8px; }
-    .form-row input[type="checkbox"], .form-row input[type="radio"] { margin-right: 8px; width: 18px; height: 18px; cursor: pointer; }
-    .form-row input[type="checkbox"]:disabled, .form-row input[type="radio"]:disabled { cursor: not-allowed; opacity: 0.5; }
-    .form-row label { cursor: pointer; user-select: none; }
-    .form-row label.disabled-label { cursor: not-allowed; opacity: 0.5; }
-    .form-row ha-entity-picker { flex: 1; max-width: 300px; }
-    .form-row select { cursor: pointer; font-family: inherit; font-size: 14px; }
-    .form-row select:focus { outline: 2px solid var(--primary-color); outline-offset: 2px; }
-    .description { font-size: 12px; color: var(--secondary-text-color); margin-top: 4px; margin-left: 26px; margin-bottom: 16px; }
-    .description strong { font-weight: 600; color: var(--primary-text-color); }
-    .area-list { border: 1px solid var(--divider-color); border-radius: 8px; overflow: hidden; }
-    .area-item { border-bottom: 1px solid var(--divider-color); background: var(--card-background-color); }
-    .area-item:last-child { border-bottom: none; }
-    .area-item.dragging { opacity: 0.5; }
-    .area-item.drag-over { border-top: 2px solid var(--primary-color); }
-    .area-header { display: flex; align-items: center; padding: 12px; }
-    .drag-handle { margin-right: 12px; color: var(--secondary-text-color); cursor: grab; user-select: none; padding: 4px; }
-    .drag-handle:active { cursor: grabbing; }
-    .area-checkbox { margin-right: 12px; }
-    .area-name { flex: 1; }
-    .area-icon { margin-left: 8px; margin-right: 12px; color: var(--secondary-text-color); }
-    .expand-button { background: none; border: none; padding: 4px 8px; cursor: pointer; color: var(--secondary-text-color); transition: transform 0.2s; }
-    .expand-button:disabled { opacity: 0.3; cursor: not-allowed; }
-    .expand-button.expanded .expand-icon { transform: rotate(90deg); }
-    .expand-icon { display: inline-block; transition: transform 0.2s; }
-    .area-content { padding: 0 12px 12px 48px; background: var(--secondary-background-color); }
-    .loading-placeholder { padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic; }
-    .entity-groups { padding-top: 8px; }
-    .entity-group { margin-bottom: 8px; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--card-background-color); }
-    .entity-group-header { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; user-select: none; }
-    .entity-group-header:hover { background: var(--secondary-background-color); }
-    .group-checkbox { margin-right: 8px; width: 16px; height: 16px; cursor: pointer; }
-    .group-checkbox[data-indeterminate="true"] { opacity: 0.6; }
-    .entity-group-header ha-icon { margin-right: 8px; --mdc-icon-size: 18px; color: var(--secondary-text-color); }
-    .group-name { flex: 1; font-weight: 500; }
-    .entity-count { color: var(--secondary-text-color); font-size: 12px; margin-right: 8px; }
-    .expand-button-small { background: none; border: none; padding: 4px; cursor: pointer; color: var(--secondary-text-color); }
-    .expand-button-small.expanded .expand-icon-small { transform: rotate(90deg); }
-    .expand-icon-small { display: inline-block; font-size: 12px; transition: transform 0.2s; }
-    .entity-list { padding: 8px 12px 8px 36px; border-top: 1px solid var(--divider-color); }
-    .entity-item { display: flex; align-items: center; padding: 6px 0; }
-    .entity-checkbox { margin-right: 8px; width: 16px; height: 16px; cursor: pointer; }
-    .entity-name { flex: 1; font-size: 14px; }
-    .entity-id { font-size: 11px; color: var(--secondary-text-color); font-family: monospace; margin-left: 8px; }
-    .empty-state { padding: 24px; text-align: center; color: var(--secondary-text-color); font-style: italic; }
-    .badge-separator { padding: 8px 0 4px; font-size: 12px; font-weight: 500; color: var(--secondary-text-color); border-top: 1px dashed var(--divider-color); margin-top: 4px; }
-    .badge-additional-item { padding-left: 0; }
-    .badge-remove-btn { background: none; border: none; padding: 2px 6px; cursor: pointer; color: var(--error-color, #db4437); font-size: 14px; margin-left: 8px; border-radius: 4px; }
-    .badge-remove-btn:hover { background: var(--secondary-background-color); }
-    .badge-add-section { display: flex; gap: 8px; padding: 8px 0 4px; align-items: center; }
-    .badge-entity-picker { flex: 1; padding: 6px 8px; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--card-background-color); color: var(--primary-text-color); font-size: 13px; }
-    .badge-add-button { padding: 6px 12px; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--primary-color); color: var(--text-primary-color, #fff); cursor: pointer; font-size: 13px; white-space: nowrap; }
-    .badge-add-button:hover { opacity: 0.9; }
-    .badge-name-checkbox { margin-left: auto; margin-right: 2px; width: 14px; height: 14px; cursor: pointer; }
-    .badge-name-label { font-size: 11px; color: var(--secondary-text-color); margin-right: 8px; white-space: nowrap; }
+    /* -- Base layout --------------------------------------------------- */
+    .card-config {
+      padding: 16px;
+      font-family: var(--paper-font-body1_-_font-family, Roboto, sans-serif);
+      font-size: var(--mdc-typography-body1-font-size, 14px);
+      color: var(--primary-text-color);
+    }
+    .section {
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 12px;
+      color: var(--primary-text-color);
+      letter-spacing: 0.01em;
+    }
+
+    /* -- Form rows ----------------------------------------------------- */
+    .form-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .form-row input[type="checkbox"],
+    .form-row input[type="radio"] {
+      margin-right: 8px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--primary-color);
+    }
+    .form-row input[type="checkbox"]:disabled,
+    .form-row input[type="radio"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .form-row label {
+      cursor: pointer;
+      user-select: none;
+      font-size: 14px;
+      color: var(--primary-text-color);
+    }
+    .form-row label.disabled-label {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .form-row ha-entity-picker {
+      flex: 1;
+      max-width: 300px;
+    }
+    .description {
+      font-size: 12px;
+      color: var(--secondary-text-color);
+      margin-top: 4px;
+      margin-left: 26px;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+    .description strong {
+      font-weight: 600;
+      color: var(--primary-text-color);
+    }
+
+    /* -- Native <select> — HA-like ------------------------------------- */
+    select,
+    .form-row select {
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 32px 10px 12px;
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-card-border-radius, 12px);
+      background-color: var(--card-background-color);
+      color: var(--primary-text-color);
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236e6e6e' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+      transition: border-color 0.2s ease;
+    }
+    select:focus,
+    .form-row select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 1px var(--primary-color);
+    }
+    select:hover,
+    .form-row select:hover {
+      border-color: var(--primary-color);
+    }
+
+    /* -- Native <input type="text/number"> — HA-like ------------------- */
+    input[type="text"],
+    input[type="number"] {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-card-border-radius, 12px);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      transition: border-color 0.2s ease;
+      box-sizing: border-box;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 1px var(--primary-color);
+    }
+    input[type="text"]:hover,
+    input[type="number"]:hover {
+      border-color: var(--primary-color);
+    }
+    input[type="text"]::placeholder {
+      color: var(--secondary-text-color);
+      opacity: 0.7;
+    }
+
+    /* -- Native <textarea> — YAML editors ------------------------------ */
+    textarea {
+      font-family: "Roboto Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 12px;
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-card-border-radius, 12px);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      resize: vertical;
+      min-height: 80px;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease;
+      tab-size: 2;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 1px var(--primary-color);
+    }
+    textarea:hover {
+      border-color: var(--primary-color);
+    }
+    textarea::placeholder {
+      color: var(--secondary-text-color);
+      opacity: 0.7;
+      font-family: inherit;
+    }
+
+    /* -- Buttons — HA-like --------------------------------------------- */
+    button {
+      font-family: inherit;
+      font-size: 14px;
+    }
+    .btn-primary {
+      padding: 10px 20px;
+      border-radius: var(--ha-card-border-radius, 12px);
+      border: none;
+      background: var(--primary-color);
+      color: var(--text-primary-color, #fff);
+      cursor: pointer;
+      font-weight: 500;
+      transition: opacity 0.2s ease, box-shadow 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-primary:hover {
+      opacity: 0.85;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    .btn-primary:active {
+      opacity: 0.75;
+    }
+    .btn-remove {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+      color: var(--secondary-text-color);
+      cursor: pointer;
+      font-size: 14px;
+      transition: color 0.2s ease, border-color 0.2s ease;
+      line-height: 1;
+    }
+    .btn-remove:hover {
+      color: var(--error-color, #db4437);
+      border-color: var(--error-color, #db4437);
+    }
+
+    /* -- Area list ----------------------------------------------------- */
+    .area-list {
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-card-border-radius, 12px);
+      overflow: hidden;
+    }
+    .area-item {
+      border-bottom: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+    }
+    .area-item:last-child {
+      border-bottom: none;
+    }
+    .area-item.dragging {
+      opacity: 0.5;
+    }
+    .area-item.drag-over {
+      border-top: 2px solid var(--primary-color);
+    }
+    .area-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+    }
+    .drag-handle {
+      margin-right: 12px;
+      color: var(--secondary-text-color);
+      cursor: grab;
+      user-select: none;
+      padding: 4px;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    .area-checkbox {
+      margin-right: 12px;
+      accent-color: var(--primary-color);
+    }
+    .area-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .area-icon {
+      margin-left: 8px;
+      margin-right: 12px;
+      color: var(--secondary-text-color);
+    }
+    .expand-button {
+      background: none;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+      color: var(--secondary-text-color);
+      transition: transform 0.2s;
+    }
+    .expand-button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .expand-button.expanded .expand-icon {
+      transform: rotate(90deg);
+    }
+    .expand-icon {
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+    .area-content {
+      padding: 0 12px 12px 48px;
+      background: var(--secondary-background-color);
+    }
+    .loading-placeholder {
+      padding: 12px;
+      text-align: center;
+      color: var(--secondary-text-color);
+      font-style: italic;
+    }
+
+    /* -- Entity groups ------------------------------------------------- */
+    .entity-groups {
+      padding-top: 8px;
+    }
+    .entity-group {
+      margin-bottom: 8px;
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      background: var(--card-background-color);
+      overflow: hidden;
+    }
+    .entity-group-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease;
+    }
+    .entity-group-header:hover {
+      background: var(--secondary-background-color);
+    }
+    .group-checkbox {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--primary-color);
+    }
+    .group-checkbox[data-indeterminate="true"] {
+      opacity: 0.6;
+    }
+    .entity-group-header ha-icon {
+      margin-right: 8px;
+      --mdc-icon-size: 18px;
+      color: var(--secondary-text-color);
+    }
+    .group-name {
+      flex: 1;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .entity-count {
+      color: var(--secondary-text-color);
+      font-size: 12px;
+      margin-right: 8px;
+    }
+    .expand-button-small {
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      color: var(--secondary-text-color);
+    }
+    .expand-button-small.expanded .expand-icon-small {
+      transform: rotate(90deg);
+    }
+    .expand-icon-small {
+      display: inline-block;
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+
+    /* -- Entity list --------------------------------------------------- */
+    .entity-list {
+      padding: 8px 12px 8px 36px;
+      border-top: 1px solid var(--divider-color);
+    }
+    .entity-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 0;
+    }
+    .entity-checkbox {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--primary-color);
+    }
+    .entity-name {
+      flex: 1;
+      font-size: 14px;
+    }
+    .entity-id {
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      font-family: "Roboto Mono", monospace;
+      margin-left: 8px;
+    }
+    .empty-state {
+      padding: 24px;
+      text-align: center;
+      color: var(--secondary-text-color);
+      font-style: italic;
+    }
+
+    /* -- Badge entity management --------------------------------------- */
+    .badge-separator {
+      padding: 8px 0 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--secondary-text-color);
+      border-top: 1px dashed var(--divider-color);
+      margin-top: 4px;
+    }
+    .badge-additional-item {
+      padding-left: 0;
+    }
+    .badge-remove-btn {
+      background: none;
+      border: none;
+      padding: 2px 6px;
+      cursor: pointer;
+      color: var(--error-color, #db4437);
+      font-size: 14px;
+      margin-left: 8px;
+      border-radius: 4px;
+      transition: background-color 0.15s ease;
+    }
+    .badge-remove-btn:hover {
+      background: var(--secondary-background-color);
+    }
+    .badge-add-section {
+      display: flex;
+      gap: 8px;
+      padding: 8px 0 4px;
+      align-items: center;
+    }
+    .badge-entity-picker {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      font-size: 13px;
+    }
+    .badge-add-button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary-color);
+      color: var(--text-primary-color, #fff);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+    }
+    .badge-add-button:hover {
+      opacity: 0.85;
+    }
+    .badge-name-checkbox {
+      margin-left: auto;
+      margin-right: 2px;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      accent-color: var(--primary-color);
+    }
+    .badge-name-label {
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+
+    /* -- Entity search picker ------------------------------------------ */
+    .entity-search-picker {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+    .entity-search-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-card-border-radius, 12px);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      font-family: inherit;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease;
+    }
+    .entity-search-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 1px var(--primary-color);
+    }
+    .entity-search-input::placeholder {
+      color: var(--secondary-text-color);
+      opacity: 0.7;
+    }
+    .entity-search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      margin-top: 4px;
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-card-border-radius, 12px);
+      background: var(--card-background-color);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .entity-search-result {
+      display: flex;
+      flex-direction: column;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+      border-bottom: 1px solid var(--divider-color);
+    }
+    .entity-search-result:last-child {
+      border-bottom: none;
+    }
+    .entity-search-result:hover {
+      background: var(--secondary-background-color);
+    }
+    .entity-search-result .entity-search-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary-text-color);
+    }
+    .entity-search-result .entity-search-id {
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      font-family: "Roboto Mono", monospace;
+      margin-top: 2px;
+    }
+    .entity-search-no-results {
+      padding: 12px 14px;
+      color: var(--secondary-text-color);
+      font-style: italic;
+      font-size: 13px;
+    }
+
+    /* -- Favorites / Room Pins list items ------------------------------ */
+    .entity-list-container {
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-card-border-radius, 12px);
+      overflow: hidden;
+    }
+    .entity-list-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+      transition: background-color 0.1s ease;
+    }
+    .entity-list-item:last-child {
+      border-bottom: none;
+    }
+    .entity-list-item:hover {
+      background: var(--secondary-background-color);
+    }
+    .entity-list-item .drag-icon {
+      margin-right: 12px;
+      color: var(--secondary-text-color);
+      font-size: 16px;
+    }
+    .entity-list-item .item-info {
+      flex: 1;
+      min-width: 0;
+      font-size: 14px;
+    }
+    .entity-list-item .item-name {
+      font-weight: 500;
+      color: var(--primary-text-color);
+    }
+    .entity-list-item .item-entity-id {
+      margin-left: 8px;
+      font-size: 12px;
+      color: var(--secondary-text-color);
+      font-family: "Roboto Mono", monospace;
+    }
+    .entity-list-item .item-area {
+      display: block;
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      margin-top: 2px;
+    }
+
+    /* -- Custom view/card/badge items ---------------------------------- */
+    .custom-item {
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-card-border-radius, 12px);
+      padding: 16px;
+      margin-bottom: 12px;
+      background: var(--card-background-color);
+    }
+    .custom-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .custom-item-header strong {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .custom-item-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .custom-item-row {
+      display: flex;
+      gap: 8px;
+    }
+    .custom-item-validation {
+      font-size: 12px;
+      min-height: 16px;
+    }
+
+    /* -- Section dividers ---------------------------------------------- */
+    .section-divider {
+      border-top: 2px solid var(--divider-color);
+      margin: 24px 0 16px;
+      padding-top: 16px;
+    }
+    .section-divider-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary-text-color);
+      margin-bottom: 4px;
+      letter-spacing: 0.01em;
+    }
+
+    /* -- Mobile responsive --------------------------------------------- */
+    @media (max-width: 600px) {
+      .card-config {
+        padding: 12px 8px;
+      }
+      .section {
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-size: 15px;
+        margin-bottom: 8px;
+      }
+      .form-row {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .form-row label {
+        font-size: 13px;
+      }
+      .description {
+        margin-left: 26px;
+        margin-bottom: 12px;
+        font-size: 11px;
+      }
+
+      select,
+      .form-row select {
+        width: 100%;
+        min-width: 0;
+        font-size: 13px;
+        padding: 8px 28px 8px 10px;
+      }
+      input[type="text"],
+      input[type="number"] {
+        width: 100%;
+        font-size: 13px;
+        padding: 8px 10px;
+      }
+      textarea {
+        font-size: 11px;
+        padding: 10px;
+        min-height: 60px;
+      }
+
+      .entity-search-picker {
+        width: 100%;
+      }
+      .entity-search-results {
+        max-height: 240px;
+      }
+      .entity-search-result {
+        padding: 8px 10px;
+      }
+
+      .area-header {
+        padding: 10px 12px;
+      }
+      .area-content {
+        padding: 0 8px 8px 24px;
+      }
+      .entity-list {
+        padding: 6px 8px 6px 16px;
+      }
+
+      .custom-item {
+        padding: 12px;
+      }
+      .custom-item-row {
+        flex-direction: column;
+      }
+
+      .entity-list-item {
+        padding: 8px 10px;
+      }
+      .entity-list-item .item-entity-id {
+        display: block;
+        margin-left: 0;
+        margin-top: 2px;
+      }
+
+      .badge-add-section {
+        flex-wrap: wrap;
+      }
+
+      .btn-primary {
+        padding: 8px 16px;
+        font-size: 13px;
+      }
+    }
   `;
 
   // -- Main render ------------------------------------------------------
@@ -229,8 +879,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderInfoCardsSection()}
         ${this._renderFavoritesSection()}
 
-        <div style="border-top: 2px solid var(--divider-color); margin: 24px 0 16px; padding-top: 16px;">
-          <div style="font-size: 16px; font-weight: 600; color: var(--primary-text-color); margin-bottom: 4px;">
+        <div class="section-divider">
+          <div class="section-divider-title">
             ${localize('editor.section_areas_rooms')}
           </div>
         </div>
@@ -239,8 +889,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderRoomPinsSection()}
         ${this._renderViewsSection()}
 
-        <div style="border-top: 2px solid var(--divider-color); margin: 24px 0 16px; padding-top: 16px;">
-          <div style="font-size: 16px; font-weight: 600; color: var(--primary-text-color); margin-bottom: 4px;">
+        <div class="section-divider">
+          <div class="section-divider-title">
             ${localize('editor.section_advanced')}
           </div>
         </div>
@@ -274,7 +924,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
         <div class="form-row">
           <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${localize('editor.alarm_entity')}</label>
           <select id="alarm-entity"
-            style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            style="flex: 1;"
             @change=${this._alarmEntityChanged}>
             <option value="" ?selected=${!alarmEntity}>${localize('editor.alarm_none')}</option>
             ${alarmEntities.map((entity) => html`
@@ -372,14 +1022,14 @@ class Simon42DashboardStrategyEditor extends LitElement {
             <label for="battery-critical-threshold" style="min-width: 140px;">${localize('editor.battery_critical_below')}</label>
             <input type="number" id="battery-critical-threshold" min="1" max="99"
               .value=${String(batteryCriticalThreshold)}
-              style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              style="width: 70px;"
               @change=${this._batteryCriticalChanged} /> %
           </div>
           <div class="form-row">
             <label for="battery-low-threshold" style="min-width: 140px;">${localize('editor.battery_low_below')}</label>
             <input type="number" id="battery-low-threshold" min="1" max="99"
               .value=${String(batteryLowThreshold)}
-              style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              style="width: 70px;"
               @change=${this._batteryLowChanged} /> %
           </div>
           <div class="description">${localize('editor.battery_thresholds_desc')}</div>
@@ -414,6 +1064,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const favoritesHideLastChanged = this._config.favorites_hide_last_changed === true;
 
     const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
+    const filteredEntities = this._getFilteredEntities(this._favoriteSearch);
 
     return html`
       <div class="section">
@@ -421,22 +1072,19 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
         <div id="favorites-list" style="margin-bottom: 12px;">
           ${favoriteEntities.length === 0
-            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_favorites')}</div>`
+            ? html`<div class="empty-state">${localize('editor.no_favorites')}</div>`
             : html`
-              <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+              <div class="entity-list-container">
                 ${favoriteEntities.map((entityId) => {
                   const name = entityMap.get(entityId) || entityId;
                   return html`
-                    <div class="favorite-item" data-entity-id=${entityId} style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-                      <span style="margin-right: 12px; color: var(--secondary-text-color);">&#x2630;</span>
-                      <span style="flex: 1; font-size: 14px;">
-                        <strong>${name}</strong>
-                        <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
+                    <div class="entity-list-item" data-entity-id=${entityId}>
+                      <span class="drag-icon">&#x2630;</span>
+                      <span class="item-info">
+                        <span class="item-name">${name}</span>
+                        <span class="item-entity-id">${entityId}</span>
                       </span>
-                      <button @click=${() => this._removeFavoriteEntity(entityId)}
-                        style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
-                        &#x2715;
-                      </button>
+                      <button class="btn-remove" @click=${() => this._removeFavoriteEntity(entityId)}>&#x2715;</button>
                     </div>
                   `;
                 })}
@@ -444,18 +1092,26 @@ class Simon42DashboardStrategyEditor extends LitElement {
             `}
         </div>
 
-        <div style="display: flex; gap: 8px; align-items: flex-start;">
-          <select id="favorite-entity-select"
-            style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">${localize('editor.select_entity')}</option>
-            ${allEntities.map((entity) => html`
-              <option value=${entity.entity_id}>${entity.name}</option>
-            `)}
-          </select>
-          <button @click=${this._addFavoriteFromSelect}
-            style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-            ${localize('editor.add')}
-          </button>
+        <div class="entity-search-picker">
+          <input type="text" class="entity-search-input"
+            placeholder=${localize('editor.select_entity') + '...'}
+            .value=${this._favoriteSearch}
+            @input=${(e: Event) => { this._favoriteSearch = (e.target as HTMLInputElement).value; this.requestUpdate(); }}
+            @blur=${() => { setTimeout(() => { this._favoriteSearch = ''; this.requestUpdate(); }, 200); }}
+          />
+          ${this._favoriteSearch.length >= 2 ? html`
+            <div class="entity-search-results">
+              ${filteredEntities.length > 0
+                ? filteredEntities.map((entity) => html`
+                  <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); this._addFavoriteEntity(entity.entity_id); this._favoriteSearch = ''; this.requestUpdate(); }}>
+                    <span class="entity-search-name">${entity.name}</span>
+                    <span class="entity-search-id">${entity.entity_id}</span>
+                  </div>
+                `)
+                : html`<div class="entity-search-no-results">${localize('editor.no_results') || 'No results'}</div>`
+              }
+            </div>
+          ` : nothing}
         </div>
         <div class="description">${localize('editor.favorites_desc')}</div>
 
@@ -533,6 +1189,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
     const entityMap = new Map(allEntities.map((e) => [e.entity_id, e]));
     const areaMap = new Map(allAreas.map((a) => [a.area_id, a.name]));
+    const filteredEntities = this._getFilteredEntities(this._roomPinSearch, true);
 
     return html`
       <div class="section">
@@ -540,9 +1197,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
         <div id="room-pins-list" style="margin-bottom: 12px;">
           ${roomPinEntities.length === 0
-            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_room_pins')}</div>`
+            ? html`<div class="empty-state">${localize('editor.no_room_pins')}</div>`
             : html`
-              <div style="border: 1px solid var(--divider-color); border-radius: 4px; overflow: hidden;">
+              <div class="entity-list-container">
                 ${roomPinEntities.map((entityId) => {
                   const entity = entityMap.get(entityId);
                   const name = entity?.name || entityId;
@@ -550,18 +1207,14 @@ class Simon42DashboardStrategyEditor extends LitElement {
                   const areaName = areaId ? areaMap.get(areaId) || areaId : localize('editor.no_room');
 
                   return html`
-                    <div class="room-pin-item" data-entity-id=${entityId} style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--divider-color); background: var(--card-background-color);">
-                      <span style="margin-right: 12px; color: var(--secondary-text-color);">&#x2630;</span>
-                      <span style="flex: 1; font-size: 14px;">
-                        <strong>${name}</strong>
-                        <span style="margin-left: 8px; font-size: 12px; color: var(--secondary-text-color); font-family: monospace;">${entityId}</span>
-                        <br>
-                        <span style="font-size: 11px; color: var(--secondary-text-color);">&#x1F4CD; ${areaName}</span>
+                    <div class="entity-list-item" data-entity-id=${entityId}>
+                      <span class="drag-icon">&#x2630;</span>
+                      <span class="item-info">
+                        <span class="item-name">${name}</span>
+                        <span class="item-entity-id">${entityId}</span>
+                        <span class="item-area">&#x1F4CD; ${areaName}</span>
                       </span>
-                      <button @click=${() => this._removeRoomPinEntity(entityId)}
-                        style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">
-                        &#x2715;
-                      </button>
+                      <button class="btn-remove" @click=${() => this._removeRoomPinEntity(entityId)}>&#x2715;</button>
                     </div>
                   `;
                 })}
@@ -569,20 +1222,26 @@ class Simon42DashboardStrategyEditor extends LitElement {
             `}
         </div>
 
-        <div style="display: flex; gap: 8px; align-items: flex-start;">
-          <select id="room-pin-entity-select"
-            style="flex: 1; min-width: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
-            <option value="">${localize('editor.select_entity')}</option>
-            ${allEntities
-              .filter((entity) => entity.area_id || entity.device_area_id)
-              .map((entity) => html`
-                <option value=${entity.entity_id}>${entity.name}</option>
-              `)}
-          </select>
-          <button @click=${this._addRoomPinFromSelect}
-            style="flex-shrink: 0; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer; white-space: nowrap;">
-            ${localize('editor.add')}
-          </button>
+        <div class="entity-search-picker">
+          <input type="text" class="entity-search-input"
+            placeholder=${localize('editor.select_entity') + '...'}
+            .value=${this._roomPinSearch}
+            @input=${(e: Event) => { this._roomPinSearch = (e.target as HTMLInputElement).value; this.requestUpdate(); }}
+            @blur=${() => { setTimeout(() => { this._roomPinSearch = ''; this.requestUpdate(); }, 200); }}
+          />
+          ${this._roomPinSearch.length >= 2 ? html`
+            <div class="entity-search-results">
+              ${filteredEntities.length > 0
+                ? filteredEntities.map((entity) => html`
+                  <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); this._addRoomPinEntity(entity.entity_id); this._roomPinSearch = ''; this.requestUpdate(); }}>
+                    <span class="entity-search-name">${entity.name}</span>
+                    <span class="entity-search-id">${entity.entity_id}</span>
+                  </div>
+                `)
+                : html`<div class="entity-search-no-results">${localize('editor.no_results') || 'No results'}</div>`
+              }
+            </div>
+          ` : nothing}
         </div>
         <div class="description">${localize('editor.room_pins_desc')}</div>
 
@@ -628,28 +1287,27 @@ class Simon42DashboardStrategyEditor extends LitElement {
             style="color: var(--primary-color); text-decoration: none; font-size: 18px;"
             title=${localize('editor.video_tutorial')}>&#x1F3AC;</a>
         </div>
-        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <div class="custom-item-row" style="margin-bottom: 12px;">
           <input type="text" id="custom-cards-heading"
             .value=${customCardsHeading}
             placeholder=${localize('editor.custom_cards_heading_placeholder')}
-            style="flex: 2; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            style="flex: 2;"
             @change=${this._customCardsHeadingChanged} />
           <input type="text" id="custom-cards-icon"
             .value=${customCardsIcon}
             placeholder="mdi:cards"
-            style="flex: 1; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+            style="flex: 1;"
             @change=${this._customCardsIconChanged} />
         </div>
         <div class="description" style="margin-bottom: 8px;">${localize('editor.custom_cards_desc')}</div>
 
         <div id="custom-cards-list">
           ${customCards.length === 0
-            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_custom_cards')}</div>`
+            ? html`<div class="empty-state">${localize('editor.no_custom_cards')}</div>`
             : customCards.map((card, index) => this._renderCustomCardItem(card, index))}
         </div>
 
-        <button @click=${this._addCustomCard}
-          style="margin-top: 8px; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer;">
+        <button class="btn-primary" style="margin-top: 8px;" @click=${this._addCustomCard}>
           ${localize('editor.add_custom_card')}
         </button>
         <div class="description">${localize('editor.custom_cards_help')}</div>
@@ -672,12 +1330,11 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
         <div id="custom-badges-list">
           ${customBadges.length === 0
-            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_custom_badges')}</div>`
+            ? html`<div class="empty-state">${localize('editor.no_custom_badges')}</div>`
             : customBadges.map((badge, index) => this._renderCustomBadgeItem(badge, index))}
         </div>
 
-        <button @click=${this._addCustomBadge}
-          style="margin-top: 8px; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer;">
+        <button class="btn-primary" style="margin-top: 8px;" @click=${this._addCustomBadge}>
           ${localize('editor.add_custom_badge')}
         </button>
         <div class="description">${localize('editor.custom_badges_help')}</div>
@@ -700,12 +1357,11 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
         <div id="custom-views-list">
           ${customViews.length === 0
-            ? html`<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">${localize('editor.no_custom_views')}</div>`
+            ? html`<div class="empty-state">${localize('editor.no_custom_views')}</div>`
             : customViews.map((view, index) => this._renderCustomViewItem(view, index))}
         </div>
 
-        <button @click=${this._addCustomView}
-          style="margin-top: 8px; padding: 8px 16px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--primary-color); color: var(--text-primary-color); cursor: pointer;">
+        <button class="btn-primary" style="margin-top: 8px;" @click=${this._addCustomView}>
           ${localize('editor.add_custom_view')}
         </button>
         <div class="description">${localize('editor.custom_views_help')}</div>
@@ -743,30 +1399,28 @@ class Simon42DashboardStrategyEditor extends LitElement {
         : nothing;
 
     return html`
-      <div class="custom-view-item" data-index=${index}
-        style="border: 1px solid var(--divider-color); border-radius: 8px; padding: 12px; margin-bottom: 12px; background: var(--card-background-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <strong style="font-size: 14px;">${view.title || localize('editor.new_view')}</strong>
-          <button @click=${() => this._removeCustomView(index)}
-            style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">&#x2715;</button>
+      <div class="custom-item" data-index=${index}>
+        <div class="custom-item-header">
+          <strong>${view.title || localize('editor.new_view')}</strong>
+          <button class="btn-remove" @click=${() => this._removeCustomView(index)}>&#x2715;</button>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; gap: 8px;">
+        <div class="custom-item-fields">
+          <div class="custom-item-row">
             <input type="text" .value=${view.title || ''} placeholder=${localize('editor.title_placeholder')}
-              style="flex: 2; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              style="flex: 2;"
               @change=${(e: Event) => this._updateCustomViewField(index, 'title', (e.target as HTMLInputElement).value)} />
             <input type="text" .value=${view.path || ''} placeholder=${localize('editor.path_placeholder')}
-              style="flex: 2; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              style="flex: 2;"
               @change=${(e: Event) => this._updateCustomViewField(index, 'path', (e.target as HTMLInputElement).value)} />
             <input type="text" .value=${view.icon || ''} placeholder="mdi:star"
-              style="flex: 1; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
+              style="flex: 1;"
               @change=${(e: Event) => this._updateCustomViewField(index, 'icon', (e.target as HTMLInputElement).value)} />
           </div>
           <textarea rows="8" placeholder=${localize('editor.yaml_placeholder')}
             .value=${view.yaml || ''}
-            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"
+            style="width: 100%;"
             @change=${(e: Event) => this._updateCustomViewYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
-          <div class="custom-view-validation" style="font-size: 12px; min-height: 16px;">
+          <div class="custom-item-validation">
             ${validationMsg}
           </div>
         </div>
@@ -782,22 +1436,19 @@ class Simon42DashboardStrategyEditor extends LitElement {
         : nothing;
 
     return html`
-      <div class="custom-card-item" data-index=${index}
-        style="border: 1px solid var(--divider-color); border-radius: 8px; padding: 12px; margin-bottom: 12px; background: var(--card-background-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <strong style="font-size: 14px;">${card.title || localize('editor.new_card')}</strong>
-          <button @click=${() => this._removeCustomCard(index)}
-            style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">&#x2715;</button>
+      <div class="custom-item" data-index=${index}>
+        <div class="custom-item-header">
+          <strong>${card.title || localize('editor.new_card')}</strong>
+          <button class="btn-remove" @click=${() => this._removeCustomCard(index)}>&#x2715;</button>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="custom-item-fields">
           <input type="text" .value=${card.title || ''} placeholder=${localize('editor.card_title_placeholder')}
-            style="padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"
             @change=${(e: Event) => this._updateCustomCardField(index, 'title', (e.target as HTMLInputElement).value)} />
           <textarea rows="6" placeholder=${localize('editor.yaml_placeholder')}
             .value=${card.yaml || ''}
-            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"
+            style="width: 100%;"
             @change=${(e: Event) => this._updateCustomCardYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
-          <div class="custom-card-validation" style="font-size: 12px; min-height: 16px;">
+          <div class="custom-item-validation">
             ${validationMsg}
           </div>
         </div>
@@ -813,18 +1464,16 @@ class Simon42DashboardStrategyEditor extends LitElement {
         : nothing;
 
     return html`
-      <div class="custom-badge-item" data-index=${index}
-        style="border: 1px solid var(--divider-color); border-radius: 8px; padding: 12px; margin-bottom: 12px; background: var(--card-background-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <strong style="font-size: 14px;">Badge ${index + 1}</strong>
-          <button @click=${() => this._removeCustomBadge(index)}
-            style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); cursor: pointer;">&#x2715;</button>
+      <div class="custom-item" data-index=${index}>
+        <div class="custom-item-header">
+          <strong>Badge ${index + 1}</strong>
+          <button class="btn-remove" @click=${() => this._removeCustomBadge(index)}>&#x2715;</button>
         </div>
         <textarea rows="4" placeholder="type: entity&#10;entity: sun.sun"
           .value=${badge.yaml || ''}
-          style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"
+          style="width: 100%;"
           @change=${(e: Event) => this._updateCustomBadgeYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
-        <div class="custom-badge-validation" style="font-size: 12px; min-height: 16px;">
+        <div class="custom-item-validation">
           ${validationMsg}
         </div>
       </div>

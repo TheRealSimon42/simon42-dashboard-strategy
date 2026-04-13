@@ -188,6 +188,7 @@
     "custom_views_help": "Erstelle eigene Views mit beliebigen Cards. Tipp: Erstelle die View zuerst in einem normalen Dashboard, kopiere den YAML-Code und füge ihn hier ein.",
     "no_favorites": "Keine Favoriten hinzugefügt",
     "no_room_pins": "Keine Raum-Pins hinzugefügt",
+    "no_results": "Keine Ergebnisse gefunden",
     "no_room": "Kein Raum",
     "no_custom_views": "Keine Custom Views erstellt",
     "no_custom_cards": "Keine eigenen Karten erstellt",
