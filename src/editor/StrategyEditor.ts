@@ -368,7 +368,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
   }
 
   _alarmEntityChanged(entityId: string): void {
-    if (!this._config || !this._hass) {
+    if (!this._hass) {
       return;
     }
 
@@ -606,7 +606,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
 
     const roomPinEntities = this._config.room_pin_entities || [];
     const allEntities = this._getAllEntitiesForSelect();
-    const allAreas = Object.values(this._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
+    const allAreas = Object.values(this._hass?.areas ?? {}).sort((a, b) => a.name.localeCompare(b.name));
 
     // Dynamic import of the render function
     import('./editor-template')
@@ -630,7 +630,7 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     allEntities: EntitySelectOption[],
     allAreas: Array<{ area_id: string; name: string }>
   ): string {
-    if (!roomPinEntities || roomPinEntities.length === 0) {
+    if (roomPinEntities.length === 0) {
       return '<div class="empty-state" style="padding: 12px; text-align: center; color: var(--secondary-text-color); font-style: italic;">Keine Raum-Pins hinzugefügt</div>';
     }
 
@@ -1365,7 +1365,6 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     const lowInput = this.querySelector('#battery-low-threshold') as HTMLInputElement | null;
 
     criticalInput?.addEventListener('change', () => {
-      if (!this._config) return;
       const value = parseInt(criticalInput.value, 10);
       if (isNaN(value) || value < 1 || value > 99) return;
       const newConfig: Simon42StrategyConfig = { ...this._config, battery_critical_threshold: value };
@@ -1507,12 +1506,12 @@ class Simon42DashboardStrategyEditor extends HTMLElement {
     };
 
     // Remove hidden array when empty
-    if (newConfig.areas_display!.hidden!.length === 0) {
-      delete newConfig.areas_display!.hidden;
+    if (newConfig.areas_display?.hidden?.length === 0) {
+      delete newConfig.areas_display.hidden;
     }
 
     // Remove areas_display when empty
-    if (Object.keys(newConfig.areas_display!).length === 0) {
+    if (newConfig.areas_display && Object.keys(newConfig.areas_display).length === 0) {
       delete newConfig.areas_display;
     }
 

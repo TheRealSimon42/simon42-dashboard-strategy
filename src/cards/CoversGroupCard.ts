@@ -312,9 +312,9 @@ class Simon42CoversGroupCard extends LitElement {
     this._lastCoversList = coversKey;
 
     if (covers.length === 0) {
-      const headingSlot = this.shadowRoot!.getElementById('heading');
+      const headingSlot = this.shadowRoot?.getElementById('heading');
       if (headingSlot) headingSlot.innerHTML = '';
-      const grid = this.shadowRoot!.getElementById('grid');
+      const grid = this.shadowRoot?.getElementById('grid');
       if (grid) grid.innerHTML = '';
       this._headingCard = null;
       this._tileCards.clear();

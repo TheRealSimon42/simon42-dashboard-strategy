@@ -612,7 +612,7 @@ class Simon42LightsGroupCard extends LitElement {
           headingCard.setConfig(this._buildHeadingConfig(group.lights, group.floorName, group.floorIcon));
         }
 
-        const grid = this.shadowRoot!.getElementById(`floor-grid-${key}`);
+        const grid = this.shadowRoot?.getElementById(`floor-grid-${key}`);
         if (grid) {
           const hierarchy = this._buildHierarchy(group.lights);
           this._reconcileHierarchy(grid, hierarchy.topLevelIds, hierarchy.nodes);
