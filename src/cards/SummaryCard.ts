@@ -7,7 +7,7 @@ import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import { Registry } from '../Registry';
 import { trackHassUpdate, debugLog, timeStart, timeEnd } from '../utils/debug';
 import { localize } from '../utils/localize';
-import { getBatteryEntities } from '../utils/entity-filter';
+import { getBatteryEntities, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 
 declare global {
   interface Window {
@@ -164,6 +164,8 @@ class Simon42SummaryCard extends LitElement {
         for (const id of binarySensorIds) {
           const state = hass.states[id];
           if (!state || !this._isEntityRelevant(id, state)) continue;
+          const entry = Registry.getEntity(id);
+          if (entry?.platform && SECURITY_EXCLUDED_PLATFORMS.has(entry.platform)) continue;
           const deviceClass = state.attributes?.device_class;
           if (deviceClass !== undefined && SECURITY_BINARY_SENSOR_CLASSES.has(deviceClass)) {
             result.push(id);

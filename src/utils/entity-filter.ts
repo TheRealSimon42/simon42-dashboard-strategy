@@ -61,6 +61,13 @@ export function findDummySensor(hass: HomeAssistant): string {
 }
 
 
+/**
+ * Platforms that create binary_sensor entities with security-like device_classes
+ * (opening, door, window) but are NOT actual physical security sensors.
+ * Excluded from SecurityView and security SummaryCard count.
+ */
+export const SECURITY_EXCLUDED_PLATFORMS = new Set(['tankerkoenig']);
+
 export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyConfig): string[] {
   const sensorIds = Registry.getEntityIdsForDomain('sensor');
   const binarySensorIds = Registry.getEntityIdsForDomain('binary_sensor');

@@ -6,6 +6,7 @@ import type { HomeAssistant } from '../types/homeassistant';
 import type { LovelaceViewConfig, LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 
 class Simon42ViewSecurityStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
@@ -39,6 +40,8 @@ class Simon42ViewSecurityStrategy extends HTMLElement {
         if (deviceClass === 'garage') garages.push(id);
         else if (deviceClass === 'door' || deviceClass === 'gate' || deviceClass === 'window') doors.push(id);
       } else if (id.startsWith('binary_sensor.')) {
+        const entry = Registry.getEntity(id);
+        if (entry?.platform && SECURITY_EXCLUDED_PLATFORMS.has(entry.platform)) continue;
         if (deviceClass && ['door', 'window', 'garage_door', 'opening'].includes(deviceClass)) windows.push(id);
         else if (deviceClass && ['smoke', 'gas'].includes(deviceClass)) smokeGas.push(id);
       }
