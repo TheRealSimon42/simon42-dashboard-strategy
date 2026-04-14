@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksimon42_dashboard_strategy=self.webpackChunksimon42_dashboard_strategy||[]).push([[217,598],{217(s,e,a){a.d(e,{G:()=>r});const r=["overview","custom_cards","areas","weather","energy"]}}]);

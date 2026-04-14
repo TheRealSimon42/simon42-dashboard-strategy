@@ -6,6 +6,18 @@
 // used throughout the strategy codebase.
 // ====================================================================
 
+// -- Section Ordering -------------------------------------------------
+
+export type SectionKey = 'overview' | 'custom_cards' | 'areas' | 'weather' | 'energy';
+
+export const DEFAULT_SECTIONS_ORDER: SectionKey[] = [
+  'overview',
+  'custom_cards',
+  'areas',
+  'weather',
+  'energy',
+];
+
 // -- Main Strategy Config ---------------------------------------------
 
 export interface Simon42StrategyConfig {
@@ -35,8 +47,10 @@ export interface Simon42StrategyConfig {
   show_door_contacts_in_rooms?: boolean; // default: false
   show_switches_on_areas?: boolean; // default: false
   show_alerts_on_areas?: boolean; // default: false
+  energy_link_dashboard?: boolean; // default: true
 
   // Layout
+  sections_order?: SectionKey[]; // default: DEFAULT_SECTIONS_ORDER
   summaries_columns?: 2 | 4; // default: 2
 
   // Favorites display

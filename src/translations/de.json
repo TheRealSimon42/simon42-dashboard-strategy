@@ -103,6 +103,10 @@
     "room_pins": "Raum-Pins"
   },
   "editor": {
+    "section_order": "Abschnitts-Reihenfolge",
+    "section_order_desc": "Ziehe die Abschnitte per Drag & Drop in die gewünschte Reihenfolge.",
+    "section_hidden": "ausgeblendet",
+    "energy_link_dashboard": "Energie-Dashboard verlinken",
     "section_overview": "Übersicht",
     "show_clock_card": "Uhrzeit-Karte anzeigen",
     "show_clock_card_desc": "Zeigt die Uhrzeit-Karte in der Übersicht an.",
