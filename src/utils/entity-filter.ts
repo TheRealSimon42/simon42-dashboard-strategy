@@ -68,7 +68,14 @@ export function findDummySensor(hass: HomeAssistant): string {
  */
 export const SECURITY_EXCLUDED_PLATFORMS = new Set(['tankerkoenig']);
 
-export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyConfig): string[] {
+/**
+ * Collects battery entities based on device_class and unit, with exclusions.
+ * - Excludes entities hidden by label/config and (optionally) mobile_app batteries.
+ * - Includes binary_sensors with "battery" in the ID (common for mobile apps).
+ * - Includes sensors with device_class "battery" and unit "%".
+ * - Deduplicates binary_sensors if a %-based sensor exists for the same device.
+ */
+export function getBatteryEntities(hass: HomeAssistant, _config: Simon42StrategyConfig): string[] {
   const sensorIds = Registry.getEntityIdsForDomain('sensor');
   const binarySensorIds = Registry.getEntityIdsForDomain('binary_sensor');
 
@@ -83,8 +90,7 @@ export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyC
 
     const entry = Registry.getEntity(entityId);
     if (entry?.hidden) return false;
-    // Platform-specific filter: hide mobile_app batteries if configured
-    if (config.hide_mobile_app_batteries) {
+    if (_config?.hide_mobile_app_batteries) {
       if (entry?.platform === 'mobile_app') return false;
     }
 
@@ -93,7 +99,6 @@ export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyC
     return false;
   });
 
-  // Deduplication: remove binary_sensor if %-sensor exists on same device
   const sensorDeviceIds = new Set<string>();
   for (const id of batteryEntities) {
     if (id.startsWith('sensor.')) {

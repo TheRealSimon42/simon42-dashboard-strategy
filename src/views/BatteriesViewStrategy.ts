@@ -8,12 +8,41 @@ import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { getBatteryEntities } from '../utils/entity-filter';
 
+function createBatterySection(
+  entities: string[],
+  status: 'critical' | 'low' | 'good',
+  rangeText: string,
+): LovelaceSectionConfig | null {
+  if (entities.length === 0) return null;
+  
+  const emoji = status === 'critical' ? '🔴' : status === 'low' ? '🟡' : '🟢';
+  const iconcolor = status === 'critical' ? 'red' : status === 'low' ? 'yellow' : 'green';
+
+  return {
+    type: 'grid',
+    cards: [
+      {
+        type: 'heading',
+        heading: `${emoji} ${localize('batteries.' + status)} (${rangeText}) - ${entities.length} ${
+          localize(entities.length === 1 ? 'batteries.battery_one' : 'batteries.battery_many')
+        }`,
+        heading_style: 'title',
+      },
+      ...entities.map((e) => ({
+        type: 'tile',
+        entity: e,
+        vertical: false,
+        state_content: ['state', 'last_changed'],
+        color: iconcolor,
+      })),
+    ],
+  };
+}
+
 class Simon42ViewBatteriesStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
     // Ensure Registry is initialized (idempotent — no-op if already done)
     Registry.initialize(hass, config.config || {});
-
-    const batteryEntities = getBatteryEntities(hass, config.config);
 
     // Group by status
     const strategyConfig = config.config || {};
@@ -23,19 +52,13 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
     const low: string[] = [];
     const good: string[] = [];
 
-    for (const entityId of batteryEntities) {
+    for (const entityId of getBatteryEntities(hass, config.config)) {
       const state = hass.states[entityId];
       if (entityId.startsWith('binary_sensor.')) {
         (state.state === 'on' ? critical : good).push(entityId);
         continue;
       }
       const value = parseFloat(state.state);
-      const unit = state.attributes?.unit_of_measurement;
-      // Only apply percentage thresholds to %-based sensors.
-      // Voltage sensors (V, mV) have device-specific ranges and cannot be
-      // meaningfully compared against percentage thresholds (e.g. 3V would
-      // be "critical" at < 20 which is wrong). Skip them entirely.
-      if (unit && unit !== '%') continue;
       if (isNaN(value)) critical.push(entityId);
       else if (value < criticalThreshold) critical.push(entityId);
       else if (value <= lowThreshold) low.push(entityId);
@@ -56,65 +79,14 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
 
     const sections: LovelaceSectionConfig[] = [];
 
-    if (critical.length > 0) {
-      sections.push({
-        type: 'grid',
-        cards: [
-          {
-            type: 'heading',
-            heading: `🔴 ${localize('batteries.critical')} (< ${criticalThreshold}%) - ${critical.length} ${critical.length === 1 ? localize('batteries.battery_one') : localize('batteries.battery_many')}`,
-            heading_style: 'title',
-          },
-          ...critical.map((e) => ({
-            type: 'tile',
-            entity: e,
-            vertical: false,
-            state_content: ['state', 'last_changed'],
-            color: 'red',
-          })),
-        ],
-      });
-    }
+    const criticalSection = createBatterySection(critical, 'critical', `< ${criticalThreshold}%`);
+    if (criticalSection) sections.push(criticalSection);
 
-    if (low.length > 0) {
-      sections.push({
-        type: 'grid',
-        cards: [
-          {
-            type: 'heading',
-            heading: `🟡 ${localize('batteries.low')} (${criticalThreshold}-${lowThreshold}%) - ${low.length} ${low.length === 1 ? localize('batteries.battery_one') : localize('batteries.battery_many')}`,
-            heading_style: 'title',
-          },
-          ...low.map((e) => ({
-            type: 'tile',
-            entity: e,
-            vertical: false,
-            state_content: ['state', 'last_changed'],
-            color: 'yellow',
-          })),
-        ],
-      });
-    }
+    const lowSection = createBatterySection(low, 'low', `${criticalThreshold}% - ${lowThreshold}%`);
+    if (lowSection) sections.push(lowSection);
 
-    if (good.length > 0) {
-      sections.push({
-        type: 'grid',
-        cards: [
-          {
-            type: 'heading',
-            heading: `🟢 ${localize('batteries.good')} (> ${lowThreshold}%) - ${good.length} ${good.length === 1 ? localize('batteries.battery_one') : localize('batteries.battery_many')}`,
-            heading_style: 'title',
-          },
-          ...good.map((e) => ({
-            type: 'tile',
-            entity: e,
-            vertical: false,
-            state_content: ['state', 'last_changed'],
-            color: 'green',
-          })),
-        ],
-      });
-    }
+    const goodSection = createBatterySection(good, 'good', `> ${lowThreshold}%`);
+    if (goodSection) sections.push(goodSection);
 
     return { type: 'sections', sections };
   }
