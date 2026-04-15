@@ -1127,7 +1127,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
                 <div class="section-order-sub">
                   <input type="checkbox" id="energy-link-dashboard"
                     ?checked=${energyLinkDashboard}
-                    @change=${(e: Event) => this._toggleChanged('energy_link_dashboard', (e.target as HTMLInputElement).checked, true)} />
+                    @change=${(e: Event) => { this._toggleChanged('energy_link_dashboard', (e.target as HTMLInputElement).checked, true); }} />
                   <label for="energy-link-dashboard">${localize('editor.energy_link_dashboard')}</label>
                 </div>
               ` : nothing}
