@@ -1097,7 +1097,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
         </div>
         <div class="section-order-list" id="section-order-list">
           ${order.map((key) => {
-            const meta = Simon42DashboardStrategyEditor._sectionMeta[key];
+            const meta = Object.prototype.hasOwnProperty.call(Simon42DashboardStrategyEditor._sectionMeta, key) ? Simon42DashboardStrategyEditor._sectionMeta[key] : null;
+            if (!meta) return nothing;
             const disabled = this._isSectionDisabled(key);
             const toggleable = this._isSectionToggleable(key);
             return html`
@@ -1114,7 +1115,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
                 <span class="section-label">${localize(meta.labelKey)}</span>
                 ${disabled && !toggleable ? html`<span class="section-hidden-tag">(${localize('editor.section_hidden')})</span>` : nothing}
                 ${toggleable ? html`
-                  <label class="section-toggle" @mousedown=${(e: Event) => e.stopPropagation()}>
+                  <label class="section-toggle" @mousedown=${(e: Event) => { e.stopPropagation(); }}>
                     <input type="checkbox"
                       ?checked=${!disabled}
                       @change=${(e: Event) => this._toggleSectionVisibility(key, (e.target as HTMLInputElement).checked)}

@@ -117,6 +117,7 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     const sectionsOrder = normalizeSectionsOrder(dashboardConfig.sections_order ?? DEFAULT_SECTIONS_ORDER);
     const overviewSections: LovelaceSectionConfig[] = [];
     for (const key of sectionsOrder) {
+      if (!Object.prototype.hasOwnProperty.call(sectionMap, key)) continue;
       const result = sectionMap[key];
       if (!result) continue;
       if (Array.isArray(result)) {
@@ -132,7 +133,7 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
           if (extraCards.length > 0) {
             // Append to the last section added (handles array sections like areas)
             const lastSection = overviewSections[overviewSections.length - 1];
-            if (lastSection?.cards) {
+            if (lastSection && lastSection.cards) {
               lastSection.cards.push(...extraCards);
             }
           }
