@@ -192,7 +192,7 @@ export function createAreasSection(
 
   for (const floorId of sortedFloors) {
     const areas = areasByFloor.get(floorId) ?? [];
-    const floor = hass.floors[floorId];
+    const floor = hass.floors[floorId] as (typeof hass.floors)[string] | undefined;
     const floorName = floor?.name || floorId;
     const floorIcon = floor?.icon || getFloorIcon(floor?.level);
 
