@@ -1118,8 +1118,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
                   <label class="section-toggle" @mousedown=${(e: Event) => { e.stopPropagation(); }}>
                     <input type="checkbox"
                       ?checked=${!disabled}
-                      @change=${(e: Event) => this._toggleSectionVisibility(key, (e.target as HTMLInputElement).checked)}
-                      @dragstart=${(e: Event) => e.stopPropagation()} />
+                      @change=${(e: Event) => { this._toggleSectionVisibility(key, (e.target as HTMLInputElement).checked); }}
+                      @dragstart=${(e: Event) => { e.stopPropagation(); }} />
                   </label>
                 ` : nothing}
               </div>
