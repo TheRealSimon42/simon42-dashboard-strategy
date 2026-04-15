@@ -129,6 +129,17 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
 }
 
 /**
+ * Fallback floor icons based on HA's floor icons (mdi:home-floor-0 to mdi:home-floor-3, mdi:home-floor-negative-1).
+ * HA doesn't provide a default icon for floors, but these are commonly used in custom floor plans.
+ */
+function getFloorIcon(level: number | null | undefined): string {
+  if (level == null) return 'mdi:floor-plan';
+  if (level === -1) return 'mdi:home-floor-negative-1';
+  if (level >= 0 && level <= 3) return `mdi:home-floor-${level}`;
+  return 'mdi:floor-plan';
+}
+
+/**
  * Creates the areas section(s).
  *
  * - Without floor grouping: returns a single section with all areas.
@@ -182,8 +193,8 @@ export function createAreasSection(
   for (const floorId of sortedFloors) {
     const areas = areasByFloor.get(floorId) ?? [];
     const floor = hass.floors[floorId];
-    const floorName = floor.name || floorId;
-    const floorIcon = floor.icon || 'mdi:floor-plan';
+    const floorName = floor?.name || floorId;
+    const floorIcon = floor?.icon || getFloorIcon(floor?.level);
 
     sections.push({
       type: 'grid',
