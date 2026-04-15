@@ -1064,13 +1064,13 @@ class Simon42DashboardStrategyEditor extends LitElement {
     }
   }
 
-  private static _sectionMeta: Record<SectionKey, { icon: string; labelKey: string }> = {
-    overview: { icon: 'mdi:home-outline', labelKey: 'sections.overview' },
-    custom_cards: { icon: 'mdi:cards', labelKey: 'sections.custom_cards' },
-    areas: { icon: 'mdi:floor-plan', labelKey: 'sections.areas' },
-    weather: { icon: 'mdi:weather-partly-cloudy', labelKey: 'sections.weather' },
-    energy: { icon: 'mdi:lightning-bolt', labelKey: 'sections.energy' },
-  };
+  private static _sectionMeta = new Map<SectionKey, { icon: string; labelKey: string }>([
+    ['overview', { icon: 'mdi:home-outline', labelKey: 'sections.overview' }],
+    ['custom_cards', { icon: 'mdi:cards', labelKey: 'sections.custom_cards' }],
+    ['areas', { icon: 'mdi:floor-plan', labelKey: 'sections.areas' }],
+    ['weather', { icon: 'mdi:weather-partly-cloudy', labelKey: 'sections.weather' }],
+    ['energy', { icon: 'mdi:lightning-bolt', labelKey: 'sections.energy' }],
+  ]);
 
   private _isSectionToggleable(key: SectionKey): boolean {
     return key === 'weather' || key === 'energy';
@@ -1097,7 +1097,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
         </div>
         <div class="section-order-list" id="section-order-list">
           ${order.map((key) => {
-            const meta = Object.prototype.hasOwnProperty.call(Simon42DashboardStrategyEditor._sectionMeta, key) ? Simon42DashboardStrategyEditor._sectionMeta[key] : null;
+            const meta = Simon42DashboardStrategyEditor._sectionMeta.get(key);
             if (!meta) return nothing;
             const disabled = this._isSectionDisabled(key);
             const toggleable = this._isSectionToggleable(key);
@@ -1746,7 +1746,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
               @change=${(e: Event) => this._updateCustomCardField(index, 'target_section', (e.target as HTMLSelectElement).value)}>
               ${(['custom_cards', 'overview', 'areas', 'weather', 'energy'] as const).map((key) => html`
                 <option value=${key} ?selected=${(card.target_section || 'custom_cards') === key}>
-                  ${localize(Simon42DashboardStrategyEditor._sectionMeta[key].labelKey)}
+                  ${localize(Simon42DashboardStrategyEditor._sectionMeta.get(key)!.labelKey)}
                 </option>
               `)}
             </select>

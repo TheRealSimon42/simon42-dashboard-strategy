@@ -105,20 +105,19 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
 
     // Section map: key → section(s) or null
-    const sectionMap: Record<SectionKey, LovelaceSectionConfig | LovelaceSectionConfig[] | null> = {
-      overview: overviewSection,
-      custom_cards: customCardsSection,
-      areas: areasSections,
-      weather: createWeatherSection(weatherEntity ?? null, showWeather),
-      energy: createEnergySection(showEnergy, dashboardConfig.energy_link_dashboard !== false),
-    };
+    const sectionMap = new Map<SectionKey, LovelaceSectionConfig | LovelaceSectionConfig[] | null>([
+      ['overview', overviewSection],
+      ['custom_cards', customCardsSection],
+      ['areas', areasSections],
+      ['weather', createWeatherSection(weatherEntity ?? null, showWeather)],
+      ['energy', createEnergySection(showEnergy, dashboardConfig.energy_link_dashboard !== false)],
+    ]);
 
     // Assemble in configured order, appending assigned custom cards to each section
     const sectionsOrder = normalizeSectionsOrder(dashboardConfig.sections_order ?? DEFAULT_SECTIONS_ORDER);
     const overviewSections: LovelaceSectionConfig[] = [];
     for (const key of sectionsOrder) {
-      if (!Object.prototype.hasOwnProperty.call(sectionMap, key)) continue;
-      const result = sectionMap[key];
+      const result = sectionMap.get(key);
       if (!result) continue;
       if (Array.isArray(result)) {
         overviewSections.push(...result);
@@ -133,7 +132,7 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
           if (extraCards.length > 0) {
             // Append to the last section added (handles array sections like areas)
             const lastSection = overviewSections[overviewSections.length - 1];
-            if (lastSection && lastSection.cards) {
+            if (lastSection.cards) {
               lastSection.cards.push(...extraCards);
             }
           }
