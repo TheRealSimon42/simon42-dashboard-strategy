@@ -6,6 +6,7 @@
 // ====================================================================
 
 import { LitElement, html, css, nothing, type TemplateResult, type PropertyValues } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import yaml from 'js-yaml';
 
 import type { HomeAssistant } from '../types/homeassistant';
@@ -864,6 +865,25 @@ class Simon42DashboardStrategyEditor extends LitElement {
       flex-direction: column;
       gap: 8px;
     }
+    .custom-card-target {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .custom-card-target label {
+      color: var(--secondary-text-color);
+      white-space: nowrap;
+    }
+    .custom-card-target select {
+      flex: 1;
+      padding: 4px 8px;
+      border: 1px solid var(--divider-color);
+      border-radius: 4px;
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+      font-size: 13px;
+    }
     .custom-item-row {
       display: flex;
       gap: 8px;
@@ -984,7 +1004,6 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
     return html`
       <div class="card-config">
-        ${this._renderSectionOrderPanel()}
         ${this._renderOverviewSection()}
         ${this._renderSummariesSection()}
         ${this._renderFavoritesSection()}
@@ -1005,6 +1024,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
           </div>
         </div>
 
+        ${this._renderSectionOrderPanel()}
         ${this._renderCustomCardsSection()}
         ${this._renderCustomBadgesSection()}
         ${this._renderCustomViewsSection()}
@@ -1224,7 +1244,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
         <div class="description">
           ${hasSearchCardDeps
             ? localize('editor.show_search_card_desc')
-            : html`<span>&#x26A0;&#xFE0F; ${localize('editor.show_search_card_missing')}</span>`}
+            : html`<span>&#x26A0;&#xFE0F; ${unsafeHTML(localize('editor.show_search_card_missing'))}</span>`}
         </div>
       </div>
     `;
@@ -1518,7 +1538,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
             </div>
           ` : nothing}
         </div>
-        <div class="description">${localize('editor.room_pins_desc')}</div>
+        <div class="description">${unsafeHTML(localize('editor.room_pins_desc'))}</div>
 
         ${this._renderCheckbox('room-pins-show-state', localize('editor.show_state'), roomPinsShowState,
           (checked) => this._toggleChanged('room_pins_show_state', checked, false))}
@@ -1719,6 +1739,17 @@ class Simon42DashboardStrategyEditor extends LitElement {
         <div class="custom-item-fields">
           <input type="text" .value=${card.title || ''} placeholder=${localize('editor.card_title_placeholder')}
             @change=${(e: Event) => this._updateCustomCardField(index, 'title', (e.target as HTMLInputElement).value)} />
+          <div class="custom-card-target">
+            <label>${localize('editor.target_section')}:</label>
+            <select
+              @change=${(e: Event) => this._updateCustomCardField(index, 'target_section', (e.target as HTMLSelectElement).value)}>
+              ${(['custom_cards', 'overview', 'areas', 'weather', 'energy'] as const).map((key) => html`
+                <option value=${key} ?selected=${(card.target_section || 'custom_cards') === key}>
+                  ${localize(Simon42DashboardStrategyEditor._sectionMeta[key].labelKey)}
+                </option>
+              `)}
+            </select>
+          </div>
           <textarea rows="6" placeholder=${localize('editor.yaml_placeholder')}
             .value=${card.yaml || ''}
             style="width: 100%;"

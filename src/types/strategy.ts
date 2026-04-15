@@ -134,6 +134,8 @@ export interface CustomBadge {
 export interface CustomCard {
   /** Optional title shown as heading above the card */
   title?: string;
+  /** Target section where this card appears (default: 'custom_cards') */
+  target_section?: SectionKey;
   /** Raw YAML string entered by the user in the editor */
   yaml?: string;
   /** Parsed Lovelace card config (generated from yaml) */

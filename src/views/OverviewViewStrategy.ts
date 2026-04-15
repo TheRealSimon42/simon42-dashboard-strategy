@@ -7,9 +7,9 @@
 // ====================================================================
 
 import type { HomeAssistant } from '../types/homeassistant';
-import type { Simon42StrategyConfig, SectionKey } from '../types/strategy';
+import type { Simon42StrategyConfig, SectionKey, CustomCard } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
-import type { LovelaceViewConfig, LovelaceSectionConfig, LovelaceBadgeConfig } from '../types/lovelace';
+import type { LovelaceViewConfig, LovelaceSectionConfig, LovelaceBadgeConfig, LovelaceCardConfig } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { collectPersons, findWeatherEntity, findDummySensor } from '../utils/entity-filter';
 import { getVisibleAreas } from '../utils/name-utils';
@@ -40,6 +40,26 @@ function normalizeSectionsOrder(order: SectionKey[]): SectionKey[] {
   return result;
 }
 
+/**
+ * Renders custom cards into an array of LovelaceCardConfigs (without section wrapper).
+ * Used to append assigned custom cards to existing sections.
+ */
+function renderCustomCards(cards: CustomCard[]): LovelaceCardConfig[] {
+  const result: LovelaceCardConfig[] = [];
+  for (const card of cards) {
+    if (!card.parsed_config) continue;
+    if (Array.isArray(card.parsed_config)) {
+      result.push(...card.parsed_config);
+    } else {
+      if (card.title) {
+        result.push({ type: 'heading', heading: card.title, heading_style: 'subtitle' });
+      }
+      result.push(card.parsed_config as LovelaceCardConfig);
+    }
+  }
+  return result;
+}
+
 class Simon42ViewOverviewStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
     timeStart('overview-generate');
@@ -65,10 +85,20 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     const showSearchCard = dashboardConfig.show_search_card === true;
     const groupByFloors = dashboardConfig.group_by_floors === true;
 
+    // Group custom cards by target section
+    const allCustomCards = dashboardConfig.custom_cards || [];
+    const customCardsBySection = new Map<SectionKey, CustomCard[]>();
+    for (const card of allCustomCards) {
+      const target = card.target_section || 'custom_cards';
+      const list = customCardsBySection.get(target) || [];
+      list.push(card);
+      customCardsBySection.set(target, list);
+    }
+
     // Build sections
     const overviewSection = createOverviewSection({ someSensorId, showSearchCard, config: dashboardConfig, hass });
     const customCardsSection = createCustomCardsSection(
-      dashboardConfig.custom_cards || [],
+      customCardsBySection.get('custom_cards') || [],
       dashboardConfig.custom_cards_heading,
       dashboardConfig.custom_cards_icon
     );
@@ -83,7 +113,7 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
       energy: createEnergySection(showEnergy, dashboardConfig.energy_link_dashboard !== false),
     };
 
-    // Assemble in configured order
+    // Assemble in configured order, appending assigned custom cards to each section
     const sectionsOrder = normalizeSectionsOrder(dashboardConfig.sections_order ?? DEFAULT_SECTIONS_ORDER);
     const overviewSections: LovelaceSectionConfig[] = [];
     for (const key of sectionsOrder) {
@@ -93,6 +123,20 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
         overviewSections.push(...result);
       } else {
         overviewSections.push(result);
+      }
+      // Append custom cards assigned to this section (skip 'custom_cards' — handled by createCustomCardsSection)
+      if (key !== 'custom_cards') {
+        const assigned = customCardsBySection.get(key);
+        if (assigned && assigned.length > 0) {
+          const extraCards = renderCustomCards(assigned);
+          if (extraCards.length > 0) {
+            // Append to the last section added (handles array sections like areas)
+            const lastSection = overviewSections[overviewSections.length - 1];
+            if (lastSection?.cards) {
+              lastSection.cards.push(...extraCards);
+            }
+          }
+        }
       }
     }
 

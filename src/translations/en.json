@@ -104,9 +104,10 @@
   },
   "editor": {
     "section_order": "Section Order",
-    "section_order_desc": "Drag sections to reorder them on the overview page.",
+    "section_order_desc": "Drag sections to reorder them on the overview page. Empty sections are hidden automatically.",
     "section_hidden": "hidden",
     "energy_link_dashboard": "Link to energy dashboard",
+    "target_section": "Show in",
     "section_overview": "Overview",
     "show_clock_card": "Show clock card",
     "show_clock_card_desc": "Shows the clock card on the overview.",
