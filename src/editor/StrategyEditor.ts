@@ -1159,7 +1159,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const item = (ev.target as HTMLElement).closest('.section-order-item') as HTMLElement | null;
     if (item) item.classList.remove('dragging');
 
-    const list = this.shadowRoot!.querySelector('#section-order-list');
+    const list = this.shadowRoot?.querySelector('#section-order-list');
     if (list) {
       list.querySelectorAll('.section-order-item').forEach((el) => {
         el.classList.remove('drag-over');
@@ -1170,7 +1170,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _handleSectionDragOver = (ev: DragEvent): void => {
     ev.preventDefault();
-    ev.dataTransfer!.dropEffect = 'move';
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
 
     const item = ev.currentTarget as HTMLElement;
     if (item !== this._sectionDraggedElement) {
