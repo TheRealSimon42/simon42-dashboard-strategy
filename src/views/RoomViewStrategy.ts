@@ -34,6 +34,21 @@ function mediaPlayerSupportsPlayback(state: HassEntity): boolean {
   return (f & (MEDIA_PAUSE | MEDIA_PLAY | MEDIA_STOP)) !== 0;
 }
 
+/** Filter all configured room pins for the ones in the given area */
+function getAreasRoomPins(config: any, area: AreaRegistryEntry): string[] {
+    const roomPinEntities: string[] = config.room_pin_entities || [];
+    return roomPinEntities.filter((entityId) => {
+      const entity = Registry.getEntity(entityId);
+      if (!entity) return false;
+      if (entity.area_id === area.area_id) return true;
+      if (entity.device_id) {
+        const device = Registry.getDevice(entity.device_id);
+        if (device?.area_id === area.area_id) return true;
+      }
+      return false;
+    });
+}
+
 class Simon42ViewRoomStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
     const area: AreaRegistryEntry = config.area;
@@ -445,40 +460,18 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       });
     };
 
-    // Room Pins
-    const roomPinEntities: string[] = dashboardConfig.room_pin_entities || [];
-    const pinsForArea = roomPinEntities.filter((entityId) => {
-      const entity = Registry.getEntity(entityId);
-      if (!entity) return false;
-      if (entity.area_id === area.area_id) return true;
-      if (entity.device_id) {
-        const device = Registry.getDevice(entity.device_id);
-        if (device?.area_id === area.area_id) return true;
-      }
-      return false;
+    domainSection(getAreasRoomPins(dashboardConfig, area), localize('room.room_pins'), 'mdi:pin', (e) => {
+      const pinStateContent: string[] = [];
+      if (dashboardConfig.room_pins_show_state === true) pinStateContent.push('state');
+      if (dashboardConfig.room_pins_hide_last_changed !== true) pinStateContent.push('last_changed');
+      return {
+        type: 'tile',
+        entity: e,
+        name: stripAreaName(e, area, hass),
+        vertical: false,
+        ...(pinStateContent.length > 0 ? { state_content: pinStateContent } : {}),
+      };
     });
-
-    if (pinsForArea.length > 0) {
-      sections.push({
-        type: 'grid',
-        cards: [
-          { type: 'heading', heading: localize('room.room_pins'), heading_style: 'title', icon: 'mdi:pin' },
-          ...pinsForArea.map((e) => {
-            const pinStateContent: string[] = [];
-            if (dashboardConfig.room_pins_show_state === true) pinStateContent.push('state');
-            if (dashboardConfig.room_pins_hide_last_changed !== true) pinStateContent.push('last_changed');
-            return {
-              type: 'tile',
-              entity: e,
-              name: stripAreaName(e, area, hass),
-              vertical: false,
-              ...(pinStateContent.length > 0 ? { state_content: pinStateContent } : {}),
-            };
-          }),
-        ],
-      });
-    }
-
 
     if (roomEntities.lights.length > 0) {
       sections.push({
