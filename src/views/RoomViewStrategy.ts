@@ -102,7 +102,13 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       }
       if (domain === 'cover') {
         if (deviceClass === 'curtain') roomEntities.covers_curtain.push(entityId);
-        else if (deviceClass === 'window' || deviceClass === 'door' || deviceClass === 'gate' || deviceClass === 'garage') roomEntities.covers_window.push(entityId);
+        else if (
+          deviceClass === 'window' ||
+          deviceClass === 'door' ||
+          deviceClass === 'gate' ||
+          deviceClass === 'garage'
+        )
+          roomEntities.covers_window.push(entityId);
         else roomEntities.covers.push(entityId);
         continue;
       }
@@ -320,8 +326,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
 
     // Convert to LovelaceBadgeConfig
     const badges: LovelaceBadgeConfig[] = [];
-    if (primaryTemp) badges.push({ type: 'entity', entity: primaryTemp, color: 'red', tap_action: { action: 'more-info' } });
-    if (primaryHumidity) badges.push({ type: 'entity', entity: primaryHumidity, color: 'indigo', tap_action: { action: 'more-info' } });
+    if (primaryTemp)
+      badges.push({ type: 'entity', entity: primaryTemp, color: 'red', tap_action: { action: 'more-info' } });
+    if (primaryHumidity)
+      badges.push({ type: 'entity', entity: primaryHumidity, color: 'indigo', tap_action: { action: 'more-info' } });
     for (const b of filteredCandidates) {
       const showName = resolveShowName(b.entity, !!b.showName, namesVisible, namesHidden);
       badges.push({
@@ -335,6 +343,28 @@ class Simon42ViewRoomStrategy extends HTMLElement {
 
     // === SECTIONS ===
     const sections: LovelaceSectionConfig[] = [];
+
+    const cleaningVacuumEntity = dashboardConfig.areas_options?.[area.area_id]?.cleaning_vacuum_entity;
+    if (cleaningVacuumEntity && hass.states[cleaningVacuumEntity]) {
+      sections.push({
+        type: 'grid',
+        cards: [
+          { type: 'heading', heading: localize('room.cleaning'), heading_style: 'title', icon: 'mdi:robot-vacuum' },
+          {
+            type: 'button',
+            icon: 'mdi:play',
+            name: localize('room.clean_area'),
+            tap_action: {
+              action: 'perform-action',
+              perform_action: 'vacuum.clean_area',
+              target: { entity_id: cleaningVacuumEntity },
+              data: { cleaning_area_id: [area.area_id] },
+            },
+            show_state: false,
+          },
+        ],
+      });
+    }
 
     // Cameras
     if (roomEntities.cameras.length > 0) {
@@ -421,7 +451,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       if (cameraCards.length > 0) {
         sections.push({
           type: 'grid',
-          cards: [{ type: 'heading', heading: localize('room.cameras'), heading_style: 'title', icon: 'mdi:cctv' }, ...cameraCards],
+          cards: [
+            { type: 'heading', heading: localize('room.cameras'), heading_style: 'title', icon: 'mdi:cctv' },
+            ...cameraCards,
+          ],
         });
       }
     }

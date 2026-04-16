@@ -64,9 +64,17 @@ function getAreaControls(areaId: string, hass: HomeAssistant): ControlDomain[] {
 // Alert-relevant binary sensor device classes.
 // Excludes noisy classes like light, connectivity, battery, plug, power, running, problem.
 const ALERT_DEVICE_CLASSES = new Set([
-  'motion', 'occupancy', 'sound',
+  'motion',
+  'occupancy',
+  'sound',
   'moisture',
-  'smoke', 'gas', 'heat', 'cold', 'safety', 'tamper', 'vibration',
+  'smoke',
+  'gas',
+  'heat',
+  'cold',
+  'safety',
+  'tamper',
+  'vibration',
 ]);
 
 /**
@@ -99,6 +107,8 @@ function getAreaAlertClasses(areaId: string, hass: HomeAssistant): string[] {
  */
 function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCardConfig {
   const controls = getAreaControls(area.area_id, hass);
+  const cleaningVacuumEntity = Registry.config.areas_options?.[area.area_id]?.cleaning_vacuum_entity;
+  const hasCleaningVacuum = !!cleaningVacuumEntity && !!hass.states[cleaningVacuumEntity];
 
   // Only include sensor_classes that are configured on the area (like HA does)
   const sensorClasses: string[] = [];
@@ -110,11 +120,9 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
   }
 
   // Pre-filter alert classes if enabled
-  const alertClasses = Registry.config.show_alerts_on_areas
-    ? getAreaAlertClasses(area.area_id, hass)
-    : undefined;
+  const alertClasses = Registry.config.show_alerts_on_areas ? getAreaAlertClasses(area.area_id, hass) : undefined;
 
-  return {
+  const areaCard: LovelaceCardConfig = {
     type: 'area',
     area: area.area_id,
     display_type: 'compact',
@@ -124,6 +132,31 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
     features_position: 'inline',
     navigation_path: area.area_id,
     vertical: false,
+    grid_options: { columns: 'full' },
+  };
+
+  if (!hasCleaningVacuum || !cleaningVacuumEntity) {
+    return areaCard;
+  }
+
+  return {
+    type: 'horizontal-stack',
+    cards: [
+      areaCard,
+      {
+        type: 'button',
+        icon: 'mdi:robot-vacuum',
+        name: localize('areas.clean'),
+        tap_action: {
+          action: 'perform-action',
+          perform_action: 'vacuum.clean_area',
+          target: { entity_id: cleaningVacuumEntity },
+          data: { cleaning_area_id: [area.area_id] },
+        },
+        show_name: false,
+        show_state: false,
+      },
+    ],
     grid_options: { columns: 'full' },
   };
 }

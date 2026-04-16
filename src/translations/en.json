@@ -82,8 +82,12 @@
   "climate": {
     "heating": "Heating",
     "cooling": "Cooling",
+    "dehumidifier": "Dehumidifiers",
     "idle": "Idle",
     "off": "Off"
+  },
+  "areas": {
+    "clean": "Clean"
   },
   "room": {
     "cameras": "Cameras",
@@ -100,7 +104,9 @@
     "misc": "Miscellaneous",
     "automations": "Automations",
     "scripts": "Scripts",
-    "room_pins": "Room Pins"
+    "room_pins": "Room Pins",
+    "cleaning": "Cleaning",
+    "clean_area": "Start cleaning"
   },
   "editor": {
     "section_order": "Section Order",
@@ -152,8 +158,11 @@
     "hide_last_changed": "Hide last changed",
     "section_areas_rooms": "Areas & Rooms",
     "section_areas": "Areas",
+    "none": "None",
     "group_by_floors": "Group areas by floors",
     "group_by_floors_desc": "Groups areas on the overview by floors. When enabled, a separate section is created for each floor.",
+    "area_cleaning_vacuum": "Cleaning robot for this area",
+    "area_cleaning_vacuum_desc": "Select which vacuum should clean this area when pressing the clean button.",
     "show_switches_on_areas": "Show switches on area cards",
     "show_switches_on_areas_desc": "Shows switches as controls on the area cards in the overview. Home Assistant hides these by default.",
     "show_alerts_on_areas": "Show alert icons on area cards",

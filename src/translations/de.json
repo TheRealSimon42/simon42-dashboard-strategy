@@ -82,8 +82,12 @@
   "climate": {
     "heating": "Heizen",
     "cooling": "Kühlen",
+    "dehumidifier": "Luftentfeuchter",
     "idle": "Bereitschaft",
     "off": "Aus"
+  },
+  "areas": {
+    "clean": "Reinigen"
   },
   "room": {
     "cameras": "Kameras",
@@ -100,7 +104,9 @@
     "misc": "Sonstiges",
     "automations": "Automationen",
     "scripts": "Skripte",
-    "room_pins": "Raum-Pins"
+    "room_pins": "Raum-Pins",
+    "cleaning": "Reinigung",
+    "clean_area": "Reinigung starten"
   },
   "editor": {
     "section_order": "Abschnitts-Reihenfolge",
@@ -152,8 +158,11 @@
     "hide_last_changed": "Zuletzt aktualisiert ausblenden",
     "section_areas_rooms": "Bereiche & Räume",
     "section_areas": "Bereiche",
+    "none": "Keine",
     "group_by_floors": "Bereiche in Etagen gliedern",
     "group_by_floors_desc": "Gruppiert die Bereiche in der Übersicht nach Etagen. Wenn aktiviert, wird für jede Etage eine separate Section erstellt.",
+    "area_cleaning_vacuum": "Reinigungsroboter für diesen Bereich",
+    "area_cleaning_vacuum_desc": "Wähle den Staubsaugerroboter aus, der diesen Bereich beim Klick auf den Reinigungsbutton reinigen soll.",
     "show_switches_on_areas": "Schalter auf Bereichskarten anzeigen",
     "show_switches_on_areas_desc": "Zeigt Schalter (Switches) als Controls auf den Bereichskarten in der Übersicht an. ⚠️ Stelle sicher, dass alle Schalter, die nicht geschaltet werden können oder sollen, über die Entitäts-Einstellungen auf 'Nicht sichtbar' gestellt sind!",
     "show_alerts_on_areas": "Alert-Icons auf Bereichskarten anzeigen",

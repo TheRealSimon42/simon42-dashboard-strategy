@@ -10,13 +10,7 @@
 
 export type SectionKey = 'overview' | 'custom_cards' | 'areas' | 'weather' | 'energy';
 
-export const DEFAULT_SECTIONS_ORDER: SectionKey[] = [
-  'overview',
-  'custom_cards',
-  'areas',
-  'weather',
-  'energy',
-];
+export const DEFAULT_SECTIONS_ORDER: SectionKey[] = ['overview', 'custom_cards', 'areas', 'weather', 'energy'];
 
 // -- Main Strategy Config ---------------------------------------------
 
@@ -90,6 +84,7 @@ export interface AreasDisplay {
 
 export interface AreaOptions {
   groups_options?: Record<string, GroupOptions>;
+  cleaning_vacuum_entity?: string;
 }
 
 export interface GroupOptions {
