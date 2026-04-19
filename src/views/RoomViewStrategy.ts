@@ -473,15 +473,36 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       state_content: 'last_changed',
     }));
 
-    domainSection(roomEntities.climate, localize('room.climate'), 'mdi:thermostat', (e) => ({
-      type: 'tile',
-      entity: e,
-      name: stripAreaName(e, area, hass),
-      features: [{ type: 'climate-hvac-modes' }],
-      features_position: 'inline',
-      vertical: false,
-      state_content: ['hvac_action', 'current_temperature'],
-    }));
+    // Climate + Fan combined into one "Klima" section
+    if (roomEntities.climate.length > 0 || roomEntities.fan.length > 0) {
+      const climateCards: LovelaceCardConfig[] = [
+        { type: 'heading', heading: localize('room.climate'), heading_style: 'title', icon: 'mdi:thermostat' },
+      ];
+      for (const e of roomEntities.climate) {
+        climateCards.push({
+          type: 'tile',
+          entity: e,
+          name: stripAreaName(e, area, hass),
+          features: [{ type: 'climate-hvac-modes' }],
+          features_position: 'inline',
+          vertical: false,
+          state_content: ['hvac_action', 'current_temperature'],
+        });
+      }
+      for (const e of roomEntities.fan) {
+        const state = hass.states[e];
+        const hasSpeed = state && fanSupportsSpeed(state);
+        climateCards.push({
+          type: 'tile',
+          entity: e,
+          name: stripAreaName(e, area, hass),
+          ...(hasSpeed ? { features: [{ type: 'fan-speed' }], features_position: 'inline' } : {}),
+          vertical: false,
+          state_content: 'last_changed',
+        });
+      }
+      sections.push({ type: 'grid', cards: climateCards });
+    }
 
     domainSection(roomEntities.covers, localize('room.covers'), 'mdi:window-shutter', (e) => ({
       type: 'tile',
@@ -546,18 +567,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         vertical: false,
         state_content: 'last_changed',
       });
-    for (const e of roomEntities.fan) {
-      const state = hass.states[e];
-      const hasSpeed = state && fanSupportsSpeed(state);
-      miscCards.push({
-        type: 'tile',
-        entity: e,
-        name: stripAreaName(e, area, hass),
-        ...(hasSpeed ? { features: [{ type: 'fan-speed' }], features_position: 'inline' } : {}),
-        vertical: false,
-        state_content: 'last_changed',
-      });
-    }
     for (const e of roomEntities.switches)
       miscCards.push({
         type: 'tile',
