@@ -161,7 +161,10 @@ export function createAreasSection(
   visibleAreas: AreaRegistryEntry[],
   groupByFloors: boolean = false,
   hass: HomeAssistant | null = null
-): LovelaceSectionConfig | LovelaceSectionConfig[] {
+): LovelaceSectionConfig | LovelaceSectionConfig[] | null {
+  // Auto-hide: no visible areas → no section at all (not a lonely heading)
+  if (visibleAreas.length === 0) return null;
+
   // No floor grouping: flat list
   if (!groupByFloors || !hass) {
     return {
