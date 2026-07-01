@@ -121,6 +121,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       door: [],
       smoke: [],
       gas: [],
+      heat: [],
     };
 
     // Main categorization loop — use pre-filtered visible entities from Registry
@@ -252,6 +253,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
           sensorEntities.gas.push(entityId);
           continue;
         }
+        if (deviceClass === 'heat') {
+          sensorEntities.heat.push(entityId);
+          continue;
+        }
       }
     }
 
@@ -332,6 +337,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       [sensorEntities.absolute_humidity, 'moisture'],
       [sensorEntities.smoke, 'smoke'],
       [sensorEntities.gas, 'gas'],
+      [sensorEntities.heat, 'heat'],
     ];
     for (const [entities, colorKey] of singleTypes) {
       if (entities[0]) addCandidate(entities[0], colorKey);

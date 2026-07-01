@@ -69,8 +69,8 @@
     "garages_closed": "Garages - Closed",
     "windows_open": "Door & Window Sensors - Open",
     "windows_closed": "Door & Window Sensors - Closed",
-    "smoke_gas_active": "Smoke & Gas Detectors - Alarm",
-    "smoke_gas_inactive": "Smoke & Gas Detectors - No Alarm"
+    "smoke_gas_active": "Smoke, Gas & Heat Detectors - Alarm",
+    "smoke_gas_inactive": "Smoke, Gas & Heat Detectors - No Alarm"
   },
   "batteries": {
     "critical": "Critical",

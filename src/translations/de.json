@@ -69,8 +69,8 @@
     "garages_closed": "Garagen - Geschlossen",
     "windows_open": "Tür- & Fenstersensoren - Offen",
     "windows_closed": "Tür- & Fenstersensoren - Geschlossen",
-    "smoke_gas_active": "Rauch- & Gasmelder - Alarm",
-    "smoke_gas_inactive": "Rauch- & Gasmelder - Kein Alarm"
+    "smoke_gas_active": "Rauch-, Gas- & Hitzemelder - Alarm",
+    "smoke_gas_inactive": "Rauch-, Gas- & Hitzemelder - Kein Alarm"
   },
   "batteries": {
     "critical": "Kritisch",

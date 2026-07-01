@@ -25,6 +25,7 @@ export const BADGE_COLOR_MAP: Record<string, string> = {
   door: 'teal',
   smoke: 'red',
   gas: 'red',
+  heat: 'red',
   wind_speed: 'blue',
   pressure: 'deep-purple',
   power: 'orange',
@@ -82,7 +83,8 @@ export function isBadgeCandidate(
       deviceClass === 'window' ||
       deviceClass === 'door' ||
       deviceClass === 'smoke' ||
-      deviceClass === 'gas'
+      deviceClass === 'gas' ||
+      deviceClass === 'heat'
     );
   }
   return false;

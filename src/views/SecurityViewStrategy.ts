@@ -43,7 +43,7 @@ class Simon42ViewSecurityStrategy extends HTMLElement {
         const entry = Registry.getEntity(id);
         if (entry?.platform && SECURITY_EXCLUDED_PLATFORMS.has(entry.platform)) continue;
         if (deviceClass && ['door', 'window', 'garage_door', 'opening'].includes(deviceClass)) windows.push(id);
-        else if (deviceClass && ['smoke', 'gas'].includes(deviceClass)) smokeGas.push(id);
+        else if (deviceClass && ['smoke', 'gas', 'heat'].includes(deviceClass)) smokeGas.push(id);
       }
     }
 
