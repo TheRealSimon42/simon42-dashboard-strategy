@@ -1476,6 +1476,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const allAreas = Object.values(this._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
     const roomPinsShowState = this._config.room_pins_show_state === true;
     const roomPinsHideLastChanged = this._config.room_pins_hide_last_changed === true;
+    const roomPinsFirst = this._config.room_pins_first === true;
 
     const entityMap = new Map(allEntities.map((e) => [e.entity_id, e]));
     const areaMap = new Map(allAreas.map((a) => [a.area_id, a.name]));
@@ -1546,6 +1547,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
         ${this._renderCheckbox('room-pins-hide-last-changed', localize('editor.hide_last_changed'), roomPinsHideLastChanged,
           (checked) => this._toggleChanged('room_pins_hide_last_changed', checked, false))}
+
+        ${this._renderCheckbox('room-pins-first', localize('editor.room_pins_first'), roomPinsFirst,
+          (checked) => this._toggleChanged('room_pins_first', checked, false))}
       </div>
     `;
   }

@@ -460,7 +460,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       });
     };
 
-    domainSection(getAreasRoomPins(dashboardConfig, area), localize('room.room_pins'), 'mdi:pin', (e) => {
+    const roomPinTile = (e: string): LovelaceCardConfig => {
       const pinStateContent: string[] = [];
       if (dashboardConfig.room_pins_show_state === true) pinStateContent.push('state');
       if (dashboardConfig.room_pins_hide_last_changed !== true) pinStateContent.push('last_changed');
@@ -471,7 +471,12 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         vertical: false,
         ...(pinStateContent.length > 0 ? { state_content: pinStateContent } : {}),
       };
-    });
+    };
+
+    // Room pins render as the last section by default; opt-in `room_pins_first` moves them to the top (#189)
+    if (dashboardConfig.room_pins_first === true) {
+      domainSection(getAreasRoomPins(dashboardConfig, area), localize('room.room_pins'), 'mdi:pin', roomPinTile);
+    }
 
     if (roomEntities.lights.length > 0) {
       sections.push({
@@ -635,6 +640,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       name: stripAreaName(e, area, hass),
       vertical: false,
     }));
+
+    if (dashboardConfig.room_pins_first !== true) {
+      domainSection(getAreasRoomPins(dashboardConfig, area), localize('room.room_pins'), 'mdi:pin', roomPinTile);
+    }
 
     debugLog(
       `Room ${area.area_id}: ${visibleEntities.length} visible entities, ${sections.length} sections, ${badges.length} badges`

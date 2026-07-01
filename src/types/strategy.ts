@@ -58,6 +58,7 @@ export interface Simon42StrategyConfig {
   favorites_hide_last_changed?: boolean; // default: false
   room_pins_show_state?: boolean; // default: false
   room_pins_hide_last_changed?: boolean; // default: false
+  room_pins_first?: boolean; // default: false (pins render as last section in the room)
 
   // Special entities
   alarm_entity?: string;
