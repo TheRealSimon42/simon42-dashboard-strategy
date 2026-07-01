@@ -24,6 +24,9 @@ interface CoversGroupConfig {
   heading_partial?: string;
   batch_open_text?: string;
   batch_close_text?: string;
+  icon_open?: string;
+  icon_closed?: string;
+  icon_partial?: string;
 }
 
 // Pre-compiled RegExps for cover type name stripping
@@ -205,7 +208,7 @@ class Simon42CoversGroupCard extends LitElement {
       return {
         type: 'heading',
         heading: `${headingLabel} (${covers.length})`,
-        icon: 'mdi:blinds-horizontal',
+        icon: this._config.icon_partial || 'mdi:blinds-horizontal',
         badges: [
           {
             type: 'button',
@@ -238,7 +241,9 @@ class Simon42CoversGroupCard extends LitElement {
     return {
       type: 'heading',
       heading: `${headingLabel} (${covers.length})`,
-      icon: isOpen ? 'mdi:blinds-horizontal' : 'mdi:blinds',
+      icon: isOpen
+        ? this._config.icon_open || 'mdi:blinds-horizontal'
+        : this._config.icon_closed || 'mdi:blinds',
       badges: [
         {
           type: 'button',
