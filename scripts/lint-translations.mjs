@@ -29,12 +29,20 @@ function warn(file, msg) {
   console.warn(`[lint-translations] ${file}: warning: ${msg}`);
 }
 
-// Only accept plain locale filenames inside the fixed translations dir to
-// satisfy security/detect-non-literal-fs-filename — anything else is a
-// programmer error here.
+// Literal read per locale to satisfy security/detect-non-literal-fs-filename.
+// New locale files must be registered here — the directory scan below errors
+// on any .json file that is missing from this map, so nothing can silently
+// bypass the linter.
+const LOCALE_READERS = {
+  'en.json': () => readFileSync('src/translations/en.json', 'utf8'),
+  'de.json': () => readFileSync('src/translations/de.json', 'utf8'),
+  'ru.json': () => readFileSync('src/translations/ru.json', 'utf8'),
+};
+
 function readTranslation(file) {
-  if (!/^[a-z][a-z0-9-]*\.json$/.test(file)) throw new Error(`unknown translation file: ${file}`);
-  return readFileSync(`${TRANSLATIONS_DIR}/${file}`, 'utf8');
+  const reader = LOCALE_READERS[file];
+  if (!reader) throw new Error(`unknown translation file: ${file}`);
+  return reader();
 }
 
 // Walk a JSON.parse-able text and report duplicate keys.
@@ -108,6 +116,10 @@ if (!localeFiles.includes('en.json')) report('en.json', 'reference locale file i
 
 const parsed = new Map(); // filename → parsed object (or null on parse error)
 for (const file of localeFiles) {
+  if (!(file in LOCALE_READERS)) {
+    report(file, 'not registered in LOCALE_READERS in scripts/lint-translations.mjs — add it so it gets linted');
+    continue;
+  }
   const text = readTranslation(file);
   try {
     parsed.set(file, JSON.parse(text));

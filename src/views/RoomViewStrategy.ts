@@ -34,8 +34,16 @@ function mediaPlayerSupportsPlayback(state: HassEntity): boolean {
   return (f & (MEDIA_PAUSE | MEDIA_PLAY | MEDIA_STOP)) !== 0;
 }
 
+/** Config fields consumed by the room-pins section */
+interface RoomPinsConfig {
+  room_pin_entities?: string[];
+  room_pins_show_state?: boolean;
+  room_pins_hide_last_changed?: boolean;
+  room_pins_first?: boolean;
+}
+
 /** Filter all configured room pins for the ones in the given area */
-function getAreasRoomPins(config: any, area: AreaRegistryEntry): string[] {
+function getAreasRoomPins(config: RoomPinsConfig, area: AreaRegistryEntry): string[] {
     const roomPinEntities: string[] = config.room_pin_entities || [];
     return roomPinEntities.filter((entityId) => {
       const entity = Registry.getEntity(entityId);
@@ -47,6 +55,26 @@ function getAreasRoomPins(config: any, area: AreaRegistryEntry): string[] {
       }
       return false;
     });
+}
+
+/** Build the tile-card factory for room-pin entities */
+function buildRoomPinTile(
+  config: RoomPinsConfig,
+  area: AreaRegistryEntry,
+  hass: HomeAssistant
+): (e: string) => LovelaceCardConfig {
+  return (e: string): LovelaceCardConfig => {
+    const pinStateContent: string[] = [];
+    if (config.room_pins_show_state === true) pinStateContent.push('state');
+    if (config.room_pins_hide_last_changed !== true) pinStateContent.push('last_changed');
+    return {
+      type: 'tile',
+      entity: e,
+      name: stripAreaName(e, area, hass),
+      vertical: false,
+      ...(pinStateContent.length > 0 ? { state_content: pinStateContent } : {}),
+    };
+  };
 }
 
 class Simon42ViewRoomStrategy extends HTMLElement {
@@ -460,22 +488,14 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       });
     };
 
-    const roomPinTile = (e: string): LovelaceCardConfig => {
-      const pinStateContent: string[] = [];
-      if (dashboardConfig.room_pins_show_state === true) pinStateContent.push('state');
-      if (dashboardConfig.room_pins_hide_last_changed !== true) pinStateContent.push('last_changed');
-      return {
-        type: 'tile',
-        entity: e,
-        name: stripAreaName(e, area, hass),
-        vertical: false,
-        ...(pinStateContent.length > 0 ? { state_content: pinStateContent } : {}),
-      };
-    };
-
     // Room pins render as the last section by default; opt-in `room_pins_first` moves them to the top (#189)
     if (dashboardConfig.room_pins_first === true) {
-      domainSection(getAreasRoomPins(dashboardConfig, area), localize('room.room_pins'), 'mdi:pin', roomPinTile);
+      domainSection(
+        getAreasRoomPins(dashboardConfig, area),
+        localize('room.room_pins'),
+        'mdi:pin',
+        buildRoomPinTile(dashboardConfig, area, hass)
+      );
     }
 
     if (roomEntities.lights.length > 0) {
@@ -642,7 +662,12 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     }));
 
     if (dashboardConfig.room_pins_first !== true) {
-      domainSection(getAreasRoomPins(dashboardConfig, area), localize('room.room_pins'), 'mdi:pin', roomPinTile);
+      domainSection(
+        getAreasRoomPins(dashboardConfig, area),
+        localize('room.room_pins'),
+        'mdi:pin',
+        buildRoomPinTile(dashboardConfig, area, hass)
+      );
     }
 
     debugLog(
