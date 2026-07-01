@@ -1,0 +1,37 @@
+name: Claude Mention
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    # Nur reagieren, wenn @claude erwähnt wird (bzw. Issue Claude zugewiesen wird)
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && github.event.assignee.login == 'claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Kein prompt → Action erkennt den Kontext selbst und reagiert
+          # auf die @claude-Erwähnung. Antworte-Sprache folgt dem Kommentar.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(git:*),Bash(gh:*),Bash(npm run build:*),Bash(npm run lint:*),Bash(npm ci)"

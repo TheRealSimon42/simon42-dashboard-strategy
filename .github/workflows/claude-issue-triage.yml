@@ -1,0 +1,47 @@
+name: Claude Issue Triage
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ github.event.issue.number }}
+            TITLE: ${{ github.event.issue.title }}
+            AUTHOR: ${{ github.event.issue.user.login }}
+
+            Triagiere dieses neue Issue für ein Home Assistant Dashboard-
+            Strategy-Projekt (deutschsprachige Community, viele Issues auf
+            Deutsch):
+
+            1. Kategorie bestimmen: Bug / Feature-Request / Frage-Support.
+               Passendes Label setzen (`gh label list` zeigt verfügbare;
+               fehlt ein passendes, nur kommentieren statt labeln).
+            2. Duplikat-Check: Mit `gh search issues` und `gh issue list`
+               nach ähnlichen offenen Issues suchen. Bei Duplikat: freundlich
+               auf Deutsch kommentieren, Original verlinken.
+            3. Bei Bugs: Prüfen, ob Version, HA-Version und Repro-Schritte
+               genannt sind. Fehlt das, freundlich auf Deutsch nachfragen
+               (STRATEGY_VERSION steht in der Browser-Konsole).
+            4. Bei Fragen: Wenn die Antwort klar aus README/CLAUDE.md
+               hervorgeht, direkt beantworten.
+
+            Ton: hilfsbereit, per Du, wie in der simon42-Community üblich.
+            Keine Zusagen machen, ob/wann ein Feature kommt.
+
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Bash(gh issue:*),Bash(gh search:*),Bash(gh label:*)"
