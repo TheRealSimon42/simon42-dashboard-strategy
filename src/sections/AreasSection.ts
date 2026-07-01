@@ -58,7 +58,13 @@ function getAreaControls(areaId: string, hass: HomeAssistant): ControlDomain[] {
     }
   }
 
-  return [...found];
+  // Return in canonical CONTROL_DOMAINS order, not entity-iteration order.
+  // Set preserves insertion order in JS, which depends on the order entities
+  // happened to be added — that varies between areas (because the entity
+  // registry returns entities in registration order), so without an explicit
+  // sort, two areas with the same control mix could produce shortcut icons
+  // in different orders. See issue #201.
+  return CONTROL_DOMAINS.filter((d) => found.has(d));
 }
 
 // Alert-relevant binary sensor device classes.
