@@ -12,11 +12,15 @@ import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 
-// Area control domains to check (same as HA, with optional 'switch')
+// Area control domains to check (same set as HA, with optional 'switch').
+// Array order = render order of the shortcut icons on the area cards.
+// The tail is deliberately fixed: … → fan → covers → light. Lights exist in
+// almost every room, so keeping them in the last slot (and covers/fans right
+// before them) makes the icons line up vertically across all area cards,
+// no matter which other controls a room has. See issue #201.
 const CONTROL_DOMAINS = [
-  'light',
-  'fan',
   'switch',
+  'fan',
   'cover-shutter',
   'cover-blind',
   'cover-curtain',
@@ -27,6 +31,7 @@ const CONTROL_DOMAINS = [
   'cover-door',
   'cover-window',
   'cover-damper',
+  'light',
 ] as const;
 
 type ControlDomain = (typeof CONTROL_DOMAINS)[number];
