@@ -338,8 +338,14 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     }
 
     // Window/door: show ALL matches (not just first), users control via per-area hidden[]
-    for (const id of sensorEntities.window) addCandidate(id, 'window', 'window');
-    for (const id of sensorEntities.door) addCandidate(id, 'door', 'door');
+    // Per-domain opt-out via show_window_contacts_in_rooms / show_door_contacts_in_rooms
+    // (default true — preserves prior behavior; set false to silence the badge type).
+    if (dashboardConfig.show_window_contacts_in_rooms !== false) {
+      for (const id of sensorEntities.window) addCandidate(id, 'window', 'window');
+    }
+    if (dashboardConfig.show_door_contacts_in_rooms !== false) {
+      for (const id of sensorEntities.door) addCandidate(id, 'door', 'door');
+    }
 
     // Apply per-area badge config: filter hidden, append additional
     let filteredCandidates = candidates;

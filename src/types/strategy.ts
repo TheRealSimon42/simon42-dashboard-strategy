@@ -43,8 +43,8 @@ export interface Simon42StrategyConfig {
   show_locks_in_rooms?: boolean; // default: false
   show_automations_in_rooms?: boolean; // default: false
   show_scripts_in_rooms?: boolean; // default: false
-  show_window_contacts_in_rooms?: boolean; // default: false
-  show_door_contacts_in_rooms?: boolean; // default: false
+  show_window_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide window contact badges)
+  show_door_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide door contact badges)
   show_switches_on_areas?: boolean; // default: false
   show_alerts_on_areas?: boolean; // default: false
   energy_link_dashboard?: boolean; // default: true

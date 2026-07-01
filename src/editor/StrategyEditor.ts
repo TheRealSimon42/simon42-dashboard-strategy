@@ -1421,6 +1421,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const showLocksInRooms = this._config.show_locks_in_rooms === true;
     const showAutomationsInRooms = this._config.show_automations_in_rooms === true;
     const showScriptsInRooms = this._config.show_scripts_in_rooms === true;
+    // Window / door contact badges default to visible — read as opt-out (!== false).
+    const showWindowContactsInRooms = this._config.show_window_contacts_in_rooms !== false;
+    const showDoorContactsInRooms = this._config.show_door_contacts_in_rooms !== false;
     const useDefaultAreaSort = this._config.use_default_area_sort === true;
 
     const allAreas = Object.values(this._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
@@ -1454,6 +1457,14 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderCheckbox('show-scripts-in-rooms', localize('editor.show_scripts_in_rooms'), showScriptsInRooms,
           (checked) => this._toggleChanged('show_scripts_in_rooms', checked, false))}
         <div class="description">${localize('editor.show_scripts_in_rooms_desc')}</div>
+
+        ${this._renderCheckbox('show-window-contacts-in-rooms', localize('editor.show_window_contacts_in_rooms'), showWindowContactsInRooms,
+          (checked) => this._toggleChanged('show_window_contacts_in_rooms', checked, true))}
+        <div class="description">${localize('editor.show_window_contacts_in_rooms_desc')}</div>
+
+        ${this._renderCheckbox('show-door-contacts-in-rooms', localize('editor.show_door_contacts_in_rooms'), showDoorContactsInRooms,
+          (checked) => this._toggleChanged('show_door_contacts_in_rooms', checked, true))}
+        <div class="description">${localize('editor.show_door_contacts_in_rooms_desc')}</div>
 
         ${this._renderCheckbox('use-default-area-sort', localize('editor.use_default_area_sort'), useDefaultAreaSort,
           (checked) => this._toggleChanged('use_default_area_sort', checked, false))}
