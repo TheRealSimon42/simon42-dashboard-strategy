@@ -8,9 +8,10 @@
 
 import * as de from '../translations/de.json';
 import * as en from '../translations/en.json';
+import * as ru from '../translations/ru.json';
 import type { HomeAssistant } from '../types/homeassistant';
 
-const languages: Record<string, unknown> = { de, en };
+const languages: Record<string, unknown> = { de, en, ru };
 const DEFAULT_LANG = 'en';
 
 function getTranslatedString(key: string, lang: string): string | undefined {
