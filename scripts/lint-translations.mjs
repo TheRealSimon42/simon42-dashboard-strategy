@@ -29,20 +29,18 @@ function warn(file, msg) {
   console.warn(`[lint-translations] ${file}: warning: ${msg}`);
 }
 
-// Literal read per locale to satisfy security/detect-non-literal-fs-filename.
-// New locale files must be registered here — the directory scan below errors
-// on any .json file that is missing from this map, so nothing can silently
-// bypass the linter.
-const LOCALE_READERS = {
-  'en.json': () => readFileSync('src/translations/en.json', 'utf8'),
-  'de.json': () => readFileSync('src/translations/de.json', 'utf8'),
-  'ru.json': () => readFileSync('src/translations/ru.json', 'utf8'),
-};
+// Literal read per locale to satisfy security/detect-non-literal-fs-filename
+// (and no map/bracket lookup, which trips detect-object-injection).
+// New locale files must be registered in BOTH places below — the directory
+// scan errors on any .json file missing from KNOWN_LOCALES, so nothing can
+// silently bypass the linter.
+const KNOWN_LOCALES = new Set(['en.json', 'de.json', 'ru.json']);
 
 function readTranslation(file) {
-  const reader = LOCALE_READERS[file];
-  if (!reader) throw new Error(`unknown translation file: ${file}`);
-  return reader();
+  if (file === 'en.json') return readFileSync('src/translations/en.json', 'utf8');
+  if (file === 'de.json') return readFileSync('src/translations/de.json', 'utf8');
+  if (file === 'ru.json') return readFileSync('src/translations/ru.json', 'utf8');
+  throw new Error(`unknown translation file: ${file}`);
 }
 
 // Walk a JSON.parse-able text and report duplicate keys.
@@ -116,8 +114,8 @@ if (!localeFiles.includes('en.json')) report('en.json', 'reference locale file i
 
 const parsed = new Map(); // filename → parsed object (or null on parse error)
 for (const file of localeFiles) {
-  if (!(file in LOCALE_READERS)) {
-    report(file, 'not registered in LOCALE_READERS in scripts/lint-translations.mjs — add it so it gets linted');
+  if (!KNOWN_LOCALES.has(file)) {
+    report(file, 'not registered in scripts/lint-translations.mjs — add it so it gets linted');
     continue;
   }
   const text = readTranslation(file);
