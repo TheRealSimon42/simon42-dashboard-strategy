@@ -88,6 +88,16 @@ class Registry {
   /** Initialization flag */
   private static _initialized: boolean = false;
 
+  /**
+   * Reset the Registry singleton between tests so each test starts with a
+   * clean slate. Production code never calls this — the singleton lives for
+   * the lifetime of the dashboard. Exported so vitest test files can clear
+   * cross-test state without using vi.resetModules() (which is expensive).
+   */
+  static resetForTesting(): void {
+    Registry._initialized = false;
+  }
+
   // =====================================================================
   // Initialization
   // =====================================================================

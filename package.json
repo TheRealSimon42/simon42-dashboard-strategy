@@ -10,7 +10,10 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\"",
-    "lint:fix": "eslint \"src/**/*.ts\" --fix"
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
@@ -20,6 +23,7 @@
     "@types/js-yaml": "^4.0.9",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.58.1",
+    "@vitest/coverage-v8": "^2.1.9",
     "compression-webpack-plugin": "^12.0.0",
     "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
@@ -28,6 +32,7 @@
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
+    "vitest": "^2.1.9",
     "webpack": "^5.105.4",
     "webpack-cli": "^7.0.2"
   }

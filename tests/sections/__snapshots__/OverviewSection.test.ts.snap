@@ -1,0 +1,103 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createOverviewSection > matches the snapshot for a default config 1`] = `
+{
+  "cards": [
+    {
+      "heading": "Overview",
+      "heading_style": "title",
+      "icon": "mdi:overscan",
+      "type": "heading",
+    },
+    {
+      "clock_size": "small",
+      "grid_options": {
+        "columns": "full",
+      },
+      "show_seconds": false,
+      "type": "clock",
+    },
+    {
+      "heading": "Summaries",
+      "type": "heading",
+    },
+    {
+      "cards": [
+        {
+          "areas_options": {},
+          "summary_type": "lights",
+          "type": "custom:simon42-summary-card",
+        },
+        {
+          "areas_options": {},
+          "summary_type": "covers",
+          "type": "custom:simon42-summary-card",
+        },
+      ],
+      "type": "horizontal-stack",
+    },
+    {
+      "cards": [
+        {
+          "areas_options": {},
+          "summary_type": "security",
+          "type": "custom:simon42-summary-card",
+        },
+        {
+          "areas_options": {},
+          "battery_critical_threshold": undefined,
+          "hide_mobile_app_batteries": undefined,
+          "summary_type": "batteries",
+          "type": "custom:simon42-summary-card",
+        },
+      ],
+      "type": "horizontal-stack",
+    },
+  ],
+  "type": "grid",
+}
+`;
+
+exports[`createOverviewSection > matches the snapshot when show_clock_card is disabled 1`] = `
+{
+  "cards": [
+    {
+      "heading": "Summaries",
+      "type": "heading",
+    },
+    {
+      "cards": [
+        {
+          "areas_options": {},
+          "summary_type": "lights",
+          "type": "custom:simon42-summary-card",
+        },
+        {
+          "areas_options": {},
+          "summary_type": "covers",
+          "type": "custom:simon42-summary-card",
+        },
+      ],
+      "type": "horizontal-stack",
+    },
+    {
+      "cards": [
+        {
+          "areas_options": {},
+          "summary_type": "security",
+          "type": "custom:simon42-summary-card",
+        },
+        {
+          "areas_options": {},
+          "battery_critical_threshold": undefined,
+          "hide_mobile_app_batteries": undefined,
+          "summary_type": "batteries",
+          "type": "custom:simon42-summary-card",
+        },
+      ],
+      "type": "horizontal-stack",
+    },
+  ],
+  "type": "grid",
+}
+`;

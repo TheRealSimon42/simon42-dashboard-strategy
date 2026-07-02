@@ -33,6 +33,20 @@ jobs:
       - name: Lint translation files
         run: node scripts/lint-translations.mjs
 
+  tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install
+        run: npm ci
+      - name: Run unit tests
+        run: npm test
+
   build:
     name: Build
     runs-on: ubuntu-latest
