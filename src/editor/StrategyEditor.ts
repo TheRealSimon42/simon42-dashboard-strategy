@@ -1262,8 +1262,11 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const showClimateSummary = this._config.show_climate_summary === true;
     const showBatterySummary = this._config.show_battery_summary !== false;
     const hideMobileAppBatteries = this._config.hide_mobile_app_batteries === true;
+    const hideBatteryNotesEntities = this._config.hide_battery_notes_entities === true;
     const batteryCriticalThreshold = this._config.battery_critical_threshold ?? 20;
     const batteryLowThreshold = this._config.battery_low_threshold ?? 50;
+    const showAreaInBatteryView = this._config.show_area_in_battery_view === true;
+    const unavailableBatteriesBucket = this._config.unavailable_batteries_bucket === 'critical' ? 'critical' : 'good';
 
     return html`
       <div class="section">
@@ -1318,6 +1321,13 @@ class Simon42DashboardStrategyEditor extends LitElement {
             (checked) => this._toggleChanged('hide_mobile_app_batteries', checked, false))}
           <div class="description">${localize('editor.hide_mobile_app_batteries_desc')}</div>
 
+          ${this._renderCheckbox('show-area-in-battery-view', localize('editor.show_area_in_battery_view'), showAreaInBatteryView,
+            (checked) => this._toggleChanged('show_area_in_battery_view', checked, false))}
+          <div class="description">${localize('editor.show_area_in_battery_view_desc')}</div>
+          ${this._renderCheckbox('hide-battery-notes-entities', localize('editor.hide_battery_notes_entities'), hideBatteryNotesEntities,
+            (checked) => this._toggleChanged('hide_battery_notes_entities', checked, false))}
+          <div class="description">${localize('editor.hide_battery_notes_entities_desc')}</div>
+
           <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
             ${localize('editor.battery_thresholds')}
           </div>
@@ -1336,9 +1346,37 @@ class Simon42DashboardStrategyEditor extends LitElement {
               @change=${this._batteryLowChanged} /> %
           </div>
           <div class="description">${localize('editor.battery_thresholds_desc')}</div>
+
+          <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
+            ${localize('editor.unavailable_batteries_bucket')}
+          </div>
+          <div class="form-row">
+            <input type="radio" id="unavailable-batteries-critical" name="unavailable-batteries-bucket" value="critical"
+              ?checked=${unavailableBatteriesBucket === 'critical'}
+              @change=${() => this._unavailableBatteriesBucketChanged('critical')} />
+            <label for="unavailable-batteries-critical">${localize('editor.unavailable_batteries_critical')}</label>
+          </div>
+          <div class="form-row">
+            <input type="radio" id="unavailable-batteries-good" name="unavailable-batteries-bucket" value="good"
+              ?checked=${unavailableBatteriesBucket === 'good'}
+              @change=${() => this._unavailableBatteriesBucketChanged('good')} />
+            <label for="unavailable-batteries-good">${localize('editor.unavailable_batteries_good')}</label>
+          </div>
+          <div class="description">${localize('editor.unavailable_batteries_bucket_desc')}</div>
         </div>
       </div>
     `;
+  }
+
+  private _unavailableBatteriesBucketChanged(bucket: 'critical' | 'good'): void {
+    const updated: Simon42StrategyConfig = { ...this._config };
+    // 'good' is now the default → omit the key when matching default
+    if (bucket === 'good') {
+      delete updated.unavailable_batteries_bucket;
+    } else {
+      updated.unavailable_batteries_bucket = bucket;
+    }
+    this._fireConfigChanged(updated);
   }
 
   private _renderFavoritesSection(): TemplateResult {

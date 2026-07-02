@@ -8,10 +8,24 @@ import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { getBatteryEntities } from '../utils/entity-filter';
 
+function getAreaNameForEntity(entityId: string, hass: HomeAssistant): string | null {
+  const entity = Registry.getEntity(entityId);
+  let areaId: string | null = entity?.area_id ?? null;
+  if (!areaId && entity?.device_id) {
+    const device = Registry.getDevice(entity.device_id);
+    areaId = device?.area_id ?? null;
+  }
+  if (!areaId) return null;
+  const area = Reflect.get(hass.areas as Record<string, unknown>, areaId) as { name?: string } | undefined;
+  return area?.name ?? null;
+}
+
 function createBatterySection(
   entities: string[],
   status: 'critical' | 'low' | 'good',
   rangeText: string,
+  hass: HomeAssistant,
+  showArea: boolean,
 ): LovelaceSectionConfig | null {
   if (entities.length === 0) return null;
 
@@ -28,13 +42,24 @@ function createBatterySection(
         }`,
         heading_style: 'title',
       },
-      ...entities.map((e) => ({
-        type: 'tile',
-        entity: e,
-        vertical: false,
-        state_content: ['state', 'last_changed'],
-        color,
-      })),
+      ...entities.map((e) => {
+        const tile: { type: string; [key: string]: unknown } = {
+          type: 'tile',
+          entity: e,
+          vertical: false,
+          state_content: ['state', 'last_changed'],
+          color,
+        };
+        if (showArea) {
+          const areaName = getAreaNameForEntity(e, hass);
+          if (areaName) {
+            const st = Reflect.get(hass.states as Record<string, unknown>, e) as { attributes?: { friendly_name?: string } } | undefined;
+            const friendly = st?.attributes?.friendly_name;
+            tile.name = friendly ? `${areaName} • ${friendly}` : areaName;
+          }
+        }
+        return tile;
+      }),
     ],
   };
 }
@@ -50,13 +75,32 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
     const strategyConfig = config.config || {};
     const criticalThreshold = strategyConfig.battery_critical_threshold ?? 20;
     const lowThreshold = strategyConfig.battery_low_threshold ?? 50;
+    const showArea = strategyConfig.show_area_in_battery_view === true;
+    // Where to bucket sensors whose state can't be evaluated (unavailable,
+    // unknown, restarting, non-numeric). Default 'good': in a survey of
+    // typical HA installs, the Critical bucket otherwise gets flooded with
+    // offline / never-pressed entities that aren't actionable as low
+    // batteries. Users who want to surface broken sensors as critical can
+    // flip the radio in the editor. Both buckets are defensible defaults;
+    // 'good' keeps the count meaningful for at-a-glance scanning.
+    const unavailableBucket: 'critical' | 'good' =
+      strategyConfig.unavailable_batteries_bucket === 'critical' ? 'critical' : 'good';
     const critical: string[] = [];
     const low: string[] = [];
     const good: string[] = [];
 
+    const UNAVAILABLE_STATES = new Set(['unavailable', 'unknown', 'none', 'restarting']);
+
     for (const entityId of batteryEntities) {
       const state = hass.states[entityId];
       if (entityId.startsWith('binary_sensor.')) {
+        // Unavailable binary battery sensors aren't reporting; mirror the
+        // sensor.* path and respect the user's chosen bucket.
+        if (UNAVAILABLE_STATES.has(state.state)) {
+          (unavailableBucket === 'critical' ? critical : good).push(entityId);
+          continue;
+        }
+        // For device_class === 'battery' binary sensors, state 'on' === low.
         (state.state === 'on' ? critical : good).push(entityId);
         continue;
       }
@@ -67,8 +111,11 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
       // meaningfully compared against percentage thresholds (e.g. 3V would
       // be "critical" at < 20 which is wrong). Skip them entirely.
       if (unit && unit !== '%') continue;
-      if (isNaN(value)) critical.push(entityId);
-      else if (value < criticalThreshold) critical.push(entityId);
+      if (isNaN(value)) {
+        (unavailableBucket === 'critical' ? critical : good).push(entityId);
+        continue;
+      }
+      if (value < criticalThreshold) critical.push(entityId);
       else if (value <= lowThreshold) low.push(entityId);
       else good.push(entityId);
     }
@@ -87,13 +134,13 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
 
     const sections: LovelaceSectionConfig[] = [];
 
-    const criticalSection = createBatterySection(critical, 'critical', `< ${criticalThreshold}%`);
+    const criticalSection = createBatterySection(critical, 'critical', `< ${criticalThreshold}%`, hass, showArea);
     if (criticalSection) sections.push(criticalSection);
 
-    const lowSection = createBatterySection(low, 'low', `${criticalThreshold}% - ${lowThreshold}%`);
+    const lowSection = createBatterySection(low, 'low', `${criticalThreshold}% - ${lowThreshold}%`, hass, showArea);
     if (lowSection) sections.push(lowSection);
 
-    const goodSection = createBatterySection(good, 'good', `> ${lowThreshold}%`);
+    const goodSection = createBatterySection(good, 'good', `> ${lowThreshold}%`, hass, showArea);
     if (goodSection) sections.push(goodSection);
 
     return { type: 'sections', sections };

@@ -20,6 +20,7 @@ type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate';
 interface SummaryCardConfig {
   summary_type: SummaryType;
   hide_mobile_app_batteries?: boolean;
+  hide_battery_notes_entities?: boolean;
   battery_critical_threshold?: number;
 }
 

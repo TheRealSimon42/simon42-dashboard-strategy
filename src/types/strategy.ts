@@ -38,8 +38,11 @@ export interface Simon42StrategyConfig {
   show_battery_summary?: boolean; // default: true
   show_climate_summary?: boolean; // default: false
   hide_mobile_app_batteries?: boolean; // default: false
+  hide_battery_notes_entities?: boolean; // default: false
   battery_critical_threshold?: number; // default: 20
   battery_low_threshold?: number; // default: 50
+  show_area_in_battery_view?: boolean; // default: false
+  unavailable_batteries_bucket?: 'critical' | 'good'; // default: 'good' (follow-up to #248)
   show_locks_in_rooms?: boolean; // default: false
   show_automations_in_rooms?: boolean; // default: false
   show_scripts_in_rooms?: boolean; // default: false

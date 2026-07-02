@@ -46,6 +46,7 @@ exports[`createOverviewSection > matches the snapshot for a default config 1`] =
         {
           "areas_options": {},
           "battery_critical_threshold": undefined,
+          "hide_battery_notes_entities": undefined,
           "hide_mobile_app_batteries": undefined,
           "summary_type": "batteries",
           "type": "custom:simon42-summary-card",
@@ -90,6 +91,7 @@ exports[`createOverviewSection > matches the snapshot when show_clock_card is di
         {
           "areas_options": {},
           "battery_critical_threshold": undefined,
+          "hide_battery_notes_entities": undefined,
           "hide_mobile_app_batteries": undefined,
           "summary_type": "batteries",
           "type": "custom:simon42-summary-card",
