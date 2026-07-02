@@ -73,7 +73,13 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
 
     // Collect data for overview
     const persons = collectPersons(hass, dashboardConfig);
-    const weatherEntity = findWeatherEntity(hass);
+    // Resolve the weather entity: explicit config wins when the entity
+    // exists in this hass instance, otherwise fall back to auto-discovery.
+    const configuredWeather = dashboardConfig.weather_entity;
+    const weatherEntity =
+      configuredWeather && hass.states[configuredWeather]
+        ? configuredWeather
+        : findWeatherEntity(hass);
     const someSensorId = findDummySensor(hass);
 
     // Person badges
@@ -109,8 +115,24 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
       ['overview', overviewSection],
       ['custom_cards', customCardsSection],
       ['areas', areasSections],
-      ['weather', createWeatherSection(weatherEntity ?? null, showWeather)],
-      ['energy', createEnergySection(showEnergy, dashboardConfig.energy_link_dashboard !== false)],
+      [
+        'weather',
+        createWeatherSection(
+          weatherEntity ?? null,
+          showWeather,
+          dashboardConfig.show_weather_forecast_card !== false,
+          dashboardConfig.weather_sensors || [],
+          dashboardConfig.weather_presentation
+        ),
+      ],
+      [
+        'energy',
+        createEnergySection(
+          showEnergy,
+          dashboardConfig.energy_link_dashboard !== false,
+          dashboardConfig.show_energy_distribution_card !== false
+        ),
+      ],
     ]);
 
     // Assemble in configured order, appending assigned custom cards to each section

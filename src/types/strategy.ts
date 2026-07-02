@@ -23,13 +23,30 @@ export const DEFAULT_SECTIONS_ORDER: SectionKey[] = [
 export interface Simon42StrategyConfig {
   // Global toggles
   show_weather?: boolean; // default: true
+  show_weather_forecast_card?: boolean; // (legacy) default: true — set false
+  // to keep the `weather` section + heading but omit the built-in card.
+  // Equivalent to `weather_presentation: 'none'`; superseded by it but still
+  // honoured for backwards-compatibility when no explicit weather_presentation
+  // is set.
+  weather_presentation?: WeatherPresentation; // default: 'forecast_daily'.
+  // Picks which built-in weather card the section renders. Use 'none' to omit
+  // the built-in card and supply your own via custom_cards target=weather
+  // (e.g. clock-weather-card, mini-weather, custom radar widget).
+  weather_sensors?: WeatherSensorConfig[]; // optional inline icon+value row
+  // rendered at the top of the weather section. Useful for displaying local
+  // outdoor sensors (temperature, humidity, wind, pressure...) alongside or
+  // in place of the built-in forecast card.
   show_energy?: boolean; // default: true
+  show_energy_distribution_card?: boolean; // default: true — same behaviour for
+  // the energy section: false keeps the section so custom_cards can render
+  // here without the built-in energy-distribution card alongside
   show_search_card?: boolean; // default: false
   show_summary_views?: boolean; // default: false
   show_room_views?: boolean; // default: false
   group_by_floors?: boolean; // default: false
   show_covers_summary?: boolean; // default: true
   show_partially_open_covers?: boolean; // default: false
+  group_covers_by_floors?: boolean; // default: false
   show_clock_card?: boolean; // default: true
   show_light_summary?: boolean; // default: true
   group_lights_by_floors?: boolean; // default: false
@@ -65,6 +82,9 @@ export interface Simon42StrategyConfig {
 
   // Special entities
   alarm_entity?: string;
+  weather_entity?: string; // explicit weather entity for the weather section;
+  // defaults to the first visible weather.* entity when omitted. Falls back
+  // to auto-discovery if the configured entity is unavailable at render time.
   favorite_entities?: string[];
   room_pin_entities?: string[];
 
@@ -103,6 +123,44 @@ export interface GroupOptions {
   names_visible?: string[]; // Override show_name to true (used by badges group)
   names_hidden?: string[]; // Override show_name to false (used by badges group)
   [key: string]: unknown;
+}
+
+// -- Weather Presentation ---------------------------------------------
+
+/**
+ * Selects the built-in weather card variant rendered in the weather
+ * section. Setting 'none' suppresses the built-in card entirely so a
+ * custom_cards entry with target_section='weather' can stand alone.
+ *
+ * - `forecast_daily`       — `weather-forecast` with `forecast_type: daily`
+ * - `forecast_hourly`      — `weather-forecast` with `forecast_type: hourly`
+ * - `forecast_twice_daily` — `weather-forecast` with `forecast_type: twice_daily`
+ * - `tile`                 — HA core `tile` card bound to the weather entity
+ * - `none`                 — omit built-in card; section keeps heading + slot
+ */
+export type WeatherPresentation =
+  | 'forecast_daily'
+  | 'forecast_hourly'
+  | 'forecast_twice_daily'
+  | 'tile'
+  | 'none';
+
+// -- Weather Sensors --------------------------------------------------
+
+/**
+ * Inline sensor display in the weather section header. Rendered as an
+ * icon + value (+ optional unit) using a markdown card with text_only.
+ * The value is read via a template, so the entity's live state is used.
+ */
+export interface WeatherSensorConfig {
+  /** Entity id, e.g. `sensor.outdoor_temperature`. Required. */
+  entity: string;
+  /** MDI icon to show before the value. Default: `mdi:gauge`. */
+  icon?: string;
+  /** Unit string appended to the value, e.g. `"°C"` or `"km/h"`. */
+  unit?: string;
+  /** Round the numeric value to N decimals. Omit to show raw state. */
+  round?: number;
 }
 
 // -- Custom Views -----------------------------------------------------

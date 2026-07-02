@@ -9,6 +9,7 @@ class Simon42ViewCoversStrategy extends HTMLElement {
   static async generate(config: any, _hass: any): Promise<LovelaceViewConfig> {
     const strategyConfig = config.config || {};
     const showPartiallyOpen = strategyConfig.show_partially_open_covers === true;
+    const groupByFloors = strategyConfig.group_covers_by_floors === true;
 
     // Separate awnings and windows from other covers — they have different semantics
     const allDeviceClasses = config.device_classes || ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'];
@@ -26,6 +27,7 @@ class Simon42ViewCoversStrategy extends HTMLElement {
         device_classes: coverClasses,
         group_type: 'open',
         show_partially_open: showPartiallyOpen,
+        group_by_floors: groupByFloors,
       },
     ];
 
@@ -36,6 +38,7 @@ class Simon42ViewCoversStrategy extends HTMLElement {
         device_classes: coverClasses,
         group_type: 'partially_open',
         show_partially_open: true,
+        group_by_floors: groupByFloors,
       });
     }
 
@@ -45,6 +48,7 @@ class Simon42ViewCoversStrategy extends HTMLElement {
       device_classes: coverClasses,
       group_type: 'closed',
       show_partially_open: showPartiallyOpen,
+      group_by_floors: groupByFloors,
     });
 
     // Markisen (separate group with own headings/batch actions)
@@ -57,10 +61,11 @@ class Simon42ViewCoversStrategy extends HTMLElement {
         heading_partial: localize('covers.awnings_partial'),
         batch_open_text: localize('covers.awnings_open_all'),
         batch_close_text: localize('covers.awnings_close_all'),
-        // Awnings are no window coverings — storefront icons instead of blinds (#144)
-        icon_open: 'mdi:storefront-outline',
-        icon_closed: 'mdi:storefront',
-        icon_partial: 'mdi:storefront-outline',
+        // Awnings are no window coverings — storefront icons instead of blinds (#144),
+        // overridable via awning_icon_* config
+        icon_open: strategyConfig.awning_icon_open || 'mdi:storefront-outline',
+        icon_closed: strategyConfig.awning_icon_closed || 'mdi:storefront',
+        icon_partial: strategyConfig.awning_icon_partial || 'mdi:storefront-outline',
       };
 
       cards.push({

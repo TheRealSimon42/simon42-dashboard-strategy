@@ -4,9 +4,15 @@
 
 import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
 import type { HomeAssistant } from '../types/homeassistant';
+import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { trackHassUpdate } from '../utils/debug';
 import { localize } from '../utils/localize';
+
+interface LovelaceCardElement extends HTMLElement {
+  hass?: HomeAssistant;
+  setConfig(config: Record<string, unknown>): void;
+}
 
 declare global {
   interface Window {
@@ -27,6 +33,14 @@ interface CoversGroupConfig {
   icon_open?: string;
   icon_closed?: string;
   icon_partial?: string;
+  group_by_floors?: boolean;
+}
+
+interface CoversFloorGroup {
+  floorId: string | null;
+  floorName: string;
+  floorIcon: string;
+  covers: string[];
 }
 
 // Pre-compiled RegExps for cover type name stripping
@@ -62,11 +76,13 @@ class Simon42CoversGroupCard extends LitElement {
   private _config!: CoversGroupConfig;
   private _deviceClasses!: string[];
   private _cachedFilteredIds: Set<string> | null = null;
+  private _cachedAreaForEntity: Map<string, string | null> | null = null;
   private _lastCoversList = '';
 
   // Reusable card pool
   private _tileCards: Map<string, any> = new Map();
   private _headingCard: any = null;
+  private _floorHeadingCards: Map<string, LovelaceCardElement> = new Map();
 
   static styles = css`
     :host {
@@ -86,6 +102,11 @@ class Simon42CoversGroupCard extends LitElement {
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 8px;
     }
+    .floor-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
   `;
 
   setConfig(config: CoversGroupConfig): void {
@@ -101,6 +122,7 @@ class Simon42CoversGroupCard extends LitElement {
 
     if (!oldHass || oldHass.entities !== this.hass.entities) {
       this._cachedFilteredIds = null;
+      this._cachedAreaForEntity = null;
     }
 
     // Build cache if needed
@@ -184,6 +206,61 @@ class Simon42CoversGroupCard extends LitElement {
     return relevant;
   }
 
+  private _getAreaForEntity(entityId: string): string | null {
+    if (!this._cachedAreaForEntity) this._cachedAreaForEntity = new Map();
+    if (this._cachedAreaForEntity.has(entityId)) {
+      return this._cachedAreaForEntity.get(entityId) ?? null;
+    }
+    const entity = Registry.getEntity(entityId);
+    let areaId: string | null = entity?.area_id ?? null;
+    if (!areaId && entity?.device_id) {
+      const device = Registry.getDevice(entity.device_id);
+      areaId = device?.area_id ?? null;
+    }
+    this._cachedAreaForEntity.set(entityId, areaId);
+    return areaId;
+  }
+
+  private _groupByFloors(covers: string[]): CoversFloorGroup[] {
+    if (!this.hass) return [];
+
+    const areas: AreaRegistryEntry[] = Object.values(this.hass.areas);
+    const areaFloorMap = new Map<string, string | null>();
+    for (const area of areas) {
+      areaFloorMap.set(area.area_id, area.floor_id ?? null);
+    }
+
+    const floorMap = new Map<string | null, string[]>();
+    for (const id of covers) {
+      const areaId = this._getAreaForEntity(id);
+      const floorId = areaId ? (areaFloorMap.get(areaId) ?? null) : null;
+      if (!floorMap.has(floorId)) floorMap.set(floorId, []);
+      floorMap.get(floorId)?.push(id);
+    }
+
+    // HA's floor registry order preserves the user-defined "Reorder areas and floors" sequence
+    const floors = this.hass.floors;
+    const floorOrder = Object.keys(floors);
+    const sortedKeys: (string | null)[] = [
+      ...floorOrder.filter((id) => floorMap.has(id)),
+      ...(floorMap.has(null) ? [null] : []),
+    ];
+
+    return sortedKeys.map((floorId) => {
+      const floor = floorId ? floors[floorId] : null;
+      return {
+        floorId,
+        floorName: floor?.name || localize('lights.floor_other'),
+        floorIcon: floor?.icon || 'mdi:home-outline',
+        covers: floorMap.get(floorId) ?? [],
+      };
+    });
+  }
+
+  private _getFloorDomKey(floorId: string | null): string {
+    return floorId ?? '_none';
+  }
+
   private _stripCoverType(entityId: string): string {
     const state = this.hass?.states[entityId];
     if (!state) return entityId;
@@ -198,17 +275,17 @@ class Simon42CoversGroupCard extends LitElement {
     return name.trim() || state.attributes.friendly_name || entityId;
   }
 
-  private _buildHeadingConfig(covers: string[]): any {
+  private _buildHeadingConfig(covers: string[], floorLabel?: string, floorIcon?: string): Record<string, unknown> {
     const groupType = this._config.group_type;
     const openText = this._config.batch_open_text || localize('covers.open_all');
     const closeText = this._config.batch_close_text || localize('covers.close_all');
 
     if (groupType === 'partially_open') {
-      const headingLabel = this._config.heading_partial || localize('covers.partially_open');
+      const headingLabel = floorLabel || this._config.heading_partial || localize('covers.partially_open');
       return {
         type: 'heading',
         heading: `${headingLabel} (${covers.length})`,
-        icon: this._config.icon_partial || 'mdi:blinds-horizontal',
+        icon: floorIcon || this._config.icon_partial || 'mdi:blinds-horizontal',
         badges: [
           {
             type: 'button',
@@ -235,15 +312,16 @@ class Simon42CoversGroupCard extends LitElement {
     }
 
     const isOpen = groupType === 'open';
-    const headingLabel = isOpen
+    const headingLabel = floorLabel || (isOpen
       ? (this._config.heading_open || localize('covers.open'))
-      : (this._config.heading_closed || localize('covers.closed'));
+      : (this._config.heading_closed || localize('covers.closed')));
+    const defaultIcon = isOpen ? 'mdi:blinds-horizontal' : 'mdi:blinds';
+    const headingIcon = floorIcon
+      || (isOpen ? (this._config.icon_open || defaultIcon) : (this._config.icon_closed || defaultIcon));
     return {
       type: 'heading',
       heading: `${headingLabel} (${covers.length})`,
-      icon: isOpen
-        ? this._config.icon_open || 'mdi:blinds-horizontal'
-        : this._config.icon_closed || 'mdi:blinds',
+      icon: headingIcon,
       badges: [
         {
           type: 'button',
@@ -298,12 +376,38 @@ class Simon42CoversGroupCard extends LitElement {
     const covers = this._getRelevantCovers();
     this.hidden = covers.length === 0;
 
+    if (this._config.group_by_floors && covers.length > 0) {
+      const floorGroups = this._groupByFloors(covers);
+      return html`
+        <div class="covers-section">
+          <div id="heading"></div>
+          ${floorGroups.map((group) => {
+            const key = this._getFloorDomKey(group.floorId);
+            return html`
+              <div class="floor-section">
+                <div id=${`floor-heading-${key}`}></div>
+                <div class="cover-grid" id=${`floor-grid-${key}`}></div>
+              </div>
+            `;
+          })}
+        </div>
+      `;
+    }
+
     return html`
       <div class="covers-section">
         <div id="heading"></div>
         <div class="cover-grid" id="grid"></div>
       </div>
     `;
+  }
+
+  private _getOrCreateFloorHeadingCard(key: string): LovelaceCardElement {
+    let card = this._floorHeadingCards.get(key);
+    if (card) return card;
+    card = document.createElement('hui-heading-card') as LovelaceCardElement;
+    this._floorHeadingCards.set(key, card);
+    return card;
   }
 
   protected updated(changedProps: PropertyValues): void {
@@ -321,12 +425,74 @@ class Simon42CoversGroupCard extends LitElement {
       const grid = this.shadowRoot?.getElementById('grid');
       if (grid) grid.innerHTML = '';
       this._headingCard = null;
+      this._floorHeadingCards.clear();
       this._tileCards.clear();
       this._lastCoversList = '';
       return;
     }
 
-    // Reconcile heading card
+    if (this._config.group_by_floors) {
+      const floorGroups = this._groupByFloors(covers);
+
+      // Reconcile main heading (total count)
+      const headingSlot = this.shadowRoot?.getElementById('heading');
+      if (headingSlot) {
+        if (!this._headingCard) {
+          this._headingCard = document.createElement('hui-heading-card');
+          headingSlot.appendChild(this._headingCard);
+        }
+        this._headingCard.hass = this.hass;
+        this._headingCard.setConfig(this._buildHeadingConfig(covers));
+      }
+
+      const activeIds = new Set(covers);
+      const activeFloorKeys = new Set<string>();
+
+      // Reconcile per-floor sections
+      for (const group of floorGroups) {
+        const key = this._getFloorDomKey(group.floorId);
+        activeFloorKeys.add(key);
+        const floorHeadingSlot = this.shadowRoot?.getElementById(`floor-heading-${key}`);
+        if (floorHeadingSlot) {
+          const headingCard = this._getOrCreateFloorHeadingCard(key);
+          if (!headingCard.parentNode) floorHeadingSlot.appendChild(headingCard);
+          headingCard.hass = this.hass;
+          headingCard.setConfig(this._buildHeadingConfig(group.covers, group.floorName, group.floorIcon));
+        }
+
+        const grid = this.shadowRoot?.getElementById(`floor-grid-${key}`);
+        if (!grid) continue;
+
+        let prevNode: Node | null = null;
+        for (const entityId of group.covers) {
+          const card = this._getOrCreateTileCard(entityId);
+          const nextSibling = prevNode ? prevNode.nextSibling : grid.firstChild;
+          if (card !== nextSibling) grid.insertBefore(card, nextSibling);
+          prevNode = card;
+        }
+        while (prevNode && prevNode.nextSibling) {
+          grid.removeChild(prevNode.nextSibling);
+        }
+      }
+
+      // Clean up tile cards no longer in any floor
+      for (const [id, card] of this._tileCards) {
+        if (!activeIds.has(id)) {
+          if (card.parentNode) card.parentNode.removeChild(card);
+          this._tileCards.delete(id);
+        }
+      }
+      // Clean up floor heading cards for floors no longer present
+      for (const [k, card] of this._floorHeadingCards) {
+        if (!activeFloorKeys.has(k)) {
+          if (card.parentNode) card.parentNode.removeChild(card);
+          this._floorHeadingCards.delete(k);
+        }
+      }
+      return;
+    }
+
+    // Flat mode (no floor grouping)
     const headingSlot = this.shadowRoot?.getElementById('heading');
     if (headingSlot) {
       if (!this._headingCard) {
@@ -337,13 +503,11 @@ class Simon42CoversGroupCard extends LitElement {
       this._headingCard.setConfig(this._buildHeadingConfig(covers));
     }
 
-    // Reconcile tile cards in grid
     const grid = this.shadowRoot?.getElementById('grid');
     if (!grid) return;
 
     const activeIds = new Set(covers);
 
-    // Remove cards for entities no longer in the list
     for (const [id, card] of this._tileCards) {
       if (!activeIds.has(id)) {
         if (card.parentNode === grid) grid.removeChild(card);
@@ -351,7 +515,6 @@ class Simon42CoversGroupCard extends LitElement {
       }
     }
 
-    // Add/reorder cards to match the desired order
     let prevNode: Node | null = null;
     for (const entityId of covers) {
       const card = this._getOrCreateTileCard(entityId);
@@ -362,7 +525,6 @@ class Simon42CoversGroupCard extends LitElement {
       prevNode = card;
     }
 
-    // Remove trailing stale nodes
     while (prevNode && prevNode.nextSibling) {
       grid.removeChild(prevNode.nextSibling);
     }

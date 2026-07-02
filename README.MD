@@ -271,6 +271,49 @@ entity: sun.sun
   <img src="https://raw.githubusercontent.com/TheRealSimon42/simon42-dashboard-strategy/main/assets/Custom-Badges-hinzufugen.gif" alt="Eigene Badges hinzufügen" width="800" />
 </p>
 
+#### Wetter & Energie anpassen
+
+Die `weather`- und `energy`-Sections der Übersicht akzeptieren `custom_cards` über `target_section` (siehe Eigene Karten). Standardmäßig erscheinen die eingefügten Karten unterhalb der eingebauten `weather-forecast`- bzw. `energy-distribution`-Karte. Wer die Section komplett selbst gestalten möchte, kann die eingebaute Karte unterdrücken — die Section (Überschrift + Slot für eigene Karten) bleibt erhalten:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  show_weather: true
+  show_weather_forecast_card: false   # eingebaute weather-forecast-Karte ausblenden
+  show_energy: true
+  show_energy_distribution_card: false  # eingebaute energy-distribution-Karte ausblenden
+  custom_cards:
+    - target_section: weather
+      parsed_config:
+        type: custom:clock-weather-card
+        entity: weather.openweathermap
+```
+
+Für eine kompakte Live-Anzeige eigener Außen-Sensoren (Temperatur, Luftfeuchte, Wind, …) gibt es `weather_sensors`. Die Einträge werden als Icon + Wert + Einheit oben in der Wetter-Section gerendert — ohne zusätzliche Card-Chrome. Ideal als Ergänzung zur Forecast-Karte oder als alleinige Anzeige bei `show_weather_forecast_card: false`.
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  weather_sensors:
+    - entity: sensor.outdoor_temperature
+      icon: mdi:thermometer
+      unit: "°C"
+      round: 1
+    - entity: sensor.outdoor_humidity
+      icon: mdi:water-percent
+      unit: "%"
+    - entity: sensor.wind_speed
+      icon: mdi:weather-windy
+      unit: "km/h"
+      round: 1
+```
+
+Pro Eintrag:
+- `entity` — Sensor-Entity-ID (Pflicht; Format `domain.object_id`)
+- `icon` — MDI-Icon (Standard: `mdi:gauge`)
+- `unit` — angehängte Einheit als Text (z.B. `°C`, `km/h`)
+- `round` — Anzahl Nachkommastellen für numerische Werte; weglassen für rohen Zustand
+
 #### Custom Views
 
 Eigene Dashboard-Views mit beliebigen Cards erstellen. Jede Custom View benötigt einen Titel, Pfad und Icon. Der YAML-Code definiert den Inhalt der View.
@@ -320,8 +363,11 @@ Entitäten können auf mehreren Ebenen gefiltert werden:
 | `hide_mobile_app_batteries` | boolean | `false` | Mobile-App-Batterien ausblenden |
 | `battery_critical_threshold` | number | `20` | Schwellwert für kritische Batterien (%) |
 | `battery_low_threshold` | number | `50` | Schwellwert für niedrige Batterien (%) |
-| `show_weather` | boolean | `true` | Wetter-Karte |
-| `show_energy` | boolean | `true` | Energie-Dashboard |
+| `show_weather` | boolean | `true` | Wetter-Section |
+| `show_weather_forecast_card` | boolean | `true` | Eingebaute `weather-forecast`-Karte. Auf `false` für komplett eigene Wetter-Section |
+| `weather_sensors` | object[] | `[]` | Inline Icon+Wert-Zeile oben in der Wetter-Section (siehe oben) |
+| `show_energy` | boolean | `true` | Energie-Section |
+| `show_energy_distribution_card` | boolean | `true` | Eingebaute `energy-distribution`-Karte. Auf `false` für komplett eigene Energie-Section |
 | `favorite_entities` | string[] | `[]` | Favoriten-Entitäten auf der Übersicht |
 | `group_by_floors` | boolean | `false` | Bereiche nach Etagen gliedern |
 | `show_partially_open_covers` | boolean | `false` | Teiloffene Rollos separat anzeigen |
