@@ -10,6 +10,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Structure validation resolves against the latest STABLE release's assets
+  # (since v1.3.5 they carry the dist files) — do not remove releases with
+  # assets, or this check breaks again.
+  hacs:
+    name: HACS Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hacs/action@main
+        with:
+          category: plugin
+
   translations:
     name: Translation Lint
     runs-on: ubuntu-latest
