@@ -1459,11 +1459,17 @@ class Simon42DashboardStrategyEditor extends LitElement {
         <div class="description">${localize('editor.show_scripts_in_rooms_desc')}</div>
 
         ${this._renderCheckbox('show-window-contacts-in-rooms', localize('editor.show_window_contacts_in_rooms'), showWindowContactsInRooms,
-          (checked) => this._toggleChanged('show_window_contacts_in_rooms', checked, true))}
+          (checked) => {
+            this._toggleChanged('show_window_contacts_in_rooms', checked, true);
+            this._refreshAllAreaCaches();
+          })}
         <div class="description">${localize('editor.show_window_contacts_in_rooms_desc')}</div>
 
         ${this._renderCheckbox('show-door-contacts-in-rooms', localize('editor.show_door_contacts_in_rooms'), showDoorContactsInRooms,
-          (checked) => this._toggleChanged('show_door_contacts_in_rooms', checked, true))}
+          (checked) => {
+            this._toggleChanged('show_door_contacts_in_rooms', checked, true);
+            this._refreshAllAreaCaches();
+          })}
         <div class="description">${localize('editor.show_door_contacts_in_rooms_desc')}</div>
 
         ${this._renderCheckbox('use-default-area-sort', localize('editor.use_default_area_sort'), useDefaultAreaSort,
@@ -2105,7 +2111,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const groupedEntities = await getAreaGroupedEntities(areaId, this._hass);
     const hiddenEntities = getHiddenEntitiesForArea(areaId, this._config);
     const entityOrders = getEntityOrdersForArea(areaId, this._config);
-    const badgeCandidates = getAreaBadgeCandidates(areaId, this._hass);
+    const badgeCandidates = getAreaBadgeCandidates(areaId, this._hass, this._config);
     const additionalBadges = getAdditionalBadgesForArea(areaId, this._config);
     const availableEntities = getAvailableBadgeEntities(areaId, this._hass, badgeCandidates, additionalBadges);
     const defaultShowNames = getDefaultShowNameEntities(badgeCandidates, this._hass);
@@ -2126,13 +2132,20 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this.requestUpdate();
   }
 
+  /** Re-derive cached per-area data for all loaded areas (e.g. after a global toggle changed) */
+  private _refreshAllAreaCaches(): void {
+    for (const areaId of this._areaEntitiesCache.keys()) {
+      this._refreshAreaCache(areaId);
+    }
+  }
+
   private _refreshAreaCache(areaId: string): void {
     if (!this._hass || !this._areaEntitiesCache.has(areaId)) return;
 
     const groupedEntities = this._areaEntitiesCache.get(areaId)!.groupedEntities;
     const hiddenEntities = getHiddenEntitiesForArea(areaId, this._config);
     const entityOrders = getEntityOrdersForArea(areaId, this._config);
-    const badgeCandidates = getAreaBadgeCandidates(areaId, this._hass);
+    const badgeCandidates = getAreaBadgeCandidates(areaId, this._hass, this._config);
     const additionalBadges = getAdditionalBadgesForArea(areaId, this._config);
     const availableEntities = getAvailableBadgeEntities(areaId, this._hass, badgeCandidates, additionalBadges);
     const defaultShowNames = getDefaultShowNameEntities(badgeCandidates, this._hass);
@@ -3145,7 +3158,7 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
   return roomEntities;
 }
 
-function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant): string[] {
+function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Simon42StrategyConfig): string[] {
   const devices = Object.values(hass.devices || {});
   const entities = Object.values(hass.entities || {});
 
@@ -3171,6 +3184,12 @@ function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant): string[] {
     const unit = stateObj.attributes?.unit_of_measurement as string | undefined;
 
     if (!isBadgeCandidate(domain, dc, unit, entity.entity_id)) continue;
+
+    // Globally disabled contact types don't render as badges — don't offer
+    // them as candidates either (they stay pickable as additional badges,
+    // which is the deliberate per-room override).
+    if (domain === 'binary_sensor' && dc === 'window' && config.show_window_contacts_in_rooms === false) continue;
+    if (domain === 'binary_sensor' && dc === 'door' && config.show_door_contacts_in_rooms === false) continue;
 
     if (domain === 'sensor' && (dc === 'battery' || entity.entity_id.includes('battery'))) {
       const val = parseFloat(stateObj.state);
