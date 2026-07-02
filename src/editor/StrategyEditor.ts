@@ -1765,9 +1765,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
             <label>${localize('editor.target_section')}:</label>
             <select
               @change=${(e: Event) => this._updateCustomCardField(index, 'target_section', (e.target as HTMLSelectElement).value)}>
-              ${(['custom_cards', 'overview', 'areas', 'weather', 'energy'] as const).map((key) => html`
+              ${[...Simon42DashboardStrategyEditor._sectionMeta.entries()].map(([key, meta]) => html`
                 <option value=${key} ?selected=${(card.target_section || 'custom_cards') === key}>
-                  ${localize(Simon42DashboardStrategyEditor._sectionMeta.get(key)!.labelKey)}
+                  ${localize(meta.labelKey)}
                 </option>
               `)}
             </select>
