@@ -82,8 +82,13 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
         : findWeatherEntity(hass);
     const someSensorId = findDummySensor(hass);
 
-    // Person badges
-    const personBadges = createPersonBadges(persons, hass);
+    // Person badges (default-on; suppress via show_person_badges=false to swap in
+    // your own person badges through custom_badges instead).
+    // Zone-aware: HA's person.state returns the zone name when the person is in
+    // a non-home zone, so 'with_state' layout surfaces "Work" / "Office" / etc.
+    const showPersonBadges = dashboardConfig.show_person_badges !== false;
+    const personBadgeLayout = dashboardConfig.person_badge_layout || 'with_state';
+    const personBadges = showPersonBadges ? createPersonBadges(persons, hass, personBadgeLayout) : [];
 
     // Config flags
     const showWeather = dashboardConfig.show_weather !== false;

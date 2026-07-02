@@ -76,6 +76,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
   private _roomPinSearch = '';
   private _weatherSensorSearch = '';
   private _securityExtraSearch = '';
+  private _lightFavSearch = '';
 
   // Cache for loaded area entities (avoid re-fetching on every render)
   private _areaEntitiesCache = new Map<string, {
@@ -1025,6 +1026,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderOverviewSection()}
         ${this._renderSummariesSection()}
         ${this._renderFavoritesSection()}
+        ${this._renderLightFavoritesSection()}
 
         <div class="section-divider">
           <div class="section-divider-title">
@@ -1378,6 +1380,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
   private _renderOverviewSection(): TemplateResult {
     const showClockCard = this._config.show_clock_card !== false;
     const showSearchCard = this._config.show_search_card === true;
+    const showPersonBadges = this._config.show_person_badges !== false;
     const hasSearchCardDeps = this._checkSearchCardDependencies();
     const alarmEntity = this._config.alarm_entity || '';
     const alarmEntities = this._getAlarmEntities();
@@ -1389,6 +1392,22 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderCheckbox('show-clock-card', localize('editor.show_clock_card'), showClockCard,
           (checked) => this._toggleChanged('show_clock_card', checked, true))}
         <div class="description">${localize('editor.show_clock_card_desc')}</div>
+
+        <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
+          ${localize('editor.person_badge_layout')}
+        </div>
+        ${(['minimal', 'with_state', 'with_state_and_time'] as const).map((opt) => {
+          const current = this._config.person_badge_layout || 'with_state';
+          return html`
+            <div class="form-row">
+              <input type="radio" id="person-badge-${opt}" name="person-badge-layout" value=${opt}
+                ?checked=${current === opt}
+                @change=${() => this._personBadgeLayoutChanged(opt)} />
+              <label for="person-badge-${opt}">${localize('editor.person_badge_layout_' + opt)}</label>
+            </div>
+          `;
+        })}
+        <div class="description">${localize('editor.person_badge_layout_desc')}</div>
 
         <div class="form-row">
           <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${localize('editor.alarm_entity')}</label>
@@ -1406,15 +1425,46 @@ class Simon42DashboardStrategyEditor extends LitElement {
         <div class="description">${localize('editor.alarm_desc')}</div>
 
         ${this._renderCheckbox('show-search-card', localize('editor.show_search_card'), showSearchCard,
-          (checked) => this._toggleChanged('show_search_card', checked, false),
-          !hasSearchCardDeps)}
+          (checked) => { this._toggleChanged('show_search_card', checked, false); })}
         <div class="description">
           ${hasSearchCardDeps
             ? localize('editor.show_search_card_desc')
             : html`<span>&#x26A0;&#xFE0F; ${unsafeHTML(localize('editor.show_search_card_missing'))}</span>`}
         </div>
+
+        ${this._renderCheckbox('show-person-badges', localize('editor.show_person_badges'), showPersonBadges,
+          (checked) => this._toggleChanged('show_person_badges', checked, true))}
+        <div class="description">${localize('editor.show_person_badges_desc')}</div>
+        ${showSearchCard ? html`
+          <div style="margin-left: 26px; margin-bottom: 8px;">
+            <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
+              ${localize('editor.search_card_variant')}
+            </div>
+            ${(['custom', 'tip'] as const).map((opt) => {
+              const current = this._config.search_card_variant === 'tip' ? 'tip' : 'custom';
+              return html`
+                <div class="form-row">
+                  <input type="radio" id="search-variant-${opt}" name="search-card-variant" value=${opt}
+                    ?checked=${current === opt}
+                    @change=${() => this._searchCardVariantChanged(opt)} />
+                  <label for="search-variant-${opt}">${localize('editor.search_card_variant_' + opt)}</label>
+                </div>
+              `;
+            })}
+          </div>
+        ` : nothing}
       </div>
     `;
+  }
+
+  private _searchCardVariantChanged(variant: 'custom' | 'tip'): void {
+    const updated: Simon42StrategyConfig = { ...this._config };
+    if (variant === 'custom') {
+      delete updated.search_card_variant;
+    } else {
+      updated.search_card_variant = variant;
+    }
+    this._fireConfigChanged(updated);
   }
 
   private _renderSummariesSection(): TemplateResult {
@@ -1622,6 +1672,74 @@ class Simon42DashboardStrategyEditor extends LitElement {
     } else {
       updated.security_extra_entities = next;
     }
+    this._fireConfigChanged(updated);
+  }
+
+  private _renderLightFavoritesSection(): TemplateResult {
+    const lightFavs = this._config.light_favorite_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
+    const filtered = this._getFilteredEntities(this._lightFavSearch).filter((e) => e.entity_id.startsWith('light.'));
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_light_favorites')}</div>
+
+        ${lightFavs.length > 0 ? html`
+          <div class="entity-list-container" style="margin-bottom: 8px;">
+            ${lightFavs.map((entityId) => {
+              const name = entityMap.get(entityId) || entityId;
+              return html`
+                <div class="entity-list-item" data-entity-id=${entityId}>
+                  <span class="item-info">
+                    <span class="item-name">${name}</span>
+                    <span class="item-entity-id">${entityId}</span>
+                  </span>
+                  <button class="btn-remove" @click=${() => this._removeLightFavorite(entityId)}>&#x2715;</button>
+                </div>
+              `;
+            })}
+          </div>
+        ` : nothing}
+
+        <div class="entity-search-picker">
+          <input type="text" class="entity-search-input"
+            placeholder=${localize('editor.select_entity') + '...'}
+            .value=${this._lightFavSearch}
+            @input=${(e: Event) => { this._lightFavSearch = (e.target as HTMLInputElement).value; this.requestUpdate(); }}
+            @blur=${() => { setTimeout(() => { this._lightFavSearch = ''; this.requestUpdate(); }, 200); }}
+          />
+          ${this._lightFavSearch.length >= 2 ? html`
+            <div class="entity-search-results">
+              ${filtered.length > 0
+                ? filtered.map((entity) => html`
+                  <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); this._addLightFavorite(entity.entity_id); this._lightFavSearch = ''; this.requestUpdate(); }}>
+                    <span class="entity-search-name">${entity.name}</span>
+                    <span class="entity-search-id">${entity.entity_id}</span>
+                  </div>
+                `)
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
+              }
+            </div>
+          ` : nothing}
+        </div>
+        <div class="description">${localize('editor.light_favorites_desc')}</div>
+      </div>
+    `;
+  }
+
+  private _addLightFavorite(entityId: string): void {
+    const current = this._config.light_favorite_entities || [];
+    if (current.includes(entityId)) return;
+    const updated: Simon42StrategyConfig = { ...this._config, light_favorite_entities: [...current, entityId] };
+    this._fireConfigChanged(updated);
+  }
+
+  private _removeLightFavorite(entityId: string): void {
+    const current = this._config.light_favorite_entities || [];
+    const next = current.filter((e) => e !== entityId);
+    const updated: Simon42StrategyConfig = { ...this._config };
+    if (next.length === 0) delete updated.light_favorite_entities;
+    else updated.light_favorite_entities = next;
     this._fireConfigChanged(updated);
   }
 
@@ -2792,6 +2910,16 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+  }
+
+  private _personBadgeLayoutChanged(layout: 'minimal' | 'with_state' | 'with_state_and_time'): void {
+    const updated: Simon42StrategyConfig = { ...this._config };
+    if (layout === 'with_state') {
+      delete updated.person_badge_layout;
+    } else {
+      updated.person_badge_layout = layout;
+    }
+    this._fireConfigChanged(updated);
   }
 
   private _alarmEntityChanged(e: Event): void {

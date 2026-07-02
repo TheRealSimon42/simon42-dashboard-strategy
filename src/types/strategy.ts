@@ -63,6 +63,14 @@ export interface Simon42StrategyConfig {
   // the energy section: false keeps the section so custom_cards can render
   // here without the built-in energy-distribution card alongside
   show_search_card?: boolean; // default: false
+  /**
+   * Which kind of search affordance to render when show_search_card is true.
+   * - 'custom' (default): the existing custom:search-card from HACS — true
+   *   inline search input, but needs custom:search-card + card-tools installed.
+   * - 'tip': a small HA-native markdown card hinting the global search shortcut
+   *   (Cmd/Ctrl+E). No HACS dependency. Less powerful but works out of the box.
+   */
+  search_card_variant?: 'custom' | 'tip';
   show_summary_views?: boolean; // default: false
   show_room_views?: boolean; // default: false
   group_by_floors?: boolean; // default: false
@@ -110,6 +118,10 @@ export interface Simon42StrategyConfig {
    * room views and nav tabs.
    */
   room_visibility?: Record<string, { entity: string; state: string }>;
+  show_person_badges?: boolean; // default: true — set false to suppress the
+  // auto-generated person chip badges (useful when supplying replacement
+  // badges via custom_badges)
+  person_badge_layout?: 'minimal' | 'with_state' | 'with_state_and_time'; // default: 'with_state'
 
   // Layout
   sections_order?: SectionKey[]; // default: DEFAULT_SECTIONS_ORDER
@@ -131,6 +143,7 @@ export interface Simon42StrategyConfig {
   favorite_entities?: string[];
   room_pin_entities?: string[];
   security_extra_entities?: string[];
+  light_favorite_entities?: string[]; // light.* glance row on overview (#176)
 
   // Area management
   use_default_area_sort?: boolean; // default: false
