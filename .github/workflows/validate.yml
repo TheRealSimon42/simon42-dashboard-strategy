@@ -10,15 +10,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  hacs:
-    name: HACS Validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hacs/action@main
-        with:
-          category: plugin
-
   translations:
     name: Translation Lint
     runs-on: ubuntu-latest

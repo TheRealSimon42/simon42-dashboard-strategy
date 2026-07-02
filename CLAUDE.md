@@ -167,7 +167,7 @@ npm run watch       # Dev + auto-rebuild on file changes
 2. Develop, build, test on live system
 3. **Source only — `dist/` is gitignored and never committed.** HACS serves the built files as release assets (see Release Automation below); old tags (≤ v1.3.4-beta.9) still carry their committed `dist/`
 4. `git push -u origin feature/<name>`
-5. Create PR from feature branch → `main` (triggers validation workflows: HACS, translation lint, build)
+5. Create PR from feature branch → `main` (triggers validation workflows: translation lint, build + bundle check. NOTE: hacs/action cannot be used here — it validates the branch TREE only and the tree deliberately has no `dist/`; real HACS installs from release assets instead)
 6. Wait for CI to pass, then merge
 7. Delete feature branch (local + remote)
 

@@ -43,7 +43,3 @@ jobs:
             dist/*.js.gz
             dist/*.js.br
             dist/*.js.LICENSE.txt
-      - name: Validate for HACS
-        uses: hacs/action@main
-        with:
-          category: plugin
