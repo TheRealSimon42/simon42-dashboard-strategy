@@ -218,6 +218,12 @@ export interface RoomEntities {
   media_player: string[];
   vacuum: string[];
   fan: string[];
+  /** humidifier domain — covers both humidifier and dehumidifier devices */
+  humidifier: string[];
+  /** valve domain (HA 2024+) — irrigation, gas, water shutoff */
+  valve: string[];
+  /** water_heater domain — boilers, heat pumps */
+  water_heater: string[];
   switches: string[];
   locks: string[];
   automations: string[];

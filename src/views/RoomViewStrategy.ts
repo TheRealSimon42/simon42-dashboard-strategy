@@ -98,6 +98,9 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       media_player: [],
       vacuum: [],
       fan: [],
+      humidifier: [],
+      valve: [],
+      water_heater: [],
       switches: [],
       locks: [],
       automations: [],
@@ -168,6 +171,18 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       }
       if (domain === 'fan') {
         roomEntities.fan.push(entityId);
+        continue;
+      }
+      if (domain === 'humidifier') {
+        roomEntities.humidifier.push(entityId);
+        continue;
+      }
+      if (domain === 'valve') {
+        roomEntities.valve.push(entityId);
+        continue;
+      }
+      if (domain === 'water_heater') {
+        roomEntities.water_heater.push(entityId);
         continue;
       }
       if (domain === 'switch') {
@@ -639,6 +654,36 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         name: stripAreaName(e, area, hass),
         vertical: false,
         state_content: 'last_changed',
+      });
+    for (const e of roomEntities.humidifier)
+      miscCards.push({
+        type: 'tile',
+        entity: e,
+        name: stripAreaName(e, area, hass),
+        features: [{ type: 'humidifier-toggle' }],
+        features_position: 'inline',
+        vertical: false,
+        state_content: ['action', 'current_humidity'],
+      });
+    for (const e of roomEntities.valve)
+      miscCards.push({
+        type: 'tile',
+        entity: e,
+        name: stripAreaName(e, area, hass),
+        features: [{ type: 'valve-open-close' }],
+        features_position: 'inline',
+        vertical: false,
+        state_content: 'last_changed',
+      });
+    for (const e of roomEntities.water_heater)
+      miscCards.push({
+        type: 'tile',
+        entity: e,
+        name: stripAreaName(e, area, hass),
+        features: [{ type: 'water-heater-operation-modes' }],
+        features_position: 'inline',
+        vertical: false,
+        state_content: ['operation_mode', 'current_temperature'],
       });
 
     miscCards.sort((a, b) => {
