@@ -165,11 +165,17 @@ npm run watch       # Dev + auto-rebuild on file changes
 ### Feature Development
 1. `git checkout -b feature/<name>` from `main`
 2. Develop, build, test on live system
-3. **Commit all files — source AND `dist/`!** HACS serves the `dist/` files from the tagged commit
+3. **Source only — `dist/` is gitignored and never committed.** HACS serves the built files as release assets (see Release Automation below); old tags (≤ v1.3.4-beta.9) still carry their committed `dist/`
 4. `git push -u origin feature/<name>`
-5. Create PR from feature branch → `main` (triggers HACS validation workflow)
+5. Create PR from feature branch → `main` (triggers validation workflows: HACS, translation lint, build)
 6. Wait for CI to pass, then merge
 7. Delete feature branch (local + remote)
+
+### Release Automation (since the dist/ removal, #190)
+- Pushing a tag `vX.Y.Z` triggers `.github/workflows/release.yml`: CI checks the tag is on `main`, builds, verifies version consistency (`scripts/verify-release-version.mjs`) and bundle completeness (`scripts/verify-release-bundle.mjs`), then publishes a GitHub Release with all `dist/*.js` (+ `.gz`/`.br`/LICENSE) files as individual assets
+- Pushing a tag `vX.Y.Z-beta.N` triggers `release-prerelease.yml` (same steps, published as Pre-Release)
+- **Do not create GitHub releases manually anymore — only push the tag.** The workflow creates the release; a manually pre-created release would be updated in place
+- HACS installs tagged versions from the release assets (verified against HACS source: all assets of the release are downloaded). `hide_default_branch: true` in `hacs.json` prevents installing `main`, which has no `dist/`
 
 ### Beta Releases
 - Beta versions are tagged as **Pre-Release** on GitHub (e.g. `v1.3.0-beta.1`)
@@ -190,6 +196,8 @@ The following locations must be updated for a new version:
 | **Git tag** | create on release | `v1.3.0-beta.5` or `v1.3.0` |
 
 **Important:** `STRATEGY_VERSION` is logged to the browser console — useful for asking users which version they have installed.
+
+The release workflow enforces this checklist: `verify-release-version.mjs` fails the release if `package.json`, `STRATEGY_VERSION` and the tag name disagree — so bump both files and merge to `main` BEFORE pushing the tag.
 
 ### Porting Community PRs
 When PRs were created against the old codebase and cannot be merged directly:

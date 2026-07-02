@@ -29,3 +29,18 @@ jobs:
           node-version: '20'
       - name: Lint translation files
         run: node scripts/lint-translations.mjs
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Verify built bundle
+        run: node scripts/verify-release-bundle.mjs
