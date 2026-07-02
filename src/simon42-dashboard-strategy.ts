@@ -53,7 +53,19 @@ class Simon42DashboardStrategy extends HTMLElement {
     Registry.initialize(hass, config);
     t('registry initialized');
 
-    const visibleAreas = getVisibleAreasFromHass(hass, config.areas_display, config.use_default_area_sort);
+    const allVisibleAreas = getVisibleAreasFromHass(hass, config.areas_display, config.use_default_area_sort);
+
+    // Per-room conditional visibility: filter the area list used to build
+    // room views / nav tabs. The overview's area cards section is NOT
+    // filtered — it uses Registry.areas via OverviewViewStrategy and the
+    // user can already hide individual area cards via areas_display.hidden.
+    const roomVisibility = config.room_visibility || {};
+    const visibleAreas = allVisibleAreas.filter((area) => {
+      const rule = Reflect.get(roomVisibility, area.area_id) as { entity?: string; state?: string } | undefined;
+      if (!rule?.entity) return true;
+      const st = Reflect.get(hass.states as Record<string, unknown>, rule.entity) as { state?: string } | undefined;
+      return !!st && st.state === rule.state;
+    });
 
     const showSummaryViews = config.show_summary_views === true;
     const showRoomViews = config.show_room_views === true;

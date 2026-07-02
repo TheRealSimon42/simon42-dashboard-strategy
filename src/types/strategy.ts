@@ -85,6 +85,7 @@ export interface Simon42StrategyConfig {
   show_locks_in_rooms?: boolean; // default: false
   show_automations_in_rooms?: boolean; // default: false
   show_scripts_in_rooms?: boolean; // default: false
+  show_cameras_in_rooms?: boolean; // default: true
   show_window_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide window contact badges)
   show_door_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide door contact badges)
   show_switches_on_areas?: boolean; // default: false
@@ -98,6 +99,17 @@ export interface Simon42StrategyConfig {
    * → agenda section only on workdays.
    */
   section_visibility?: Record<string, { entity: string; state: string }>;
+  hide_unavailable_in_rooms?: boolean; // default: true (skip unavailable in room views)
+  /**
+   * Per-room conditional visibility. Keyed by area_id. When set, the room
+   * view (and its corresponding nav tab) is only rendered when
+   * hass.states[entity].state === state. Useful for guest-mode rooms,
+   * seasonal rooms (garden in winter), etc.
+   *
+   * The overview's area cards section is NOT affected — only the per-area
+   * room views and nav tabs.
+   */
+  room_visibility?: Record<string, { entity: string; state: string }>;
 
   // Layout
   sections_order?: SectionKey[]; // default: DEFAULT_SECTIONS_ORDER
@@ -269,6 +281,7 @@ export interface RoomEntities {
 export interface SensorEntities {
   temperature: string[];
   humidity: string[];
+  pm1: string[];
   pm25: string[];
   pm10: string[];
   co2: string[];
@@ -277,6 +290,7 @@ export interface SensorEntities {
   occupancy: string[];
   illuminance: string[];
   absolute_humidity: string[];
+  soil_moisture: string[];
   battery: string[];
   window: string[];
   door: string[];

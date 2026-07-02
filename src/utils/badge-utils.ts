@@ -11,6 +11,7 @@ import type { HomeAssistant } from '../types/homeassistant';
 export const BADGE_COLOR_MAP: Record<string, string> = {
   temperature: 'red',
   humidity: 'indigo',
+  pm1: 'orange',
   pm25: 'orange',
   pm10: 'orange',
   carbon_dioxide: 'green',
@@ -62,10 +63,15 @@ export function isBadgeCandidate(
   if (domain === 'sensor') {
     // Battery (caller must check threshold)
     if (deviceClass === 'battery' || entityId.includes('battery')) return true;
+    // Soil/plant moisture sensors (e.g. plant.*, soil moisture %). Check before
+    // the generic '%'-unit reject below — soil moisture also uses '%' but is
+    // semantically distinct from air humidity.
+    if (deviceClass === 'moisture') return true;
     // Skip temperature/humidity (handled by HA area config, not auto-detected)
     if (deviceClass === 'temperature' || unit === '°C' || unit === '°F') return false;
     if (deviceClass === 'humidity' || unit === '%') return false;
     // Air quality
+    if (deviceClass === 'pm1' || entityId.includes('pm_1') || /(^|_)pm1($|_)/.test(entityId)) return true;
     if (deviceClass === 'pm25' || entityId.includes('pm_2_5') || entityId.includes('pm25')) return true;
     if (deviceClass === 'pm10' || entityId.includes('pm_10') || entityId.includes('pm10')) return true;
     if (deviceClass === 'carbon_dioxide' || entityId.includes('co2')) return true;
@@ -73,6 +79,10 @@ export function isBadgeCandidate(
     // Light / humidity
     if (deviceClass === 'illuminance' || unit === 'lx') return true;
     if (unit === 'g/m³') return true; // absolute humidity
+    // Power: instantaneous load (W, kW). Energy meter totals (Wh, kWh)
+    // are intentionally omitted — they're cumulative counters that don't
+    // make sense as a single live badge value.
+    if (deviceClass === 'power' || unit === 'W' || unit === 'kW') return true;
     return false;
   }
   if (domain === 'binary_sensor') {

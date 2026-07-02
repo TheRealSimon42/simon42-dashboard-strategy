@@ -111,6 +111,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     const sensorEntities: SensorEntities = {
       temperature: [],
       humidity: [],
+      pm1: [],
       pm25: [],
       pm10: [],
       co2: [],
@@ -119,6 +120,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       occupancy: [],
       illuminance: [],
       absolute_humidity: [],
+      soil_moisture: [],
       battery: [],
       window: [],
       door: [],
@@ -131,12 +133,18 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     // (no hidden, no_dboard, config/diagnostic, config-hidden)
     const visibleEntities = Registry.getVisibleEntitiesForArea(area.area_id);
 
+    // Filter unavailable entities from per-room domain lists / sensor badges.
+    // Default true: unavailable items are noise in a room view (offline devices,
+    // dead batteries surface elsewhere via the batteries view + alert badge).
+    const hideUnavailable = dashboardConfig.hide_unavailable_in_rooms !== false;
+
     for (const entity of visibleEntities) {
       const entityId = entity.entity_id;
 
       // State check
       const state = hass.states[entityId];
       if (!state) continue;
+      if (hideUnavailable && state.state === 'unavailable') continue;
 
       // Domain categorization
       const domain = entityId.split('.')[0];
@@ -201,7 +209,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         roomEntities.scripts.push(entityId);
         continue;
       }
-      if (domain === 'camera') {
+      if (domain === 'camera' && dashboardConfig.show_cameras_in_rooms !== false) {
         roomEntities.cameras.push(entityId);
         continue;
       }
@@ -217,9 +225,20 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         // assigned in HA area settings (area.temperature_entity_id / humidity_entity_id).
         // No auto-detection — avoids wrong sensors (e.g. heater temperature).
         if (deviceClass === 'temperature' || unit === '°C' || unit === '°F') continue;
+        // Soil/plant moisture sensors are auto-detected (device_class === 'moisture'
+        // on sensor.* — distinct from binary_sensor.moisture which means a leak).
+        // Check before the '%' fallthrough so we don't lose them.
+        if (deviceClass === 'moisture') {
+          sensorEntities.soil_moisture.push(entityId);
+          continue;
+        }
         if (deviceClass === 'humidity' || unit === '%') continue;
         if (unit === 'g/m³') {
           sensorEntities.absolute_humidity.push(entityId);
+          continue;
+        }
+        if (deviceClass === 'pm1' || entityId.includes('pm_1') || /(^|_)pm1($|_)/.test(entityId)) {
+          sensorEntities.pm1.push(entityId);
           continue;
         }
         if (deviceClass === 'pm25' || entityId.includes('pm_2_5') || entityId.includes('pm25')) {
@@ -341,6 +360,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
 
     // Single-match sensor types
     const singleTypes: Array<[string[], string]> = [
+      [sensorEntities.pm1, 'pm1'],
       [sensorEntities.pm25, 'pm25'],
       [sensorEntities.pm10, 'pm10'],
       [sensorEntities.co2, 'carbon_dioxide'],
@@ -350,6 +370,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       [sensorEntities.motion, 'motion'],
       [sensorEntities.occupancy, 'occupancy'],
       [sensorEntities.absolute_humidity, 'moisture'],
+      [sensorEntities.soil_moisture, 'moisture'],
       [sensorEntities.smoke, 'smoke'],
       [sensorEntities.gas, 'gas'],
       [sensorEntities.heat, 'heat'],
