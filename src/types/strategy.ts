@@ -122,6 +122,11 @@ export interface Simon42StrategyConfig {
   // auto-generated person chip badges (useful when supplying replacement
   // badges via custom_badges)
   person_badge_layout?: 'minimal' | 'with_state' | 'with_state_and_time'; // default: 'with_state'
+  power_badge_entity?: string; // default: unset (no badge). Pick a sensor (e.g. main grid power in W).
+  show_unavailable_alert_badge?: boolean; // default: false (auto-hides at zero)
+  show_now_playing_badge?: boolean; // default: false (auto-hides when nothing's playing)
+  show_sun_badge?: boolean; // default: false (requires HA sun integration / sun.sun entity)
+  show_updates_badge?: boolean; // default: false (auto-hides at zero pending)
 
   // Layout
   sections_order?: SectionKey[]; // default: DEFAULT_SECTIONS_ORDER

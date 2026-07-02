@@ -196,7 +196,113 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
       .filter((b) => b.parsed_config)
       .map((b) => b.parsed_config as LovelaceBadgeConfig);
 
-    return createOverviewView(overviewSections, [...personBadges, ...customBadges]);
+    // Optional live power badge — auto-hide when entity missing
+    const powerBadges: LovelaceBadgeConfig[] = [];
+    const powerEntity = dashboardConfig.power_badge_entity;
+    // eslint-disable-next-line security/detect-object-injection -- entity ID is user-picked from the editor sensor dropdown
+    if (powerEntity && hass.states[powerEntity]) {
+      powerBadges.push({
+        type: 'entity',
+        entity: powerEntity,
+        show_name: false,
+        color: 'orange',
+      });
+    }
+
+    // Optional "unavailable entities" alert badge — count entities whose
+    // state is "unavailable", skipping ones the user hid. Auto-hide at zero.
+    const alertBadges: LovelaceBadgeConfig[] = [];
+    if (dashboardConfig.show_unavailable_alert_badge === true) {
+      let count = 0;
+      for (const [entityId, state] of Object.entries(hass.states)) {
+        if (state.state !== 'unavailable') continue;
+        if (Registry.isExcludedByLabel(entityId)) continue;
+        if (Registry.isHiddenByConfig(entityId)) continue;
+        const entry = Registry.getEntity(entityId);
+        if (entry?.hidden) continue;
+        count++;
+      }
+      if (count > 0 && someSensorId) {
+        alertBadges.push({
+          type: 'entity',
+          entity: someSensorId,
+          name: String(count),
+          icon: 'mdi:alert-circle-outline',
+          color: 'red',
+          show_state: false,
+        });
+      }
+    }
+
+    // Optional "now playing" badge — first media_player in 'playing' state.
+    const nowPlayingBadges: LovelaceBadgeConfig[] = [];
+    if (dashboardConfig.show_now_playing_badge === true) {
+      const playing = Registry.getVisibleEntityIdsForDomain('media_player').find((id) => {
+        const st = Reflect.get(hass.states as Record<string, unknown>, id) as { state?: string } | undefined;
+        return st?.state === 'playing';
+      });
+      if (playing) {
+        nowPlayingBadges.push({
+          type: 'entity',
+          entity: playing,
+          icon: 'mdi:play-circle',
+          color: 'green',
+          show_state: false,
+          tap_action: { action: 'more-info' },
+        });
+      }
+    }
+
+    // Optional sun badge — sun.sun + auto next-sunrise/sunset state content.
+    // Auto-hide when no sun.sun entity present.
+    const sunBadges: LovelaceBadgeConfig[] = [];
+    const sunState = Reflect.get(hass.states as Record<string, unknown>, 'sun.sun') as { state?: string } | undefined;
+    if (dashboardConfig.show_sun_badge === true && sunState) {
+      const isAbove = sunState.state === 'above_horizon';
+      sunBadges.push({
+        type: 'entity',
+        entity: 'sun.sun',
+        name: '',
+        icon: isAbove ? 'mdi:weather-sunset-down' : 'mdi:weather-sunset-up',
+        color: isAbove ? 'amber' : 'indigo',
+        tap_action: { action: 'more-info' },
+      });
+    }
+
+    // Optional "pending updates count" badge — Registry-filtered update.* in state 'on'.
+    const updatesBadges: LovelaceBadgeConfig[] = [];
+    if (dashboardConfig.show_updates_badge === true) {
+      let count = 0;
+      let firstId: string | undefined;
+      for (const id of Registry.getVisibleEntityIdsForDomain('update')) {
+        const st = Reflect.get(hass.states as Record<string, unknown>, id) as { state?: string } | undefined;
+        if (st?.state === 'on') {
+          count++;
+          if (!firstId) firstId = id;
+        }
+      }
+      if (count > 0 && firstId) {
+        updatesBadges.push({
+          type: 'entity',
+          entity: firstId,
+          name: String(count),
+          icon: 'mdi:update',
+          color: 'orange',
+          show_state: false,
+          tap_action: { action: 'navigate', navigation_path: '/config/updates' },
+        });
+      }
+    }
+
+    return createOverviewView(overviewSections, [
+      ...personBadges,
+      ...powerBadges,
+      ...alertBadges,
+      ...nowPlayingBadges,
+      ...sunBadges,
+      ...updatesBadges,
+      ...customBadges,
+    ]);
   }
 }
 

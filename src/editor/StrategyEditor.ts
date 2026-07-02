@@ -181,6 +181,27 @@ class Simon42DashboardStrategyEditor extends LitElement {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  /** Sensor entities reporting power (W / kW). For the optional live power badge. */
+  private _getPowerSensorEntities(): AlarmEntityOption[] {
+    if (!this._hass) return [];
+    return Object.keys(this._hass.states)
+      .filter((entityId) => {
+        if (!entityId.startsWith('sensor.')) return false;
+        const stateObj = this._hass!.states[entityId];
+        const dc = stateObj?.attributes?.device_class;
+        const unit = stateObj?.attributes?.unit_of_measurement;
+        return dc === 'power' || unit === 'W' || unit === 'kW';
+      })
+      .map((entityId) => {
+        const stateObj = this._hass!.states[entityId];
+        return {
+          entity_id: entityId,
+          name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   private _getFilteredEntities(query: string, filterWithArea = false): EntitySelectOption[] {
     if (!this._hass || query.length < 2) return [];
     const q = query.toLowerCase();
@@ -1137,6 +1158,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const weatherEntity = this._config.weather_entity || '';
     const weatherEntities = this._getWeatherEntities();
     const hiddenHeadings = new Set(this._config.hidden_section_headings || []);
+    const powerBadgeEntity = this._config.power_badge_entity || '';
+    const powerSensorEntities = this._getPowerSensorEntities();
 
     return html`
       <div class="section">
@@ -1214,6 +1237,23 @@ class Simon42DashboardStrategyEditor extends LitElement {
                     @change=${(e: Event) => { this._toggleChanged('show_energy_distribution_card', (e.target as HTMLInputElement).checked, true); }} />
                   <label for="show-energy-distribution-card">${localize('editor.show_energy_distribution_card')}</label>
                 </div>
+
+                ${powerSensorEntities.length > 0 ? html`
+                  <div class="section-order-sub" style="display: block;">
+                    <label for="power-badge-entity" style="display: block; margin-bottom: 4px;">${localize('editor.power_badge_entity')}</label>
+                    <select id="power-badge-entity"
+                      style="width: 100%;"
+                      @change=${this._powerBadgeEntityChanged}>
+                      <option value="" ?selected=${!powerBadgeEntity}>${localize('editor.power_badge_none')}</option>
+                      ${powerSensorEntities.map((entity) => html`
+                        <option value=${entity.entity_id} ?selected=${entity.entity_id === powerBadgeEntity}>
+                          ${entity.name}
+                        </option>
+                      `)}
+                    </select>
+                    <div class="description">${localize('editor.power_badge_entity_desc')}</div>
+                  </div>
+                ` : nothing}
               ` : nothing}
             `;
           })}
@@ -1267,6 +1307,25 @@ class Simon42DashboardStrategyEditor extends LitElement {
             })}
           </div>
         </details>
+
+        <div style="margin-top: 12px;">
+          ${this._renderCheckbox('show-unavailable-alert-badge', localize('editor.show_unavailable_alert_badge'),
+            this._config.show_unavailable_alert_badge === true,
+            (checked) => this._toggleChanged('show_unavailable_alert_badge', checked, false))}
+          <div class="description">${localize('editor.show_unavailable_alert_badge_desc')}</div>
+          ${this._renderCheckbox('show-now-playing-badge', localize('editor.show_now_playing_badge'),
+            this._config.show_now_playing_badge === true,
+            (checked) => this._toggleChanged('show_now_playing_badge', checked, false))}
+          <div class="description">${localize('editor.show_now_playing_badge_desc')}</div>
+          ${this._renderCheckbox('show-sun-badge', localize('editor.show_sun_badge'),
+            this._config.show_sun_badge === true,
+            (checked) => this._toggleChanged('show_sun_badge', checked, false))}
+          <div class="description">${localize('editor.show_sun_badge_desc')}</div>
+          ${this._renderCheckbox('show-updates-badge', localize('editor.show_updates_badge'),
+            this._config.show_updates_badge === true,
+            (checked) => this._toggleChanged('show_updates_badge', checked, false))}
+          <div class="description">${localize('editor.show_updates_badge_desc')}</div>
+        </div>
       </div>
     `;
   }
@@ -2955,6 +3014,17 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
   }
+
+  private _powerBadgeEntityChanged = (e: Event): void => {
+    const entityId = (e.target as HTMLSelectElement).value;
+    const newConfig: Simon42StrategyConfig = { ...this._config };
+    if (entityId) {
+      newConfig.power_badge_entity = entityId;
+    } else {
+      delete newConfig.power_badge_entity;
+    }
+    this._fireConfigChanged(newConfig);
+  };
 
   private _batteryCriticalChanged(e: Event): void {
     const value = parseInt((e.target as HTMLInputElement).value, 10);
