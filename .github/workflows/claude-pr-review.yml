@@ -41,9 +41,10 @@ jobs:
                Custom Cards nicht aufweichen, keine ungefilterten Entity-Scans
                in Cards, Chunk-Architektur nicht verändern, keine
                Auto-Detection für Temperatur/Feuchte auf Area Cards.
-            3. dist/: Wurde dist/ mitgeliefert und passt es zum Quellcode?
-               (Solange dist/ im Repo liegt, muss es aktuell sein.)
-               dist/-Diffs inhaltlich ignorieren, nur Konsistenz prüfen.
+            3. dist/: Das Repo enthält KEIN dist/ mehr (Auslieferung über
+               Release-Assets, siehe CLAUDE.md "Release Automation"). Enthält
+               der PR dist/-Dateien, freundlich bitten, sie zu entfernen —
+               Quellcode reicht.
             4. i18n: Neue UI-Strings müssen über die localize-Utility laufen
                und in de.json UND en.json vorhanden sein.
             5. Übliche Code-Qualität, Bugs, Typsicherheit (strict mode).
