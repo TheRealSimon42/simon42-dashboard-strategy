@@ -18,6 +18,28 @@ export const DEFAULT_SECTIONS_ORDER: SectionKey[] = [
   'energy',
 ];
 
+/** Keys for section headings that can be hidden via hidden_section_headings */
+export type HeadingKey =
+  | 'overview'
+  | 'summaries'
+  | 'favorites'
+  | 'custom_cards'
+  | 'areas'
+  | 'areas_other'
+  | 'weather'
+  | 'energy';
+
+export const ALL_HEADING_KEYS: HeadingKey[] = [
+  'overview',
+  'summaries',
+  'favorites',
+  'custom_cards',
+  'areas',
+  'areas_other',
+  'weather',
+  'energy',
+];
+
 // -- Main Strategy Config ---------------------------------------------
 
 export interface Simon42StrategyConfig {
@@ -67,11 +89,20 @@ export interface Simon42StrategyConfig {
   show_door_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide door contact badges)
   show_switches_on_areas?: boolean; // default: false
   show_alerts_on_areas?: boolean; // default: false
+  show_window_alerts_on_areas?: boolean; // default: false
   energy_link_dashboard?: boolean; // default: true
+  /**
+   * Per-section conditional visibility. Keyed by SectionKey. When set, the
+   * section is only rendered when hass.states[entity].state === state.
+   * Example: { agenda: { entity: 'calendar.workday_sensor', state: 'on' } }
+   * → agenda section only on workdays.
+   */
+  section_visibility?: Record<string, { entity: string; state: string }>;
 
   // Layout
   sections_order?: SectionKey[]; // default: DEFAULT_SECTIONS_ORDER
   summaries_columns?: 2 | 4; // default: 2
+  hidden_section_headings?: HeadingKey[]; // default: []
 
   // Favorites display
   favorites_show_state?: boolean; // default: false
@@ -87,6 +118,7 @@ export interface Simon42StrategyConfig {
   // to auto-discovery if the configured entity is unavailable at render time.
   favorite_entities?: string[];
   room_pin_entities?: string[];
+  security_extra_entities?: string[];
 
   // Area management
   use_default_area_sort?: boolean; // default: false

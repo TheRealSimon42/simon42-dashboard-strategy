@@ -34,7 +34,7 @@ interface DisplayConfig {
 const COVER_DEVICE_CLASSES = new Set(['awning', 'blind', 'curtain', 'shade', 'shutter', 'window']);
 
 const SECURITY_COVER_CLASSES = new Set(['door', 'garage', 'gate', 'window']);
-const SECURITY_BINARY_SENSOR_CLASSES = new Set(['door', 'window', 'garage_door', 'opening', 'smoke', 'gas', 'heat']);
+const SECURITY_BINARY_SENSOR_CLASSES = new Set(['door', 'window', 'garage_door', 'opening', 'smoke', 'gas', 'heat', 'moisture']);
 
 const COLOR_MAP: Record<string, string> = {
   orange: 'var(--orange-color, #ff9800)',
@@ -168,9 +168,15 @@ class Simon42SummaryCard extends LitElement {
           const entry = Registry.getEntity(id);
           if (entry?.platform && SECURITY_EXCLUDED_PLATFORMS.has(entry.platform)) continue;
           const deviceClass = state.attributes?.device_class;
-          if (deviceClass !== undefined && SECURITY_BINARY_SENSOR_CLASSES.has(deviceClass)) {
-            result.push(id);
+          if (deviceClass === undefined || !SECURITY_BINARY_SENSOR_CLASSES.has(deviceClass)) continue;
+          // Skip relay-style devices that expose an `opening` binary_sensor
+          // alongside their primary switch (e.g. SONOFF ZBMINIR2/L2). The
+          // "opening" state mirrors the relay, not a door/window contact.
+          if (deviceClass === 'opening' && entry?.device_id) {
+            const siblings = Registry.getEntityIdsForDevice(entry.device_id);
+            if (siblings.some((sid) => sid.startsWith('switch.'))) continue;
           }
+          result.push(id);
         }
         break;
       }

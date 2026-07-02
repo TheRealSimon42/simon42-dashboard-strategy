@@ -26,6 +26,7 @@ export interface OverviewSectionParams {
 export function createOverviewSection(data: OverviewSectionParams): LovelaceSectionConfig | null {
   const { showSearchCard, config, hass } = data;
   const showClockCard = config.show_clock_card !== false;
+  const hidden = new Set(config.hidden_section_headings || []);
 
   // Check if alarm entity is configured
   const alarmEntity = config.alarm_entity;
@@ -33,7 +34,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   const cards: LovelaceCardConfig[] = [];
 
   // Only show "Übersicht" heading if clock or alarm is visible
-  if (showClockCard || alarmEntity) {
+  if ((showClockCard || alarmEntity) && !hidden.has('overview')) {
     cards.push({
       type: 'heading',
       heading: localize('sections.overview'),
@@ -144,10 +145,12 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
 
   // Only show summaries heading and cards if at least one is enabled
   if (summaryCards.length > 0) {
-    cards.push({
-      type: 'heading',
-      heading: localize('sections.summaries'),
-    });
+    if (!hidden.has('summaries')) {
+      cards.push({
+        type: 'heading',
+        heading: localize('sections.summaries'),
+      });
+    }
 
     // Layout logic: adapt to number of cards
     if (summariesColumns === 4) {
@@ -172,10 +175,12 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   const favoriteEntities = (config.favorite_entities || []).filter((entityId) => hass.states[entityId] !== undefined);
 
   if (favoriteEntities.length > 0) {
-    cards.push({
-      type: 'heading',
-      heading: localize('sections.favorites'),
-    });
+    if (!hidden.has('favorites')) {
+      cards.push({
+        type: 'heading',
+        heading: localize('sections.favorites'),
+      });
+    }
 
     const showState = config.favorites_show_state === true;
     const hideLastChanged = config.favorites_hide_last_changed === true;
@@ -212,14 +217,15 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
 export function createCustomCardsSection(
   customCards: CustomCard[],
   heading?: string,
-  icon?: string
+  icon?: string,
+  hideHeading?: boolean
 ): LovelaceSectionConfig | null {
   const validCards = customCards.filter((c) => c.parsed_config);
   if (validCards.length === 0) return null;
 
-  const cards: LovelaceCardConfig[] = [
-    { type: 'heading', heading: heading || localize('sections.custom_cards'), icon: icon || 'mdi:cards' },
-  ];
+  const cards: LovelaceCardConfig[] = hideHeading
+    ? []
+    : [{ type: 'heading', heading: heading || localize('sections.custom_cards'), icon: icon || 'mdi:cards' }];
 
   for (const card of validCards) {
     if (Array.isArray(card.parsed_config)) {

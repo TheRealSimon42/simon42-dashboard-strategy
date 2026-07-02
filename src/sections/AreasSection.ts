@@ -80,12 +80,22 @@ const ALERT_DEVICE_CLASSES = new Set([
   'smoke', 'gas', 'heat', 'cold', 'safety', 'tamper', 'vibration',
 ]);
 
+// Window/door alerts are gated by a separate toggle (show_window_alerts_on_areas)
+// because they're less universally desired — many users have permanent contact
+// sensors on doors that they don't want as constant "alerts" on the overview.
+const WINDOW_ALERT_DEVICE_CLASSES = new Set(['window', 'door', 'opening', 'garage_door']);
+
 /**
  * Pre-computes which binary sensor alert classes exist in this area.
  * Only returns device classes from the allowlist that have at least one
  * binary_sensor entity, so the area card doesn't scan all entities at render time.
  */
-function getAreaAlertClasses(areaId: string, hass: HomeAssistant): string[] {
+function getAreaAlertClasses(
+  areaId: string,
+  hass: HomeAssistant,
+  includeStandardAlerts: boolean,
+  includeWindowAlerts: boolean
+): string[] {
   const areaEntities = Registry.getVisibleEntitiesForArea(areaId);
   if (areaEntities.length === 0) return [];
 
@@ -97,7 +107,9 @@ function getAreaAlertClasses(areaId: string, hass: HomeAssistant): string[] {
 
     const state = hass.states[entity.entity_id];
     const deviceClass = state?.attributes?.device_class as string | undefined;
-    if (deviceClass && ALERT_DEVICE_CLASSES.has(deviceClass)) found.add(deviceClass);
+    if (!deviceClass) continue;
+    if (includeStandardAlerts && ALERT_DEVICE_CLASSES.has(deviceClass)) found.add(deviceClass);
+    else if (includeWindowAlerts && WINDOW_ALERT_DEVICE_CLASSES.has(deviceClass)) found.add(deviceClass);
   }
 
   return [...found];
@@ -120,9 +132,12 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
     sensorClasses.push('humidity');
   }
 
-  // Pre-filter alert classes if enabled
-  const alertClasses = Registry.config.show_alerts_on_areas
-    ? getAreaAlertClasses(area.area_id, hass)
+  // Pre-filter alert classes if enabled. Window/door classes are gated by a
+  // separate toggle so users can opt into open-window badges independently.
+  const showAlerts = Registry.config.show_alerts_on_areas === true;
+  const showWindowAlerts = Registry.config.show_window_alerts_on_areas === true;
+  const alertClasses = showAlerts || showWindowAlerts
+    ? getAreaAlertClasses(area.area_id, hass, showAlerts, showWindowAlerts)
     : undefined;
 
   return {
@@ -160,24 +175,25 @@ function getFloorIcon(level: number | null | undefined): string {
 export function createAreasSection(
   visibleAreas: AreaRegistryEntry[],
   groupByFloors: boolean = false,
-  hass: HomeAssistant | null = null
+  hass: HomeAssistant | null = null,
+  hideAreasHeading: boolean = false,
+  hideAreasOtherHeading: boolean = false
 ): LovelaceSectionConfig | LovelaceSectionConfig[] | null {
   // Auto-hide: no visible areas → no section at all (not a lonely heading)
   if (visibleAreas.length === 0) return null;
 
   // No floor grouping: flat list
   if (!groupByFloors || !hass) {
-    return {
-      type: 'grid',
-      cards: [
-        {
-          type: 'heading',
-          heading_style: 'title',
-          heading: localize('sections.areas'),
-        },
-        ...visibleAreas.map((area) => buildAreaCard(area, hass as HomeAssistant)),
-      ],
-    };
+    const cards: LovelaceCardConfig[] = [];
+    if (!hideAreasHeading) {
+      cards.push({
+        type: 'heading',
+        heading_style: 'title',
+        heading: localize('sections.areas'),
+      });
+    }
+    for (const area of visibleAreas) cards.push(buildAreaCard(area, hass as HomeAssistant));
+    return { type: 'grid', cards };
   }
 
   // Group areas by floor
@@ -226,18 +242,17 @@ export function createAreasSection(
 
   // Areas without a floor
   if (areasWithoutFloor.length > 0) {
-    sections.push({
-      type: 'grid',
-      cards: [
-        {
-          type: 'heading',
-          heading_style: 'title',
-          heading: localize('sections.areas_other'),
-          icon: 'mdi:home-outline',
-        },
-        ...areasWithoutFloor.map((area) => buildAreaCard(area, hass)),
-      ],
-    });
+    const cards: LovelaceCardConfig[] = [];
+    if (!hideAreasOtherHeading) {
+      cards.push({
+        type: 'heading',
+        heading_style: 'title',
+        heading: localize('sections.areas_other'),
+        icon: 'mdi:home-outline',
+      });
+    }
+    for (const area of areasWithoutFloor) cards.push(buildAreaCard(area, hass));
+    sections.push({ type: 'grid', cards });
   }
 
   return sections;

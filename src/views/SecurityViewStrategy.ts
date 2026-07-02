@@ -19,10 +19,12 @@ class Simon42ViewSecurityStrategy extends HTMLElement {
 
     // Categorize entities
     const locks: string[] = [];
-    const doors: string[] = [];
+    const doors: string[] = [];          // cover.door + cover.gate (security: open/closed)
+    const motorizedWindows: string[] = []; // cover.window (electric Velux etc.)
     const garages: string[] = [];
-    const windows: string[] = [];
+    const windows: string[] = [];        // binary_sensor.door/window/opening (contact sensors)
     const smokeGas: string[] = [];
+    const waterLeak: string[] = [];
 
     for (const id of [
       ...allVisibleByDomain('lock'),
@@ -38,12 +40,23 @@ class Simon42ViewSecurityStrategy extends HTMLElement {
         locks.push(id);
       } else if (id.startsWith('cover.')) {
         if (deviceClass === 'garage') garages.push(id);
-        else if (deviceClass === 'door' || deviceClass === 'gate' || deviceClass === 'window') doors.push(id);
+        else if (deviceClass === 'window') motorizedWindows.push(id);
+        else if (deviceClass === 'door' || deviceClass === 'gate') doors.push(id);
       } else if (id.startsWith('binary_sensor.')) {
         const entry = Registry.getEntity(id);
         if (entry?.platform && SECURITY_EXCLUDED_PLATFORMS.has(entry.platform)) continue;
+        // Drop relay-style devices that incidentally expose an opening
+        // binary_sensor (e.g. SONOFF ZBMINIR2/L2 — they're switches whose
+        // "opening" state mirrors the relay, not a real door/window contact).
+        // Heuristic: if the same parent device also exposes a switch.*
+        // entity, the binary_sensor is the relay-state indicator.
+        if (deviceClass === 'opening' && entry?.device_id) {
+          const siblings = Registry.getEntityIdsForDevice(entry.device_id);
+          if (siblings.some((sid) => sid.startsWith('switch.'))) continue;
+        }
         if (deviceClass && ['door', 'window', 'garage_door', 'opening'].includes(deviceClass)) windows.push(id);
         else if (deviceClass && ['smoke', 'gas', 'heat'].includes(deviceClass)) smokeGas.push(id);
+        else if (deviceClass === 'moisture') waterLeak.push(id);
       }
     }
 
@@ -147,6 +160,58 @@ class Simon42ViewSecurityStrategy extends HTMLElement {
       if (cards.length > 0) sections.push({ type: 'grid', cards });
     }
 
+    // Motorized windows (cover.* with device_class=window — e.g. Velux electric)
+    if (motorizedWindows.length > 0) {
+      const open = motorizedWindows.filter((e) => hass.states[e]?.state === 'open');
+      const closed = motorizedWindows.filter((e) => hass.states[e]?.state === 'closed');
+      const cards: LovelaceCardConfig[] = [];
+
+      if (open.length > 0) {
+        cards.push({
+          type: 'heading',
+          heading: localize('security.motorized_windows_open'),
+          heading_style: 'subtitle',
+          icon: 'mdi:window-open-variant',
+          badges: [
+            {
+              type: 'entity',
+              entity: open[0],
+              show_name: false,
+              show_state: false,
+              tap_action: {
+                action: 'perform-action',
+                perform_action: 'cover.close_cover',
+                target: { entity_id: open },
+              },
+              icon: 'mdi:arrow-down',
+            },
+          ],
+        });
+        cards.push(
+          ...open.map((e) => ({
+            type: 'tile',
+            entity: e,
+            features: [{ type: 'cover-open-close' }],
+            features_position: 'inline',
+            state_content: 'last_changed',
+          }))
+        );
+      }
+      if (closed.length > 0) {
+        cards.push({ type: 'heading', heading: localize('security.motorized_windows_closed'), heading_style: 'subtitle', icon: 'mdi:window-closed-variant' });
+        cards.push(
+          ...closed.map((e) => ({
+            type: 'tile',
+            entity: e,
+            features: [{ type: 'cover-open-close' }],
+            features_position: 'inline',
+            state_content: 'last_changed',
+          }))
+        );
+      }
+      if (cards.length > 0) sections.push({ type: 'grid', cards });
+    }
+
     // Garages
     if (garages.length > 0) {
       const open = garages.filter((e) => hass.states[e]?.state === 'open');
@@ -231,6 +296,44 @@ class Simon42ViewSecurityStrategy extends HTMLElement {
         cards.push(...inactive.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
       }
       if (cards.length > 0) sections.push({ type: 'grid', cards });
+    }
+
+    // Water leak / moisture sensors
+    if (waterLeak.length > 0) {
+      const active = waterLeak.filter((e) => hass.states[e]?.state === 'on');
+      const inactive = waterLeak.filter((e) => hass.states[e]?.state === 'off');
+      const cards: LovelaceCardConfig[] = [];
+
+      if (active.length > 0) {
+        cards.push({ type: 'heading', heading: localize('security.water_leak_active'), heading_style: 'subtitle', icon: 'mdi:water-alert' });
+        cards.push(...active.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
+      }
+      if (inactive.length > 0) {
+        cards.push({ type: 'heading', heading: localize('security.water_leak_inactive'), heading_style: 'subtitle', icon: 'mdi:water-check' });
+        cards.push(...inactive.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
+      }
+      if (cards.length > 0) sections.push({ type: 'grid', cards });
+    }
+
+    // User-picked extra entities (smart appliances, custom sensors, etc.)
+    const extraEntities: string[] = (config.config?.security_extra_entities || []).filter(
+      (id: string) => hass.states[id] !== undefined
+    );
+    if (extraEntities.length > 0) {
+      const cards: LovelaceCardConfig[] = [
+        {
+          type: 'heading',
+          heading: localize('security.extra_entities'),
+          heading_style: 'subtitle',
+          icon: 'mdi:home-alert',
+        },
+        ...extraEntities.map((e) => ({
+          type: 'tile',
+          entity: e,
+          state_content: ['state', 'last_changed'],
+        })),
+      ];
+      sections.push({ type: 'grid', cards });
     }
 
     return { type: 'sections', sections };

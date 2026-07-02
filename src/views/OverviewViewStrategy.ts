@@ -101,14 +101,24 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
       customCardsBySection.set(target, list);
     }
 
+    // Hidden section headings (per-section opt-in)
+    const hiddenHeadings = new Set(dashboardConfig.hidden_section_headings || []);
+
     // Build sections
     const overviewSection = createOverviewSection({ someSensorId, showSearchCard, config: dashboardConfig, hass });
     const customCardsSection = createCustomCardsSection(
       customCardsBySection.get('custom_cards') || [],
       dashboardConfig.custom_cards_heading,
-      dashboardConfig.custom_cards_icon
+      dashboardConfig.custom_cards_icon,
+      hiddenHeadings.has('custom_cards')
     );
-    const areasSections = createAreasSection(visibleAreas, groupByFloors, hass);
+    const areasSections = createAreasSection(
+      visibleAreas,
+      groupByFloors,
+      hass,
+      hiddenHeadings.has('areas'),
+      hiddenHeadings.has('areas_other'),
+    );
 
     // Section map: key → section(s) or null
     const sectionMap = new Map<SectionKey, LovelaceSectionConfig | LovelaceSectionConfig[] | null>([
@@ -122,7 +132,8 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
           showWeather,
           dashboardConfig.show_weather_forecast_card !== false,
           dashboardConfig.weather_sensors || [],
-          dashboardConfig.weather_presentation
+          dashboardConfig.weather_presentation,
+          hiddenHeadings.has('weather')
         ),
       ],
       [
@@ -130,15 +141,24 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
         createEnergySection(
           showEnergy,
           dashboardConfig.energy_link_dashboard !== false,
-          dashboardConfig.show_energy_distribution_card !== false
+          dashboardConfig.show_energy_distribution_card !== false,
+          hiddenHeadings.has('energy')
         ),
       ],
     ]);
+
+    // Per-section conditional visibility (e.g. show agenda only on workdays).
+    const sectionVisibility = dashboardConfig.section_visibility || {};
 
     // Assemble in configured order, appending assigned custom cards to each section
     const sectionsOrder = normalizeSectionsOrder(dashboardConfig.sections_order ?? DEFAULT_SECTIONS_ORDER);
     const overviewSections: LovelaceSectionConfig[] = [];
     for (const key of sectionsOrder) {
+      const rule = Reflect.get(sectionVisibility, key) as { entity?: string; state?: string } | undefined;
+      if (rule?.entity) {
+        const entState = Reflect.get(hass.states as Record<string, unknown>, rule.entity) as { state?: string } | undefined;
+        if (!entState || entState.state !== rule.state) continue;
+      }
       const result = sectionMap.get(key);
       if (!result) continue;
       if (Array.isArray(result)) {

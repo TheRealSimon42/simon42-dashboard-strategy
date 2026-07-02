@@ -135,21 +135,23 @@ export function createWeatherSection(
   showWeather: boolean,
   showForecastCard: boolean = true,
   weatherSensors: WeatherSensorConfig[] = [],
-  presentation?: WeatherPresentation
+  presentation?: WeatherPresentation,
+  hideHeading: boolean = false
 ): LovelaceSectionConfig | null {
   if (!weatherEntity || !showWeather) return null;
 
   const resolvedPresentation: WeatherPresentation =
     presentation ?? (showForecastCard ? 'forecast_daily' : 'none');
 
-  const cards: LovelaceCardConfig[] = [
-    {
+  const cards: LovelaceCardConfig[] = [];
+  if (!hideHeading) {
+    cards.push({
       type: 'heading',
       heading: localize('sections.weather'),
       heading_style: 'title',
       icon: 'mdi:weather-partly-cloudy',
-    },
-  ];
+    });
+  }
 
   const sensorRow = buildWeatherSensorRow(weatherSensors);
   if (sensorRow) cards.push(sensorRow);
@@ -171,18 +173,20 @@ export function createWeatherSection(
 export function createEnergySection(
   showEnergy: boolean,
   linkDashboard: boolean = true,
-  showDistributionCard: boolean = true
+  showDistributionCard: boolean = true,
+  hideHeading: boolean = false
 ): LovelaceSectionConfig | null {
   if (!showEnergy) return null;
 
-  const cards: LovelaceCardConfig[] = [
-    {
+  const cards: LovelaceCardConfig[] = [];
+  if (!hideHeading) {
+    cards.push({
       type: 'heading',
       heading: localize('sections.energy'),
       heading_style: 'title',
       icon: 'mdi:lightning-bolt',
-    },
-  ];
+    });
+  }
 
   if (showDistributionCard) {
     cards.push({

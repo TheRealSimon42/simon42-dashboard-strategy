@@ -75,6 +75,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
   private _favoriteSearch = '';
   private _roomPinSearch = '';
   private _weatherSensorSearch = '';
+  private _securityExtraSearch = '';
 
   // Cache for loaded area entities (avoid re-fetching on every render)
   private _areaEntitiesCache = new Map<string, {
@@ -1133,6 +1134,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
       (this._config.show_weather_forecast_card === false ? 'none' : 'forecast_daily');
     const weatherEntity = this._config.weather_entity || '';
     const weatherEntities = this._getWeatherEntities();
+    const hiddenHeadings = new Set(this._config.hidden_section_headings || []);
 
     return html`
       <div class="section">
@@ -1214,8 +1216,92 @@ class Simon42DashboardStrategyEditor extends LitElement {
             `;
           })}
         </div>
+
+        <details style="margin-top: 12px;">
+          <summary style="cursor: pointer; font-size: 13px; font-weight: 500; color: var(--primary-text-color); padding: 4px 0;">
+            ${localize('editor.hide_section_headings')}
+          </summary>
+          <div style="margin-left: 14px; margin-top: 6px;">
+            <div class="description" style="margin-left: 0; margin-bottom: 8px;">
+              ${localize('editor.hide_section_headings_desc')}
+            </div>
+            ${(['overview', 'summaries', 'favorites', 'custom_cards', 'areas', 'areas_other', 'weather', 'energy'] as const).map((hk) => html`
+              <div class="form-row">
+                <input type="checkbox" id="hide-heading-${hk}"
+                  ?checked=${hiddenHeadings.has(hk)}
+                  @change=${(e: Event) => { this._toggleHiddenHeading(hk, (e.target as HTMLInputElement).checked); }} />
+                <label for="hide-heading-${hk}">${localize('editor.heading_label_' + hk)}</label>
+              </div>
+            `)}
+            ${localize('editor.section_visibility')}
+          </summary>
+          <div style="margin-left: 14px; margin-top: 6px;">
+            <div class="description" style="margin-left: 0; margin-bottom: 8px;">
+              ${localize('editor.section_visibility_desc')}
+            </div>
+            ${order.map((key) => {
+              const meta = Simon42DashboardStrategyEditor._sectionMeta.get(key);
+              if (!meta) return nothing;
+              const rule = this._config.section_visibility?.[key];
+              return html`
+                <div style="border: 1px solid var(--divider-color); border-radius: 6px; padding: 8px; margin-bottom: 8px;">
+                  <div style="font-weight: 500; margin-bottom: 6px;">${localize(meta.labelKey)}</div>
+                  <div class="form-row">
+                    <label for="visibility-entity-${key}" style="min-width: 80px; font-size: 12px;">${localize('editor.section_visibility_entity')}</label>
+                    <input type="text" id="visibility-entity-${key}" style="flex: 1;"
+                      placeholder="calendar.workday_sensor"
+                      .value=${rule?.entity || ''}
+                      @change=${(e: Event) => this._sectionVisibilityChanged(key, 'entity', (e.target as HTMLInputElement).value)} />
+                  </div>
+                  <div class="form-row">
+                    <label for="visibility-state-${key}" style="min-width: 80px; font-size: 12px;">${localize('editor.section_visibility_state')}</label>
+                    <input type="text" id="visibility-state-${key}" style="flex: 1;"
+                      placeholder="on"
+                      .value=${rule?.state || ''}
+                      @change=${(e: Event) => this._sectionVisibilityChanged(key, 'state', (e.target as HTMLInputElement).value)} />
+                  </div>
+                </div>
+              `;
+            })}
+          </div>
+        </details>
       </div>
     `;
+  }
+
+  private _toggleHiddenHeading(key: string, hide: boolean): void {
+    const current = new Set(this._config.hidden_section_headings || []);
+    if (hide) {
+      current.add(key as any);
+    } else {
+      current.delete(key as any);
+    }
+    const next = [...current];
+    const updated: Simon42StrategyConfig = { ...this._config };
+    if (next.length === 0) {
+      delete updated.hidden_section_headings;
+    } else {
+      updated.hidden_section_headings = next;
+    }
+    this._fireConfigChanged(updated);
+  }
+
+  private _sectionVisibilityChanged(sectionKey: string, field: 'entity' | 'state', value: string): void {
+    const updated: Simon42StrategyConfig = { ...this._config };
+    const current = { ...(updated.section_visibility || {}) };
+    const rule = { ...(current[sectionKey] || { entity: '', state: '' }) };
+    rule[field] = value.trim();
+    if (!rule.entity && !rule.state) {
+      delete current[sectionKey];
+    } else {
+      current[sectionKey] = rule;
+    }
+    if (Object.keys(current).length === 0) {
+      delete updated.section_visibility;
+    } else {
+      updated.section_visibility = current;
+    }
+    this._fireConfigChanged(updated);
   }
 
   // -- Section order drag & drop -----------------------------------------
@@ -1394,6 +1480,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderCheckbox('show-security-summary', localize('editor.show_security_summary'), showSecuritySummary,
           (checked) => this._toggleChanged('show_security_summary', checked, true))}
 
+        <div style="margin-left: 26px; margin-bottom: 8px;">
+          ${this._renderSecurityExtraEntitiesPicker()}
+        </div>
+
         ${this._renderCheckbox('show-climate-summary', localize('editor.show_climate_summary'), showClimateSummary,
           (checked) => this._toggleChanged('show_climate_summary', checked, false))}
         <div class="description">${localize('editor.show_climate_summary_desc')}</div>
@@ -1460,6 +1550,77 @@ class Simon42DashboardStrategyEditor extends LitElement {
       delete updated.unavailable_batteries_bucket;
     } else {
       updated.unavailable_batteries_bucket = bucket;
+    }
+    this._fireConfigChanged(updated);
+  }
+
+  private _renderSecurityExtraEntitiesPicker(): TemplateResult {
+    const extras = this._config.security_extra_entities || [];
+    const allEntities = this._getAllEntitiesForSelect();
+    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
+    const filtered = this._getFilteredEntities(this._securityExtraSearch);
+    return html`
+      <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
+        ${localize('editor.security_extra_entities')}
+      </div>
+      <div class="description" style="margin-left: 0; margin-bottom: 8px;">
+        ${localize('editor.security_extra_entities_desc')}
+      </div>
+      ${extras.length > 0 ? html`
+        <div class="entity-list-container" style="margin-bottom: 8px;">
+          ${extras.map((entityId) => {
+            const name = entityMap.get(entityId) || entityId;
+            return html`
+              <div class="entity-list-item" data-entity-id=${entityId}>
+                <span class="item-info">
+                  <span class="item-name">${name}</span>
+                  <span class="item-entity-id">${entityId}</span>
+                </span>
+                <button class="btn-remove" @click=${() => this._removeSecurityExtraEntity(entityId)}>&#x2715;</button>
+              </div>
+            `;
+          })}
+        </div>
+      ` : nothing}
+      <div class="entity-search-picker">
+        <input type="text" class="entity-search-input"
+          placeholder=${localize('editor.select_entity') + '...'}
+          .value=${this._securityExtraSearch}
+          @input=${(e: Event) => { this._securityExtraSearch = (e.target as HTMLInputElement).value; this.requestUpdate(); }}
+          @blur=${() => { setTimeout(() => { this._securityExtraSearch = ''; this.requestUpdate(); }, 200); }}
+        />
+        ${this._securityExtraSearch.length >= 2 ? html`
+          <div class="entity-search-results">
+            ${filtered.length > 0
+              ? filtered.map((entity) => html`
+                <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); this._addSecurityExtraEntity(entity.entity_id); this._securityExtraSearch = ''; this.requestUpdate(); }}>
+                  <span class="entity-search-name">${entity.name}</span>
+                  <span class="entity-search-id">${entity.entity_id}</span>
+                </div>
+              `)
+              : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
+            }
+          </div>
+        ` : nothing}
+      </div>
+    `;
+  }
+
+  private _addSecurityExtraEntity(entityId: string): void {
+    const current = this._config.security_extra_entities || [];
+    if (current.includes(entityId)) return;
+    const updated: Simon42StrategyConfig = { ...this._config, security_extra_entities: [...current, entityId] };
+    this._fireConfigChanged(updated);
+  }
+
+  private _removeSecurityExtraEntity(entityId: string): void {
+    const current = this._config.security_extra_entities || [];
+    const next = current.filter((e) => e !== entityId);
+    const updated: Simon42StrategyConfig = { ...this._config };
+    if (next.length === 0) {
+      delete updated.security_extra_entities;
+    } else {
+      updated.security_extra_entities = next;
     }
     this._fireConfigChanged(updated);
   }
@@ -1784,6 +1945,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const groupByFloors = this._config.group_by_floors === true;
     const showSwitchesOnAreas = this._config.show_switches_on_areas === true;
     const showAlertsOnAreas = this._config.show_alerts_on_areas === true;
+    const showWindowAlertsOnAreas = this._config.show_window_alerts_on_areas === true;
     const showLocksInRooms = this._config.show_locks_in_rooms === true;
     const showAutomationsInRooms = this._config.show_automations_in_rooms === true;
     const showScriptsInRooms = this._config.show_scripts_in_rooms === true;
@@ -1811,6 +1973,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderCheckbox('show-alerts-on-areas', localize('editor.show_alerts_on_areas'), showAlertsOnAreas,
           (checked) => this._toggleChanged('show_alerts_on_areas', checked, false))}
         <div class="description">${localize('editor.show_alerts_on_areas_desc')}</div>
+
+        ${this._renderCheckbox('show-window-alerts-on-areas', localize('editor.show_window_alerts_on_areas'), showWindowAlertsOnAreas,
+          (checked) => this._toggleChanged('show_window_alerts_on_areas', checked, false))}
+        <div class="description">${localize('editor.show_window_alerts_on_areas_desc')}</div>
 
         ${this._renderCheckbox('show-locks-in-rooms', localize('editor.show_locks_in_rooms'), showLocksInRooms,
           (checked) => this._toggleChanged('show_locks_in_rooms', checked, false))}
@@ -1936,6 +2102,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
       </div>
     `;
   }
+
 
   private _renderViewsSection(): TemplateResult {
     const showSummaryViews = this._config.show_summary_views === true;
