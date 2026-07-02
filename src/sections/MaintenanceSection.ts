@@ -18,7 +18,6 @@ export function createMaintenanceSection(
   if (!enabled) return null;
 
   const pending = Registry.getVisibleEntityIdsForDomain('update').filter((id) => {
-    // eslint-disable-next-line security/detect-object-injection -- entity IDs from Registry
     return hass.states[id]?.state === 'on';
   });
   if (pending.length === 0) return null;

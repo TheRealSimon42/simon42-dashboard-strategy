@@ -30,7 +30,6 @@ export function createTodosSection(
   if (!enabled) return null;
 
   const visible = Registry.getVisibleEntityIdsForDomain('todo').filter(
-    // eslint-disable-next-line security/detect-object-injection -- entity IDs from Registry
     (id) => hass.states[id] !== undefined
   );
 

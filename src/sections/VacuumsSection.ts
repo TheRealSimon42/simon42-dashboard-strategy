@@ -18,11 +18,9 @@ export function createVacuumsSection(
   if (!enabled) return null;
 
   const vacuumIds = Registry.getVisibleEntityIdsForDomain('vacuum').filter(
-    // eslint-disable-next-line security/detect-object-injection -- entity IDs from Registry
     (id) => hass.states[id] !== undefined
   );
   const mowerIds = Registry.getVisibleEntityIdsForDomain('lawn_mower').filter(
-    // eslint-disable-next-line security/detect-object-injection -- entity IDs from Registry
     (id) => hass.states[id] !== undefined
   );
   const entities = [...vacuumIds, ...mowerIds];

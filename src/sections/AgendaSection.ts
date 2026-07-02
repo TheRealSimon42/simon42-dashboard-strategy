@@ -31,7 +31,6 @@ export function createAgendaSection(
 
   // All calendar.* entities visible in this hass instance (no_dboard / hidden filtered)
   const visible = Registry.getVisibleEntityIdsForDomain('calendar').filter(
-    // eslint-disable-next-line security/detect-object-injection -- entity IDs from Registry
     (id) => hass.states[id] !== undefined
   );
 
