@@ -17,6 +17,12 @@ import { createPersonBadges } from '../utils/badge-builder';
 import { createOverviewSection, createCustomCardsSection } from '../sections/OverviewSection';
 import { createAreasSection } from '../sections/AreasSection';
 import { createWeatherSection, createEnergySection } from '../sections/WeatherEnergySection';
+import { createPlantsSection } from '../sections/PlantsSection';
+import { createAgendaSection } from '../sections/AgendaSection';
+import { createTodosSection } from '../sections/TodosSection';
+import { createPersonsSection } from '../sections/PersonsSection';
+import { createVacuumsSection } from '../sections/VacuumsSection';
+import { createMaintenanceSection } from '../sections/MaintenanceSection';
 import { createOverviewView } from '../utils/view-builder';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
 
@@ -25,7 +31,10 @@ import { timeStart, timeEnd, debugLog } from '../utils/debug';
  * appends any missing keys at the end (forward compatibility).
  */
 function normalizeSectionsOrder(order: SectionKey[]): SectionKey[] {
-  const validKeys = new Set<SectionKey>(['overview', 'custom_cards', 'areas', 'weather', 'energy']);
+  const validKeys = new Set<SectionKey>([
+    'overview', 'custom_cards', 'areas', 'weather', 'energy',
+    'plants', 'agenda', 'todos', 'persons', 'vacuums', 'maintenance',
+  ]);
   const seen = new Set<SectionKey>();
   const result: SectionKey[] = [];
   for (const key of order) {
@@ -150,6 +159,16 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
           hiddenHeadings.has('energy')
         ),
       ],
+      ['plants', createPlantsSection(hass, dashboardConfig.show_plants_section === true)],
+      ['agenda', createAgendaSection(
+        hass,
+        dashboardConfig.show_agenda_section === true,
+        dashboardConfig.agenda_calendar_entities,
+      )],
+      ['todos', createTodosSection(hass, dashboardConfig.show_todos_section === true, dashboardConfig.todos_entities)],
+      ['persons', createPersonsSection(hass, dashboardConfig.show_persons_section === true)],
+      ['vacuums', createVacuumsSection(hass, dashboardConfig.show_vacuums_section === true)],
+      ['maintenance', createMaintenanceSection(hass, dashboardConfig.show_maintenance_section === true)],
     ]);
 
     // Per-section conditional visibility (e.g. show agenda only on workdays).

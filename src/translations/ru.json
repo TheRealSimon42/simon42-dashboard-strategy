@@ -19,7 +19,13 @@
     "areas_other": "Другие зоны",
     "weather": "Погода",
     "energy": "Энергия",
-    "light_favorites": "Быстрый свет"
+    "light_favorites": "Быстрый свет",
+    "plants": "Растения",
+    "agenda": "Повестка",
+    "todos": "Задачи",
+    "persons": "Люди",
+    "vacuums": "Пылесосы и газонокосилки",
+    "maintenance": "Ожидающие обновления"
   },
   "summary": {
     "lights_on_one": "Свет включён",

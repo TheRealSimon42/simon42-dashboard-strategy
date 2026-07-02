@@ -19,7 +19,13 @@
     "areas_other": "Other Areas",
     "weather": "Weather",
     "energy": "Energy",
-    "light_favorites": "Quick lights"
+    "light_favorites": "Quick lights",
+    "plants": "Plants",
+    "agenda": "Agenda",
+    "todos": "To-do",
+    "persons": "People",
+    "vacuums": "Vacuums & Mowers",
+    "maintenance": "Pending Updates"
   },
   "summary": {
     "lights_on_one": "light on",

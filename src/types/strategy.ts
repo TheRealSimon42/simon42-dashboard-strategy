@@ -8,7 +8,18 @@
 
 // -- Section Ordering -------------------------------------------------
 
-export type SectionKey = 'overview' | 'custom_cards' | 'areas' | 'weather' | 'energy';
+export type SectionKey =
+  | 'overview'
+  | 'custom_cards'
+  | 'areas'
+  | 'weather'
+  | 'energy'
+  | 'plants'
+  | 'agenda'
+  | 'todos'
+  | 'persons'
+  | 'vacuums'
+  | 'maintenance';
 
 export const DEFAULT_SECTIONS_ORDER: SectionKey[] = [
   'overview',
@@ -16,6 +27,12 @@ export const DEFAULT_SECTIONS_ORDER: SectionKey[] = [
   'areas',
   'weather',
   'energy',
+  'plants',
+  'agenda',
+  'todos',
+  'persons',
+  'vacuums',
+  'maintenance',
 ];
 
 /** Keys for section headings that can be hidden via hidden_section_headings */
@@ -127,6 +144,14 @@ export interface Simon42StrategyConfig {
   show_now_playing_badge?: boolean; // default: false (auto-hides when nothing's playing)
   show_sun_badge?: boolean; // default: false (requires HA sun integration / sun.sun entity)
   show_updates_badge?: boolean; // default: false (auto-hides at zero pending)
+  show_plants_section?: boolean; // default: false (auto-hides anyway if no plants)
+  show_agenda_section?: boolean; // default: false (auto-hides when no calendars)
+  agenda_calendar_entities?: string[]; // default: [] → all visible calendars
+  show_todos_section?: boolean; // default: false (auto-hides when no todos)
+  todos_entities?: string[]; // default: [] → all visible todo.* entities
+  show_persons_section?: boolean; // default: false (auto-hides when no persons)
+  show_vacuums_section?: boolean; // default: false (auto-hides without vacuum/mower)
+  show_maintenance_section?: boolean; // default: false (auto-hides when nothing pending)
 
   // Layout
   sections_order?: SectionKey[]; // default: DEFAULT_SECTIONS_ORDER

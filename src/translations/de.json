@@ -19,7 +19,13 @@
     "areas_other": "Weitere Bereiche",
     "weather": "Wetter",
     "energy": "Energie",
-    "light_favorites": "Schnellzugriff Lampen"
+    "light_favorites": "Schnellzugriff Lampen",
+    "plants": "Pflanzen",
+    "agenda": "Agenda",
+    "todos": "Aufgaben",
+    "persons": "Personen",
+    "vacuums": "Saug- & Mähroboter",
+    "maintenance": "Anstehende Updates"
   },
   "summary": {
     "lights_on_one": "Licht an",

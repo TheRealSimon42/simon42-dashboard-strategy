@@ -1101,6 +1101,18 @@ class Simon42DashboardStrategyEditor extends LitElement {
         return this._config.show_weather === false;
       case 'energy':
         return this._config.show_energy === false;
+      case 'plants':
+        return this._config.show_plants_section !== true;
+      case 'agenda':
+        return this._config.show_agenda_section !== true;
+      case 'todos':
+        return this._config.show_todos_section !== true;
+      case 'persons':
+        return this._config.show_persons_section !== true;
+      case 'vacuums':
+        return this._config.show_vacuums_section !== true;
+      case 'maintenance':
+        return this._config.show_maintenance_section !== true;
       default:
         return false;
     }
@@ -1112,10 +1124,25 @@ class Simon42DashboardStrategyEditor extends LitElement {
     ['areas', { icon: 'mdi:floor-plan', labelKey: 'sections.areas' }],
     ['weather', { icon: 'mdi:weather-partly-cloudy', labelKey: 'sections.weather' }],
     ['energy', { icon: 'mdi:lightning-bolt', labelKey: 'sections.energy' }],
+    ['plants', { icon: 'mdi:flower-tulip', labelKey: 'sections.plants' }],
+    ['agenda', { icon: 'mdi:calendar', labelKey: 'sections.agenda' }],
+    ['todos', { icon: 'mdi:format-list-checks', labelKey: 'sections.todos' }],
+    ['persons', { icon: 'mdi:account-group', labelKey: 'sections.persons' }],
+    ['vacuums', { icon: 'mdi:robot-vacuum', labelKey: 'sections.vacuums' }],
+    ['maintenance', { icon: 'mdi:update', labelKey: 'sections.maintenance' }],
   ]);
 
   private _isSectionToggleable(key: SectionKey): boolean {
-    return key === 'weather' || key === 'energy';
+    return (
+      key === 'weather' ||
+      key === 'energy' ||
+      key === 'plants' ||
+      key === 'agenda' ||
+      key === 'todos' ||
+      key === 'persons' ||
+      key === 'vacuums' ||
+      key === 'maintenance'
+    );
   }
 
   private _toggleSectionVisibility(key: SectionKey, visible: boolean): void {
@@ -1123,6 +1150,18 @@ class Simon42DashboardStrategyEditor extends LitElement {
       this._toggleChanged('show_weather', visible, true);
     } else if (key === 'energy') {
       this._toggleChanged('show_energy', visible, true);
+    } else if (key === 'plants') {
+      this._toggleChanged('show_plants_section', visible, false);
+    } else if (key === 'agenda') {
+      this._toggleChanged('show_agenda_section', visible, false);
+    } else if (key === 'todos') {
+      this._toggleChanged('show_todos_section', visible, false);
+    } else if (key === 'persons') {
+      this._toggleChanged('show_persons_section', visible, false);
+    } else if (key === 'vacuums') {
+      this._toggleChanged('show_vacuums_section', visible, false);
+    } else if (key === 'maintenance') {
+      this._toggleChanged('show_maintenance_section', visible, false);
     }
   }
 
