@@ -93,25 +93,29 @@ type SectionBuilder = (ctx: SectionBuildContext) => LovelaceSectionConfig | Love
 // chunk) and deliberately NOT in section-registry.ts, so the lazy editor
 // chunk never pulls the builders in. When adding a section, add its
 // registry entry AND a builder entry here (see section-registry.ts).
-const SECTION_BUILDERS = new Map<SectionKey, SectionBuilder>([
-  ['overview', ({ hass, config, someSensorId }) =>
-    createOverviewSection({ someSensorId, showSearchCard: config.show_search_card === true, config, hass })],
-  ['custom_cards', ({ config, customCardsBySection, hiddenHeadings }) =>
+//
+// Typed as Record<SectionKey, ...>: TypeScript rejects a missing or
+// unknown key, so a registry entry without a builder (or vice versa)
+// is a compile error, not a silently empty section.
+const SECTION_BUILDER_IMPL: Record<SectionKey, SectionBuilder> = {
+  overview: ({ hass, config, someSensorId }) =>
+    createOverviewSection({ someSensorId, showSearchCard: config.show_search_card === true, config, hass }),
+  custom_cards: ({ config, customCardsBySection, hiddenHeadings }) =>
     createCustomCardsSection(
       customCardsBySection.get('custom_cards') || [],
       config.custom_cards_heading,
       config.custom_cards_icon,
       hiddenHeadings.has('custom_cards')
-    )],
-  ['areas', ({ hass, config, visibleAreas, hiddenHeadings }) =>
+    ),
+  areas: ({ hass, config, visibleAreas, hiddenHeadings }) =>
     createAreasSection(
       visibleAreas,
       config.group_by_floors === true,
       hass,
       hiddenHeadings.has('areas'),
       hiddenHeadings.has('areas_other')
-    )],
-  ['weather', ({ config, weatherEntity, hiddenHeadings }) =>
+    ),
+  weather: ({ config, weatherEntity, hiddenHeadings }) =>
     createWeatherSection(
       weatherEntity,
       config.show_weather !== false,
@@ -119,23 +123,28 @@ const SECTION_BUILDERS = new Map<SectionKey, SectionBuilder>([
       config.weather_sensors || [],
       config.weather_presentation,
       hiddenHeadings.has('weather')
-    )],
-  ['energy', ({ config, hiddenHeadings }) =>
+    ),
+  energy: ({ config, hiddenHeadings }) =>
     createEnergySection(
       config.show_energy !== false,
       config.energy_link_dashboard !== false,
       config.show_energy_distribution_card !== false,
       hiddenHeadings.has('energy')
-    )],
-  ['plants', ({ hass, config }) => createPlantsSection(hass, config.show_plants_section === true)],
-  ['agenda', ({ hass, config }) =>
-    createAgendaSection(hass, config.show_agenda_section === true, config.agenda_calendar_entities)],
-  ['todos', ({ hass, config }) =>
-    createTodosSection(hass, config.show_todos_section === true, config.todos_entities)],
-  ['persons', ({ hass, config }) => createPersonsSection(hass, config.show_persons_section === true)],
-  ['vacuums', ({ hass, config }) => createVacuumsSection(hass, config.show_vacuums_section === true)],
-  ['maintenance', ({ hass, config }) => createMaintenanceSection(hass, config.show_maintenance_section === true)],
-]);
+    ),
+  plants: ({ hass, config }) => createPlantsSection(hass, config.show_plants_section === true),
+  agenda: ({ hass, config }) =>
+    createAgendaSection(hass, config.show_agenda_section === true, config.agenda_calendar_entities),
+  todos: ({ hass, config }) =>
+    createTodosSection(hass, config.show_todos_section === true, config.todos_entities),
+  persons: ({ hass, config }) => createPersonsSection(hass, config.show_persons_section === true),
+  vacuums: ({ hass, config }) => createVacuumsSection(hass, config.show_vacuums_section === true),
+  maintenance: ({ hass, config }) => createMaintenanceSection(hass, config.show_maintenance_section === true),
+};
+
+// Map wrapper for dynamic key lookup (avoids obj[variable] access)
+const SECTION_BUILDERS = new Map<SectionKey, SectionBuilder>(
+  Object.entries(SECTION_BUILDER_IMPL) as [SectionKey, SectionBuilder][]
+);
 
 class Simon42ViewOverviewStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
