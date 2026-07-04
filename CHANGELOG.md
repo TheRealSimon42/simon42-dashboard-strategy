@@ -2,7 +2,49 @@
 All notable changes to this project will be documented in this file.  
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.3.3...HEAD).
+A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.2...HEAD).
+
+<a name="1.4.0-beta.2"></a>
+## [1.4.0-beta.2] - 2026-07-04 (Pre-Release)
+### Refactoring
+- section registry as single source of truth for overview sections — adding a section no longer requires manual editor wiring; missing wiring is now a compile error. No user-visible changes ([#312](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/312))
+
+### Documentation
+- README overhaul: all v1.3.5/v1.4.0 features documented, full config reference with "since version" column, updated architecture numbers; refreshed HACS info.md; backfilled changelog
+
+<a name="1.4.0-beta.1"></a>
+## [1.4.0-beta.1] - 2026-07-04 (Pre-Release)
+### Features
+- six new opt-in overview sections: plants, agenda, todos, persons, vacuums, maintenance — all with auto-hide ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#270](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/270))
+- five opt-in live header badges: power, unavailable count, now playing, sun, updates ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#271](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/271))
+- battery view: area names, battery-notes filter, unavailable bucket configurable ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#272](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/272))
+- room views: cameras toggle, PM1 + soil-moisture badges, hide-unavailable option ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#273](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/273))
+- per-section and per-room conditional visibility, hidden section headings, security extra entities, water-leak sensors in security ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#274](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/274))
+- configurable weather entity + presentation modes, awning icons, covers grouped by floor ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#275](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/275))
+- configurable person badges, zone presence, search card variant, quick-lights row ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#276](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/276))
+- auto-detect humidifier, valve and water_heater entities in rooms ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#279](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/279))
+- editor: target_section dropdown derived from section meta map ([#309](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/309), ported from [#280](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/280))
+
+### Tests
+- vitest foundation: section-builder + entity-filter unit tests with snapshots ([#308](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/308), based on [#278](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/278))
+
+<a name="1.3.5"></a>
+## [1.3.5] - 2026-07-02
+### Features
+- room pins can render at the top of room views via `room_pins_first` ([#301](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/301), ported from [#191](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/191))
+- Russian translation ([#301](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/301), ported from [#299](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/299), closes [#215](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/215))
+- fans categorized under climate in room views ([#301](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/301), ported from [#202](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/202))
+- storefront icons for awning cover groups ([#302](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/302), closes [#144](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/144))
+- heat detectors in security view, summary count and room badges ([#302](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/302), closes [#151](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/151))
+- window/door contact badge toggles wired up in the editor ([#302](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/302), ported from [#282](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/282))
+
+### Bugfixes
+- canonical order of area card controls across all areas ([#301](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/301), ported from [#249](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/249), closes [#201](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/201))
+- areas section auto-hides when no areas are visible ([#302](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/302), ported from [#281](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/281))
+
+### Chores
+- release automation via GitHub Actions — `dist/` removed from the repo, HACS installs from release assets ([#303](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/303), closes [#190](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/190))
+- translation lint in CI: JSON validity, duplicate keys, locale parity ([#301](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/301), ported from [#277](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/277))
 
 <a name="1.3.3"></a>
 ## [1.3.3] - 2026-04-10
