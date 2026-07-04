@@ -2,10 +2,10 @@
 All notable changes to this project will be documented in this file.  
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.4...HEAD).
+A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.5...HEAD).
 
-<a name="unreleased"></a>
-## [Unreleased]
+<a name="1.4.0-beta.5"></a>
+## [1.4.0-beta.5] - 2026-07-05 (Pre-Release)
 ### Features
 - `show_battery_view`: keep the /batteries subview available even when the battery summary is hidden — for badges/links that deep-link to the page (closes [#315](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/315))
 
