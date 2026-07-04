@@ -17,13 +17,18 @@ const BUILTIN_KEYS = new Set<string>(DEFAULT_SECTIONS_ORDER);
  * - key must be a non-empty string
  * - keys colliding with built-in sections are dropped (built-in wins)
  * - duplicate keys: first entry wins
+ *
+ * Input is treated as unknown-shaped: the array comes straight from user
+ * YAML, so entries may be null or malformed despite the declared type.
  */
 export function validateCustomSections(raw: CustomSection[] | undefined): CustomSection[] {
-  if (!raw || raw.length === 0) return [];
+  const entries: readonly unknown[] = Array.isArray(raw) ? raw : [];
   const seen = new Set<string>();
   const result: CustomSection[] = [];
-  for (const section of raw) {
-    if (!section || typeof section.key !== 'string' || section.key.trim() === '') continue;
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') continue;
+    const section = entry as CustomSection;
+    if (typeof section.key !== 'string' || section.key.trim() === '') continue;
     if (BUILTIN_KEYS.has(section.key)) continue;
     if (seen.has(section.key)) continue;
     seen.add(section.key);
@@ -48,9 +53,11 @@ export function buildCustomSection(
   section: CustomSection,
   hasAssignedCards: boolean = false
 ): LovelaceSectionConfig | null {
-  const parsed = Array.isArray(section.parsed_config) ? section.parsed_config : [];
+  // unknown-shaped: parsed_config comes from user YAML, entries may be null
+  const parsed: readonly unknown[] = Array.isArray(section.parsed_config) ? section.parsed_config : [];
   const validCards = parsed.filter(
-    (c): c is LovelaceCardConfig => !!c && typeof (c as { type?: unknown }).type === 'string'
+    (c): c is LovelaceCardConfig =>
+      !!c && typeof c === 'object' && typeof (c as { type?: unknown }).type === 'string'
   );
   if (validCards.length === 0 && !hasAssignedCards) return null;
 

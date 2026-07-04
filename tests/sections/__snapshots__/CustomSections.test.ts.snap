@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildCustomSection > assembles heading with icon plus cards (snapshot) 1`] = `
+{
+  "cards": [
+    {
+      "heading": "Guten Morgen",
+      "heading_style": "title",
+      "icon": "mdi:weather-sunrise",
+      "type": "heading",
+    },
+    {
+      "content": "Kaffee ist fertig",
+      "type": "markdown",
+    },
+    {
+      "entity": "light.kitchen",
+      "type": "tile",
+    },
+  ],
+  "type": "grid",
+}
+`;

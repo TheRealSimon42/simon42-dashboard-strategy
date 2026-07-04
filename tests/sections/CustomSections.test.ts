@@ -12,12 +12,14 @@ import { describe, it, expect } from 'vitest';
 import { validateCustomSections, buildCustomSection } from '../../src/sections/CustomSections';
 import type { CustomSection } from '../../src/types/strategy';
 
-const section = (overrides: Partial<CustomSection> = {}): CustomSection => ({
-  key: 'my_test',
-  heading: 'Test',
-  parsed_config: [{ type: 'markdown', content: 'hi' }],
-  ...overrides,
-});
+function section(overrides: Partial<CustomSection> = {}): CustomSection {
+  return {
+    key: 'my_test',
+    heading: 'Test',
+    parsed_config: [{ type: 'markdown', content: 'hi' }],
+    ...overrides,
+  };
+}
 
 describe('validateCustomSections', () => {
   it('returns empty array for undefined/empty input', () => {
