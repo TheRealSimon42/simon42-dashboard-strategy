@@ -150,6 +150,10 @@ class Simon42LightsGroupCard extends LitElement {
   protected willUpdate(changedProps: PropertyValues): void {
     if (!changedProps.has('hass') || !this.hass) return;
 
+    // Standalone use on manual dashboards (#147): the strategy never ran,
+    // so localization + registry maps are missing — self-initialize.
+    if (!Registry.initialized) Registry.initializeStandalone(this.hass);
+
     trackHassUpdate('lights-group');
     const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
 

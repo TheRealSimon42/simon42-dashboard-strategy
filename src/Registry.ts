@@ -88,6 +88,9 @@ class Registry {
   /** Initialization flag */
   private static _initialized: boolean = false;
 
+  /** True when the current init came from a card without strategy config. */
+  private static _standaloneInit: boolean = false;
+
   /**
    * Reset the Registry singleton between tests so each test starts with a
    * clean slate. Production code never calls this — the singleton lives for
@@ -96,6 +99,7 @@ class Registry {
    */
   static resetForTesting(): void {
     Registry._initialized = false;
+    Registry._standaloneInit = false;
   }
 
   // =====================================================================
@@ -105,11 +109,30 @@ class Registry {
   /**
    * Initialize the registry from hass object and strategy config.
    * Synchronous — reads directly from hass.entities/devices/areas.
-   * Idempotent: skips if already initialized.
+   * Idempotent: skips if already initialized — EXCEPT when the previous
+   * init was a config-less standalone init (see initializeStandalone):
+   * the strategy's real config always takes precedence and re-initializes.
    */
   static initialize(hass: HomeAssistant, config: Simon42StrategyConfig): void {
-    if (Registry._initialized) return;
+    if (Registry._initialized && !Registry._standaloneInit) return;
+    Registry._standaloneInit = false;
+    Registry._doInitialize(hass, config);
+  }
 
+  /**
+   * Config-less init for custom cards used OUTSIDE a strategy dashboard
+   * (#147: group/summary cards on manual dashboards). No-op when any init
+   * already ran. Entity visibility then follows only the registry rules
+   * (hidden/disabled/category/no-dboard label) — there is no strategy
+   * config to apply.
+   */
+  static initializeStandalone(hass: HomeAssistant): void {
+    if (Registry._initialized) return;
+    Registry._standaloneInit = true;
+    Registry._doInitialize(hass, {});
+  }
+
+  private static _doInitialize(hass: HomeAssistant, config: Simon42StrategyConfig): void {
     timeStart('registry-init');
     Registry._hass = hass;
     Registry._config = config;

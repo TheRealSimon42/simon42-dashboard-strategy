@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.4...HEAD).
 
+<a name="unreleased"></a>
+## [Unreleased]
+### Bugfixes
+- group/summary cards work on manual dashboards again: cards self-initialize localization + registry when used outside a strategy dashboard; a later strategy init with real config always takes precedence (closes [#147](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/147))
+
 <a name="1.4.0-beta.4"></a>
 ## [1.4.0-beta.4] - 2026-07-05 (Pre-Release)
 ### Features
