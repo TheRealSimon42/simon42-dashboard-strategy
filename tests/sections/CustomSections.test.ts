@@ -110,11 +110,13 @@ describe('buildCustomSection', () => {
 });
 
 describe('buildAreaCustomSections', () => {
-  const areaSection = (overrides: Record<string, unknown> = {}) => ({
-    heading: 'Raum-Block',
-    parsed_config: [{ type: 'markdown', content: 'hi' }],
-    ...overrides,
-  });
+  function areaSection(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+    return {
+      heading: 'Raum-Block',
+      parsed_config: [{ type: 'markdown', content: 'hi' }],
+      ...overrides,
+    };
+  }
 
   it('returns empty array for undefined input', () => {
     expect(buildAreaCustomSections(undefined, 'top')).toEqual([]);
