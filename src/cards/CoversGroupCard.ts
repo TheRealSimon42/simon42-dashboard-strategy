@@ -6,6 +6,7 @@ import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
 import type { HomeAssistant } from '../types/homeassistant';
 import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
+import { huiCardElementsReady, ensureHuiCardElements } from '../utils/hui-elements';
 import { trackHassUpdate } from '../utils/debug';
 import { localize } from '../utils/localize';
 
@@ -118,8 +119,15 @@ class Simon42CoversGroupCard extends LitElement {
     if (!changedProps.has('hass') || !this.hass) return;
 
     // Standalone use on manual dashboards (#147): the strategy never ran,
-    // so localization + registry maps are missing — self-initialize.
+    // so localization + registry maps are missing — self-initialize. HA's
+    // tile/heading elements may also be missing there (lazy per card type);
+    // load them and re-render once available.
     if (!Registry.initialized) Registry.initializeStandalone(this.hass);
+    if (!huiCardElementsReady()) {
+      void ensureHuiCardElements().then((ok) => {
+        if (ok) this.requestUpdate();
+      });
+    }
 
     trackHassUpdate('covers-group');
     const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
@@ -376,6 +384,10 @@ class Simon42CoversGroupCard extends LitElement {
 
   protected render() {
     if (!this.hass || !this._cachedFilteredIds) return nothing;
+    // Children are hui-tile/heading elements — without their definitions
+    // setConfig() on them would throw (#147). ensureHuiCardElements()
+    // triggers a re-render once they arrive.
+    if (!huiCardElementsReady()) return nothing;
 
     const covers = this._getRelevantCovers();
     this.hidden = covers.length === 0;

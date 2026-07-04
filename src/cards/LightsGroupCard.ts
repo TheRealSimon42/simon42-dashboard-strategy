@@ -6,6 +6,7 @@ import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
 import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
+import { huiCardElementsReady, ensureHuiCardElements } from '../utils/hui-elements';
 import { trackHassUpdate } from '../utils/debug';
 import { localize } from '../utils/localize';
 import { stripAreaName } from '../utils/name-utils';
@@ -141,6 +142,11 @@ class Simon42LightsGroupCard extends LitElement {
   `;
 
   setConfig(config: LightsGroupConfig): void {
+    // Standalone-friendly default: the strategy always sets group_type,
+    // manual-dashboard users shouldn't need to know the internal values.
+    if (!config.group_type) {
+      config = { ...config, group_type: 'all' };
+    }
     if (!['on', 'off', 'all'].includes(config.group_type)) {
       throw new Error('You need to define group_type (on/off/all)');
     }
@@ -151,8 +157,15 @@ class Simon42LightsGroupCard extends LitElement {
     if (!changedProps.has('hass') || !this.hass) return;
 
     // Standalone use on manual dashboards (#147): the strategy never ran,
-    // so localization + registry maps are missing — self-initialize.
+    // so localization + registry maps are missing — self-initialize. HA's
+    // tile/heading elements may also be missing there (lazy per card type);
+    // load them and re-render once available.
     if (!Registry.initialized) Registry.initializeStandalone(this.hass);
+    if (!huiCardElementsReady()) {
+      void ensureHuiCardElements().then((ok) => {
+        if (ok) this.requestUpdate();
+      });
+    }
 
     trackHassUpdate('lights-group');
     const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
@@ -534,6 +547,10 @@ class Simon42LightsGroupCard extends LitElement {
 
   protected render() {
     if (!this.hass || !this._cachedSourceIds) return nothing;
+    // Children are hui-tile/heading elements — without their definitions
+    // setConfig() on them would throw (#147). ensureHuiCardElements()
+    // triggers a re-render once they arrive.
+    if (!huiCardElementsReady()) return nothing;
 
     const lights = this._getRelevantLights();
     if (lights.length === 0) {
