@@ -142,15 +142,14 @@ class Simon42LightsGroupCard extends LitElement {
   `;
 
   setConfig(config: LightsGroupConfig): void {
-    // Standalone-friendly default: the strategy always sets group_type,
-    // manual-dashboard users shouldn't need to know the internal values.
-    if (!config.group_type) {
-      config = { ...config, group_type: 'all' };
-    }
-    if (!['on', 'off', 'all'].includes(config.group_type)) {
+    // User YAML may omit group_type despite the declared type (manual
+    // dashboards, #147) — default to 'all' instead of an error card.
+    const raw: Partial<LightsGroupConfig> = config;
+    const normalized: LightsGroupConfig = { ...config, group_type: raw.group_type ?? 'all' };
+    if (!['on', 'off', 'all'].includes(normalized.group_type)) {
       throw new Error('You need to define group_type (on/off/all)');
     }
-    this._config = config;
+    this._config = normalized;
   }
 
   protected willUpdate(changedProps: PropertyValues): void {

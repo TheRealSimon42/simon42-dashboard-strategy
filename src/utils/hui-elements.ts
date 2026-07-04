@@ -34,7 +34,11 @@ export function ensureHuiCardElements(): Promise<boolean> {
   if (huiCardElementsReady()) return Promise.resolve(true);
   if (ensurePromise) return ensurePromise;
 
-  ensurePromise = loadDefinitions();
+  // Belt and braces: loadDefinitions already try/catches, the extra catch
+  // satisfies static analysis that the promise can never reject.
+  ensurePromise = loadDefinitions().catch(function swallow(): boolean {
+    return false;
+  });
   return ensurePromise;
 }
 
