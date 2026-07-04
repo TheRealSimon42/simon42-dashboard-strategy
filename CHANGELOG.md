@@ -2,10 +2,10 @@
 All notable changes to this project will be documented in this file.  
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.2...HEAD).
+A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.3...HEAD).
 
-<a name="unreleased"></a>
-## [Unreleased]
+<a name="1.4.0-beta.3"></a>
+## [1.4.0-beta.3] - 2026-07-05 (Pre-Release)
 ### Features
 - `custom_sections`: user-declared overview sections without forking — key works in sections_order (drag & drop panel), as custom_cards target_section and in section_visibility rules; built-in collision guard, duplicate keys first-wins, auto-hide when empty; full editor panel with inline key/YAML validation (closes [#153](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/153); design from [#283](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/283) by @TheDave94)
 
