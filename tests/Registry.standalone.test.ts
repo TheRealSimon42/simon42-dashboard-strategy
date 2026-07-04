@@ -13,14 +13,15 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Registry } from '../src/Registry';
 import { makeHass } from './fixtures/hass';
 
-const HASS = () =>
-  makeHass({
+function HASS(): ReturnType<typeof makeHass> {
+  return makeHass({
     areas: [{ area_id: 'living', name: 'Wohnzimmer' }],
     entities: [
       { entity_id: 'light.sofa', state: 'on', area_id: 'living' },
       { entity_id: 'light.decke', state: 'off', area_id: 'living' },
     ],
   });
+}
 
 // Strategy config that hides light.sofa in the living room
 const HIDING_CONFIG = {
