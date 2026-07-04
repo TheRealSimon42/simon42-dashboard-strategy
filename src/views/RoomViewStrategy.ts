@@ -10,8 +10,9 @@ import type {
   LovelaceBadgeConfig,
 } from '../types/lovelace';
 import type { AreaRegistryEntry } from '../types/registries';
-import type { RoomEntities, SensorEntities } from '../types/strategy';
+import type { AreaCustomSection, RoomEntities, SensorEntities } from '../types/strategy';
 import { stripAreaName, sortByLastChanged } from '../utils/name-utils';
+import { buildAreaCustomSections } from '../sections/CustomSections';
 import { Registry } from '../Registry';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
 import { localize } from '../utils/localize';
@@ -87,6 +88,8 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     // Ensure Registry is initialized (idempotent — no-op if already done)
     Registry.initialize(hass, dashboardConfig);
     const groupsOptions: Record<string, any> = config.groups_options || {};
+    // User-declared sections for this room (areas_options.{areaId}.custom_sections)
+    const areaCustomSections: AreaCustomSection[] = config.custom_sections || [];
 
     const roomEntities: RoomEntities = {
       lights: [],
@@ -425,7 +428,9 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     }
 
     // === SECTIONS ===
-    const sections: LovelaceSectionConfig[] = [];
+    // Custom sections with position 'top' render before all generated
+    // sections; 'bottom' ones are appended at the very end.
+    const sections: LovelaceSectionConfig[] = buildAreaCustomSections(areaCustomSections, 'top');
 
     // Cameras
     if (roomEntities.cameras.length > 0) {
@@ -747,6 +752,8 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         buildRoomPinTile(dashboardConfig, area, hass)
       );
     }
+
+    sections.push(...buildAreaCustomSections(areaCustomSections, 'bottom'));
 
     debugLog(
       `Room ${area.area_id}: ${visibleEntities.length} visible entities, ${sections.length} sections, ${badges.length} badges`

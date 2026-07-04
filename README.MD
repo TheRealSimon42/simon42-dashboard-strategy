@@ -259,6 +259,8 @@ strategy:
 
 **Raum-Pins** — Spezielle Entitäten die in ihren zugeordneten Räumen ganz oben erscheinen. Ideal für Entitäten die nicht automatisch erkannt werden (z.B. Wetterstationen).
 
+**Eigene Sections in Räumen** *(ab v1.4.0)* — Analog zu den eigenen Sections auf der Übersicht lassen sich auch in jeder Raum-Ansicht eigene Section-Blöcke einfügen: im Editor beim jeweiligen Bereich („Eigene Sections in diesem Raum"), mit Überschrift, Icon, YAML-Karten und wählbarer Position — **oberhalb** oder **unterhalb** der automatisch erzeugten Sections. Damit lassen sich z.B. spezielle Karten aus HACS (Versatile Thermostat, Saugroboter-Karten, …) direkt im Raum unterbringen. Tipp: Wer die Standard-Kachel einer Entität ersetzen will, blendet sie in der Domain-Gruppe des Raums aus und fügt die eigene Karte als Section hinzu.
+
 **Automationen & Skripte** — Optional können dem Bereich zugeordnete Automationen und Skripte in den Raum-Views angezeigt werden. Beide Optionen sind separat aktivierbar und standardmäßig aus.
 
 **Fenster- & Türkontakte** — Fensterkontakte und Türkontakte erscheinen als Badges in den Raum-Views (standardmäßig an, per zwei getrennten Toggles im Editor abschaltbar). Absolute Luftfeuchtigkeit (z.B. von der Thermal Comfort Integration, `g/m³`) wird automatisch als Badge erkannt.
@@ -496,6 +498,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `areas_display.hidden` | string[] | `[]` | — | Ausgeblendete Bereiche |
 | `areas_display.order` | string[] | `[]` | — | Reihenfolge der Bereiche |
 | `areas_options` | object | `{}` | — | Entity-Filterung pro Bereich |
+| `areas_options.{id}.custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke in der Raum-Ansicht (`position: top\|bottom`, siehe oben) |
 | `room_pin_entities` | string[] | `[]` | — | Raum-Pin Entitäten |
 | `room_pins_first` | boolean | `false` | v1.3.5 | Raum-Pins ganz oben statt unten im Raum anzeigen |
 | `room_pins_show_state` | boolean | `false` | — | Zustand auf Raum-Pin-Kacheln anzeigen |

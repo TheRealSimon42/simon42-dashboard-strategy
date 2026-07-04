@@ -16,6 +16,7 @@ import type {
   CustomCard,
   CustomBadge,
   CustomSection,
+  AreaCustomSection,
   RoomEntities,
   SectionKey,
   SectionOrderKey,
@@ -2741,6 +2742,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
                 ${cachedData
                   ? this._renderAreaEntities(area.area_id, cachedData)
                   : html`<div class="loading-placeholder">${localize('editor.loading_entities')}</div>`}
+                ${this._renderAreaCustomSections(area.area_id)}
               </div>
             `
             : nothing}
@@ -3503,6 +3505,160 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const newConfig: Simon42StrategyConfig = { ...this._config, custom_sections: sections };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
+  }
+
+  // -- Area Custom Sections (per room view) -------------------------------
+
+  private _getAreaCustomSections(areaId: string): AreaCustomSection[] {
+    return this._config.areas_options?.[areaId]?.custom_sections || [];
+  }
+
+  /** Writes the custom_sections list for one area, pruning empty objects
+   *  (same cleanup pattern as the groups_options writers). */
+  private _setAreaCustomSections(areaId: string, sections: AreaCustomSection[]): void {
+    const currentAreaOptions = this._config.areas_options?.[areaId] || {};
+
+    const newAreaOptions: Record<string, any> = { ...currentAreaOptions };
+    if (sections.length === 0) {
+      delete newAreaOptions.custom_sections;
+    } else {
+      newAreaOptions.custom_sections = sections;
+    }
+
+    const newAreasOptions: Record<string, any> = {
+      ...this._config.areas_options,
+      [areaId]: newAreaOptions,
+    };
+    if (Object.keys(newAreasOptions[areaId]).length === 0) {
+      delete newAreasOptions[areaId];
+    }
+
+    const newConfig: Simon42StrategyConfig = {
+      ...this._config,
+      areas_options: newAreasOptions,
+    };
+    if (newConfig.areas_options && Object.keys(newConfig.areas_options).length === 0) {
+      delete newConfig.areas_options;
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  private _addAreaCustomSection(areaId: string): void {
+    const sections = [...this._getAreaCustomSections(areaId)];
+    sections.push({ heading: '', yaml: '', parsed_config: undefined } as AreaCustomSection);
+    this._setAreaCustomSections(areaId, sections);
+  }
+
+  private _removeAreaCustomSection(areaId: string, index: number): void {
+    const sections = [...this._getAreaCustomSections(areaId)];
+    sections.splice(index, 1);
+    this._setAreaCustomSections(areaId, sections);
+  }
+
+  private _updateAreaCustomSectionField(
+    areaId: string,
+    index: number,
+    field: 'heading' | 'icon' | 'position',
+    value: string
+  ): void {
+    const sections = [...this._getAreaCustomSections(areaId)];
+    if (!sections[index]) return;
+    sections[index] = { ...sections[index], [field]: value };
+    this._setAreaCustomSections(areaId, sections);
+  }
+
+  private _updateAreaCustomSectionYaml(areaId: string, index: number, yamlString: string): void {
+    const sections = [...this._getAreaCustomSections(areaId)];
+    if (!sections[index]) return;
+
+    const updated: AreaCustomSection = { ...sections[index], yaml: yamlString };
+    delete updated._yaml_error;
+
+    if (yamlString.trim()) {
+      try {
+        const parsed = yaml.load(yamlString);
+        if (Array.isArray(parsed)) {
+          updated.parsed_config = parsed as Record<string, any>[];
+        } else if (parsed && typeof parsed === 'object') {
+          updated.parsed_config = [parsed as Record<string, any>];
+        } else {
+          updated._yaml_error = localize('editor.custom_section_yaml_invalid');
+          updated.parsed_config = undefined;
+        }
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message.split('\n')[0] : 'Ungültiges YAML';
+        updated._yaml_error = message || 'Ungültiges YAML';
+        updated.parsed_config = undefined;
+      }
+    } else {
+      updated.parsed_config = undefined;
+    }
+
+    sections[index] = updated;
+    this._setAreaCustomSections(areaId, sections);
+  }
+
+  private _renderAreaCustomSections(areaId: string): TemplateResult {
+    const sections = this._getAreaCustomSections(areaId);
+
+    return html`
+      <div class="area-custom-sections" style="margin-top: 12px;">
+        <div style="font-weight: 500; margin-bottom: 4px;">${localize('editor.area_custom_sections')}</div>
+        <div class="description" style="margin-bottom: 8px;">${localize('editor.area_custom_sections_desc')}</div>
+        ${sections.map((section, index) => this._renderAreaCustomSectionItem(areaId, section, index))}
+        <button class="btn-primary" @click=${() => this._addAreaCustomSection(areaId)}>
+          ${localize('editor.add_custom_section')}
+        </button>
+      </div>
+    `;
+  }
+
+  private _renderAreaCustomSectionItem(
+    areaId: string,
+    section: AreaCustomSection,
+    index: number
+  ): TemplateResult {
+    const yamlMsg = section._yaml_error
+      ? html`<span style="color: var(--error-color);">&#x274C; ${section._yaml_error}</span>`
+      : section.yaml
+        ? html`<span style="color: var(--success-color, green);">&#x2705; ${localize('editor.yaml_valid')}</span>`
+        : nothing;
+    const position = section.position === 'top' ? 'top' : 'bottom';
+
+    return html`
+      <div class="custom-item" data-index=${index}>
+        <div class="custom-item-header">
+          <strong>${section.heading || localize('editor.new_section')}</strong>
+          <button class="btn-remove" @click=${() => this._removeAreaCustomSection(areaId, index)}>&#x2715;</button>
+        </div>
+        <div class="custom-item-fields">
+          <div class="custom-item-row">
+            <input type="text" .value=${section.heading || ''}
+              placeholder=${localize('editor.custom_section_heading_placeholder')}
+              style="flex: 2;"
+              @change=${(e: Event) => this._updateAreaCustomSectionField(areaId, index, 'heading', (e.target as HTMLInputElement).value)} />
+            <input type="text" .value=${section.icon || ''}
+              placeholder="mdi:view-grid-plus-outline"
+              style="flex: 1;"
+              @change=${(e: Event) => this._updateAreaCustomSectionField(areaId, index, 'icon', (e.target as HTMLInputElement).value)} />
+            <select
+              @change=${(e: Event) => this._updateAreaCustomSectionField(areaId, index, 'position', (e.target as HTMLSelectElement).value)}>
+              <option value="bottom" ?selected=${position === 'bottom'}>${localize('editor.custom_section_position_bottom')}</option>
+              <option value="top" ?selected=${position === 'top'}>${localize('editor.custom_section_position_top')}</option>
+            </select>
+          </div>
+          <textarea rows="6" placeholder=${localize('editor.custom_section_yaml_placeholder')}
+            .value=${section.yaml || ''}
+            style="width: 100%;"
+            @change=${(e: Event) => this._updateAreaCustomSectionYaml(areaId, index, (e.target as HTMLTextAreaElement).value)}></textarea>
+          <div class="custom-item-validation">
+            ${yamlMsg}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   // -- Custom Badges ----------------------------------------------------

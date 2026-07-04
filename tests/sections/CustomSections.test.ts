@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { validateCustomSections, buildCustomSection } from '../../src/sections/CustomSections';
+import { validateCustomSections, buildCustomSection, buildAreaCustomSections } from '../../src/sections/CustomSections';
 import type { CustomSection } from '../../src/types/strategy';
 
 function section(overrides: Partial<CustomSection> = {}): CustomSection {
@@ -106,5 +106,46 @@ describe('buildCustomSection', () => {
         })
       )
     ).toMatchSnapshot();
+  });
+});
+
+describe('buildAreaCustomSections', () => {
+  const areaSection = (overrides: Record<string, unknown> = {}) => ({
+    heading: 'Raum-Block',
+    parsed_config: [{ type: 'markdown', content: 'hi' }],
+    ...overrides,
+  });
+
+  it('returns empty array for undefined input', () => {
+    expect(buildAreaCustomSections(undefined, 'top')).toEqual([]);
+    expect(buildAreaCustomSections([], 'bottom')).toEqual([]);
+  });
+
+  it('defaults entries without position to bottom', () => {
+    const sections = [areaSection()];
+    expect(buildAreaCustomSections(sections, 'top')).toHaveLength(0);
+    expect(buildAreaCustomSections(sections, 'bottom')).toHaveLength(1);
+  });
+
+  it('partitions entries by position', () => {
+    const sections = [
+      areaSection({ heading: 'A', position: 'top' }),
+      areaSection({ heading: 'B', position: 'bottom' }),
+      areaSection({ heading: 'C', position: 'top' }),
+    ];
+    const top = buildAreaCustomSections(sections, 'top');
+    expect(top).toHaveLength(2);
+    expect(top[0].cards?.[0]).toMatchObject({ heading: 'A' });
+    expect(top[1].cards?.[0]).toMatchObject({ heading: 'C' });
+    expect(buildAreaCustomSections(sections, 'bottom')).toHaveLength(1);
+  });
+
+  it('drops empty and malformed entries (auto-hide)', () => {
+    const sections = [
+      areaSection({ parsed_config: [] }),
+      null as unknown as Record<string, unknown>,
+      areaSection({ parsed_config: [{ content: 'no type' }] }),
+    ];
+    expect(buildAreaCustomSections(sections, 'bottom')).toHaveLength(0);
   });
 });

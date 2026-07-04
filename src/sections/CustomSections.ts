@@ -6,7 +6,7 @@
 // for the stability contract). Pure functions, covered by unit tests.
 // ====================================================================
 
-import type { CustomSection } from '../types/strategy';
+import type { CustomSection, CustomSectionBase, AreaCustomSection } from '../types/strategy';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { DEFAULT_SECTIONS_ORDER } from './section-registry';
 
@@ -50,7 +50,7 @@ export function validateCustomSections(raw: CustomSection[] | undefined): Custom
  * requires) are dropped.
  */
 export function buildCustomSection(
-  section: CustomSection,
+  section: CustomSectionBase,
   hasAssignedCards: boolean = false
 ): LovelaceSectionConfig | null {
   // unknown-shaped: parsed_config comes from user YAML, entries may be null
@@ -72,4 +72,25 @@ export function buildCustomSection(
   }
   cards.push(...validCards);
   return { type: 'grid', cards };
+}
+
+/**
+ * Builds the room-view custom sections for one placement slot.
+ * Entries default to 'bottom'; malformed/empty entries are dropped
+ * (same defensive rules as buildCustomSection).
+ */
+export function buildAreaCustomSections(
+  raw: AreaCustomSection[] | undefined,
+  position: 'top' | 'bottom'
+): LovelaceSectionConfig[] {
+  const entries: readonly unknown[] = Array.isArray(raw) ? raw : [];
+  const result: LovelaceSectionConfig[] = [];
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') continue;
+    const section = entry as AreaCustomSection;
+    if ((section.position ?? 'bottom') !== position) continue;
+    const built = buildCustomSection(section);
+    if (built) result.push(built);
+  }
+  return result;
 }

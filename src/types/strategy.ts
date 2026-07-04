@@ -194,6 +194,8 @@ export interface AreasDisplay {
 
 export interface AreaOptions {
   groups_options?: Record<string, GroupOptions>;
+  /** User-declared sections for this area's room view (top/bottom) */
+  custom_sections?: AreaCustomSection[];
 }
 
 export interface GroupOptions {
@@ -302,9 +304,7 @@ export interface CustomCard {
 // - duplicate keys: first entry wins
 // - the section auto-hides when it has no cards (own or assigned)
 
-export interface CustomSection {
-  /** Required unique key — must not collide with a built-in SectionKey */
-  key: string;
+export interface CustomSectionBase {
   /** Heading text shown at the top of the section */
   heading?: string;
   /** Optional MDI icon for the heading */
@@ -316,6 +316,20 @@ export interface CustomSection {
   parsed_config?: Record<string, any>[] | null;
   /** YAML parse error message, if any */
   _yaml_error?: string;
+}
+
+/** Overview-level custom section (positioned via its key). */
+export interface CustomSection extends CustomSectionBase {
+  /** Required unique key — must not collide with a built-in SectionKey */
+  key: string;
+}
+
+/** Room-level custom section (areas_options.{areaId}.custom_sections).
+ *  Positioned relative to the generated room sections — no key needed
+ *  until the room stack order becomes configurable (Sortier-Konzept). */
+export interface AreaCustomSection extends CustomSectionBase {
+  /** Placement relative to the auto-generated room sections (default: 'bottom') */
+  position?: 'top' | 'bottom';
 }
 
 // -- Room Entities (entity collections per area) ----------------------

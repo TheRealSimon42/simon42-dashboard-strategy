@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.3...HEAD).
 
+<a name="unreleased"></a>
+## [Unreleased]
+### Features
+- per-room custom sections: `areas_options.{areaId}.custom_sections[]` renders user-declared section blocks above or below the generated room sections (`position: top|bottom`), editable per area in the editor (closes [#222](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/222), [#210](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/210); per-area idea from [#298](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/298) by @Cyberhunter88)
+
 <a name="1.4.0-beta.3"></a>
 ## [1.4.0-beta.3] - 2026-07-05 (Pre-Release)
 ### Features
