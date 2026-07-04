@@ -25,9 +25,11 @@ src/
 │   ├── badge-builder.ts             #   Person badge creation
 │   └── view-builder.ts              #   View generation (overview, utility, area views)
 ├── sections/
+│   ├── section-registry.ts          #   SINGLE SOURCE OF TRUTH for overview sections (pure data — no builder imports!)
 │   ├── OverviewSection.ts           #   Clock, alarm, search, summaries, favorites
 │   ├── AreasSection.ts              #   Area cards (with optional floor grouping)
-│   └── WeatherEnergySection.ts      #   Weather forecast + energy distribution
+│   ├── WeatherEnergySection.ts      #   Weather forecast + energy distribution
+│   └── *Section.ts                  #   Opt-in sections (Plants, Agenda, Todos, Persons, Vacuums, Maintenance)
 ├── cards/                           # LitElement custom cards (reactive, tile card pooling)
 │   ├── SummaryCard.ts               #   Reactive summary tiles (lights, covers, security, batteries, climate)
 │   ├── LightsGroupCard.ts           #   On/off light grouping (heading badges + tile card pool + floor grouping)
@@ -131,6 +133,17 @@ Many entity properties exist ONLY in the Entity Registry, NOT in state attribute
 - **Area-level**: areas_display.hidden, areas_display.order
 - **Entity-level**: areas_options.{areaId}.groups_options.{domain}.hidden
 - **Special**: room_pin_entities, alarm_entity, favorite_entities, custom_views
+
+### Adding a New Overview Section
+
+Overview sections are driven by `src/sections/section-registry.ts` (single source of truth). To add one:
+
+1. Create the builder in `src/sections/<Name>Section.ts` (return `LovelaceSectionConfig | null`, `null` = auto-hide)
+2. Add ONE entry to `SECTION_REGISTRY` (key, icon, labelKey, optional visibility toggle) — its position defines the default order
+3. Wire the builder into `SECTION_BUILDERS` in `views/OverviewViewStrategy.ts`
+4. Add i18n keys (`sections.<key>` + editor texts) in `translations/{de,en,ru}.json`
+
+The `SectionKey` type, default order, editor drag & drop panel, visibility toggle, per-section visibility rules and `target_section` dropdown all derive from the registry entry — no editor changes needed. **Important:** `section-registry.ts` must stay pure data (no builder imports), otherwise the lazy editor chunk would pull in all section builders (see Chunk Architecture below).
 
 ## Complexity Hotspots
 

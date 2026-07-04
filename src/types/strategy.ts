@@ -7,33 +7,14 @@
 // ====================================================================
 
 // -- Section Ordering -------------------------------------------------
+// SectionKey and DEFAULT_SECTIONS_ORDER are derived from the section
+// registry (single source of truth) and re-exported here so existing
+// imports keep working. See src/sections/section-registry.ts.
 
-export type SectionKey =
-  | 'overview'
-  | 'custom_cards'
-  | 'areas'
-  | 'weather'
-  | 'energy'
-  | 'plants'
-  | 'agenda'
-  | 'todos'
-  | 'persons'
-  | 'vacuums'
-  | 'maintenance';
+import type { SectionKey } from '../sections/section-registry';
 
-export const DEFAULT_SECTIONS_ORDER: SectionKey[] = [
-  'overview',
-  'custom_cards',
-  'areas',
-  'weather',
-  'energy',
-  'plants',
-  'agenda',
-  'todos',
-  'persons',
-  'vacuums',
-  'maintenance',
-];
+export type { SectionKey, SectionMeta } from '../sections/section-registry';
+export { DEFAULT_SECTIONS_ORDER } from '../sections/section-registry';
 
 /** Keys for section headings that can be hidden via hidden_section_headings */
 export type HeadingKey =

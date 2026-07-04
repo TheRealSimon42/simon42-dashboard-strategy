@@ -7,9 +7,10 @@
 // ====================================================================
 
 import type { HomeAssistant } from '../types/homeassistant';
-import type { Simon42StrategyConfig, SectionKey, CustomCard } from '../types/strategy';
+import type { Simon42StrategyConfig, SectionKey, CustomCard, HeadingKey } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
 import type { LovelaceViewConfig, LovelaceSectionConfig, LovelaceBadgeConfig, LovelaceCardConfig } from '../types/lovelace';
+import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { collectPersons, findWeatherEntity, findDummySensor } from '../utils/entity-filter';
 import { getVisibleAreas } from '../utils/name-utils';
@@ -29,12 +30,10 @@ import { timeStart, timeEnd, debugLog } from '../utils/debug';
 /**
  * Normalizes a sections_order array: removes invalid/duplicate keys,
  * appends any missing keys at the end (forward compatibility).
+ * Valid keys derive from the section registry (single source of truth).
  */
 function normalizeSectionsOrder(order: SectionKey[]): SectionKey[] {
-  const validKeys = new Set<SectionKey>([
-    'overview', 'custom_cards', 'areas', 'weather', 'energy',
-    'plants', 'agenda', 'todos', 'persons', 'vacuums', 'maintenance',
-  ]);
+  const validKeys = new Set<SectionKey>(DEFAULT_SECTIONS_ORDER);
   const seen = new Set<SectionKey>();
   const result: SectionKey[] = [];
   for (const key of order) {
@@ -69,6 +68,75 @@ function renderCustomCards(cards: CustomCard[]): LovelaceCardConfig[] {
   return result;
 }
 
+/**
+ * Precomputed inputs shared by all section builders — assembled once per
+ * generate() run, then handed to each SECTION_BUILDERS entry.
+ */
+interface SectionBuildContext {
+  hass: HomeAssistant;
+  config: Simon42StrategyConfig;
+  /** Headings hidden via hidden_section_headings */
+  hiddenHeadings: Set<HeadingKey>;
+  /** Areas filtered + sorted by config */
+  visibleAreas: AreaRegistryEntry[];
+  /** Resolved weather entity (config override or auto-discovery) */
+  weatherEntity: string | null;
+  /** Dummy sensor for entity-less cards */
+  someSensorId: string;
+  /** custom_cards grouped by target_section */
+  customCardsBySection: Map<SectionKey, CustomCard[]>;
+}
+
+type SectionBuilder = (ctx: SectionBuildContext) => LovelaceSectionConfig | LovelaceSectionConfig[] | null;
+
+// Builder wiring: one entry per SECTION_REGISTRY key. Lives here (core
+// chunk) and deliberately NOT in section-registry.ts, so the lazy editor
+// chunk never pulls the builders in. When adding a section, add its
+// registry entry AND a builder entry here (see section-registry.ts).
+const SECTION_BUILDERS = new Map<SectionKey, SectionBuilder>([
+  ['overview', ({ hass, config, someSensorId }) =>
+    createOverviewSection({ someSensorId, showSearchCard: config.show_search_card === true, config, hass })],
+  ['custom_cards', ({ config, customCardsBySection, hiddenHeadings }) =>
+    createCustomCardsSection(
+      customCardsBySection.get('custom_cards') || [],
+      config.custom_cards_heading,
+      config.custom_cards_icon,
+      hiddenHeadings.has('custom_cards')
+    )],
+  ['areas', ({ hass, config, visibleAreas, hiddenHeadings }) =>
+    createAreasSection(
+      visibleAreas,
+      config.group_by_floors === true,
+      hass,
+      hiddenHeadings.has('areas'),
+      hiddenHeadings.has('areas_other')
+    )],
+  ['weather', ({ config, weatherEntity, hiddenHeadings }) =>
+    createWeatherSection(
+      weatherEntity,
+      config.show_weather !== false,
+      config.show_weather_forecast_card !== false,
+      config.weather_sensors || [],
+      config.weather_presentation,
+      hiddenHeadings.has('weather')
+    )],
+  ['energy', ({ config, hiddenHeadings }) =>
+    createEnergySection(
+      config.show_energy !== false,
+      config.energy_link_dashboard !== false,
+      config.show_energy_distribution_card !== false,
+      hiddenHeadings.has('energy')
+    )],
+  ['plants', ({ hass, config }) => createPlantsSection(hass, config.show_plants_section === true)],
+  ['agenda', ({ hass, config }) =>
+    createAgendaSection(hass, config.show_agenda_section === true, config.agenda_calendar_entities)],
+  ['todos', ({ hass, config }) =>
+    createTodosSection(hass, config.show_todos_section === true, config.todos_entities)],
+  ['persons', ({ hass, config }) => createPersonsSection(hass, config.show_persons_section === true)],
+  ['vacuums', ({ hass, config }) => createVacuumsSection(hass, config.show_vacuums_section === true)],
+  ['maintenance', ({ hass, config }) => createMaintenanceSection(hass, config.show_maintenance_section === true)],
+]);
+
 class Simon42ViewOverviewStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
     timeStart('overview-generate');
@@ -99,12 +167,6 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     const personBadgeLayout = dashboardConfig.person_badge_layout || 'with_state';
     const personBadges = showPersonBadges ? createPersonBadges(persons, hass, personBadgeLayout) : [];
 
-    // Config flags
-    const showWeather = dashboardConfig.show_weather !== false;
-    const showEnergy = dashboardConfig.show_energy !== false;
-    const showSearchCard = dashboardConfig.show_search_card === true;
-    const groupByFloors = dashboardConfig.group_by_floors === true;
-
     // Group custom cards by target section
     const allCustomCards = dashboardConfig.custom_cards || [];
     const customCardsBySection = new Map<SectionKey, CustomCard[]>();
@@ -115,61 +177,16 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
       customCardsBySection.set(target, list);
     }
 
-    // Hidden section headings (per-section opt-in)
-    const hiddenHeadings = new Set(dashboardConfig.hidden_section_headings || []);
-
-    // Build sections
-    const overviewSection = createOverviewSection({ someSensorId, showSearchCard, config: dashboardConfig, hass });
-    const customCardsSection = createCustomCardsSection(
-      customCardsBySection.get('custom_cards') || [],
-      dashboardConfig.custom_cards_heading,
-      dashboardConfig.custom_cards_icon,
-      hiddenHeadings.has('custom_cards')
-    );
-    const areasSections = createAreasSection(
-      visibleAreas,
-      groupByFloors,
+    // Everything the section builders need, precomputed once
+    const ctx: SectionBuildContext = {
       hass,
-      hiddenHeadings.has('areas'),
-      hiddenHeadings.has('areas_other'),
-    );
-
-    // Section map: key → section(s) or null
-    const sectionMap = new Map<SectionKey, LovelaceSectionConfig | LovelaceSectionConfig[] | null>([
-      ['overview', overviewSection],
-      ['custom_cards', customCardsSection],
-      ['areas', areasSections],
-      [
-        'weather',
-        createWeatherSection(
-          weatherEntity ?? null,
-          showWeather,
-          dashboardConfig.show_weather_forecast_card !== false,
-          dashboardConfig.weather_sensors || [],
-          dashboardConfig.weather_presentation,
-          hiddenHeadings.has('weather')
-        ),
-      ],
-      [
-        'energy',
-        createEnergySection(
-          showEnergy,
-          dashboardConfig.energy_link_dashboard !== false,
-          dashboardConfig.show_energy_distribution_card !== false,
-          hiddenHeadings.has('energy')
-        ),
-      ],
-      ['plants', createPlantsSection(hass, dashboardConfig.show_plants_section === true)],
-      ['agenda', createAgendaSection(
-        hass,
-        dashboardConfig.show_agenda_section === true,
-        dashboardConfig.agenda_calendar_entities,
-      )],
-      ['todos', createTodosSection(hass, dashboardConfig.show_todos_section === true, dashboardConfig.todos_entities)],
-      ['persons', createPersonsSection(hass, dashboardConfig.show_persons_section === true)],
-      ['vacuums', createVacuumsSection(hass, dashboardConfig.show_vacuums_section === true)],
-      ['maintenance', createMaintenanceSection(hass, dashboardConfig.show_maintenance_section === true)],
-    ]);
+      config: dashboardConfig,
+      hiddenHeadings: new Set(dashboardConfig.hidden_section_headings || []),
+      visibleAreas,
+      weatherEntity: weatherEntity ?? null,
+      someSensorId,
+      customCardsBySection,
+    };
 
     // Per-section conditional visibility (e.g. show agenda only on workdays).
     const sectionVisibility = dashboardConfig.section_visibility || {};
@@ -183,7 +200,8 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
         const entState = Reflect.get(hass.states as Record<string, unknown>, rule.entity) as { state?: string } | undefined;
         if (!entState || entState.state !== rule.state) continue;
       }
-      const result = sectionMap.get(key);
+      const builder = SECTION_BUILDERS.get(key);
+      const result = builder ? builder(ctx) : null;
       if (!result) continue;
       if (Array.isArray(result)) {
         overviewSections.push(...result);

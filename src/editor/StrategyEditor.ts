@@ -21,6 +21,8 @@ import type {
   WeatherSensorConfig,
 } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
+// Pure-data section registry (no builder imports — safe for the editor chunk)
+import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/section-registry';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
 import { localize } from '../utils/localize';
 import { isBadgeCandidate, isDefaultShowName, resolveShowName } from '../utils/badge-utils';
@@ -1093,75 +1095,25 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this._fireConfigChanged(newConfig);
   }
 
+  // Section metadata (icon, label, visibility toggle) derives from the
+  // section registry — a new section needs no editor changes at all.
+
   private _isSectionDisabled(key: SectionKey): boolean {
-    switch (key) {
-      case 'custom_cards':
-        return (this._config.custom_cards || []).length === 0;
-      case 'weather':
-        return this._config.show_weather === false;
-      case 'energy':
-        return this._config.show_energy === false;
-      case 'plants':
-        return this._config.show_plants_section !== true;
-      case 'agenda':
-        return this._config.show_agenda_section !== true;
-      case 'todos':
-        return this._config.show_todos_section !== true;
-      case 'persons':
-        return this._config.show_persons_section !== true;
-      case 'vacuums':
-        return this._config.show_vacuums_section !== true;
-      case 'maintenance':
-        return this._config.show_maintenance_section !== true;
-      default:
-        return false;
+    // custom_cards has no toggle: its visibility derives from content
+    if (key === 'custom_cards') {
+      return (this._config.custom_cards || []).length === 0;
     }
+    return isSectionHiddenByConfig(key, this._config);
   }
 
-  private static _sectionMeta = new Map<SectionKey, { icon: string; labelKey: string }>([
-    ['overview', { icon: 'mdi:home-outline', labelKey: 'sections.overview' }],
-    ['custom_cards', { icon: 'mdi:cards', labelKey: 'sections.custom_cards' }],
-    ['areas', { icon: 'mdi:floor-plan', labelKey: 'sections.areas' }],
-    ['weather', { icon: 'mdi:weather-partly-cloudy', labelKey: 'sections.weather' }],
-    ['energy', { icon: 'mdi:lightning-bolt', labelKey: 'sections.energy' }],
-    ['plants', { icon: 'mdi:flower-tulip', labelKey: 'sections.plants' }],
-    ['agenda', { icon: 'mdi:calendar', labelKey: 'sections.agenda' }],
-    ['todos', { icon: 'mdi:format-list-checks', labelKey: 'sections.todos' }],
-    ['persons', { icon: 'mdi:account-group', labelKey: 'sections.persons' }],
-    ['vacuums', { icon: 'mdi:robot-vacuum', labelKey: 'sections.vacuums' }],
-    ['maintenance', { icon: 'mdi:update', labelKey: 'sections.maintenance' }],
-  ]);
-
   private _isSectionToggleable(key: SectionKey): boolean {
-    return (
-      key === 'weather' ||
-      key === 'energy' ||
-      key === 'plants' ||
-      key === 'agenda' ||
-      key === 'todos' ||
-      key === 'persons' ||
-      key === 'vacuums' ||
-      key === 'maintenance'
-    );
+    return SECTION_META_BY_KEY.get(key)?.toggle !== undefined;
   }
 
   private _toggleSectionVisibility(key: SectionKey, visible: boolean): void {
-    if (key === 'weather') {
-      this._toggleChanged('show_weather', visible, true);
-    } else if (key === 'energy') {
-      this._toggleChanged('show_energy', visible, true);
-    } else if (key === 'plants') {
-      this._toggleChanged('show_plants_section', visible, false);
-    } else if (key === 'agenda') {
-      this._toggleChanged('show_agenda_section', visible, false);
-    } else if (key === 'todos') {
-      this._toggleChanged('show_todos_section', visible, false);
-    } else if (key === 'persons') {
-      this._toggleChanged('show_persons_section', visible, false);
-    } else if (key === 'vacuums') {
-      this._toggleChanged('show_vacuums_section', visible, false);
-    } else if (key === 'maintenance') {
-      this._toggleChanged('show_maintenance_section', visible, false);
+    const toggle = SECTION_META_BY_KEY.get(key)?.toggle;
+    if (toggle) {
+      this._toggleChanged(toggle.flag, visible, toggle.defaultOn);
     }
   }
 
@@ -1208,7 +1160,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
         </div>
         <div class="section-order-list" id="section-order-list">
           ${order.map((key) => {
-            const meta = Simon42DashboardStrategyEditor._sectionMeta.get(key);
+            const meta = SECTION_META_BY_KEY.get(key);
             if (!meta) return nothing;
             const disabled = this._isSectionDisabled(key);
             const toggleable = this._isSectionToggleable(key);
@@ -1321,7 +1273,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
               ${localize('editor.section_visibility_desc')}
             </div>
             ${order.map((key) => {
-              const meta = Simon42DashboardStrategyEditor._sectionMeta.get(key);
+              const meta = SECTION_META_BY_KEY.get(key);
               if (!meta) return nothing;
               const rule = this._config.section_visibility?.[key];
               return html`
@@ -2574,7 +2526,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
             <label>${localize('editor.target_section')}:</label>
             <select
               @change=${(e: Event) => this._updateCustomCardField(index, 'target_section', (e.target as HTMLSelectElement).value)}>
-              ${[...Simon42DashboardStrategyEditor._sectionMeta.entries()].map(([key, meta]) => html`
+              ${[...SECTION_META_BY_KEY.entries()].map(([key, meta]) => html`
                 <option value=${key} ?selected=${(card.target_section || 'custom_cards') === key}>
                   ${localize(meta.labelKey)}
                 </option>
