@@ -21,6 +21,12 @@ jobs:
       - uses: hacs/action@main
         with:
           category: plugin
+          # license-Check ignorieren: CC BY-NC-SA 4.0 ist eine bewusste
+          # Lizenz-Entscheidung, wird aber von GitHubs licensee nicht als
+          # SPDX erkannt (CC-BY-NC-* fehlt im choosealicense-Datensatz →
+          # dauerhaft "NOASSERTION"). Der Check kam am 2026-07-04 per
+          # HACS-Update dazu und würde sonst jeden PR blocken.
+          ignore: license
 
   translations:
     name: Translation Lint

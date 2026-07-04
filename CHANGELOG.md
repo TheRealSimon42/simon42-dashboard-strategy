@@ -12,6 +12,9 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 ### Documentation
 - README overhaul: all v1.3.5/v1.4.0 features documented, full config reference with "since version" column, updated architecture numbers; refreshed HACS info.md; backfilled changelog
 
+### Chores
+- ci: ignore the new HACS license check — CC BY-NC-SA 4.0 is a deliberate license choice but not SPDX-detectable by GitHub's licensee (would block every PR)
+
 <a name="1.4.0-beta.1"></a>
 ## [1.4.0-beta.1] - 2026-07-04 (Pre-Release)
 ### Features
