@@ -52,21 +52,28 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Automatische Raum-Erkennung** — Nutzt Home Assistant Areas, Devices & Floors
 - **Spezialisierte Views** — Lichter, Rollos, Sicherheit, Batterien, Klima — jeweils mit Status-Gruppierung
 - **Zusammenfassungskarten** — Einzeln ein-/ausschaltbar für Lichter, Rollos, Sicherheit, Batterien und Klima
-- **Etagen-Gruppierung** — Bereiche und Lichter optional nach Etagen gliedern
+- **Abschnitts-Reihenfolge** — Sections der Übersicht per Drag & Drop sortieren *(ab v1.3.5)*
+- **Zusätzliche Sections** — Pflanzen, Agenda, To-dos, Personen, Staubsauger, Wartung — alle opt-in, mit Auto-Hide *(ab v1.4.0)*
+- **Bedingte Sichtbarkeit** — Sections und Raum-Views nur bei bestimmtem Entity-Zustand anzeigen (z.B. Agenda nur an Werktagen) *(ab v1.4.0)*
+- **Header-Badges** — Optionale Live-Badges: Stromverbrauch, nicht verfügbare Entitäten, Now Playing, Sonnenstand, anstehende Updates *(ab v1.4.0)*
+- **Etagen-Gruppierung** — Bereiche, Lichter und Rollos optional nach Etagen gliedern
 - **Favoriten** — Beliebige Entitäten als Kacheln auf der Übersicht anpinnen
 - **Alarm-Panel** — Optionale Alarmanlage neben der Uhr
 - **Granulare Filterung** — Per Label (`no-dboard`), pro Bereich, pro Domain, pro Entity
 - **Teiloffene Rollos** — Optionale dritte Gruppe (Offen / Teiloffen / Geschlossen) mit Live-Übergängen
 - **Alert-Icons** — Optionale Alert-Badges auf Bereichskarten (Bewegung, Feuchtigkeit, Rauch, Wärme u.a.)
-- **Rauch- & Gasmelder** — In der Sicherheits-Übersicht, im Security-Summary-Count und als Badges in Raum-Views
+- **Rauch-, Gas- & Hitzemelder** — In der Sicherheits-Übersicht, im Security-Summary-Count und als Badges in Raum-Views
+- **Wetter flexibel** — Wetter-Entität wählbar, Darstellung umschaltbar (Forecast täglich/stündlich, Tile, eigene Karte), eigene Außensensoren als Inline-Zeile *(ab v1.4.0)*
 - **Batch-Aktionen** — Heading-Badges für Gruppensteuerung (alle ein/aus, alle öffnen/schließen)
 - **Automationen & Skripte in Räumen** — Bereichs-zugeordnete Automationen und Skripte in Raum-Views anzeigen
-- **Eigene Karten** — Beliebige Karten via YAML auf der Übersicht einbinden
+- **Eigene Karten** — Beliebige Karten via YAML auf der Übersicht einbinden, Ziel-Section frei wählbar
 - **Eigene Badges** — Beliebige Badges via YAML im Header (neben Personen-Chips)
 - **Custom Views** — Eigene Dashboard-Views mit beliebigen Cards via YAML
 - **Reaktive Updates** — Echtzeit-Aktualisierung via LitElement Custom Cards
-- **Mehrsprachig** — Deutsch und Englisch, automatische Erkennung aus HA-Einstellungen, Fallback auf Englisch
+- **Mehrsprachig** — Deutsch, Englisch und Russisch, automatische Erkennung aus HA-Einstellungen, Fallback auf Englisch
 - **Performance-optimiert** — Code-Split Bundles, Registry-Caching, Tile-Card-Pooling
+
+> **Versions-Hinweis:** Features ohne Vermerk sind seit v1.3.x oder länger enthalten. Neuere Features tragen ein *(ab vX.Y)* — die vollständige Zuordnung aller Optionen steht in der [Konfigurationsreferenz](#alle-optionen-referenz).
 
 ## Installation
 
@@ -193,6 +200,32 @@ Die Hauptseite des Dashboards zeigt eine Übersicht mit folgenden Bereichen:
 
 **Info-Karten** — Optionale Wetter- und Energie-Karten auf der Übersicht.
 
+**Abschnitts-Reihenfolge** *(ab v1.3.5)* — Alle Sections der Übersicht lassen sich im Editor per Drag & Drop sortieren. Abschaltbare Sections haben direkt im Panel einen Ein/Aus-Toggle. Leere Sections werden automatisch ausgeblendet.
+
+**Zusätzliche Sections** *(ab v1.4.0)* — Sechs optionale Sections für die Übersicht, alle standardmäßig aus und mit Auto-Hide (erscheinen nur, wenn passende Entitäten existieren):
+
+| Section | Inhalt |
+|---------|--------|
+| Pflanzen | Alle `plant.*`-Entitäten als Kacheln |
+| Agenda | Anstehende Kalender-Termine (Kalender wählbar) |
+| To-dos | Einträge aus `todo.*`-Listen (Listen wählbar) |
+| Personen | Personen-Karten mit Anwesenheit |
+| Staubsauger | Saugroboter & Mähroboter mit Status |
+| Wartung | Anstehende Updates & niedrige Batterien auf einen Blick |
+
+**Bedingte Sichtbarkeit** *(ab v1.4.0)* — Jede Section (und jede Raum-View) kann an einen Entity-Zustand geknüpft werden. Beispiel: Agenda nur an Werktagen anzeigen:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  section_visibility:
+    agenda:
+      entity: binary_sensor.workday_sensor
+      state: "on"
+```
+
+**Header-Badges** *(ab v1.4.0)* — Optionale Live-Badges neben den Personen-Chips: aktueller Stromverbrauch (Sensor wählbar), Anzahl nicht verfügbarer Entitäten, gerade spielende Medien, Sonnenauf-/-untergang und anstehende Updates. Alle standardmäßig aus, alle mit Auto-Hide. Die Personen-Chips selbst sind konfigurierbar (Layout mit/ohne Status und Zeitangabe) oder komplett abschaltbar — z.B. um sie durch eigene Badges zu ersetzen.
+
 **Favoriten** — Beliebige Entitäten, die als Kacheln unter den Zusammenfassungen erscheinen. Im Editor per Dropdown hinzufügen.
 
 <p align="center">
@@ -227,7 +260,11 @@ Die Hauptseite des Dashboards zeigt eine Übersicht mit folgenden Bereichen:
 
 **Automationen & Skripte** — Optional können dem Bereich zugeordnete Automationen und Skripte in den Raum-Views angezeigt werden. Beide Optionen sind separat aktivierbar und standardmäßig aus.
 
-**Fenster- & Türkontakte** — Optional können Fensterkontakte und Türkontakte als Badges in den Raum-Views angezeigt werden. Zwei getrennte Toggles im Editor, standardmäßig aus. Absolute Luftfeuchtigkeit (z.B. von der Thermal Comfort Integration, `g/m³`) wird automatisch als Badge erkannt.
+**Fenster- & Türkontakte** — Fensterkontakte und Türkontakte erscheinen als Badges in den Raum-Views (standardmäßig an, per zwei getrennten Toggles im Editor abschaltbar). Absolute Luftfeuchtigkeit (z.B. von der Thermal Comfort Integration, `g/m³`) wird automatisch als Badge erkannt.
+
+**Kameras in Räumen** *(ab v1.4.0)* — Kamera-Streams in den Raum-Views sind standardmäßig an und können per Toggle deaktiviert werden.
+
+**Raum-Sichtbarkeit** *(ab v1.4.0)* — Einzelne Raum-Views (inkl. Navigations-Tab) können an einen Entity-Zustand geknüpft werden (`room_visibility`) — z.B. Gästezimmer nur bei aktiviertem Gäste-Modus. Die Bereichskarte auf der Übersicht bleibt davon unberührt.
 
 **Ansichten** — Summary-Views (Lichter, Rollos, etc.) und Raum-Views können optional in der oberen Navigation angezeigt werden.
 
@@ -271,22 +308,26 @@ entity: sun.sun
   <img src="https://raw.githubusercontent.com/TheRealSimon42/simon42-dashboard-strategy/main/assets/Custom-Badges-hinzufugen.gif" alt="Eigene Badges hinzufügen" width="800" />
 </p>
 
-#### Wetter & Energie anpassen
+#### Wetter & Energie anpassen *(ab v1.4.0)*
 
-Die `weather`- und `energy`-Sections der Übersicht akzeptieren `custom_cards` über `target_section` (siehe Eigene Karten). Standardmäßig erscheinen die eingefügten Karten unterhalb der eingebauten `weather-forecast`- bzw. `energy-distribution`-Karte. Wer die Section komplett selbst gestalten möchte, kann die eingebaute Karte unterdrücken — die Section (Überschrift + Slot für eigene Karten) bleibt erhalten:
+**Wetter-Entität & Darstellung** — Im Editor (unterhalb der Wetter-Section im Reihenfolge-Panel) lässt sich die Wetter-Entität explizit auswählen (Standard: automatische Erkennung) und die Darstellung umschalten: Forecast täglich (Standard), stündlich, zweimal täglich, kompakte Tile-Karte oder „keine eingebaute Karte" für komplett eigene Gestaltung.
+
+Die `weather`- und `energy`-Sections der Übersicht akzeptieren `custom_cards` über `target_section` (siehe Eigene Karten). Standardmäßig erscheinen die eingefügten Karten unterhalb der eingebauten Karte. Wer die Section komplett selbst gestalten möchte, unterdrückt die eingebaute Karte — die Section (Überschrift + Slot für eigene Karten) bleibt erhalten. So lässt sich z.B. die Energie-Karte durch eine eigene ersetzen (power-flow-card-plus & Co.):
 
 ```yaml
 strategy:
   type: custom:simon42-dashboard
-  show_weather: true
-  show_weather_forecast_card: false   # eingebaute weather-forecast-Karte ausblenden
-  show_energy: true
+  weather_presentation: none            # keine eingebaute Wetter-Karte
   show_energy_distribution_card: false  # eingebaute energy-distribution-Karte ausblenden
   custom_cards:
     - target_section: weather
       parsed_config:
         type: custom:clock-weather-card
         entity: weather.openweathermap
+    - target_section: energy
+      parsed_config:
+        type: custom:power-flow-card-plus
+        # ... deine Energiekarten-Konfiguration
 ```
 
 Für eine kompakte Live-Anzeige eigener Außen-Sensoren (Temperatur, Luftfeuchte, Wind, …) gibt es `weather_sensors`. Die Einträge werden als Icon + Wert + Einheit oben in der Wetter-Section gerendert — ohne zusätzliche Card-Chrome. Ideal als Ergänzung zur Forecast-Karte oder als alleinige Anzeige bei `show_weather_forecast_card: false`.
@@ -346,50 +387,123 @@ Entitäten können auf mehreren Ebenen gefiltert werden:
 
 ### Alle Optionen (Referenz)
 
+Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „—" bedeutet: seit v1.3.x oder länger.
+
 <details>
 <summary>Vollständige Konfigurationsreferenz aufklappen</summary>
 
-| Option | Typ | Standard | Beschreibung |
-|--------|-----|----------|-------------|
-| `show_clock_card` | boolean | `true` | Uhr auf der Übersicht |
-| `alarm_entity` | string | — | Alarm-Panel Entity neben der Uhr |
-| `show_search_card` | boolean | `false` | Such-Karte (benötigt custom:search-card) |
-| `show_light_summary` | boolean | `true` | Lichter-Zusammenfassung |
-| `show_covers_summary` | boolean | `true` | Rollo-Zusammenfassung |
-| `show_security_summary` | boolean | `true` | Sicherheits-Zusammenfassung |
-| `show_climate_summary` | boolean | `false` | Klima-Zusammenfassung |
-| `show_battery_summary` | boolean | `true` | Batterie-Zusammenfassung |
-| `summaries_columns` | 2 \| 4 | `2` | Spalten-Layout der Zusammenfassungen |
-| `hide_mobile_app_batteries` | boolean | `false` | Mobile-App-Batterien ausblenden |
-| `battery_critical_threshold` | number | `20` | Schwellwert für kritische Batterien (%) |
-| `battery_low_threshold` | number | `50` | Schwellwert für niedrige Batterien (%) |
-| `show_weather` | boolean | `true` | Wetter-Section |
-| `show_weather_forecast_card` | boolean | `true` | Eingebaute `weather-forecast`-Karte. Auf `false` für komplett eigene Wetter-Section |
-| `weather_sensors` | object[] | `[]` | Inline Icon+Wert-Zeile oben in der Wetter-Section (siehe oben) |
-| `show_energy` | boolean | `true` | Energie-Section |
-| `show_energy_distribution_card` | boolean | `true` | Eingebaute `energy-distribution`-Karte. Auf `false` für komplett eigene Energie-Section |
-| `favorite_entities` | string[] | `[]` | Favoriten-Entitäten auf der Übersicht |
-| `group_by_floors` | boolean | `false` | Bereiche nach Etagen gliedern |
-| `show_partially_open_covers` | boolean | `false` | Teiloffene Rollos separat anzeigen |
-| `show_alerts_on_areas` | boolean | `false` | Alert-Icons auf Bereichskarten |
-| `show_locks_in_rooms` | boolean | `false` | Schlösser in Raum-Views |
-| `show_automations_in_rooms` | boolean | `false` | Automationen in Raum-Views |
-| `show_scripts_in_rooms` | boolean | `false` | Skripte in Raum-Views |
-| `show_window_contacts_in_rooms` | boolean | `false` | Fensterkontakte als Badges in Raum-Views |
-| `show_door_contacts_in_rooms` | boolean | `false` | Türkontakte als Badges in Raum-Views |
-| `use_default_area_sort` | boolean | `false` | HA-Sortierung für Bereiche verwenden |
-| `areas_display.hidden` | string[] | `[]` | Ausgeblendete Bereiche |
-| `areas_display.order` | string[] | `[]` | Reihenfolge der Bereiche |
-| `areas_options` | object | `{}` | Entity-Filterung pro Bereich |
-| `room_pin_entities` | string[] | `[]` | Raum-Pin Entitäten |
-| `show_summary_views` | boolean | `false` | Summary-Views in Navigation |
-| `show_room_views` | boolean | `false` | Raum-Views in Navigation |
-| `group_lights_by_floors` | boolean | `false` | Lichter nach Etagen gruppieren |
-| `custom_cards` | object[] | `[]` | Eigene Karten via YAML |
-| `custom_cards_heading` | string | `"Eigene Karten"` | Überschrift der Custom Cards Section |
-| `custom_cards_icon` | string | `"mdi:cards"` | Icon der Custom Cards Section |
-| `custom_badges` | object[] | `[]` | Eigene Badges im Header via YAML |
-| `custom_views` | object[] | `[]` | Eigene Views via YAML |
+**Übersicht & Zusammenfassungen**
+
+| Option | Typ | Standard | Seit | Beschreibung |
+|--------|-----|----------|------|-------------|
+| `show_clock_card` | boolean | `true` | — | Uhr auf der Übersicht |
+| `alarm_entity` | string | — | — | Alarm-Panel Entity neben der Uhr |
+| `show_search_card` | boolean | `false` | — | Such-Karte auf der Übersicht |
+| `search_card_variant` | `custom` \| `tip` | `custom` | v1.4.0 | `custom` benötigt custom:search-card aus HACS; `tip` ist ein HA-nativer Hinweis auf die globale Suche |
+| `show_light_summary` | boolean | `true` | — | Lichter-Zusammenfassung |
+| `show_covers_summary` | boolean | `true` | — | Rollo-Zusammenfassung |
+| `show_partially_open_covers` | boolean | `false` | — | Teiloffene Rollos separat anzeigen |
+| `show_security_summary` | boolean | `true` | — | Sicherheits-Zusammenfassung |
+| `show_climate_summary` | boolean | `false` | — | Klima-Zusammenfassung |
+| `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
+| `summaries_columns` | 2 \| 4 | `2` | — | Spalten-Layout der Zusammenfassungen |
+| `favorite_entities` | string[] | `[]` | — | Favoriten-Entitäten auf der Übersicht |
+| `favorites_show_state` | boolean | `false` | — | Zustand auf Favoriten-Kacheln anzeigen |
+| `favorites_hide_last_changed` | boolean | `false` | — | „Zuletzt geändert" auf Favoriten ausblenden |
+| `light_favorite_entities` | string[] | `[]` | v1.4.0 | Schnellzugriffs-Reihe für Lieblingslampen auf der Übersicht |
+
+**Sections & Reihenfolge**
+
+| Option | Typ | Standard | Seit | Beschreibung |
+|--------|-----|----------|------|-------------|
+| `sections_order` | string[] | Standard-Reihenfolge | v1.3.5 | Reihenfolge der Übersichts-Sections (im Editor per Drag & Drop) |
+| `hidden_section_headings` | string[] | `[]` | v1.4.0 | Überschriften einzelner Sections ausblenden |
+| `section_visibility` | object | `{}` | v1.4.0 | Sections nur bei bestimmtem Entity-Zustand anzeigen (siehe oben) |
+| `show_weather` | boolean | `true` | — | Wetter-Section |
+| `weather_entity` | string | auto | v1.4.0 | Explizite Wetter-Entität (Standard: automatische Erkennung) |
+| `weather_presentation` | string | `forecast_daily` | v1.4.0 | Darstellung: `forecast_daily`, `forecast_hourly`, `forecast_twice_daily`, `tile`, `none` |
+| `show_weather_forecast_card` | boolean | `true` | v1.4.0 | Legacy — durch `weather_presentation` abgelöst, wird weiter berücksichtigt |
+| `weather_sensors` | object[] | `[]` | v1.4.0 | Inline Icon+Wert-Zeile oben in der Wetter-Section (siehe oben) |
+| `show_energy` | boolean | `true` | — | Energie-Section |
+| `show_energy_distribution_card` | boolean | `true` | v1.4.0 | Eingebaute `energy-distribution`-Karte. Auf `false` für komplett eigene Energie-Section |
+| `energy_link_dashboard` | boolean | `true` | v1.3.5 | Energie-Karte verlinkt auf das HA-Energie-Dashboard |
+| `show_plants_section` | boolean | `false` | v1.4.0 | Pflanzen-Section (Auto-Hide ohne `plant.*`-Entitäten) |
+| `show_agenda_section` | boolean | `false` | v1.4.0 | Agenda-Section mit Kalender-Terminen |
+| `agenda_calendar_entities` | string[] | alle | v1.4.0 | Kalender für die Agenda einschränken |
+| `show_todos_section` | boolean | `false` | v1.4.0 | To-do-Section |
+| `todos_entities` | string[] | alle | v1.4.0 | To-do-Listen einschränken |
+| `show_persons_section` | boolean | `false` | v1.4.0 | Personen-Section |
+| `show_vacuums_section` | boolean | `false` | v1.4.0 | Staubsauger-/Mähroboter-Section |
+| `show_maintenance_section` | boolean | `false` | v1.4.0 | Wartungs-Section (Updates + niedrige Batterien) |
+
+**Header-Badges**
+
+| Option | Typ | Standard | Seit | Beschreibung |
+|--------|-----|----------|------|-------------|
+| `show_person_badges` | boolean | `true` | v1.4.0 | Personen-Chips im Header (auf `false` z.B. für eigene Badges) |
+| `person_badge_layout` | string | `with_state` | v1.4.0 | `minimal`, `with_state` oder `with_state_and_time` |
+| `power_badge_entity` | string | — | v1.4.0 | Live-Badge mit aktuellem Stromverbrauch (Sensor wählbar) |
+| `show_unavailable_alert_badge` | boolean | `false` | v1.4.0 | Badge mit Anzahl nicht verfügbarer Entitäten (Auto-Hide bei 0) |
+| `show_now_playing_badge` | boolean | `false` | v1.4.0 | Badge für gerade spielende Medien (Auto-Hide) |
+| `show_sun_badge` | boolean | `false` | v1.4.0 | Sonnenauf-/-untergangs-Badge (benötigt `sun.sun`) |
+| `show_updates_badge` | boolean | `false` | v1.4.0 | Badge mit Anzahl anstehender Updates (Auto-Hide bei 0) |
+| `custom_badges` | object[] | `[]` | — | Eigene Badges im Header via YAML |
+
+**Batterien**
+
+| Option | Typ | Standard | Seit | Beschreibung |
+|--------|-----|----------|------|-------------|
+| `hide_mobile_app_batteries` | boolean | `false` | — | Mobile-App-Batterien ausblenden |
+| `hide_battery_notes_entities` | boolean | `false` | v1.4.0 | Hilfs-Entitäten der Battery-Notes-Integration ausblenden |
+| `battery_critical_threshold` | number | `20` | — | Schwellwert für kritische Batterien (%) |
+| `battery_low_threshold` | number | `50` | — | Schwellwert für niedrige Batterien (%) |
+| `show_area_in_battery_view` | boolean | `false` | v1.4.0 | Bereichsnamen in der Batterie-View anzeigen |
+| `unavailable_batteries_bucket` | `critical` \| `good` | `good` | v1.4.0 | Einordnung nicht erreichbarer Batterie-Sensoren |
+
+**Bereiche & Räume**
+
+| Option | Typ | Standard | Seit | Beschreibung |
+|--------|-----|----------|------|-------------|
+| `group_by_floors` | boolean | `false` | — | Bereiche nach Etagen gliedern |
+| `show_alerts_on_areas` | boolean | `false` | — | Alert-Icons auf Bereichskarten |
+| `show_window_alerts_on_areas` | boolean | `false` | v1.4.0 | Offene Fenster als Alert-Icon auf Bereichskarten |
+| `show_switches_on_areas` | boolean | `false` | — | Schalter-Control auf Bereichskarten |
+| `use_default_area_sort` | boolean | `false` | — | HA-Sortierung für Bereiche verwenden |
+| `areas_display.hidden` | string[] | `[]` | — | Ausgeblendete Bereiche |
+| `areas_display.order` | string[] | `[]` | — | Reihenfolge der Bereiche |
+| `areas_options` | object | `{}` | — | Entity-Filterung pro Bereich |
+| `room_pin_entities` | string[] | `[]` | — | Raum-Pin Entitäten |
+| `room_pins_first` | boolean | `false` | v1.3.5 | Raum-Pins ganz oben statt unten im Raum anzeigen |
+| `room_pins_show_state` | boolean | `false` | — | Zustand auf Raum-Pin-Kacheln anzeigen |
+| `room_pins_hide_last_changed` | boolean | `false` | — | „Zuletzt geändert" auf Raum-Pins ausblenden |
+| `show_locks_in_rooms` | boolean | `false` | — | Schlösser in Raum-Views |
+| `show_automations_in_rooms` | boolean | `false` | — | Automationen in Raum-Views |
+| `show_scripts_in_rooms` | boolean | `false` | — | Skripte in Raum-Views |
+| `show_cameras_in_rooms` | boolean | `true` | v1.4.0 | Kamera-Streams in Raum-Views |
+| `show_window_contacts_in_rooms` | boolean | `true` | v1.3.5 | Fensterkontakte als Badges in Raum-Views |
+| `show_door_contacts_in_rooms` | boolean | `true` | v1.3.5 | Türkontakte als Badges in Raum-Views |
+| `hide_unavailable_in_rooms` | boolean | `true` | v1.4.0 | Nicht verfügbare Entitäten in Raum-Views ausblenden |
+| `room_visibility` | object | `{}` | v1.4.0 | Raum-Views nur bei bestimmtem Entity-Zustand anzeigen |
+| `security_extra_entities` | string[] | `[]` | v1.4.0 | Zusätzliche Entitäten für die Sicherheits-View (z.B. Backofen) |
+
+**Views & Navigation**
+
+| Option | Typ | Standard | Seit | Beschreibung |
+|--------|-----|----------|------|-------------|
+| `show_summary_views` | boolean | `false` | — | Summary-Views in Navigation |
+| `show_room_views` | boolean | `false` | — | Raum-Views in Navigation |
+| `group_lights_by_floors` | boolean | `false` | — | Lichter nach Etagen gruppieren |
+| `nested_light_groups` | boolean | `false` | v1.3.5 | Verschachtelte Lichtgruppen aufklappbar rendern |
+| `group_covers_by_floors` | boolean | `false` | v1.4.0 | Rollos nach Etagen gruppieren |
+
+**Eigene Inhalte**
+
+| Option | Typ | Standard | Seit | Beschreibung |
+|--------|-----|----------|------|-------------|
+| `custom_cards` | object[] | `[]` | — | Eigene Karten via YAML; `target_section` wählt die Ziel-Section (Dropdown im Editor ab v1.4.0) |
+| `custom_cards_heading` | string | `"Eigene Karten"` | — | Überschrift der Custom Cards Section |
+| `custom_cards_icon` | string | `"mdi:cards"` | — | Icon der Custom Cards Section |
+| `custom_views` | object[] | `[]` | — | Eigene Views via YAML |
 
 </details>
 
@@ -428,12 +542,15 @@ Die Strategy erkennt automatisch die Sprache aus deinen Home Assistant Einstellu
 |---------|--------|
 | 🇩🇪 Deutsch | Vollständig |
 | 🇬🇧 English | Vollständig |
+| 🇷🇺 Русский | Vollständig *(ab v1.3.5)* |
 
 **Weitere Sprachen hinzufügen:** Erstelle eine neue Datei `src/translations/<code>.json` (z.B. `fr.json`) nach dem Muster der bestehenden Dateien und öffne einen Pull Request. Der Aufwand ist gering — es müssen nur die Strings übersetzt werden, kein Code.
 
 ## Contributing
 
 Issues und Pull Requests sind willkommen! Bitte teste PRs gründlich in einem lokalen HA-Setup.
+
+**Neue Übersichts-Section beisteuern?** Seit v1.4.0 sind die Sections registry-getrieben: Builder-Datei in `src/sections/` anlegen, einen Eintrag in `src/sections/section-registry.ts` ergänzen, den Builder in `views/OverviewViewStrategy.ts` verdrahten, Übersetzungen ergänzen — Editor-Panel, Toggle, Dropdown und Sortierung kommen automatisch. Das vollständige Rezept steht in der [CLAUDE.md](CLAUDE.md#adding-a-new-overview-section).
 
 <details>
 <summary>Architektur</summary>
@@ -445,10 +562,10 @@ Issues und Pull Requests sind willkommen! Bitte teste PRs gründlich in einem lo
 | Chunk | Größe | Inhalt |
 |-------|-------|--------|
 | main | ~6 KB | Entry Point, Custom Element Registrierung |
-| lit | ~15 KB | Lit Framework (shared) |
-| core | ~51 KB | Registry, Utils, Translations, Overview, Custom Cards |
-| views | ~19 KB | Lichter, Rollos, Sicherheit, Batterien, Klima, Raum-Detail |
-| editor | ~110 KB | Konfigurations-UI (nur bei Bedarf geladen) |
+| lit | ~16 KB | Lit Framework (shared) |
+| core | ~125 KB | Registry, Utils, Translations, Overview, Custom Cards |
+| views | ~24 KB | Lichter, Rollos, Sicherheit, Batterien, Klima, Raum-Detail |
+| editor | ~145 KB | Konfigurations-UI (nur bei Bedarf geladen) |
 
 ### Performance-Design
 
