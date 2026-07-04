@@ -15,14 +15,17 @@ import type {
   CustomView,
   CustomCard,
   CustomBadge,
+  CustomSection,
   RoomEntities,
   SectionKey,
+  SectionOrderKey,
   WeatherPresentation,
   WeatherSensorConfig,
 } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
 // Pure-data section registry (no builder imports — safe for the editor chunk)
 import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/section-registry';
+import { validateCustomSections } from '../sections/CustomSections';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
 import { localize } from '../utils/localize';
 import { isBadgeCandidate, isDefaultShowName, resolveShowName } from '../utils/badge-utils';
@@ -1070,6 +1073,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderSectionOrderPanel()}
         ${this._renderWeatherSensorsSection()}
         ${this._renderCustomCardsSection()}
+        ${this._renderCustomSectionsSection()}
         ${this._renderCustomBadgesSection()}
         ${this._renderCustomViewsSection()}
       </div>
@@ -1082,11 +1086,35 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   // -- Section order panel -----------------------------------------------
 
-  private _getSectionsOrder(): SectionKey[] {
-    return this._config.sections_order || [...DEFAULT_SECTIONS_ORDER];
+  /** Keys of valid user-declared custom sections (collisions/duplicates dropped). */
+  private _validCustomSectionKeys(): string[] {
+    return validateCustomSections(this._config.custom_sections).map((cs) => cs.key);
   }
 
-  private _updateSectionsOrder(newOrder: SectionKey[]): void {
+  private _getSectionsOrder(): SectionOrderKey[] {
+    // Mirrors the view's normalization: configured order (invalid keys
+    // dropped), then missing built-ins, then unpositioned custom sections —
+    // so new custom sections show up in the drag & drop panel immediately.
+    const customKeys = this._validCustomSectionKeys();
+    const validKeys = new Set<string>([...DEFAULT_SECTIONS_ORDER, ...customKeys]);
+    const seen = new Set<string>();
+    const result: SectionOrderKey[] = [];
+    for (const key of this._config.sections_order || []) {
+      if (validKeys.has(key) && !seen.has(key)) {
+        result.push(key);
+        seen.add(key);
+      }
+    }
+    for (const key of DEFAULT_SECTIONS_ORDER) {
+      if (!seen.has(key)) result.push(key);
+    }
+    for (const key of customKeys) {
+      if (!seen.has(key)) result.push(key);
+    }
+    return result;
+  }
+
+  private _updateSectionsOrder(newOrder: SectionOrderKey[]): void {
     const newConfig: Simon42StrategyConfig = {
       ...this._config,
       sections_order: newOrder,
@@ -1096,22 +1124,38 @@ class Simon42DashboardStrategyEditor extends LitElement {
   }
 
   // Section metadata (icon, label, visibility toggle) derives from the
-  // section registry — a new section needs no editor changes at all.
+  // section registry — a new built-in section needs no editor changes at
+  // all. Custom sections get synthesized display meta from their config.
 
-  private _isSectionDisabled(key: SectionKey): boolean {
+  private _sectionDisplayMeta(key: SectionOrderKey): { icon: string; label: string } | null {
+    const builtin = SECTION_META_BY_KEY.get(key as SectionKey);
+    if (builtin) return { icon: builtin.icon, label: localize(builtin.labelKey) };
+    const custom = (this._config.custom_sections || []).find((cs) => cs.key === key);
+    if (custom) {
+      return { icon: custom.icon || 'mdi:view-grid-plus-outline', label: custom.heading || custom.key };
+    }
+    return null;
+  }
+
+  private _isSectionDisabled(key: SectionOrderKey): boolean {
     // custom_cards has no toggle: its visibility derives from content
     if (key === 'custom_cards') {
       return (this._config.custom_cards || []).length === 0;
     }
-    return isSectionHiddenByConfig(key, this._config);
+    const custom = (this._config.custom_sections || []).find((cs) => cs.key === key);
+    if (custom) {
+      // custom sections auto-hide when they have no valid cards
+      return !Array.isArray(custom.parsed_config) || custom.parsed_config.length === 0;
+    }
+    return isSectionHiddenByConfig(key as SectionKey, this._config);
   }
 
-  private _isSectionToggleable(key: SectionKey): boolean {
-    return SECTION_META_BY_KEY.get(key)?.toggle !== undefined;
+  private _isSectionToggleable(key: SectionOrderKey): boolean {
+    return SECTION_META_BY_KEY.get(key as SectionKey)?.toggle !== undefined;
   }
 
-  private _toggleSectionVisibility(key: SectionKey, visible: boolean): void {
-    const toggle = SECTION_META_BY_KEY.get(key)?.toggle;
+  private _toggleSectionVisibility(key: SectionOrderKey, visible: boolean): void {
+    const toggle = SECTION_META_BY_KEY.get(key as SectionKey)?.toggle;
     if (toggle) {
       this._toggleChanged(toggle.flag, visible, toggle.defaultOn);
     }
@@ -1160,7 +1204,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
         </div>
         <div class="section-order-list" id="section-order-list">
           ${order.map((key) => {
-            const meta = SECTION_META_BY_KEY.get(key);
+            const meta = this._sectionDisplayMeta(key);
             if (!meta) return nothing;
             const disabled = this._isSectionDisabled(key);
             const toggleable = this._isSectionToggleable(key);
@@ -1175,7 +1219,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
                 @drop=${this._handleSectionDrop}>
                 <span class="drag-handle" draggable="true">&#x2630;</span>
                 <ha-icon class="section-icon" icon=${meta.icon}></ha-icon>
-                <span class="section-label">${localize(meta.labelKey)}</span>
+                <span class="section-label">${meta.label}</span>
                 ${disabled && !toggleable ? html`<span class="section-hidden-tag">(${localize('editor.section_hidden')})</span>` : nothing}
                 ${toggleable ? html`
                   <label class="section-toggle" @mousedown=${(e: Event) => { e.stopPropagation(); }}>
@@ -1273,12 +1317,12 @@ class Simon42DashboardStrategyEditor extends LitElement {
               ${localize('editor.section_visibility_desc')}
             </div>
             ${order.map((key) => {
-              const meta = SECTION_META_BY_KEY.get(key);
+              const meta = this._sectionDisplayMeta(key);
               if (!meta) return nothing;
               const rule = this._config.section_visibility?.[key];
               return html`
                 <div style="border: 1px solid var(--divider-color); border-radius: 6px; padding: 8px; margin-bottom: 8px;">
-                  <div style="font-weight: 500; margin-bottom: 6px;">${localize(meta.labelKey)}</div>
+                  <div style="font-weight: 500; margin-bottom: 6px;">${meta.label}</div>
                   <div class="form-row">
                     <label for="visibility-entity-${key}" style="min-width: 80px; font-size: 12px;">${localize('editor.section_visibility_entity')}</label>
                     <input type="text" id="visibility-entity-${key}" style="flex: 1;"
@@ -1409,8 +1453,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
     if (!this._sectionDraggedElement || this._sectionDraggedElement === dropTarget) return;
 
-    const draggedKey = this._sectionDraggedElement.dataset.sectionKey as SectionKey | undefined;
-    const dropKey = dropTarget.dataset.sectionKey as SectionKey | undefined;
+    const draggedKey = this._sectionDraggedElement.dataset.sectionKey as SectionOrderKey | undefined;
+    const dropKey = dropTarget.dataset.sectionKey as SectionOrderKey | undefined;
     if (!draggedKey || !dropKey) return;
 
     const currentOrder = this._getSectionsOrder();
@@ -2531,6 +2575,11 @@ class Simon42DashboardStrategyEditor extends LitElement {
                   ${localize(meta.labelKey)}
                 </option>
               `)}
+              ${this._validCustomSectionKeys().map((key) => html`
+                <option value=${key} ?selected=${card.target_section === key}>
+                  ${this._sectionDisplayMeta(key)?.label ?? key}
+                </option>
+              `)}
             </select>
           </div>
           <textarea rows="6" placeholder=${localize('editor.yaml_placeholder')}
@@ -2539,6 +2588,72 @@ class Simon42DashboardStrategyEditor extends LitElement {
             @change=${(e: Event) => this._updateCustomCardYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
           <div class="custom-item-validation">
             ${validationMsg}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderCustomSectionsSection(): TemplateResult {
+    const customSections = this._config.custom_sections || [];
+
+    return html`
+      <div class="section">
+        <div class="section-title">${localize('editor.section_custom_sections')}</div>
+        <div class="description" style="margin-bottom: 8px;">${localize('editor.custom_sections_desc')}</div>
+
+        <div id="custom-sections-list">
+          ${customSections.length === 0
+            ? html`<div class="empty-state">${localize('editor.no_custom_sections')}</div>`
+            : customSections.map((section, index) => this._renderCustomSectionItem(section, index))}
+        </div>
+
+        <button class="btn-primary" style="margin-top: 8px;" @click=${this._addCustomSection}>
+          ${localize('editor.add_custom_section')}
+        </button>
+        <div class="description">${localize('editor.custom_sections_help')}</div>
+      </div>
+    `;
+  }
+
+  private _renderCustomSectionItem(section: CustomSection, index: number): TemplateResult {
+    const keyError = this._customSectionKeyError(section.key || '', index);
+    const yamlMsg = section._yaml_error
+      ? html`<span style="color: var(--error-color);">&#x274C; ${section._yaml_error}</span>`
+      : section.yaml
+        ? html`<span style="color: var(--success-color, green);">&#x2705; ${localize('editor.yaml_valid')}</span>`
+        : nothing;
+
+    return html`
+      <div class="custom-item" data-index=${index}>
+        <div class="custom-item-header">
+          <strong>${section.heading || section.key || localize('editor.new_section')}</strong>
+          <button class="btn-remove" @click=${() => this._removeCustomSection(index)}>&#x2715;</button>
+        </div>
+        <div class="custom-item-fields">
+          <div class="custom-item-row">
+            <input type="text" .value=${section.key || ''}
+              placeholder=${localize('editor.custom_section_key_placeholder')}
+              style="flex: 1;"
+              @change=${(e: Event) => this._updateCustomSectionField(index, 'key', (e.target as HTMLInputElement).value.trim())} />
+            <input type="text" .value=${section.heading || ''}
+              placeholder=${localize('editor.custom_section_heading_placeholder')}
+              style="flex: 2;"
+              @change=${(e: Event) => this._updateCustomSectionField(index, 'heading', (e.target as HTMLInputElement).value)} />
+            <input type="text" .value=${section.icon || ''}
+              placeholder="mdi:view-grid-plus-outline"
+              style="flex: 1;"
+              @change=${(e: Event) => this._updateCustomSectionField(index, 'icon', (e.target as HTMLInputElement).value)} />
+          </div>
+          ${keyError
+            ? html`<div class="custom-item-validation"><span style="color: var(--error-color);">&#x274C; ${keyError}</span></div>`
+            : nothing}
+          <textarea rows="6" placeholder=${localize('editor.custom_section_yaml_placeholder')}
+            .value=${section.yaml || ''}
+            style="width: 100%;"
+            @change=${(e: Event) => this._updateCustomSectionYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
+          <div class="custom-item-validation">
+            ${yamlMsg}
           </div>
         </div>
       </div>
@@ -3281,6 +3396,111 @@ class Simon42DashboardStrategyEditor extends LitElement {
     customCards[index] = updated;
 
     const newConfig: Simon42StrategyConfig = { ...this._config, custom_cards: customCards };
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  // -- Custom Sections ----------------------------------------------------
+
+  /** Inline validation for a custom section's key field. */
+  private _customSectionKeyError(key: string, index: number): string | null {
+    if (!key || key.trim() === '') return localize('editor.custom_section_key_required');
+    if ((DEFAULT_SECTIONS_ORDER as string[]).includes(key)) {
+      return localize('editor.custom_section_key_conflict');
+    }
+    const sections = this._config.custom_sections || [];
+    if (sections.some((s, i) => i !== index && s.key === key)) {
+      return localize('editor.custom_section_key_duplicate');
+    }
+    return null;
+  }
+
+  private _addCustomSection(): void {
+    const sections: CustomSection[] = [...(this._config.custom_sections || [])];
+    sections.push({ key: '', heading: '', yaml: '', parsed_config: undefined } as CustomSection);
+
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_sections: sections };
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  private _removeCustomSection(index: number): void {
+    const sections: CustomSection[] = [...(this._config.custom_sections || [])];
+    const removedKey = sections[index]?.key;
+    sections.splice(index, 1);
+
+    const newConfig: Simon42StrategyConfig = { ...this._config };
+    if (sections.length === 0) {
+      delete newConfig.custom_sections;
+    } else {
+      newConfig.custom_sections = sections;
+    }
+    // Drop the removed key from a persisted sections_order so it doesn't
+    // linger as an invalid entry in the config
+    if (removedKey && newConfig.sections_order?.includes(removedKey)) {
+      newConfig.sections_order = newConfig.sections_order.filter((k) => k !== removedKey);
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  private _updateCustomSectionField(index: number, field: 'key' | 'heading' | 'icon', value: string): void {
+    const sections: CustomSection[] = [...(this._config.custom_sections || [])];
+    if (!sections[index]) return;
+
+    const previousKey = sections[index].key;
+    sections[index] = { ...sections[index], [field]: value };
+
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_sections: sections };
+    // Key rename: keep a persisted sections_order position and re-targeted
+    // custom cards in sync instead of silently orphaning them
+    if (field === 'key' && previousKey && previousKey !== value) {
+      if (newConfig.sections_order?.includes(previousKey)) {
+        newConfig.sections_order = newConfig.sections_order.map((k) => (k === previousKey ? value : k));
+      }
+      if (newConfig.custom_cards?.some((c) => c.target_section === previousKey)) {
+        newConfig.custom_cards = newConfig.custom_cards.map((c) =>
+          c.target_section === previousKey ? { ...c, target_section: value } : c
+        );
+      }
+    }
+
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
+
+  private _updateCustomSectionYaml(index: number, yamlString: string): void {
+    const sections: CustomSection[] = [...(this._config.custom_sections || [])];
+    if (!sections[index]) return;
+
+    const updated: CustomSection = { ...sections[index], yaml: yamlString };
+    delete updated._yaml_error;
+
+    if (yamlString.trim()) {
+      try {
+        const parsed = yaml.load(yamlString);
+        if (Array.isArray(parsed)) {
+          updated.parsed_config = parsed as Record<string, any>[];
+        } else if (parsed && typeof parsed === 'object') {
+          // single card → wrap into an array
+          updated.parsed_config = [parsed as Record<string, any>];
+        } else {
+          updated._yaml_error = localize('editor.custom_section_yaml_invalid');
+          updated.parsed_config = undefined;
+        }
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message.split('\n')[0] : 'Ungültiges YAML';
+        updated._yaml_error = message || 'Ungültiges YAML';
+        updated.parsed_config = undefined;
+      }
+    } else {
+      updated.parsed_config = undefined;
+    }
+
+    sections[index] = updated;
+
+    const newConfig: Simon42StrategyConfig = { ...this._config, custom_sections: sections };
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
   }

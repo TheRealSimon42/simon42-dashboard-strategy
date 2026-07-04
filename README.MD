@@ -67,6 +67,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Batch-Aktionen** — Heading-Badges für Gruppensteuerung (alle ein/aus, alle öffnen/schließen)
 - **Automationen & Skripte in Räumen** — Bereichs-zugeordnete Automationen und Skripte in Raum-Views anzeigen
 - **Eigene Karten** — Beliebige Karten via YAML auf der Übersicht einbinden, Ziel-Section frei wählbar
+- **Eigene Sections** — Komplette eigene Section-Blöcke auf der Übersicht deklarieren, frei positionierbar *(ab v1.4.0)*
 - **Eigene Badges** — Beliebige Badges via YAML im Header (neben Personen-Chips)
 - **Custom Views** — Eigene Dashboard-Views mit beliebigen Cards via YAML
 - **Reaktive Updates** — Echtzeit-Aktualisierung via LitElement Custom Cards
@@ -291,6 +292,29 @@ content: "Willkommen zuhause!"
   <img src="https://raw.githubusercontent.com/TheRealSimon42/simon42-dashboard-strategy/main/assets/Eigene-Karten-hinzufugen.gif" alt="Eigene Karten hinzufügen" width="800" />
 </p>
 
+#### Eigene Sections *(ab v1.4.0)*
+
+Komplette eigene Section-Blöcke auf der Übersicht — die Lücke zwischen „Karte in bestehende Section einfügen" (Eigene Karten) und „ganze View anlegen" (Custom Views). Jede eigene Section hat einen Key, eine Überschrift, optional ein Icon und eine YAML-Liste von Karten:
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  custom_sections:
+    - key: my_morgenroutine
+      heading: "Guten Morgen"
+      icon: mdi:weather-sunrise
+      # Karten als YAML im Editor eintragen; einzelne Karte oder Liste
+```
+
+Der `key` verhält sich wie eine eingebaute Section:
+
+- **Positionierbar** — erscheint im Abschnitts-Reihenfolge-Panel (Drag & Drop) bzw. in `sections_order`
+- **Ziel für eigene Karten** — als `target_section` wählbar (Dropdown im Editor)
+- **Bedingte Sichtbarkeit** — funktioniert in `section_visibility` (z.B. Routine-Section nur an Werktagen)
+- **Auto-Hide** — ohne Karten wird die Section nicht gerendert
+
+**Key-Regeln:** Keys, die mit eingebauten Sections kollidieren (`overview`, `areas`, `weather`, …), werden verworfen; bei doppelten Keys gewinnt der erste Eintrag. Empfehlung: ein persönliches Präfix wie `my_` verwenden — sollte eine spätere Version eine gleichnamige eingebaute Section einführen, behält deine eigene Section Vorrang (Config-Stabilität geht vor neuem Feature).
+
 #### Eigene Badges
 
 Beliebige Badges via YAML zum Header der Übersicht hinzufügen — sie erscheinen neben den Personen-Chips.
@@ -503,6 +527,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `custom_cards` | object[] | `[]` | — | Eigene Karten via YAML; `target_section` wählt die Ziel-Section (Dropdown im Editor ab v1.4.0) |
 | `custom_cards_heading` | string | `"Eigene Karten"` | — | Überschrift der Custom Cards Section |
 | `custom_cards_icon` | string | `"mdi:cards"` | — | Icon der Custom Cards Section |
+| `custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke auf der Übersicht (Key, Überschrift, Icon, Karten — siehe oben) |
 | `custom_views` | object[] | `[]` | — | Eigene Views via YAML |
 
 </details>

@@ -16,6 +16,13 @@ import type { SectionKey } from '../sections/section-registry';
 export type { SectionKey, SectionMeta } from '../sections/section-registry';
 export { DEFAULT_SECTIONS_ORDER } from '../sections/section-registry';
 
+/**
+ * A section key in user-facing config: either a built-in SectionKey or a
+ * user-defined custom_sections[].key. The `string & {}` keeps the built-in
+ * literals in IDE autocomplete while still accepting arbitrary keys.
+ */
+export type SectionOrderKey = SectionKey | (string & {});
+
 /** Keys for section headings that can be hidden via hidden_section_headings */
 export type HeadingKey =
   | 'overview'
@@ -135,7 +142,7 @@ export interface Simon42StrategyConfig {
   show_maintenance_section?: boolean; // default: false (auto-hides when nothing pending)
 
   // Layout
-  sections_order?: SectionKey[]; // default: DEFAULT_SECTIONS_ORDER
+  sections_order?: SectionOrderKey[]; // default: DEFAULT_SECTIONS_ORDER + custom keys
   summaries_columns?: 2 | 4; // default: 2
   hidden_section_headings?: HeadingKey[]; // default: []
 
@@ -168,6 +175,11 @@ export interface Simon42StrategyConfig {
   custom_cards?: CustomCard[];
   custom_cards_heading?: string;
   custom_cards_icon?: string;
+
+  // Custom sections — user-declared section blocks (heading + card list).
+  // Each entry's `key` works in sections_order, as custom_cards
+  // target_section and in section_visibility. See CustomSection below.
+  custom_sections?: CustomSection[];
 
   // Custom badges (shown in header next to person chips)
   custom_badges?: CustomBadge[];
@@ -264,12 +276,44 @@ export interface CustomBadge {
 export interface CustomCard {
   /** Optional title shown as heading above the card */
   title?: string;
-  /** Target section where this card appears (default: 'custom_cards') */
-  target_section?: SectionKey;
+  /** Target section where this card appears (default: 'custom_cards').
+   *  Accepts built-in SectionKeys AND user-defined custom_sections[].key. */
+  target_section?: SectionOrderKey;
   /** Raw YAML string entered by the user in the editor */
   yaml?: string;
   /** Parsed Lovelace card config (generated from yaml) */
   parsed_config?: Record<string, any> | null;
+  /** YAML parse error message, if any */
+  _yaml_error?: string;
+}
+
+// -- Custom Sections ----------------------------------------------------
+// User-declared overview sections — the lightweight extension hook between
+// "inject a card into an existing section" (custom_cards) and "add a whole
+// nav view" (custom_views). The section's `key` behaves like a built-in
+// SectionKey: it works in sections_order, as custom_cards.target_section
+// and in section_visibility rules.
+//
+// Stability contract (documented in the README):
+// - keys colliding with built-in sections are dropped (built-in wins for
+//   CURRENT built-ins). Should a FUTURE release introduce a built-in with
+//   the same key, the user's custom section keeps winning — config
+//   stability beats the new feature. Docs recommend a personal prefix.
+// - duplicate keys: first entry wins
+// - the section auto-hides when it has no cards (own or assigned)
+
+export interface CustomSection {
+  /** Required unique key — must not collide with a built-in SectionKey */
+  key: string;
+  /** Heading text shown at the top of the section */
+  heading?: string;
+  /** Optional MDI icon for the heading */
+  icon?: string;
+  /** Raw YAML string entered by the user in the editor — a single card or
+   *  a YAML list of cards */
+  yaml?: string;
+  /** Parsed array of Lovelace card configs (derived from yaml) */
+  parsed_config?: Record<string, any>[] | null;
   /** YAML parse error message, if any */
   _yaml_error?: string;
 }
