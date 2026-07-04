@@ -91,7 +91,7 @@ class Simon42DashboardStrategy extends HTMLElement {
           { device_classes: ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'], config }, hass) },
       { enabled: showSecurity, title: localize('views.security'), path: 'security', icon: 'mdi:security',
         resolve: () => getStrategy('ll-strategy-simon42-view-security').generate({ config }, hass) },
-      { enabled: showBatteries, title: localize('views.batteries'), path: 'batteries', icon: 'mdi:battery-alert',
+      { enabled: showBatteries || config.show_battery_view === true, title: localize('views.batteries'), path: 'batteries', icon: 'mdi:battery-alert',
         resolve: () => getStrategy('ll-strategy-simon42-view-batteries').generate({ config }, hass) },
       { enabled: showClimate, title: localize('views.climate'), path: 'climate', icon: 'mdi:thermostat',
         resolve: () => getStrategy('ll-strategy-simon42-view-climate').generate({ config }, hass) },

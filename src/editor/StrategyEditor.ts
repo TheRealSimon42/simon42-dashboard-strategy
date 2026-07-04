@@ -1641,6 +1641,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
             (checked) => this._toggleChanged('hide_mobile_app_batteries', checked, false))}
           <div class="description">${localize('editor.hide_mobile_app_batteries_desc')}</div>
 
+          ${this._renderCheckbox('show-battery-view', localize('editor.show_battery_view'), this._config.show_battery_view === true,
+            (checked) => this._toggleChanged('show_battery_view', checked, false))}
+          <div class="description">${localize('editor.show_battery_view_desc')}</div>
+
           ${this._renderCheckbox('show-area-in-battery-view', localize('editor.show_area_in_battery_view'), showAreaInBatteryView,
             (checked) => this._toggleChanged('show_area_in_battery_view', checked, false))}
           <div class="description">${localize('editor.show_area_in_battery_view_desc')}</div>

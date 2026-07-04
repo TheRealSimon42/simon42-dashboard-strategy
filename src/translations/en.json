@@ -205,6 +205,8 @@
     "show_battery_summary": "Show battery summary",
     "hide_mobile_app_batteries": "Hide mobile app batteries",
     "hide_mobile_app_batteries_desc": "Hides batteries from smartphones, tablets, and watches (Mobile App) from the battery overview and summary.",
+    "show_battery_view": "Always provide battery view",
+    "show_battery_view_desc": "Generates the battery subview (/batteries) even when the battery summary is hidden — e.g. for badges or links that deep-link to the page.",
     "show_area_in_battery_view": "Show area name on battery tiles",
     "show_area_in_battery_view_desc": "Prepends the area name to each battery tile in the batteries view (e.g. \"Living Room • Window Battery\"). Helps distinguish identically named contact sensors that differ only by room.",
     "hide_battery_notes_entities": "Hide Battery Notes helper entities",

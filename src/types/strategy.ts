@@ -88,6 +88,8 @@ export interface Simon42StrategyConfig {
   nested_light_groups?: boolean; // default: false
   show_security_summary?: boolean; // default: true
   show_battery_summary?: boolean; // default: true
+  show_battery_view?: boolean; // default: false — keep the /batteries view
+  // available even when show_battery_summary is off (#315: badge deep-links)
   show_climate_summary?: boolean; // default: false
   hide_mobile_app_batteries?: boolean; // default: false
   hide_battery_notes_entities?: boolean; // default: false
