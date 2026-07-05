@@ -171,6 +171,13 @@ npm run build-dev   # Development (source maps)
 npm run watch       # Dev + auto-rebuild on file changes
 ```
 
+## Codacy Pitfalls (CI blocks on "high" findings)
+
+- **No module-level `const fn = () => ...` arrow functions** — Biome's Qwik rule false-positives on them ("Non-serializable expression must be wrapped with $(...)"). Use `function` declarations instead. Applies to src AND test files (hit 3x so far).
+- No `any` in new signatures (`Record<string, unknown>` over `Record<string, any>`)
+- No dynamic `obj[variable]` lookups on config objects — use `Map`/`Reflect.get` (detect-object-injection)
+- Findings without auth: `https://app.codacy.com/api/v3/analysis/organizations/gh/TheRealSimon42/repositories/simon42-dashboard-strategy/pull-requests/<N>/issues`
+
 ## Git & Release Workflow
 
 **Never commit directly to `main`.** Always use feature branches.

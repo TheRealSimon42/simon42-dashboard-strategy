@@ -23,6 +23,7 @@ class Simon42ViewLightsStrategy extends HTMLElement {
               group_type: 'on',
               group_by_floors: groupByFloors,
               nested_groups: nestedGroups,
+              sort_by: dashboardConfig.lights_sort_by,
             },
             {
               type: 'custom:simon42-lights-group-card',
@@ -31,6 +32,7 @@ class Simon42ViewLightsStrategy extends HTMLElement {
               group_type: 'off',
               group_by_floors: groupByFloors,
               nested_groups: nestedGroups,
+              sort_by: dashboardConfig.lights_sort_by,
             },
           ],
         },

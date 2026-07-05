@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.5...HEAD).
 
+<a name="unreleased"></a>
+## [Unreleased]
+### Features
+- `lights_sort_by: name` sorts lights alphabetically instead of by last change — lights view, room views and nested groups (ported from [#250](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/250) by @TheDave94, refs [#168](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/168))
+
 <a name="1.4.0-beta.5"></a>
 ## [1.4.0-beta.5] - 2026-07-05 (Pre-Release)
 ### Features

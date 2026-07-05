@@ -1605,6 +1605,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
           (checked) => this._toggleChanged('group_lights_by_floors', checked, false))}
         <div class="description">${localize('editor.group_lights_by_floors_desc')}</div>
 
+        ${this._renderCheckbox('lights-sort-by-name', localize('editor.lights_sort_by_name'), this._config.lights_sort_by === 'name',
+          (checked) => this._lightsSortByChanged(checked))}
+        <div class="description">${localize('editor.lights_sort_by_name_desc')}</div>
+
         ${this._renderCheckbox('nested-light-groups', localize('editor.nested_light_groups'), nestedLightGroups,
           (checked) => this._toggleChanged('nested_light_groups', checked, false))}
         <div class="description">${localize('editor.nested_light_groups_desc')}</div>
@@ -3049,6 +3053,19 @@ class Simon42DashboardStrategyEditor extends LitElement {
   // ====================================================================
   // EVENT HANDLERS — Toggle / Config changes
   // ====================================================================
+
+  /** lights_sort_by is an enum with a boolean-shaped editor toggle:
+   *  checked → 'name', unchecked → remove (default 'last_changed'). */
+  private _lightsSortByChanged(checked: boolean): void {
+    const newConfig: Simon42StrategyConfig = { ...this._config };
+    if (checked) {
+      newConfig.lights_sort_by = 'name';
+    } else {
+      delete newConfig.lights_sort_by;
+    }
+    this._config = newConfig;
+    this._fireConfigChanged(newConfig);
+  }
 
   private _toggleChanged(key: string, value: boolean, defaultValue: boolean): void {
     if (!this._hass) return;

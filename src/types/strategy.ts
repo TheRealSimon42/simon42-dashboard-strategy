@@ -86,6 +86,8 @@ export interface Simon42StrategyConfig {
   show_light_summary?: boolean; // default: true
   group_lights_by_floors?: boolean; // default: false
   nested_light_groups?: boolean; // default: false
+  lights_sort_by?: 'last_changed' | 'name'; // default: 'last_changed' —
+  // 'name' sorts lights alphabetically by friendly name (#168, from PR #250)
   show_security_summary?: boolean; // default: true
   show_battery_summary?: boolean; // default: true
   show_battery_view?: boolean; // default: false — keep the /batteries view

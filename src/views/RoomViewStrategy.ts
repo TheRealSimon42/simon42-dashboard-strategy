@@ -11,7 +11,7 @@ import type {
 } from '../types/lovelace';
 import type { AreaRegistryEntry } from '../types/registries';
 import type { AreaCustomSection, RoomEntities, SensorEntities } from '../types/strategy';
-import { stripAreaName, sortByLastChanged } from '../utils/name-utils';
+import { sortByFriendlyName, sortByLastChanged, stripAreaName } from '../utils/name-utils';
 import { buildAreaCustomSections } from '../sections/CustomSections';
 import { Registry } from '../Registry';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
@@ -522,9 +522,13 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       }
     }
 
-    // Sort lights by last_changed (unless custom order)
+    // Sort lights by last_changed or alphabetically (unless custom order)
     if (!groupsOptions.lights?.order) {
-      roomEntities.lights.sort((a, b) => sortByLastChanged(a, b, hass));
+      if (dashboardConfig.lights_sort_by === 'name') {
+        roomEntities.lights.sort((a, b) => sortByFriendlyName(a, b, hass));
+      } else {
+        roomEntities.lights.sort((a, b) => sortByLastChanged(a, b, hass));
+      }
     }
 
     // Helper: create a domain section
@@ -564,6 +568,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
             area,
             default_expanded: true,
             nested_groups: dashboardConfig.nested_light_groups === true,
+            sort_by: dashboardConfig.lights_sort_by,
           },
         ],
       });

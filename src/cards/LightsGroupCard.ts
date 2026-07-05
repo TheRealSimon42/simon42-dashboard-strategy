@@ -27,6 +27,7 @@ interface LightsGroupConfig {
   heading_icon?: string;
   area?: AreaRegistryEntry;
   default_expanded?: boolean;
+  sort_by?: 'last_changed' | 'name';
 }
 
 interface FloorGroup {
@@ -194,7 +195,7 @@ class Simon42LightsGroupCard extends LitElement {
     if (sourceIds.length === 0) return [];
 
     if (this._config.group_type === 'all') {
-      return [...sourceIds].sort((a, b) => this._sortByLastChanged(a, b));
+      return [...sourceIds].sort((a, b) => this._sortEntities(a, b));
     }
 
     const targetState = this._config.group_type === 'on' ? 'on' : 'off';
@@ -205,7 +206,16 @@ class Simon42LightsGroupCard extends LitElement {
       if (state && state.state === targetState) relevant.push(id);
     }
 
-    return relevant.sort((a, b) => this._sortByLastChanged(a, b));
+    return relevant.sort((a, b) => this._sortEntities(a, b));
+  }
+
+  private _sortEntities(a: string, b: string): number {
+    if (this._config.sort_by === 'name') {
+      const nameA = this._getState(a)?.attributes?.friendly_name || a;
+      const nameB = this._getState(b)?.attributes?.friendly_name || b;
+      return String(nameA).localeCompare(String(nameB));
+    }
+    return this._sortByLastChanged(a, b);
   }
 
   private _sortByLastChanged(a: string, b: string): number {
@@ -249,7 +259,7 @@ class Simon42LightsGroupCard extends LitElement {
       (id): id is string => typeof id === 'string' && id.startsWith('light.') && id !== entityId && candidateSet.has(id)
     );
 
-    return [...new Set(childIds)].sort((a, b) => this._sortByLastChanged(a, b));
+    return [...new Set(childIds)].sort((a, b) => this._sortEntities(a, b));
   }
 
   private _collectDescendants(
@@ -309,7 +319,7 @@ class Simon42LightsGroupCard extends LitElement {
 
     const topLevelIds = lightIds
       .filter((entityId) => !allNestedChildIds.has(entityId))
-      .sort((a, b) => this._sortByLastChanged(a, b));
+      .sort((a, b) => this._sortEntities(a, b));
 
     return { topLevelIds, nodes };
   }
