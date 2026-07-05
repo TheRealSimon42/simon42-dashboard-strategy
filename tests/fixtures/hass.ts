@@ -45,10 +45,18 @@ interface AreaFixture {
   icon?: string | null;
 }
 
+interface FloorFixture {
+  floor_id: string;
+  name: string;
+  icon?: string | null;
+  level?: number | null;
+}
+
 export interface HassFixtureSpec {
   entities?: EntityFixture[];
   devices?: DeviceFixture[];
   areas?: AreaFixture[];
+  floors?: FloorFixture[];
   language?: string;
   /** Loaded HA integrations (hass.config.components), e.g. ['logbook'] */
   components?: string[];
@@ -64,6 +72,7 @@ export function makeHass(spec: HassFixtureSpec = {}): HomeAssistant {
   const entities: Record<string, EntityFixture> = {};
   const devices: Record<string, DeviceFixture> = {};
   const areas: Record<string, AreaFixture> = {};
+  const floors: Record<string, FloorFixture> = {};
 
   for (const e of spec.entities ?? []) {
     const entry: EntityFixture = {
@@ -92,12 +101,16 @@ export function makeHass(spec: HassFixtureSpec = {}): HomeAssistant {
   for (const a of spec.areas ?? []) {
     areas[a.area_id] = a;
   }
+  for (const f of spec.floors ?? []) {
+    floors[f.floor_id] = f;
+  }
 
   return {
     states,
     entities,
     devices,
     areas,
+    floors,
     language: spec.language ?? 'en',
     locale: { language: spec.language ?? 'en' },
     config: { components: spec.components ?? [] },

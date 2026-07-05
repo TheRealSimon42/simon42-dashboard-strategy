@@ -1649,25 +1649,11 @@ class Simon42DashboardStrategyEditor extends LitElement {
             (checked) => this._toggleChanged('show_security_activity', checked, true))}
           <div class="description">${localize('editor.show_security_activity_desc')}</div>
 
-          ${this._config.show_security_activity !== false ? html`
-            <div class="form-row" style="margin-left: 26px;">
-              <input type="radio" id="security-activity-section" name="security-activity-layout" value="section"
-                ?checked=${this._config.security_activity_layout !== 'sidebar'}
-                @change=${() => this._securityActivityLayoutChanged('section')} />
-              <label for="security-activity-section">${localize('editor.security_activity_section')}</label>
-              <input type="radio" id="security-activity-sidebar" name="security-activity-layout" value="sidebar"
-                ?checked=${this._config.security_activity_layout === 'sidebar'}
-                @change=${() => this._securityActivityLayoutChanged('sidebar')} />
-              <label for="security-activity-sidebar">${localize('editor.security_activity_sidebar')}</label>
+          ${this._config.show_security_activity !== false && this._config.group_security_by_areas !== true ? html`
+            <div style="margin-left: 26px;">
+              ${this._renderCheckbox('security-activity-at-end', localize('editor.security_activity_at_end'), this._config.security_activity_position === 'end',
+                (checked) => this._securityActivityPositionChanged(checked))}
             </div>
-            <div class="description" style="margin-left: 26px;">${localize('editor.security_activity_layout_desc')}</div>
-
-            ${this._config.security_activity_layout !== 'sidebar' ? html`
-              <div style="margin-left: 26px;">
-                ${this._renderCheckbox('security-activity-at-end', localize('editor.security_activity_at_end'), this._config.security_activity_position === 'end',
-                  (checked) => this._securityActivityPositionChanged(checked))}
-              </div>
-            ` : nothing}
           ` : nothing}
 
           ${this._renderSecurityExtraEntitiesPicker()}
@@ -1758,18 +1744,6 @@ class Simon42DashboardStrategyEditor extends LitElement {
     } else {
       updated.unavailable_batteries_bucket = bucket;
     }
-    this._fireConfigChanged(updated);
-  }
-
-  private _securityActivityLayoutChanged(layout: 'sidebar' | 'section'): void {
-    const updated: Simon42StrategyConfig = { ...this._config };
-    // 'section' is the default → omit the key when matching default
-    if (layout === 'section') {
-      delete updated.security_activity_layout;
-    } else {
-      updated.security_activity_layout = layout;
-    }
-    this._config = updated;
     this._fireConfigChanged(updated);
   }
 

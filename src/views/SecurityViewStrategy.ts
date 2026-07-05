@@ -28,6 +28,10 @@ interface SecurityEntities {
   windows: string[]; // binary_sensor.door/window/opening (contact sensors)
   smokeGas: string[];
   waterLeak: string[];
+  /** binary_sensor safety/tamper/lock — e.g. Versatile Thermostat's
+   *  per-room "Sicherheitsstatus" (device_class safety). Matches the
+   *  filter set of HA's security panel. */
+  safety: string[];
 }
 
 function collectSecurityEntities(hass: HomeAssistant): SecurityEntities {
@@ -39,6 +43,7 @@ function collectSecurityEntities(hass: HomeAssistant): SecurityEntities {
     windows: [],
     smokeGas: [],
     waterLeak: [],
+    safety: [],
   };
 
   for (const id of [
@@ -70,8 +75,9 @@ function collectSecurityEntities(hass: HomeAssistant): SecurityEntities {
         if (siblings.some((sid) => sid.startsWith('switch.'))) continue;
       }
       if (deviceClass && ['door', 'window', 'garage_door', 'opening'].includes(deviceClass)) result.windows.push(id);
-      else if (deviceClass && ['smoke', 'gas', 'heat'].includes(deviceClass)) result.smokeGas.push(id);
+      else if (deviceClass && ['smoke', 'gas', 'heat', 'carbon_monoxide'].includes(deviceClass)) result.smokeGas.push(id);
       else if (deviceClass === 'moisture') result.waterLeak.push(id);
+      else if (deviceClass && ['safety', 'tamper', 'lock'].includes(deviceClass)) result.safety.push(id);
     }
   }
   return result;
@@ -159,6 +165,7 @@ const AREA_MODE_CATEGORY_ORDER: (keyof SecurityEntities)[] = [
   'windows',
   'smokeGas',
   'waterLeak',
+  'safety',
 ];
 
 function resolveAreaId(entityId: string): string | null {
@@ -170,9 +177,12 @@ function resolveAreaId(entityId: string): string | null {
 }
 
 /**
- * Alternative layout à la HA's security panel: one section per area
- * (heading taps through to the room view), cameras first, then the
- * security tiles. Entities without an area land in a trailing section.
+ * HA-security-panel layout: one stacked section per floor (column_span 2
+ * on a max_columns-3 view keeps them under each other), inside per area a
+ * subtitle heading (tap → room view) followed by cameras and security
+ * tiles. Area order follows the user's area sorting; floors appear in
+ * first-seen order of that sorting. Entities without an area land in a
+ * trailing section.
  */
 function buildAreaGroupedSections(
   hass: HomeAssistant,
@@ -203,32 +213,60 @@ function buildAreaGroupedSections(
     }
   }
 
-  const sections: LovelaceSectionConfig[] = [];
+  // Bucket the ordered visible areas by floor — first-seen order keeps
+  // the user's area sorting authoritative, no separate floor sort.
+  interface FloorBucket {
+    floorId: string | null;
+    areas: { area_id: string; name: string }[];
+  }
+  const buckets: FloorBucket[] = [];
+  const bucketByFloor = new Map<string | null, FloorBucket>();
   const areas = getVisibleAreasFromHass(hass, dashboardConfig.areas_display, dashboardConfig.use_default_area_sort);
   for (const area of areas) {
     const cards = cardsByArea.get(area.area_id);
     if (!cards || cards.length === 0) continue;
-    sections.push({
-      type: 'grid',
-      cards: [
-        {
-          type: 'heading',
-          heading: area.name,
-          heading_style: 'title',
-          icon: area.icon || 'mdi:floor-plan',
-          tap_action: { action: 'navigate', navigation_path: area.area_id },
-        },
-        ...cards,
-      ],
-    });
-    cardsByArea.delete(area.area_id);
+    const floorId = area.floor_id || null;
+    let bucket = bucketByFloor.get(floorId);
+    if (!bucket) {
+      bucket = { floorId, areas: [] };
+      bucketByFloor.set(floorId, bucket);
+      buckets.push(bucket);
+    }
+    bucket.areas.push(area);
   }
-  // Areas hidden via areas_display fall through to the unassigned bucket
-  // ONLY if they still have cards — hidden areas' entities are dropped,
-  // matching the areas concept everywhere else in the strategy.
+
+  // With a single group the floor name adds nothing — HA labels it
+  // "Areas" then; floorless areas get "Other areas" among floors.
+  const multipleBuckets = buckets.length > 1;
+  const sections: LovelaceSectionConfig[] = [];
+  for (const bucket of buckets) {
+    const floor = bucket.floorId ? hass.floors?.[bucket.floorId] : undefined;
+    const cards: LovelaceCardConfig[] = [
+      {
+        type: 'heading',
+        heading: multipleBuckets
+          ? floor?.name || localize('security.other_areas')
+          : localize('security.areas'),
+        heading_style: 'title',
+        ...(floor?.icon ? { icon: floor.icon } : {}),
+      },
+    ];
+    for (const area of bucket.areas) {
+      cards.push({
+        type: 'heading',
+        heading: area.name,
+        heading_style: 'subtitle',
+        tap_action: { action: 'navigate', navigation_path: area.area_id },
+      });
+      cards.push(...(cardsByArea.get(area.area_id) || []));
+    }
+    sections.push({ type: 'grid', column_span: 2, cards });
+  }
+
   if (unassigned.length > 0) {
     sections.push({
       type: 'grid',
+      column_span: 2,
       cards: [
         {
           type: 'heading',
@@ -272,7 +310,11 @@ function isExcludedFromSecurityLog(entityId: string): boolean {
   return Registry.getEntity(entityId)?.labels?.includes(SECLOG_EXCLUDE_LABEL) === true;
 }
 
-function buildActivitySection(hass: HomeAssistant, dashboardConfig: Simon42StrategyConfig): LovelaceSectionConfig | null {
+function buildActivitySection(
+  hass: HomeAssistant,
+  dashboardConfig: Simon42StrategyConfig,
+  logbookRows?: number
+): LovelaceSectionConfig | null {
   if (dashboardConfig.show_security_activity === false) return null;
   if (!hass.config?.components?.includes('logbook')) return null;
 
@@ -302,24 +344,25 @@ function buildActivitySection(hass: HomeAssistant, dashboardConfig: Simon42Strat
         type: 'logbook',
         target: { entity_id: logbookEntityIds },
         hours_to_show: 24,
-        grid_options: { columns: 12 },
+        grid_options: { columns: 12, ...(logbookRows ? { rows: logbookRows } : {}) },
       },
     ],
   };
 }
 
 /**
- * Activity log as view sidebar (opt-in layout): pinned to the right on
- * wide screens, own tab on narrow ones (sections view sidebar, HA 2026.x —
- * older frontends simply ignore the extra key). Returns undefined in the
- * default section layout. Exported for tests.
+ * Activity log as view sidebar — exclusive to the area-grouped (HA-style)
+ * layout: pinned to the right on wide screens, own tab on narrow ones
+ * (sections view sidebar, HA 2026.x — older frontends simply ignore the
+ * extra key). Taller logbook (rows: 8) so the pane fills the column next
+ * to the stacked area list. Exported for tests.
  */
 export function buildSecurityActivitySidebar(
   hass: HomeAssistant,
   dashboardConfig: Simon42StrategyConfig
 ): LovelaceViewSidebarConfig | undefined {
-  if (dashboardConfig.security_activity_layout !== 'sidebar') return undefined;
-  const section = buildActivitySection(hass, dashboardConfig);
+  if (dashboardConfig.group_security_by_areas !== true) return undefined;
+  const section = buildActivitySection(hass, dashboardConfig, 8);
   if (!section) return undefined;
   return {
     sections: [section],
@@ -343,8 +386,9 @@ export function buildSecuritySections(
     const extraSection = buildExtraEntitiesSection(hass, dashboardConfig);
     if (extraSection) sections.push(extraSection);
     // Activity section: leads the view by default, optionally trails
-    // (security_activity_position: 'end'). Sidebar layout skips this.
-    if (dashboardConfig.security_activity_layout !== 'sidebar') {
+    // (security_activity_position: 'end'). The area-grouped layout uses
+    // the sidebar instead.
+    if (dashboardConfig.group_security_by_areas !== true) {
       const activity = buildActivitySection(hass, dashboardConfig);
       if (activity) {
         if (dashboardConfig.security_activity_position === 'end') sections.push(activity);
@@ -360,7 +404,7 @@ export function buildSecuritySections(
     );
   }
 
-  const { locks, doors, motorizedWindows, garages, windows, smokeGas, waterLeak } = entities;
+  const { locks, doors, motorizedWindows, garages, windows, smokeGas, waterLeak, safety } = entities;
   const sections: LovelaceSectionConfig[] = [];
 
 
@@ -617,14 +661,31 @@ export function buildSecuritySections(
     if (cards.length > 0) sections.push({ type: 'grid', cards });
   }
 
-    // Extra entities + optional activity section (both modes, trailing)
-    // Cameras after the device categories (lean cards; the rich blocks
-    // live in the CCTV view). The area-grouped mode keeps cameras leading
-    // each area block instead.
-    const camerasSection = buildCamerasSection(cameraBlocks, cameraViewEnabled);
-    if (camerasSection) sections.push(camerasSection);
+  // Safety status sensors (device_class safety/tamper/lock — e.g.
+  // Versatile Thermostat's per-room "Sicherheitsstatus")
+  if (safety.length > 0) {
+    const active = safety.filter((e) => hass.states[e]?.state === 'on');
+    const inactive = safety.filter((e) => hass.states[e]?.state === 'off');
+    const cards: LovelaceCardConfig[] = [];
 
-    return appendTrailingSections(sections);
+    if (active.length > 0) {
+      cards.push({ type: 'heading', heading: localize('security.safety_active'), heading_style: 'subtitle', icon: 'mdi:shield-alert' });
+      cards.push(...active.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
+    }
+    if (inactive.length > 0) {
+      cards.push({ type: 'heading', heading: localize('security.safety_inactive'), heading_style: 'subtitle', icon: 'mdi:shield-check' });
+      cards.push(...inactive.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
+    }
+    if (cards.length > 0) sections.push({ type: 'grid', cards });
+  }
+
+  // Cameras after the device categories (lean cards; the rich blocks
+  // live in the CCTV view). The area-grouped mode keeps cameras leading
+  // each area block instead.
+  const camerasSection = buildCamerasSection(cameraBlocks, cameraViewEnabled);
+  if (camerasSection) sections.push(camerasSection);
+
+  return appendTrailingSections(sections);
 }
 
 class Simon42ViewSecurityStrategy extends StrategyBaseElement {
@@ -636,8 +697,12 @@ class Simon42ViewSecurityStrategy extends StrategyBaseElement {
     Registry.initialize(hass, config.config || {});
     const dashboardConfig = config.config || {};
     const sidebar = buildSecurityActivitySidebar(hass, dashboardConfig);
+    // max_columns 3 + column_span 2 sections stack the floor groups under
+    // each other in the HA-style layout (matches HA's security panel).
+    const grouped = dashboardConfig.group_security_by_areas === true;
     return {
       type: 'sections',
+      ...(grouped ? { max_columns: 3 } : {}),
       sections: buildSecuritySections(hass, dashboardConfig),
       ...(sidebar ? { sidebar } : {}),
     };

@@ -103,19 +103,18 @@ export interface Simon42StrategyConfig {
   show_cameras_in_security?: boolean; // default: false — lean camera cards
   // in the security view (à la HA's security panel); the heading links to
   // the CCTV view when show_camera_view is enabled
-  group_security_by_areas?: boolean; // default: false — group the security
-  // view by areas (heading taps into the room view) instead of categories
+  group_security_by_areas?: boolean; // default: false — HA-security-panel
+  // style: one stacked section per floor with per-area subtitle headings
+  // (tap → room view) and the activity log pinned as right-hand sidebar.
+  // Off = classic category layout with the activity log as a section
   show_security_activity?: boolean; // default: true — activity log in the
   // security view (24h logbook over security entities + persons, like
   // HA's security panel); auto-hides when logbook is not loaded
-  security_activity_layout?: 'sidebar' | 'section'; // default: 'section' —
-  // a normal section so regular sections can use the full width;
-  // 'sidebar' pins the log to the right edge instead (own tab on
-  // narrow screens, HA-style) but reserves that column
   security_activity_position?: 'start' | 'end'; // default: 'start' —
-  // where the activity section renders (section layout only). Entities
-  // labeled `no_seclog` are excluded from the log while staying visible
-  // in the security sections themselves
+  // where the activity section renders (category layout only; the
+  // area-grouped layout always uses the sidebar). Entities labeled
+  // `no_seclog` are excluded from the log while staying visible in the
+  // security sections themselves
   hidden_cameras?: string[]; // default: [] — camera entity_ids excluded
   // from the security AND camera (CCTV) views; room views deliberately
   // unaffected. For hiding everywhere use the no_dboard label or the

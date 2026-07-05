@@ -107,28 +107,51 @@ describe('cameras in security view', () => {
   });
 });
 
-describe('group_security_by_areas', () => {
-  it('builds one section per area with a room-view link in the heading', () => {
+describe('group_security_by_areas (HA-style layout)', () => {
+  it('stacks all areas in one section with subtitle headings linking to room views', () => {
     const sections = build(makeHass(securitySpec()), {
       group_security_by_areas: true,
       show_cameras_in_security: true,
     });
 
-    const areaHeadings = headings(sections).filter((h) => h.heading_style === 'title');
-    const byName = new Map(areaHeadings.map((h) => [h.heading, h]));
+    // Single floor group (no floors defined) → one stacked section
+    // labeled "Areas" with column_span 2 (stays under each other on the
+    // max_columns-3 view, like HA's security panel)
+    const areaSection = sections[0];
+    expect(areaSection.column_span).toBe(2);
+    expect(areaSection.cards?.[0]).toMatchObject({ type: 'heading', heading_style: 'title' });
 
+    const subtitles = (areaSection.cards || []).filter((c) => c.heading_style === 'subtitle');
+    const byName = new Map(subtitles.map((h) => [h.heading, h]));
     expect(byName.get('Garten')?.tap_action).toEqual({ action: 'navigate', navigation_path: 'garten' });
     expect(byName.get('Flur')?.tap_action).toEqual({ action: 'navigate', navigation_path: 'flur' });
 
-    // Garten section: camera card first, then the window contact
-    const gartenSection = sections.find((s) => s.cards?.[0]?.heading === 'Garten');
-    const gartenTypes = (gartenSection?.cards || []).map((c) => c.type);
-    expect(gartenTypes).toEqual(['heading', 'picture-entity', 'tile']);
+    // Within an area: camera card first, then the tiles
+    const cards = areaSection.cards || [];
+    const gartenIndex = cards.findIndex((c) => c.heading === 'Garten');
+    expect(cards[gartenIndex + 1]?.type).toBe('picture-entity');
 
-    // Flur section: the lock keeps its lock-commands feature
-    const flurSection = sections.find((s) => s.cards?.[0]?.heading === 'Flur');
-    const lockTile = (flurSection?.cards || []).find((c) => c.entity === 'lock.haustuer');
+    const lockTile = cards.find((c) => c.entity === 'lock.haustuer');
     expect(lockTile?.features).toEqual([{ type: 'lock-commands' }]);
+  });
+
+  it('groups areas into one section per floor', () => {
+    const spec = securitySpec();
+    spec.floors = [
+      { floor_id: 'eg', name: 'Erdgeschoss' },
+      { floor_id: 'og', name: 'Obergeschoss' },
+    ];
+    spec.areas = [
+      { area_id: 'garten', name: 'Garten', floor_id: 'eg' },
+      { area_id: 'flur', name: 'Flur', floor_id: 'og' },
+    ];
+    const sections = build(makeHass(spec), { group_security_by_areas: true });
+
+    const floorHeadings = headings(sections)
+      .filter((h) => h.heading_style === 'title')
+      .map((h) => h.heading);
+    expect(floorHeadings).toContain('Erdgeschoss');
+    expect(floorHeadings).toContain('Obergeschoss');
   });
 
   it('collects entities without an area in a trailing bucket', () => {
@@ -171,12 +194,14 @@ describe('activity sidebar', () => {
     spec.entities?.push({ entity_id: 'person.simon', state: 'home' });
     const sidebar = buildSidebar(spec, {
       show_cameras_in_security: true,
-      security_activity_layout: 'sidebar',
+      group_security_by_areas: true,
     });
 
     expect(sidebar).toBeDefined();
     const logbook = sidebar?.sections?.[0].cards?.find((c) => c.type === 'logbook');
     expect(logbook?.hours_to_show).toBe(24);
+    // Taller than the default so the pane fills the sidebar column
+    expect(logbook?.grid_options?.rows).toBe(8);
     const ids = logbook?.target?.entity_id as string[];
     expect(ids).toContain('lock.haustuer');
     expect(ids).toContain('binary_sensor.garten_fenster');
@@ -188,28 +213,28 @@ describe('activity sidebar', () => {
   it('excludes cameras from the logbook when they are not shown', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
-    const sidebar = buildSidebar(spec, { security_activity_layout: 'sidebar' });
+    const sidebar = buildSidebar(spec, { group_security_by_areas: true });
     const logbook = sidebar?.sections?.[0].cards?.find((c) => c.type === 'logbook');
     expect(logbook?.target?.entity_id).not.toContain('camera.garten_sub');
   });
 
   it('returns undefined without the logbook integration', () => {
-    expect(buildSidebar(securitySpec(), { security_activity_layout: 'sidebar' })).toBeUndefined();
+    expect(buildSidebar(securitySpec(), { group_security_by_areas: true })).toBeUndefined();
   });
 
   it('returns undefined when disabled via show_security_activity', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
     expect(
-      buildSidebar(spec, { security_activity_layout: 'sidebar', show_security_activity: false })
+      buildSidebar(spec, { group_security_by_areas: true, show_security_activity: false })
     ).toBeUndefined();
   });
 
-  it('renders as leading section by default — sidebar only on request', () => {
+  it('category mode: leading section by default, end on request, sidebar only when grouped', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
 
-    // Default: no sidebar, logbook as FIRST section
+    // Category mode: no sidebar, logbook as FIRST section
     expect(buildSidebar(spec)).toBeUndefined();
     const sections = build(makeHass(spec), {});
     expect((sections[0].cards || []).some((c) => c.type === 'logbook')).toBe(true);
@@ -220,9 +245,10 @@ describe('activity sidebar', () => {
     expect((lastSection.cards || []).some((c) => c.type === 'logbook')).toBe(true);
     expect((endSections[0].cards || []).some((c) => c.type === 'logbook')).toBe(false);
 
-    // Opt-in sidebar: no logbook section at all
-    const sidebarSections = build(makeHass(spec), { security_activity_layout: 'sidebar' });
-    expect(allCards(sidebarSections).some((c) => c.type === 'logbook')).toBe(false);
+    // HA-style grouped mode: log lives in the sidebar, never as a section
+    const groupedSections = build(makeHass(spec), { group_security_by_areas: true });
+    expect(allCards(groupedSections).some((c) => c.type === 'logbook')).toBe(false);
+    expect(buildSidebar(spec, { group_security_by_areas: true })).toBeDefined();
   });
 
   it('excludes no_seclog-labeled entities from the log but not the view', () => {
@@ -247,7 +273,7 @@ describe('hidden_cameras', () => {
     const config: Simon42StrategyConfig = {
       show_cameras_in_security: true,
       hidden_cameras: ['camera.garten_sub'],
-      security_activity_layout: 'sidebar',
+      group_security_by_areas: true,
     };
 
     const sections = build(makeHass(spec), config);
@@ -259,5 +285,24 @@ describe('hidden_cameras', () => {
     const sidebar = buildSecurityActivitySidebar(hass, config);
     const logbook = sidebar?.sections?.[0].cards?.find((c) => c.type === 'logbook');
     expect(logbook?.target?.entity_id).not.toContain('camera.garten_sub');
+  });
+});
+
+describe('safety status sensors', () => {
+  it('categorizes safety/tamper/CO sensors like HA does', () => {
+    const spec = securitySpec();
+    spec.entities?.push(
+      // e.g. Versatile Thermostat per-room safety status
+      { entity_id: 'binary_sensor.kinderzimmer_sicherheitsstatus', area_id: 'flur', state: 'off', attributes: { device_class: 'safety' } },
+      { entity_id: 'binary_sensor.keller_co', state: 'off', attributes: { device_class: 'carbon_monoxide' } }
+    );
+    const sections = build(makeHass(spec), {});
+    const cards = allCards(sections);
+
+    // safety bucket with its own headings
+    expect(cards.some((c) => c.entity === 'binary_sensor.kinderzimmer_sicherheitsstatus')).toBe(true);
+    // CO detector joins the smoke/gas bucket
+    const coTile = cards.find((c) => c.entity === 'binary_sensor.keller_co');
+    expect(coTile?.type).toBe('tile');
   });
 });
