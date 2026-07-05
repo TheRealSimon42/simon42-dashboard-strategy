@@ -109,9 +109,13 @@ export interface Simon42StrategyConfig {
   // security view (24h logbook over security entities + persons, like
   // HA's security panel); auto-hides when logbook is not loaded
   security_activity_layout?: 'sidebar' | 'section'; // default: 'section' —
-  // a normal section at the end so regular sections can use the full
-  // width; 'sidebar' pins the log to the right edge instead (own tab on
+  // a normal section so regular sections can use the full width;
+  // 'sidebar' pins the log to the right edge instead (own tab on
   // narrow screens, HA-style) but reserves that column
+  security_activity_position?: 'start' | 'end'; // default: 'start' —
+  // where the activity section renders (section layout only). Entities
+  // labeled `no_seclog` are excluded from the log while staying visible
+  // in the security sections themselves
   hidden_cameras?: string[]; // default: [] — camera entity_ids excluded
   // from the security AND camera (CCTV) views; room views deliberately
   // unaffected. For hiding everywhere use the no_dboard label or the

@@ -205,19 +205,38 @@ describe('activity sidebar', () => {
     ).toBeUndefined();
   });
 
-  it('renders as trailing section by default — sidebar only on request', () => {
+  it('renders as leading section by default — sidebar only on request', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
 
-    // Default: no sidebar, logbook as last section
+    // Default: no sidebar, logbook as FIRST section
     expect(buildSidebar(spec)).toBeUndefined();
     const sections = build(makeHass(spec), {});
-    const lastSection = sections[sections.length - 1];
-    expect((lastSection.cards || []).some((c) => c.type === 'logbook')).toBe(true);
+    expect((sections[0].cards || []).some((c) => c.type === 'logbook')).toBe(true);
 
-    // Opt-in sidebar: no trailing logbook section
+    // Optional: at the very end
+    const endSections = build(makeHass(spec), { security_activity_position: 'end' });
+    const lastSection = endSections[endSections.length - 1];
+    expect((lastSection.cards || []).some((c) => c.type === 'logbook')).toBe(true);
+    expect((endSections[0].cards || []).some((c) => c.type === 'logbook')).toBe(false);
+
+    // Opt-in sidebar: no logbook section at all
     const sidebarSections = build(makeHass(spec), { security_activity_layout: 'sidebar' });
     expect(allCards(sidebarSections).some((c) => c.type === 'logbook')).toBe(false);
+  });
+
+  it('excludes no_seclog-labeled entities from the log but not the view', () => {
+    const spec = securitySpec();
+    spec.components = ['logbook'];
+    const lock = spec.entities?.find((e) => e.entity_id === 'lock.haustuer');
+    lock!.labels = ['no_seclog'];
+
+    const sections = build(makeHass(spec), {});
+    const logbook = allCards(sections).find((c) => c.type === 'logbook');
+    expect(logbook?.target?.entity_id).not.toContain('lock.haustuer');
+    expect(logbook?.target?.entity_id).toContain('binary_sensor.garten_fenster');
+    // The lock itself stays in the security sections
+    expect(allCards(sections).some((c) => c.entity === 'lock.haustuer')).toBe(true);
   });
 });
 

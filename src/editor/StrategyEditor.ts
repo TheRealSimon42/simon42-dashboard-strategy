@@ -1661,6 +1661,13 @@ class Simon42DashboardStrategyEditor extends LitElement {
               <label for="security-activity-sidebar">${localize('editor.security_activity_sidebar')}</label>
             </div>
             <div class="description" style="margin-left: 26px;">${localize('editor.security_activity_layout_desc')}</div>
+
+            ${this._config.security_activity_layout !== 'sidebar' ? html`
+              <div style="margin-left: 26px;">
+                ${this._renderCheckbox('security-activity-at-end', localize('editor.security_activity_at_end'), this._config.security_activity_position === 'end',
+                  (checked) => this._securityActivityPositionChanged(checked))}
+              </div>
+            ` : nothing}
           ` : nothing}
 
           ${this._renderSecurityExtraEntitiesPicker()}
@@ -1761,6 +1768,18 @@ class Simon42DashboardStrategyEditor extends LitElement {
       delete updated.security_activity_layout;
     } else {
       updated.security_activity_layout = layout;
+    }
+    this._config = updated;
+    this._fireConfigChanged(updated);
+  }
+
+  private _securityActivityPositionChanged(atEnd: boolean): void {
+    const updated: Simon42StrategyConfig = { ...this._config };
+    // 'start' is the default → omit the key when matching default
+    if (atEnd) {
+      updated.security_activity_position = 'end';
+    } else {
+      delete updated.security_activity_position;
     }
     this._config = updated;
     this._fireConfigChanged(updated);

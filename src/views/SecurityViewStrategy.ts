@@ -263,6 +263,15 @@ function securityCameraBlocks(
 
 // -- Activity log (24h logbook à la HA's security panel) -------------------
 
+// Entities carrying this label stay in the security sections but are
+// excluded from the activity logbook — e.g. interior door contacts whose
+// history is just noise there (same convention as no_dboard).
+const SECLOG_EXCLUDE_LABEL = 'no_seclog';
+
+function isExcludedFromSecurityLog(entityId: string): boolean {
+  return Registry.getEntity(entityId)?.labels?.includes(SECLOG_EXCLUDE_LABEL) === true;
+}
+
 function buildActivitySection(hass: HomeAssistant, dashboardConfig: Simon42StrategyConfig): LovelaceSectionConfig | null {
   if (dashboardConfig.show_security_activity === false) return null;
   if (!hass.config?.components?.includes('logbook')) return null;
@@ -276,7 +285,9 @@ function buildActivitySection(hass: HomeAssistant, dashboardConfig: Simon42Strat
       return block.cameraId;
     }),
     ...Registry.getVisibleEntityIdsForDomain('person'),
-  ];
+  ].filter(function notLogExcluded(id) {
+    return !isExcludedFromSecurityLog(id);
+  });
   if (logbookEntityIds.length === 0) return null;
 
   return {
@@ -331,9 +342,14 @@ export function buildSecuritySections(
   const appendTrailingSections = (sections: LovelaceSectionConfig[]): LovelaceSectionConfig[] => {
     const extraSection = buildExtraEntitiesSection(hass, dashboardConfig);
     if (extraSection) sections.push(extraSection);
+    // Activity section: leads the view by default, optionally trails
+    // (security_activity_position: 'end'). Sidebar layout skips this.
     if (dashboardConfig.security_activity_layout !== 'sidebar') {
       const activity = buildActivitySection(hass, dashboardConfig);
-      if (activity) sections.push(activity);
+      if (activity) {
+        if (dashboardConfig.security_activity_position === 'end') sections.push(activity);
+        else sections.unshift(activity);
+      }
     }
     return sections;
   };
