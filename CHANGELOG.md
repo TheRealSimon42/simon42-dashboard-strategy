@@ -2,7 +2,18 @@
 All notable changes to this project will be documented in this file.  
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.8...HEAD).
+A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.9...HEAD).
+
+<a name="1.4.0-beta.9"></a>
+## [1.4.0-beta.9] - 2026-07-06 (Pre-Release)
+### Features
+- rooms: per-area block ordering (`areas_options.{id}.stacks_order`) — drag & drop panel per area in the editor reorders the generated room sections (cameras, lights, climate, …); closes [#293](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/293) (ported from [#327](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/327)/[#328](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/328) by @Cyberhunter88)
+- rooms: opt-in UPS block (`show_ups_in_rooms`) — one section per detected UPS (NUT/apcupsd platforms or "UPS"/"USV" in the device name) with battery gauge and role-sorted sensors (ported from [#327](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/327) by @Cyberhunter88)
+- rooms: opt-in energy block (`show_energy_in_rooms`) — the area's power/energy/water/gas sensors as their own section (ported from [#327](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/327) by @Cyberhunter88)
+- rooms: camera wrapper card with manual live toggle — room cameras start as stills and stream only after the play button; cameras without snapshot support (Aqara) start live automatically (ported from [#326](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/326) by @Cyberhunter88)
+- navigation: pinned room tabs (`areas_display.nav_items`) — selected room views stay in the navigation even when room views render as subviews; pin button per area row in the editor (ported from [#333](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/333) by @Cyberhunter88)
+- opt-in `hide_unavailable_entities` — generated cards/badges hide dynamically while their entity is `unavailable`/`unknown`, fully affected sections auto-hide, summary counts follow; custom cards/sections/views stay untouched (ported from [#325](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/325) by @Cyberhunter88)
+- opt-in `dense_section_placement` — fill grid gaps in all generated sections views (ported from [#334](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/334) by @simatec)
 
 <a name="1.4.0-beta.8"></a>
 ## [1.4.0-beta.8] - 2026-07-05 (Pre-Release)
