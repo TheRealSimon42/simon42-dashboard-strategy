@@ -2168,6 +2168,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const showAlertsOnAreas = this._config.show_alerts_on_areas === true;
     const showWindowAlertsOnAreas = this._config.show_window_alerts_on_areas === true;
     const showLocksInRooms = this._config.show_locks_in_rooms === true;
+    const showVacuumsSectionInRooms = this._config.show_vacuums_section_in_rooms === true;
     const showAutomationsInRooms = this._config.show_automations_in_rooms === true;
     const showScriptsInRooms = this._config.show_scripts_in_rooms === true;
     // Window / door contact badges default to visible — read as opt-out (!== false).
@@ -2203,6 +2204,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderCheckbox('show-locks-in-rooms', localize('editor.show_locks_in_rooms'), showLocksInRooms,
           (checked) => this._toggleChanged('show_locks_in_rooms', checked, false))}
         <div class="description">${localize('editor.show_locks_in_rooms_desc')}</div>
+
+        ${this._renderCheckbox('show-vacuums-section-in-rooms', localize('editor.show_vacuums_section_in_rooms'), showVacuumsSectionInRooms,
+          (checked) => this._toggleChanged('show_vacuums_section_in_rooms', checked, false))}
+        <div class="description">${localize('editor.show_vacuums_section_in_rooms_desc')}</div>
 
         ${this._renderCheckbox('show-automations-in-rooms', localize('editor.show_automations_in_rooms'), showAutomationsInRooms,
           (checked) => this._toggleChanged('show_automations_in_rooms', checked, false))}
@@ -4343,7 +4348,7 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
       roomEntities.climate.push(entity.entity_id);
     } else if (domain === 'media_player') {
       roomEntities.media_player.push(entity.entity_id);
-    } else if (domain === 'vacuum') {
+    } else if (domain === 'vacuum' || domain === 'lawn_mower') {
       roomEntities.vacuum.push(entity.entity_id);
     } else if (domain === 'fan') {
       roomEntities.fan.push(entity.entity_id);

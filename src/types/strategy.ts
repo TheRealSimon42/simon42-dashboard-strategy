@@ -100,6 +100,7 @@ export interface Simon42StrategyConfig {
   show_area_in_battery_view?: boolean; // default: false
   unavailable_batteries_bucket?: 'critical' | 'good'; // default: 'good' (follow-up to #248)
   show_locks_in_rooms?: boolean; // default: false
+  show_vacuums_section_in_rooms?: boolean; // default: false (vacuums & mowers stay under Misc, like HA's areas strategy)
   show_automations_in_rooms?: boolean; // default: false
   show_scripts_in_rooms?: boolean; // default: false
   show_cameras_in_rooms?: boolean; // default: true
@@ -346,6 +347,7 @@ export interface RoomEntities {
   scenes: string[];
   climate: string[];
   media_player: string[];
+  /** vacuum + lawn_mower domains — mowers share the group (editor toggles, order, room section) */
   vacuum: string[];
   fan: string[];
   /** humidifier domain — covers both humidifier and dehumidifier devices */

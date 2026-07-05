@@ -176,7 +176,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         roomEntities.media_player.push(entityId);
         continue;
       }
-      if (domain === 'vacuum') {
+      if (domain === 'vacuum' || domain === 'lawn_mower') {
         roomEntities.vacuum.push(entityId);
         continue;
       }
@@ -666,18 +666,35 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       state_content: 'last_changed',
     }));
 
-    // Misc (vacuum, fan, switches)
-    const miscCards: LovelaceCardConfig[] = [];
+    // Vacuums & lawn mowers — by default part of the Misc section below
+    // (matches HA's areas strategy, which groups both under "others");
+    // opt-in own section via show_vacuums_section_in_rooms.
+    const vacuumCards: LovelaceCardConfig[] = [];
     for (const e of roomEntities.vacuum)
-      miscCards.push({
+      vacuumCards.push({
         type: 'tile',
         entity: e,
         name: stripAreaName(e, area, hass),
-        features: [{ type: 'vacuum-commands' }],
+        features: [{ type: e.startsWith('lawn_mower.') ? 'lawn-mower-commands' : 'vacuum-commands' }],
         features_position: 'inline',
         vertical: false,
         state_content: 'last_changed',
       });
+
+    const ownVacuumSection = dashboardConfig.show_vacuums_section_in_rooms === true;
+    if (ownVacuumSection && vacuumCards.length > 0) {
+      sections.push({
+        type: 'grid',
+        cards: [
+          { type: 'heading', heading: localize('room.vacuums'), heading_style: 'title', icon: 'mdi:robot-vacuum' },
+          ...vacuumCards,
+        ],
+      });
+    }
+
+    // Misc (vacuum/mower unless in own section, fan, switches, …)
+    const miscCards: LovelaceCardConfig[] = [];
+    if (!ownVacuumSection) miscCards.push(...vacuumCards);
     for (const e of roomEntities.switches)
       miscCards.push({
         type: 'tile',
