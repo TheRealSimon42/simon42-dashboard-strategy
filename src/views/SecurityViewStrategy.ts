@@ -14,7 +14,7 @@ import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 import { getVisibleAreasFromHass } from '../utils/name-utils';
-import { collectCameraBlocks, leanCameraCard, type CameraBlock } from './CctvViewStrategy';
+import { collectCameraBlocks, cameraBlockAreaId, leanCameraCard, type CameraBlock } from './CctvViewStrategy';
 import { StrategyBaseElement } from './view-strategy-base';
 
 // -- Entity collection --------------------------------------------------
@@ -169,12 +169,6 @@ function resolveAreaId(entityId: string): string | null {
   return null;
 }
 
-function cameraBlockAreaId(block: CameraBlock): string | null {
-  const direct = resolveAreaId(block.cameraId);
-  if (direct) return direct;
-  return block.deviceId ? Registry.getDevice(block.deviceId)?.area_id || null : null;
-}
-
 /**
  * Alternative layout à la HA's security panel: one section per area
  * (heading taps through to the room view), cameras first, then the
@@ -262,7 +256,7 @@ function securityCameraBlocks(
 ): CameraBlock[] {
   if (dashboardConfig.show_cameras_in_security !== true) return [];
   const hidden = new Set(dashboardConfig.hidden_cameras || []);
-  return collectCameraBlocks(hass).filter(function notHidden(block) {
+  return collectCameraBlocks(hass, dashboardConfig).filter(function notHidden(block) {
     return !hidden.has(block.cameraId);
   });
 }

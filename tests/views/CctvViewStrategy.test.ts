@@ -100,7 +100,7 @@ describe('collectCameraBlocks', () => {
     const hass = makeHass(reolinkSpec());
     initRegistry(hass);
 
-    const blocks = collectCameraBlocks(hass);
+    const blocks = collectCameraBlocks(hass, {});
     expect(blocks).toHaveLength(1);
     expect(blocks[0].cameraId).toBe('camera.garten_sub');
     expect(blocks[0].deviceId).toBe('dev_garten');
@@ -115,10 +115,21 @@ describe('collectCameraBlocks', () => {
     });
     initRegistry(hass);
 
-    const blocks = collectCameraBlocks(hass);
+    const blocks = collectCameraBlocks(hass, {});
     expect(blocks).toHaveLength(1);
     expect(blocks[0].deviceId).toBeNull();
     expect(blocks[0].isReolink).toBe(false);
+  });
+
+  it('drops cameras from areas excluded from the dashboard, keeps area-less ones', () => {
+    const spec = reolinkSpec();
+    // Area-less standalone camera must survive the filter
+    spec.entities?.push({ entity_id: 'camera.einfahrt', platform: 'generic', attributes: { friendly_name: 'Einfahrt' } });
+    const hass = makeHass(spec);
+    initRegistry(hass);
+
+    const blocks = collectCameraBlocks(hass, { areas_display: { hidden: ['garten'] } });
+    expect(blocks.map((b) => b.cameraId)).toEqual(['camera.einfahrt']);
   });
 });
 
@@ -127,7 +138,7 @@ describe('buildCameraSection', () => {
     const hass = makeHass(reolinkSpec());
     initRegistry(hass);
 
-    const [block] = collectCameraBlocks(hass);
+    const [block] = collectCameraBlocks(hass, {});
     const section = buildCameraSection(block, hass, `${ROOT_PATH}/deep`);
     const cards = section.cards || [];
 
@@ -175,7 +186,7 @@ describe('buildCameraSection', () => {
     });
     initRegistry(hass);
 
-    const [block] = collectCameraBlocks(hass);
+    const [block] = collectCameraBlocks(hass, {});
     const section = buildCameraSection(block, hass, null);
     const cards = section.cards || [];
 
@@ -194,7 +205,7 @@ describe('buildCameraSection', () => {
     const hass = makeHass(spec);
     initRegistry(hass);
 
-    const [block] = collectCameraBlocks(hass);
+    const [block] = collectCameraBlocks(hass, {});
     const section = buildCameraSection(block, hass, null);
     const [tile] = findCards(section.cards || [], 'tile');
     expect(tile.features).toBeUndefined();

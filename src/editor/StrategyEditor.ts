@@ -1786,7 +1786,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     // Same dedup as the views (one camera per device, preferred stream);
     // Registry is initialized by the dashboard render, this is a no-op.
     Registry.initialize(this._hass, this._config);
-    const blocks = collectCameraBlocks(this._hass);
+    const blocks = collectCameraBlocks(this._hass, this._config);
     if (blocks.length === 0) return html``;
 
     const hidden = new Set(this._config.hidden_cameras || []);

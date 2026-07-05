@@ -248,11 +248,25 @@ function cameraDisplayName(cameraId: string, hass: HomeAssistant): string {
   return typeof friendly === 'string' && friendly ? friendly : cameraId;
 }
 
+/** Resolve a camera block's area (camera entity first, then its device). */
+export function cameraBlockAreaId(block: CameraBlock): string | null {
+  const entity = Registry.getEntity(block.cameraId);
+  if (entity?.area_id) return entity.area_id;
+  return block.deviceId ? Registry.getDevice(block.deviceId)?.area_id || null : null;
+}
+
 /**
  * Group visible cameras into one block per device (entities without a
- * device get their own block). Exported for tests.
+ * device get their own block). Cameras in areas excluded from the
+ * dashboard (areas_display.hidden) are dropped — their room views don't
+ * exist, so neither the security view's area links nor the exclusion
+ * picker should offer them. Cameras without any area stay included.
+ * Exported for tests.
  */
-export function collectCameraBlocks(hass: HomeAssistant): CameraBlock[] {
+export function collectCameraBlocks(
+  hass: HomeAssistant,
+  dashboardConfig: Simon42StrategyConfig
+): CameraBlock[] {
   const cameraIds = Registry.getVisibleEntityIdsForDomain('camera').filter(
     (id) => hass.states[id] !== undefined
   );
@@ -287,11 +301,18 @@ export function collectCameraBlocks(hass: HomeAssistant): CameraBlock[] {
     });
   }
 
+  // Drop cameras from areas that are excluded from the dashboard
+  const hiddenAreas = new Set(dashboardConfig.areas_display?.hidden || []);
+  const includedBlocks = blocks.filter(function inDashboard(block) {
+    const areaId = cameraBlockAreaId(block);
+    return !areaId || !hiddenAreas.has(areaId);
+  });
+
   // Stable order: area name, then camera name
-  blocks.sort(function compareBlocks(a, b) {
+  includedBlocks.sort(function compareBlocks(a, b) {
     return cameraSortKey(a, hass).localeCompare(cameraSortKey(b, hass));
   });
-  return blocks;
+  return includedBlocks;
 }
 
 function cameraSortKey(block: CameraBlock, hass: HomeAssistant): string {
@@ -562,7 +583,7 @@ export async function buildCctvSections(
   // hidden_cameras applies to the camera views (CCTV + security) —
   // room views deliberately keep showing these cameras.
   const hiddenCameras = new Set(dashboardConfig.hidden_cameras || []);
-  const blocks = collectCameraBlocks(hass).filter(function notHidden(block) {
+  const blocks = collectCameraBlocks(hass, dashboardConfig).filter(function notHidden(block) {
     return !hiddenCameras.has(block.cameraId);
   });
 
