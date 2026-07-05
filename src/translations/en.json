@@ -8,7 +8,8 @@
     "covers": "Blinds & Covers",
     "security": "Security",
     "batteries": "Batteries",
-    "climate": "Climate"
+    "climate": "Climate",
+    "cameras": "Cameras"
   },
   "sections": {
     "overview": "Overview",
@@ -96,6 +97,23 @@
     "cooling": "Cooling",
     "idle": "Idle",
     "off": "Off"
+  },
+  "cctv": {
+    "no_cameras": "No cameras found. Cameras appear here automatically once they are set up in Home Assistant.",
+    "recordings": "Recordings",
+    "ptz_up": "Up",
+    "ptz_down": "Down",
+    "ptz_left": "Left",
+    "ptz_right": "Right",
+    "ptz_stop": "Stop",
+    "ptz_zoom_in": "Zoom +",
+    "ptz_zoom_out": "Zoom -",
+    "ptz_calibrate": "Calibrate",
+    "ptz_home": "Home position",
+    "events": "Events",
+    "events_persons": "Persons",
+    "events_animals": "Animals",
+    "events_vehicles": "Vehicles"
   },
   "room": {
     "cameras": "Cameras",
@@ -205,6 +223,8 @@
     "security_extra_entities_desc": "Pick any extra entities (smart appliances, custom sensors, etc.) to show as tiles at the bottom of the Security view. Useful for ovens, cooktops, irons — anything you want a glance at before leaving the house.",
     "show_climate_summary": "Show climate summary",
     "show_climate_summary_desc": "Shows the climate summary card on the overview. Counts active thermostats and climate devices.",
+    "show_camera_view": "Enable camera view (CCTV)",
+    "show_camera_view_desc": "Generates a dedicated camera view: live picture, spotlight, PTZ controls and recordings link (Reolink) per camera — plus LLM Vision event timelines when installed.",
     "show_battery_summary": "Show battery summary",
     "hide_mobile_app_batteries": "Hide mobile app batteries",
     "hide_mobile_app_batteries_desc": "Hides batteries from smartphones, tablets, and watches (Mobile App) from the battery overview and summary.",

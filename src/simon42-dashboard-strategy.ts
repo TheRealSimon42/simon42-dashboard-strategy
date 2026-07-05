@@ -30,6 +30,7 @@ const modulesPromise = Promise.all([
   import('./views/SecurityViewStrategy'),
   import('./views/BatteriesViewStrategy'),
   import('./views/ClimateViewStrategy'),
+  import('./views/CctvViewStrategy'),
   import('./views/RoomViewStrategy'),
 ]);
 
@@ -95,7 +96,16 @@ class Simon42DashboardStrategy extends HTMLElement {
     t('overview resolved');
 
     // Only resolve utility views for enabled summaries
-    const utilityViewDefs = [
+    interface UtilityViewDef {
+      enabled: boolean;
+      title: string;
+      path: string;
+      icon: string;
+      /** Never render as subview — for views without a summary-card entry point */
+      alwaysInNav?: boolean;
+      resolve: () => Promise<LovelaceViewConfig>;
+    }
+    const utilityViewDefs: UtilityViewDef[] = [
       { enabled: showLights, title: localize('views.lights'), path: 'lights', icon: 'mdi:lamps',
         resolve: () => getStrategy('ll-strategy-simon42-view-lights').generate({ config }, hass) },
       { enabled: showCovers, title: localize('views.covers'), path: 'covers', icon: 'mdi:blinds-horizontal',
@@ -107,6 +117,11 @@ class Simon42DashboardStrategy extends HTMLElement {
         resolve: () => getStrategy('ll-strategy-simon42-view-batteries').generate({ config }, hass) },
       { enabled: showClimate, title: localize('views.climate'), path: 'climate', icon: 'mdi:thermostat',
         resolve: () => getStrategy('ll-strategy-simon42-view-climate').generate({ config }, hass) },
+      // alwaysInNav: no summary card deep-links here — as a subview the
+      // camera view would be unreachable.
+      { enabled: config.show_camera_view === true, alwaysInNav: true,
+        title: localize('views.cameras'), path: 'cameras', icon: 'mdi:cctv',
+        resolve: () => getStrategy('ll-strategy-simon42-view-cameras').generate({ config }, hass) },
     ];
 
     const enabledDefs = utilityViewDefs.filter((d) => d.enabled);
@@ -141,7 +156,7 @@ class Simon42DashboardStrategy extends HTMLElement {
         title: def.title,
         path: def.path,
         icon: def.icon,
-        subview: !showSummaryViews,
+        subview: def.alwaysInNav ? false : !showSummaryViews,
         ...utilityConfigs[i],
       })),
       ...visibleAreas.map((area, i) => ({

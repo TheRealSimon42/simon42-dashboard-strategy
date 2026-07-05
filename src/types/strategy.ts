@@ -93,6 +93,9 @@ export interface Simon42StrategyConfig {
   show_battery_view?: boolean; // default: false — keep the /batteries view
   // available even when show_battery_summary is off (#315: badge deep-links)
   show_climate_summary?: boolean; // default: false
+  show_camera_view?: boolean; // default: false — opt-in CCTV view (/cameras):
+  // one block per camera device with spotlight tile, Reolink PTZ pad,
+  // recordings deep-link and optional LLM Vision event timelines
   hide_mobile_app_batteries?: boolean; // default: false
   hide_battery_notes_entities?: boolean; // default: false
   battery_critical_threshold?: number; // default: 20

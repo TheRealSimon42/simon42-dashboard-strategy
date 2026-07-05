@@ -8,7 +8,8 @@
     "covers": "Rollos & Abdeckungen",
     "security": "Sicherheit",
     "batteries": "Batterien",
-    "climate": "Klima"
+    "climate": "Klima",
+    "cameras": "Kameras"
   },
   "sections": {
     "overview": "Übersicht",
@@ -96,6 +97,23 @@
     "cooling": "Kühlen",
     "idle": "Bereitschaft",
     "off": "Aus"
+  },
+  "cctv": {
+    "no_cameras": "Keine Kameras gefunden. Kameras erscheinen hier automatisch, sobald sie in Home Assistant eingerichtet sind.",
+    "recordings": "Aufnahmen",
+    "ptz_up": "Auf",
+    "ptz_down": "Ab",
+    "ptz_left": "Links",
+    "ptz_right": "Rechts",
+    "ptz_stop": "Stopp",
+    "ptz_zoom_in": "Zoom +",
+    "ptz_zoom_out": "Zoom -",
+    "ptz_calibrate": "Kalibrieren",
+    "ptz_home": "Startposition",
+    "events": "Ereignisse",
+    "events_persons": "Personen",
+    "events_animals": "Tiere",
+    "events_vehicles": "Fahrzeuge"
   },
   "room": {
     "cameras": "Kameras",
@@ -205,6 +223,8 @@
     "security_extra_entities_desc": "Beliebige Entitäten (Smart-Geräte, eigene Sensoren etc.) auswählen, die unten in der Sicherheits-Ansicht als Kacheln erscheinen. Praktisch für Backofen, Herd, Bügeleisen — alles, was du vor dem Verlassen noch einmal prüfen möchtest.",
     "show_climate_summary": "Klima-Zusammenfassung anzeigen",
     "show_climate_summary_desc": "Zeigt die Klima-Zusammenfassungskarte in der Übersicht an. Zählt aktive Thermostate und Klimageräte.",
+    "show_camera_view": "Kamera-Ansicht (CCTV) aktivieren",
+    "show_camera_view_desc": "Erzeugt eine eigene Kamera-Ansicht: pro Kamera Live-Bild, Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (Reolink) — plus LLM Vision Ereignis-Timelines, falls installiert.",
     "show_battery_summary": "Batterie-Zusammenfassung anzeigen",
     "hide_mobile_app_batteries": "Mobile-App-Batterien ausblenden",
     "hide_mobile_app_batteries_desc": "Blendet Batterien von Smartphones, Tablets und Watches (Mobile App) in der Batterie-Übersicht und -Zusammenfassung aus.",

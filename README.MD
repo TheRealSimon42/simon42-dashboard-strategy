@@ -64,6 +64,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Alert-Icons** — Optionale Alert-Badges auf Bereichskarten (Bewegung, Feuchtigkeit, Rauch, Wärme u.a.)
 - **Rauch-, Gas- & Hitzemelder** — In der Sicherheits-Übersicht, im Security-Summary-Count und als Badges in Raum-Views
 - **Wetter flexibel** — Wetter-Entität wählbar, Darstellung umschaltbar (Forecast täglich/stündlich, Tile, eigene Karte), eigene Außensensoren als Inline-Zeile *(ab v1.4.0)*
+- **Kamera-Ansicht (CCTV)** — Opt-in View mit allen Kameras: Scheinwerfer-Steuerung, PTZ-Steuerkreuz und Aufnahmen-Link (Reolink), LLM Vision Ereignis-Timelines *(ab v1.4.0)*
 - **Batch-Aktionen** — Heading-Badges für Gruppensteuerung (alle ein/aus, alle öffnen/schließen)
 - **Automationen & Skripte in Räumen** — Bereichs-zugeordnete Automationen und Skripte in Raum-Views anzeigen
 - **Eigene Karten** — Beliebige Karten via YAML auf der Übersicht einbinden, Ziel-Section frei wählbar
@@ -267,6 +268,16 @@ strategy:
 
 **Kameras in Räumen** *(ab v1.4.0)* — Kamera-Streams in den Raum-Views sind standardmäßig an und können per Toggle deaktiviert werden.
 
+**Kamera-Ansicht (CCTV)** *(ab v1.4.0)* — Eine eigene Ansicht (`/cameras`, opt-in via `show_camera_view`) mit einem Block pro Kamera-**Gerät**:
+
+- **Kamerabild** — bei mehreren Streams pro Gerät (Reolink: Klar-/Standardauflösung) wird automatisch die Standardauflösung gewählt (bandbreitenschonend). Kein Live-Zwang: Standbilder mit Klick für Live-Stream.
+- **Scheinwerfer** — hat das Kamera-Gerät ein Licht, erscheint darunter eine Kachel (mit Helligkeitsregler, wenn unterstützt).
+- **PTZ-Steuerkreuz** — bei Reolink-PTZ-Kameras werden die Steuer-Buttons (Auf/Ab/Links/Rechts/Stopp, Zoom, Kalibrieren, Startposition) automatisch erkannt und als Steuerkreuz gerendert. Es erscheinen nur Buttons, die das Gerät wirklich hat.
+- **Aufnahmen** — bei Reolink-Kameras führt ein Button direkt zu den Aufnahmen der Kamera im HA-Medienbrowser (bei NVRs mit mehreren Kanälen zur Reolink-Übersicht, falls der Kanal nicht eindeutig zuordenbar ist).
+- **Ereignis-Timelines** — ist [LLM Vision](https://llmvision.org) samt Timeline-Karte installiert, erscheinen automatisch drei Timelines (Personen / Tiere / Fahrzeuge) am Ende der Ansicht.
+
+Einzelne Kameras lassen sich wie üblich ausblenden (Label `no-dboard` oder Bereichs-Editor).
+
 **Raum-Sichtbarkeit** *(ab v1.4.0)* — Einzelne Raum-Views (inkl. Navigations-Tab) können an einen Entity-Zustand geknüpft werden (`room_visibility`) — z.B. Gästezimmer nur bei aktiviertem Gäste-Modus. Die Bereichskarte auf der Übersicht bleibt davon unberührt.
 
 **Ansichten** — Summary-Views (Lichter, Rollos, etc.) und Raum-Views können optional in der oberen Navigation angezeigt werden.
@@ -433,6 +444,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_climate_summary` | boolean | `false` | — | Klima-Zusammenfassung |
 | `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
 | `show_battery_view` | boolean | `false` | v1.4.0 | Batterie-Unterseite (/batteries) auch ohne Batterie-Zusammenfassung bereitstellen |
+| `show_camera_view` | boolean | `false` | v1.4.0 | Kamera-Ansicht (/cameras) mit Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (siehe unten) |
 | `summaries_columns` | 2 \| 4 | `2` | — | Spalten-Layout der Zusammenfassungen |
 | `favorite_entities` | string[] | `[]` | — | Favoriten-Entitäten auf der Übersicht |
 | `favorites_show_state` | boolean | `false` | — | Zustand auf Favoriten-Kacheln anzeigen |

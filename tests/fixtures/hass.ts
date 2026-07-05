@@ -23,6 +23,8 @@ interface EntityFixture {
   disabled_by?: string | null;
   platform?: string;
   labels?: string[];
+  translation_key?: string | null;
+  entity_category?: 'config' | 'diagnostic' | null;
 }
 
 interface DeviceFixture {
@@ -30,6 +32,10 @@ interface DeviceFixture {
   area_id?: string | null;
   manufacturer?: string;
   model?: string;
+  name?: string | null;
+  name_by_user?: string | null;
+  primary_config_entry?: string | null;
+  config_entries?: string[];
 }
 
 interface AreaFixture {
@@ -66,6 +72,8 @@ export function makeHass(spec: HassFixtureSpec = {}): HomeAssistant {
       disabled_by: e.disabled_by ?? null,
       platform: e.platform,
       labels: e.labels ?? [],
+      translation_key: e.translation_key ?? null,
+      entity_category: e.entity_category ?? null,
     };
     entities[e.entity_id] = entry;
     states[e.entity_id] = {
