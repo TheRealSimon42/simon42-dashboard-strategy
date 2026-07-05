@@ -171,10 +171,15 @@ class Simon42DashboardStrategy extends HTMLElement {
       })),
     ];
 
+    // hide_unavailable_entities only touches GENERATED views — custom_views
+    // are user YAML passthrough and stay untouched (same contract as
+    // custom_sections/custom_cards: the card YAML is the user's).
+    const generatedViews = views.map((view) => withUnavailableEntitiesHidden(view, config));
+
     const customViews = config.custom_views || [];
     for (const cv of customViews) {
       if (cv.parsed_config && cv.title && cv.path) {
-        views.push({
+        generatedViews.push({
           ...cv.parsed_config,
           title: cv.title,
           path: cv.path,
@@ -183,11 +188,11 @@ class Simon42DashboardStrategy extends HTMLElement {
       }
     }
 
-    t(`generate() done — ${views.length} views`);
+    t(`generate() done — ${generatedViews.length} views`);
 
     return {
       title: localize('dashboard.title'),
-      views: views.map((view) => withUnavailableEntitiesHidden(view, config)),
+      views: generatedViews,
     };
   }
 
