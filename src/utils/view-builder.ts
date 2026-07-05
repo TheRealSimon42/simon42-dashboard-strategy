@@ -1,7 +1,3 @@
-// ====================================================================
-// View Builder - Creates View Definitions
-// ====================================================================
-
 import type { LovelaceViewConfig, LovelaceBadgeConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { localize } from './localize';
 
@@ -21,6 +17,7 @@ export function createOverviewView(
     icon: 'mdi:home',
     type: 'sections',
     max_columns: 3,
+    dense_section_placement: true,
     badges: personBadges.length > 0 ? personBadges : undefined,
     header:
       personBadges.length > 0

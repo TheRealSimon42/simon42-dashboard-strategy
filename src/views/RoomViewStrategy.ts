@@ -781,7 +781,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       `Room ${area.area_id}: ${visibleEntities.length} visible entities, ${sections.length} sections, ${badges.length} badges`
     );
     timeEnd(`room-generate-${area.area_id}`);
-    return { type: 'sections', header: { badges_position: 'bottom' }, sections, badges };
+    return { type: 'sections', dense_section_placement: true, header: { badges_position: 'bottom' }, sections, badges };
   }
 }
 

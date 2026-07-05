@@ -143,7 +143,7 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
     const goodSection = createBatterySection(good, 'good', `> ${lowThreshold}%`, hass, showArea);
     if (goodSection) sections.push(goodSection);
 
-    return { type: 'sections', sections };
+    return { type: 'sections', dense_section_placement: true, sections };
   }
 }
 

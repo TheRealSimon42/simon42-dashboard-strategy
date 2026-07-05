@@ -73,7 +73,7 @@ class Simon42ViewClimateStrategy extends HTMLElement {
     buildSection(idle, localize('climate.idle'), 'mdi:thermostat');
     buildSection(off, localize('climate.off'), 'mdi:power-off');
 
-    return { type: 'sections', sections };
+    return { type: 'sections', dense_section_placement: true, sections };
   }
 }
 

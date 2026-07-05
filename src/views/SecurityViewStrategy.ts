@@ -336,7 +336,7 @@ class Simon42ViewSecurityStrategy extends HTMLElement {
       sections.push({ type: 'grid', cards });
     }
 
-    return { type: 'sections', sections };
+    return { type: 'sections', dense_section_placement: true, sections };
   }
 }
 
