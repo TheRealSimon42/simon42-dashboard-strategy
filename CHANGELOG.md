@@ -2,7 +2,24 @@
 All notable changes to this project will be documented in this file.  
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.6...HEAD).
+A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.8...HEAD).
+
+<a name="1.4.0-beta.8"></a>
+## [1.4.0-beta.8] - 2026-07-05 (Pre-Release)
+### Features
+- security view: opt-in cameras (`show_cameras_in_security`) as lean still-image cards à la HA's security panel — one card per camera device with the preferred Reolink stream; the cameras heading deep-links to the camera view when enabled ([#336](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/336))
+- security view: HA-style layout (`group_security_by_areas`, recommended) — all areas stacked and grouped by floors, area headings link to the room views, activity log pinned as a right-hand sidebar
+- security view: 24h activity log (`show_security_activity`, default on) over security entities + persons — leading section in category mode (optional at the end via `security_activity_position`), sidebar in the HA-style layout; new `no_seclog` label excludes entities from the log while keeping them in the view
+- security view: camera exclusion list (`hidden_cameras`) — hides cameras from the security AND camera views, room views unaffected; only cameras from dashboard-included areas are offered
+- security view: filter parity with HA's security panel — `safety`/`tamper` sensors get their own category (surfaces e.g. Versatile Thermostat per-room safety states), `carbon_monoxide` joins smoke/gas
+- **experimental** camera view (`show_camera_view`, `/cameras`): per camera device a live picture, spotlight tile (with brightness slider when supported), Reolink PTZ pad (detected via translation_key) and a recordings deep-link into the media browser; optional LLM Vision event timelines (`show_camera_events`, default off — the card re-fetches on every state change, see [llmvision-card#112](https://github.com/valentinfrlch/llmvision-card/issues/112)); cameras headings in room views link to the camera view when enabled
+- weather: opt-in DWD Pollenflug card (`show_pollen_card`) below the weather card — live pollen load (today + tomorrow) from the HACS `dwd_pollenflug` integration, sensors auto-discovered, toggle only offered while the integration is installed
+
+<a name="1.4.0-beta.7"></a>
+## [1.4.0-beta.7] - 2026-07-05 (Pre-Release)
+### Features
+- HA 2026.x alignment: registry staleness fix (views no longer serve stale entity/area data until hard-reload), strategy appears in HA's "new dashboard" dialog, `registryDependencies` declared, summary card removed from the card picker ([#329](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/329))
+- rooms: opt-in vacuum & mower section (`show_vacuums_section_in_rooms`), `lawn_mower` entities now categorized in room views, cameras toggleable per room ([#330](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/330))
 
 <a name="1.4.0-beta.6"></a>
 ## [1.4.0-beta.6] - 2026-07-05 (Pre-Release)
