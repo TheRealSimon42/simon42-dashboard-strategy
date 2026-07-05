@@ -537,7 +537,10 @@ export function buildLlmVisionSection(hass: HomeAssistant): LovelaceSectionConfi
 // =====================================================================
 
 /** Assemble all CCTV view sections. Exported for tests. */
-export async function buildCctvSections(hass: HomeAssistant): Promise<LovelaceSectionConfig[]> {
+export async function buildCctvSections(
+  hass: HomeAssistant,
+  showEvents: boolean
+): Promise<LovelaceSectionConfig[]> {
   const blocks = collectCameraBlocks(hass);
 
   if (blocks.length === 0) {
@@ -571,8 +574,13 @@ export async function buildCctvSections(hass: HomeAssistant): Promise<LovelaceSe
     sections.push(buildCameraSection(block, hass, recordingsPath));
   }
 
-  const eventsSection = buildLlmVisionSection(hass);
-  if (eventsSection) sections.push(eventsSection);
+  // Opt-in even when LLM Vision is present: the llmvision-card re-fetches
+  // its events API on every hass update (no debounce) — three timelines
+  // multiply that into a request storm on busy systems.
+  if (showEvents) {
+    const eventsSection = buildLlmVisionSection(hass);
+    if (eventsSection) sections.push(eventsSection);
+  }
 
   return sections;
 }
@@ -591,7 +599,7 @@ class Simon42ViewCctvStrategy extends StrategyBaseElement {
     // Ensure Registry is initialized (idempotent — no-op if already done)
     Registry.initialize(hass, config.config || {});
 
-    const sections = await buildCctvSections(hass);
+    const sections = await buildCctvSections(hass, config.config?.show_camera_events === true);
     return { type: 'sections', max_columns: 3, sections };
   }
 }

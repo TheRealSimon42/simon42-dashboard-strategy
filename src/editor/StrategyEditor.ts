@@ -1644,6 +1644,12 @@ class Simon42DashboardStrategyEditor extends LitElement {
           (checked) => this._toggleChanged('show_camera_view', checked, false))}
         <div class="description">${localize('editor.show_camera_view_desc')}</div>
 
+        <div style="margin-left: 26px; margin-bottom: 8px;">
+          ${this._renderCheckbox('show-camera-events', localize('editor.show_camera_events'), this._config.show_camera_events === true,
+            (checked) => this._toggleChanged('show_camera_events', checked, false))}
+          <div class="description">${localize('editor.show_camera_events_desc')}</div>
+        </div>
+
         ${this._renderCheckbox('show-battery-summary', localize('editor.show_battery_summary'), showBatterySummary,
           (checked) => this._toggleChanged('show_battery_summary', checked, true))}
 

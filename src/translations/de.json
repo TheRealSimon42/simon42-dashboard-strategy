@@ -225,6 +225,8 @@
     "show_climate_summary_desc": "Zeigt die Klima-Zusammenfassungskarte in der Übersicht an. Zählt aktive Thermostate und Klimageräte.",
     "show_camera_view": "Kamera-Ansicht (CCTV) aktivieren",
     "show_camera_view_desc": "Erzeugt eine eigene Kamera-Ansicht: pro Kamera Live-Bild, Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (Reolink) — plus LLM Vision Ereignis-Timelines, falls installiert.",
+    "show_camera_events": "LLM Vision Ereignis-Timelines anzeigen",
+    "show_camera_events_desc": "Personen-/Tier-/Fahrzeug-Timelines am Ende der Kamera-Ansicht (benötigt LLM Vision + llmvision-card). Achtung: Die Karte fragt ihre Ereignisse bei jeder Zustandsänderung neu ab — auf Systemen mit vielen Entitäten kann das spürbare Last erzeugen.",
     "show_battery_summary": "Batterie-Zusammenfassung anzeigen",
     "hide_mobile_app_batteries": "Mobile-App-Batterien ausblenden",
     "hide_mobile_app_batteries_desc": "Blendet Batterien von Smartphones, Tablets und Watches (Mobile App) in der Batterie-Übersicht und -Zusammenfassung aus.",

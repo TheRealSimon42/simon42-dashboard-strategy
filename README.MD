@@ -274,7 +274,7 @@ strategy:
 - **Scheinwerfer** — hat das Kamera-Gerät ein Licht, erscheint darunter eine Kachel (mit Helligkeitsregler, wenn unterstützt).
 - **PTZ-Steuerkreuz** — bei Reolink-PTZ-Kameras werden die Steuer-Buttons (Auf/Ab/Links/Rechts/Stopp, Zoom, Kalibrieren, Startposition) automatisch erkannt und als Steuerkreuz gerendert. Es erscheinen nur Buttons, die das Gerät wirklich hat.
 - **Aufnahmen** — bei Reolink-Kameras führt ein Button direkt zu den Aufnahmen der Kamera im HA-Medienbrowser (bei NVRs mit mehreren Kanälen zur Reolink-Übersicht, falls der Kanal nicht eindeutig zuordenbar ist).
-- **Ereignis-Timelines** — ist [LLM Vision](https://llmvision.org) samt Timeline-Karte installiert, erscheinen automatisch drei Timelines (Personen / Tiere / Fahrzeuge) am Ende der Ansicht.
+- **Ereignis-Timelines** *(separater Toggle `show_camera_events`, Standard aus)* — mit [LLM Vision](https://llmvision.org) samt Timeline-Karte lassen sich drei Timelines (Personen / Tiere / Fahrzeuge) am Ende der Ansicht einblenden. **Hinweis:** Die llmvision-card fragt ihre Ereignisse bei jeder Zustandsänderung neu ab — auf Systemen mit vielen Entitäten kann das spürbare Last erzeugen, daher bewusst opt-in.
 
 Einzelne Kameras lassen sich wie üblich ausblenden (Label `no-dboard` oder Bereichs-Editor).
 
@@ -445,6 +445,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
 | `show_battery_view` | boolean | `false` | v1.4.0 | Batterie-Unterseite (/batteries) auch ohne Batterie-Zusammenfassung bereitstellen |
 | `show_camera_view` | boolean | `false` | v1.4.0 | Kamera-Ansicht (/cameras) mit Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (siehe unten) |
+| `show_camera_events` | boolean | `false` | v1.4.0 | LLM Vision Ereignis-Timelines in der Kamera-Ansicht (Last-Hinweis siehe unten) |
 | `summaries_columns` | 2 \| 4 | `2` | — | Spalten-Layout der Zusammenfassungen |
 | `favorite_entities` | string[] | `[]` | — | Favoriten-Entitäten auf der Übersicht |
 | `favorites_show_state` | boolean | `false` | — | Zustand auf Favoriten-Kacheln anzeigen |
