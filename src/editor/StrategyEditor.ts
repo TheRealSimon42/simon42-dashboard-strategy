@@ -1651,14 +1651,14 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
           ${this._config.show_security_activity !== false ? html`
             <div class="form-row" style="margin-left: 26px;">
-              <input type="radio" id="security-activity-sidebar" name="security-activity-layout" value="sidebar"
-                ?checked=${this._config.security_activity_layout !== 'section'}
-                @change=${() => this._securityActivityLayoutChanged('sidebar')} />
-              <label for="security-activity-sidebar">${localize('editor.security_activity_sidebar')}</label>
               <input type="radio" id="security-activity-section" name="security-activity-layout" value="section"
-                ?checked=${this._config.security_activity_layout === 'section'}
+                ?checked=${this._config.security_activity_layout !== 'sidebar'}
                 @change=${() => this._securityActivityLayoutChanged('section')} />
               <label for="security-activity-section">${localize('editor.security_activity_section')}</label>
+              <input type="radio" id="security-activity-sidebar" name="security-activity-layout" value="sidebar"
+                ?checked=${this._config.security_activity_layout === 'sidebar'}
+                @change=${() => this._securityActivityLayoutChanged('sidebar')} />
+              <label for="security-activity-sidebar">${localize('editor.security_activity_sidebar')}</label>
             </div>
             <div class="description" style="margin-left: 26px;">${localize('editor.security_activity_layout_desc')}</div>
           ` : nothing}
@@ -1752,8 +1752,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _securityActivityLayoutChanged(layout: 'sidebar' | 'section'): void {
     const updated: Simon42StrategyConfig = { ...this._config };
-    // 'sidebar' is the default → omit the key when matching default
-    if (layout === 'sidebar') {
+    // 'section' is the default → omit the key when matching default
+    if (layout === 'section') {
       delete updated.security_activity_layout;
     } else {
       updated.security_activity_layout = layout;

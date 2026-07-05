@@ -159,7 +159,10 @@ describe('activity sidebar', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
     spec.entities?.push({ entity_id: 'person.simon', state: 'home' });
-    const sidebar = buildSidebar(spec, { show_cameras_in_security: true });
+    const sidebar = buildSidebar(spec, {
+      show_cameras_in_security: true,
+      security_activity_layout: 'sidebar',
+    });
 
     expect(sidebar).toBeDefined();
     const logbook = sidebar?.sections?.[0].cards?.find((c) => c.type === 'logbook');
@@ -175,31 +178,36 @@ describe('activity sidebar', () => {
   it('excludes cameras from the logbook when they are not shown', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
-    const sidebar = buildSidebar(spec);
+    const sidebar = buildSidebar(spec, { security_activity_layout: 'sidebar' });
     const logbook = sidebar?.sections?.[0].cards?.find((c) => c.type === 'logbook');
     expect(logbook?.target?.entity_id).not.toContain('camera.garten_sub');
   });
 
   it('returns undefined without the logbook integration', () => {
-    expect(buildSidebar(securitySpec())).toBeUndefined();
+    expect(buildSidebar(securitySpec(), { security_activity_layout: 'sidebar' })).toBeUndefined();
   });
 
   it('returns undefined when disabled via show_security_activity', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
-    expect(buildSidebar(spec, { show_security_activity: false })).toBeUndefined();
+    expect(
+      buildSidebar(spec, { security_activity_layout: 'sidebar', show_security_activity: false })
+    ).toBeUndefined();
   });
 
-  it('renders as trailing section instead of sidebar with layout=section', () => {
+  it('renders as trailing section by default — sidebar only on request', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
-    const config: Simon42StrategyConfig = { security_activity_layout: 'section' };
 
-    expect(buildSidebar(spec, config)).toBeUndefined();
-
-    const sections = build(makeHass(spec), config);
+    // Default: no sidebar, logbook as last section
+    expect(buildSidebar(spec)).toBeUndefined();
+    const sections = build(makeHass(spec), {});
     const lastSection = sections[sections.length - 1];
     expect((lastSection.cards || []).some((c) => c.type === 'logbook')).toBe(true);
+
+    // Opt-in sidebar: no trailing logbook section
+    const sidebarSections = build(makeHass(spec), { security_activity_layout: 'sidebar' });
+    expect(allCards(sidebarSections).some((c) => c.type === 'logbook')).toBe(false);
   });
 });
 
@@ -210,6 +218,7 @@ describe('security_hidden_cameras', () => {
     const config: Simon42StrategyConfig = {
       show_cameras_in_security: true,
       security_hidden_cameras: ['camera.garten_sub'],
+      security_activity_layout: 'sidebar',
     };
 
     const sections = build(makeHass(spec), config);

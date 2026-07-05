@@ -304,16 +304,16 @@ function buildActivitySection(hass: HomeAssistant, dashboardConfig: Simon42Strat
 }
 
 /**
- * Activity log as view sidebar (default layout): pinned to the right on
+ * Activity log as view sidebar (opt-in layout): pinned to the right on
  * wide screens, own tab on narrow ones (sections view sidebar, HA 2026.x —
- * older frontends simply ignore the extra key). Returns undefined when the
- * user picked the section layout instead. Exported for tests.
+ * older frontends simply ignore the extra key). Returns undefined in the
+ * default section layout. Exported for tests.
  */
 export function buildSecurityActivitySidebar(
   hass: HomeAssistant,
   dashboardConfig: Simon42StrategyConfig
 ): LovelaceViewSidebarConfig | undefined {
-  if (dashboardConfig.security_activity_layout === 'section') return undefined;
+  if (dashboardConfig.security_activity_layout !== 'sidebar') return undefined;
   const section = buildActivitySection(hass, dashboardConfig);
   if (!section) return undefined;
   return {
@@ -337,7 +337,7 @@ export function buildSecuritySections(
   const appendTrailingSections = (sections: LovelaceSectionConfig[]): LovelaceSectionConfig[] => {
     const extraSection = buildExtraEntitiesSection(hass, dashboardConfig);
     if (extraSection) sections.push(extraSection);
-    if (dashboardConfig.security_activity_layout === 'section') {
+    if (dashboardConfig.security_activity_layout !== 'sidebar') {
       const activity = buildActivitySection(hass, dashboardConfig);
       if (activity) sections.push(activity);
     }
