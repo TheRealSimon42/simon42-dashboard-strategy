@@ -517,7 +517,20 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       if (cameraCards.length > 0) {
         sections.push({
           type: 'grid',
-          cards: [{ type: 'heading', heading: localize('room.cameras'), heading_style: 'title', icon: 'mdi:cctv' }, ...cameraCards],
+          cards: [
+            {
+              type: 'heading',
+              heading: localize('room.cameras'),
+              heading_style: 'title',
+              icon: 'mdi:cctv',
+              // Deep-link into the CCTV view when it is enabled — same
+              // affordance as the cameras heading in the security view
+              ...(dashboardConfig.show_camera_view === true
+                ? { tap_action: { action: 'navigate', navigation_path: 'cameras' } }
+                : {}),
+            },
+            ...cameraCards,
+          ],
         });
       }
     }
