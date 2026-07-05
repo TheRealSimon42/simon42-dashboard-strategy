@@ -50,6 +50,8 @@ export interface HassFixtureSpec {
   devices?: DeviceFixture[];
   areas?: AreaFixture[];
   language?: string;
+  /** Loaded HA integrations (hass.config.components), e.g. ['logbook'] */
+  components?: string[];
 }
 
 /**
@@ -98,6 +100,7 @@ export function makeHass(spec: HassFixtureSpec = {}): HomeAssistant {
     areas,
     language: spec.language ?? 'en',
     locale: { language: spec.language ?? 'en' },
+    config: { components: spec.components ?? [] },
     // Anything else the code reads → cast-safe undefined
   } as unknown as HomeAssistant;
 }

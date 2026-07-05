@@ -1641,6 +1641,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
             (checked) => this._toggleChanged('group_security_by_areas', checked, false))}
           <div class="description">${localize('editor.group_security_by_areas_desc')}</div>
 
+          ${this._renderCheckbox('show-security-activity', localize('editor.show_security_activity'), this._config.show_security_activity !== false,
+            (checked) => this._toggleChanged('show_security_activity', checked, true))}
+          <div class="description">${localize('editor.show_security_activity_desc')}</div>
+
           ${this._renderSecurityExtraEntitiesPicker()}
         </div>
 

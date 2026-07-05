@@ -4,7 +4,12 @@
 
 import type { HomeAssistant } from '../types/homeassistant';
 import type { Simon42StrategyConfig } from '../types/strategy';
-import type { LovelaceViewConfig, LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
+import type {
+  LovelaceViewConfig,
+  LovelaceCardConfig,
+  LovelaceSectionConfig,
+  LovelaceViewSidebarConfig,
+} from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
@@ -242,6 +247,62 @@ function buildAreaGroupedSections(
     });
   }
   return sections;
+}
+
+// -- Activity sidebar -----------------------------------------------------
+
+/**
+ * Activity sidebar à la HA's security panel: a 24h logbook over all
+ * security entities + persons. Renders as a right-hand pane on wide
+ * screens and as its own tab on narrow ones (sections view sidebar,
+ * HA 2026.x — older frontends simply ignore the extra key).
+ * Auto-hides when the logbook integration is not loaded.
+ * Exported for tests.
+ */
+export function buildSecurityActivitySidebar(
+  hass: HomeAssistant,
+  dashboardConfig: Simon42StrategyConfig
+): LovelaceViewSidebarConfig | undefined {
+  if (dashboardConfig.show_security_activity === false) return undefined;
+  if (!hass.config?.components?.includes('logbook')) return undefined;
+
+  const entities = collectSecurityEntities(hass);
+  const cameraBlocks =
+    dashboardConfig.show_cameras_in_security === true ? collectCameraBlocks(hass) : [];
+
+  const logbookEntityIds = [
+    ...AREA_MODE_CATEGORY_ORDER.flatMap(function categoryIds(category) {
+      return entities[category];
+    }),
+    ...cameraBlocks.map(function blockCameraId(block) {
+      return block.cameraId;
+    }),
+    ...Registry.getVisibleEntityIdsForDomain('person'),
+  ];
+  if (logbookEntityIds.length === 0) return undefined;
+
+  return {
+    sections: [
+      {
+        type: 'grid',
+        cards: [
+          {
+            type: 'heading',
+            heading: localize('security.activity'),
+            heading_style: 'title',
+          },
+          {
+            type: 'logbook',
+            target: { entity_id: logbookEntityIds },
+            hours_to_show: 24,
+            grid_options: { columns: 12 },
+          },
+        ],
+      },
+    ],
+    content_label: localize('security.devices'),
+    sidebar_label: localize('security.activity'),
+  };
 }
 
 // -- View assembly ------------------------------------------------------
@@ -537,7 +598,13 @@ class Simon42ViewSecurityStrategy extends StrategyBaseElement {
   ): Promise<LovelaceViewConfig> {
     // Ensure Registry is initialized (idempotent — no-op if already done)
     Registry.initialize(hass, config.config || {});
-    return { type: 'sections', sections: buildSecuritySections(hass, config.config || {}) };
+    const dashboardConfig = config.config || {};
+    const sidebar = buildSecurityActivitySidebar(hass, dashboardConfig);
+    return {
+      type: 'sections',
+      sections: buildSecuritySections(hass, dashboardConfig),
+      ...(sidebar ? { sidebar } : {}),
+    };
   }
 }
 

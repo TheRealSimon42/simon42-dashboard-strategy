@@ -85,7 +85,9 @@
     "water_leak_inactive": "Water Leak Sensors - Dry",
     "extra_entities": "Smart Appliances & Other",
     "cameras": "Cameras",
-    "no_area": "No area"
+    "no_area": "No area",
+    "activity": "Activity",
+    "devices": "Devices"
   },
   "batteries": {
     "critical": "Critical",
@@ -225,6 +227,8 @@
     "show_cameras_in_security_desc": "Shows the cameras as compact still-image cards in the security view (like the Home Assistant security panel). When the camera view is enabled, the cameras heading links straight to it.",
     "group_security_by_areas": "Group security view by areas",
     "group_security_by_areas_desc": "Groups the security view by areas instead of categories — the area heading links to the corresponding room view.",
+    "show_security_activity": "Show activity log",
+    "show_security_activity_desc": "Shows a 24h logbook of all security entities and persons next to the security view (like the Home Assistant security panel). Renders as its own tab on narrow screens. Requires the logbook integration.",
     "security_extra_entities": "Extra entities in Security view",
     "security_extra_entities_desc": "Pick any extra entities (smart appliances, custom sensors, etc.) to show as tiles at the bottom of the Security view. Useful for ovens, cooktops, irons — anything you want a glance at before leaving the house.",
     "show_climate_summary": "Show climate summary",

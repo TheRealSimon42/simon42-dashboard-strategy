@@ -105,6 +105,9 @@ export interface Simon42StrategyConfig {
   // the CCTV view when show_camera_view is enabled
   group_security_by_areas?: boolean; // default: false — group the security
   // view by areas (heading taps into the room view) instead of categories
+  show_security_activity?: boolean; // default: true — activity sidebar in
+  // the security view (24h logbook over security entities + persons, like
+  // HA's security panel); auto-hides when logbook is not loaded
   hide_mobile_app_batteries?: boolean; // default: false
   hide_battery_notes_entities?: boolean; // default: false
   battery_critical_threshold?: number; // default: 20

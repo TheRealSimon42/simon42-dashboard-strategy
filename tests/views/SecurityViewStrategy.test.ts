@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { buildSecuritySections } from '../../src/views/SecurityViewStrategy';
+import { buildSecuritySections, buildSecurityActivitySidebar } from '../../src/views/SecurityViewStrategy';
 import { Registry } from '../../src/Registry';
 import { makeHass, type HassFixtureSpec } from '../fixtures/hass';
 import type { HomeAssistant } from '../../src/types/homeassistant';
@@ -144,5 +144,49 @@ describe('group_security_by_areas', () => {
     spec.areas?.push({ area_id: 'bad', name: 'Bad' });
     const sections = build(makeHass(spec), { group_security_by_areas: true });
     expect(headings(sections).some((h) => h.heading === 'Bad')).toBe(false);
+  });
+});
+
+describe('activity sidebar', () => {
+  function buildSidebar(spec: HassFixtureSpec, config: Simon42StrategyConfig = {}) {
+    const hass = makeHass(spec);
+    Registry.resetForTesting();
+    Registry.initialize(hass, config);
+    return buildSecurityActivitySidebar(hass, config);
+  }
+
+  it('builds a 24h logbook over security entities and persons', () => {
+    const spec = securitySpec();
+    spec.components = ['logbook'];
+    spec.entities?.push({ entity_id: 'person.simon', state: 'home' });
+    const sidebar = buildSidebar(spec, { show_cameras_in_security: true });
+
+    expect(sidebar).toBeDefined();
+    const logbook = sidebar?.sections?.[0].cards?.find((c) => c.type === 'logbook');
+    expect(logbook?.hours_to_show).toBe(24);
+    const ids = logbook?.target?.entity_id as string[];
+    expect(ids).toContain('lock.haustuer');
+    expect(ids).toContain('binary_sensor.garten_fenster');
+    expect(ids).toContain('person.simon');
+    expect(ids).toContain('camera.garten_sub');
+    expect(ids).not.toContain('camera.garten_main');
+  });
+
+  it('excludes cameras from the logbook when they are not shown', () => {
+    const spec = securitySpec();
+    spec.components = ['logbook'];
+    const sidebar = buildSidebar(spec);
+    const logbook = sidebar?.sections?.[0].cards?.find((c) => c.type === 'logbook');
+    expect(logbook?.target?.entity_id).not.toContain('camera.garten_sub');
+  });
+
+  it('returns undefined without the logbook integration', () => {
+    expect(buildSidebar(securitySpec())).toBeUndefined();
+  });
+
+  it('returns undefined when disabled via show_security_activity', () => {
+    const spec = securitySpec();
+    spec.components = ['logbook'];
+    expect(buildSidebar(spec, { show_security_activity: false })).toBeUndefined();
   });
 });
