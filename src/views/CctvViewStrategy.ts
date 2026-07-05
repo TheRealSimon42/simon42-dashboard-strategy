@@ -28,6 +28,7 @@ import type {
 } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { debugLog } from '../utils/debug';
 import { defineViewStrategy } from './view-strategy-base';
 
 // -- Camera stream preference (Reolink) --------------------------------
@@ -163,9 +164,10 @@ async function browseReolinkCamItems(hass: HomeAssistant): Promise<ReolinkCamIte
     } finally {
       if (timeoutId !== undefined) clearTimeout(timeoutId);
     }
-  } catch {
+  } catch (error: unknown) {
     // Media source unavailable (no SD card, integration still starting,
     // slow camera) — recordings links fall back to the Reolink root.
+    debugLog('Reolink media browse failed', error);
     return [];
   }
 }
