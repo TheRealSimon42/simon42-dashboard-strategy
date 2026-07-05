@@ -18,7 +18,7 @@ import { getVisibleAreas } from '../utils/name-utils';
 import { createPersonBadges } from '../utils/badge-builder';
 import { createOverviewSection, createCustomCardsSection } from '../sections/OverviewSection';
 import { createAreasSection } from '../sections/AreasSection';
-import { createWeatherSection, createEnergySection } from '../sections/WeatherEnergySection';
+import { createWeatherSection, createEnergySection, buildPollenCard } from '../sections/WeatherEnergySection';
 import { createPlantsSection } from '../sections/PlantsSection';
 import { createAgendaSection } from '../sections/AgendaSection';
 import { createTodosSection } from '../sections/TodosSection';
@@ -121,14 +121,15 @@ const SECTION_BUILDER_IMPL: Record<SectionKey, SectionBuilder> = {
       hiddenHeadings.has('areas'),
       hiddenHeadings.has('areas_other')
     ),
-  weather: ({ config, weatherEntity, hiddenHeadings }) =>
+  weather: ({ hass, config, weatherEntity, hiddenHeadings }) =>
     createWeatherSection(
       weatherEntity,
       config.show_weather !== false,
       config.show_weather_forecast_card !== false,
       config.weather_sensors || [],
       config.weather_presentation,
-      hiddenHeadings.has('weather')
+      hiddenHeadings.has('weather'),
+      config.show_pollen_card === true ? buildPollenCard(hass) : null
     ),
   energy: ({ config, hiddenHeadings }) =>
     createEnergySection(

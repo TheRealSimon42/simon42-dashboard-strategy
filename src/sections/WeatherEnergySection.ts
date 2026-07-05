@@ -5,6 +5,7 @@
 // distribution. Each returns a single section or null.
 // ====================================================================
 
+import type { HomeAssistant } from '../types/homeassistant';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import type { WeatherPresentation, WeatherSensorConfig } from '../types/strategy';
 import { localize } from '../utils/localize';
@@ -90,6 +91,82 @@ function buildWeatherSensorRow(sensors: WeatherSensorConfig[]): LovelaceCardConf
   };
 }
 
+// ====================================================================
+// DWD Pollenflug (HACS integration `dwd_pollenflug` by mampfes)
+// ====================================================================
+
+/**
+ * Escape a string for a single-quoted Jinja literal inside the markdown
+ * template ('' is Jinja's quote escape; braces stripped so a poisoned
+ * friendly_name can't open a template expression).
+ */
+function escapeJinjaLiteral(input: string): string {
+  return input.replace(/[{}]/g, '').replace(/'/g, "''");
+}
+
+/**
+ * Derive the allergen display name from a DWD Pollenflug sensor's
+ * friendly name — drop the integration's boilerplate tokens
+ * ("Pollenflug", "Gefahrenindex") and the trailing region number.
+ * "Pollenflug Gefahrenindex Pollenflug Gräser 124" → "Gräser".
+ */
+function pollenDisplayName(friendlyName: string, entityId: string): string {
+  const cleaned = friendlyName
+    .split(/\s+/)
+    .filter(function keepToken(token) {
+      const lower = token.toLowerCase();
+      return lower !== 'pollenflug' && lower !== 'gefahrenindex' && !/^\d+$/.test(token);
+    })
+    .join(' ')
+    .trim();
+  return cleaned || entityId.split('.')[1];
+}
+
+/**
+ * Optional pollen card below the weather card (show_pollen_card).
+ * Discovers the DWD Pollenflug danger-index sensors by platform +
+ * `state_today_desc` attribute — never by entity_id patterns (region
+ * number and naming differ per install). Returns null when the
+ * integration is missing, so the toggle degrades silently.
+ *
+ * The markdown template evaluates in the frontend, so the card stays
+ * live without the strategy re-generating.
+ */
+export function buildPollenCard(hass: HomeAssistant): LovelaceCardConfig | null {
+  const seenNames = new Set<string>();
+  const pairs: string[] = [];
+
+  for (const entity of Object.values(hass.entities)) {
+    if (entity.platform !== 'dwd_pollenflug') continue;
+    if (entity.hidden || entity.entity_category) continue;
+    if (entity.labels?.includes('no_dboard')) continue;
+    if (!ENTITY_ID_RE.test(entity.entity_id)) continue;
+
+    const state = hass.states[entity.entity_id];
+    if (!state || state.attributes?.state_today_desc === undefined) continue;
+
+    const friendly = (state.attributes?.friendly_name as string | undefined) || entity.entity_id;
+    const name = pollenDisplayName(friendly, entity.entity_id);
+    // Multiple DWD regions produce duplicate allergen sets — first wins
+    if (seenNames.has(name)) continue;
+    seenNames.add(name);
+
+    pairs.push(`('${escapeJinjaLiteral(name)}','${entity.entity_id}')`);
+  }
+
+  if (pairs.length === 0) return null;
+
+  const tomorrow = escapeJinjaLiteral(localize('pollen.tomorrow'));
+  const content = `## 🤧 ${localize('pollen.title')}
+{% set a = [${pairs.join(',')}] %}
+{% set ns = namespace(any=false) %}
+{% for name, eid in a %}{% set v = states(eid)|float(0) %}{% if v > 0 %}{% set ns.any = true %}{% set dot = '🔴' if v >= 2.5 else ('🟠' if v >= 1.5 else '🟡') %}
+- {{ dot }} **{{ name }}:** {{ state_attr(eid,'state_today_desc') }} _(${tomorrow}: {{ state_attr(eid,'state_tomorrow_desc') }})_{% endif %}{% endfor %}{% if not ns.any %}
+${localize('pollen.none')}{% endif %}`;
+
+  return { type: 'markdown', content };
+}
+
 /**
  * Map a WeatherPresentation enum value to the corresponding built-in card.
  * Returns null for `none` — caller emits no built-in card and the section
@@ -136,7 +213,8 @@ export function createWeatherSection(
   showForecastCard: boolean = true,
   weatherSensors: WeatherSensorConfig[] = [],
   presentation?: WeatherPresentation,
-  hideHeading: boolean = false
+  hideHeading: boolean = false,
+  pollenCard: LovelaceCardConfig | null = null
 ): LovelaceSectionConfig | null {
   if (!weatherEntity || !showWeather) return null;
 
@@ -158,6 +236,8 @@ export function createWeatherSection(
 
   const card = buildPresentationCard(weatherEntity, resolvedPresentation);
   if (card) cards.push(card);
+
+  if (pollenCard) cards.push(pollenCard);
 
   return { type: 'grid', cards };
 }

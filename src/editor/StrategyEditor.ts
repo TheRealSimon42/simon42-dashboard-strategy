@@ -1265,6 +1265,13 @@ class Simon42DashboardStrategyEditor extends LitElement {
                   </select>
                 </div>
               ` : nothing}
+              ${key === 'weather' && showWeather && this._hasDwdPollenflug() ? html`
+                <div class="section-order-sub" style="flex-wrap: wrap;">
+                  ${this._renderCheckbox('show-pollen-card', localize('editor.show_pollen_card'), this._config.show_pollen_card === true,
+                    (checked) => this._toggleChanged('show_pollen_card', checked, false))}
+                </div>
+                <div class="description" style="margin-left: 26px;">${localize('editor.show_pollen_card_desc')}</div>
+              ` : nothing}
               ${key === 'energy' && showEnergy ? html`
                 <div class="section-order-sub">
                   <input type="checkbox" id="energy-link-dashboard"
@@ -1745,6 +1752,14 @@ class Simon42DashboardStrategyEditor extends LitElement {
       updated.unavailable_batteries_bucket = bucket;
     }
     this._fireConfigChanged(updated);
+  }
+
+  /** DWD Pollenflug (HACS) installed? Gates the pollen card toggle. */
+  private _hasDwdPollenflug(): boolean {
+    if (!this._hass) return false;
+    return Object.values(this._hass.entities).some(function isPollenEntity(entity) {
+      return entity.platform === 'dwd_pollenflug';
+    });
   }
 
   private _securityActivityPositionChanged(atEnd: boolean): void {

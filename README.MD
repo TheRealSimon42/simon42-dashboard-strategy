@@ -472,6 +472,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `weather_entity` | string | auto | v1.4.0 | Explizite Wetter-Entität (Standard: automatische Erkennung) |
 | `weather_presentation` | string | `forecast_daily` | v1.4.0 | Darstellung: `forecast_daily`, `forecast_hourly`, `forecast_twice_daily`, `tile`, `none` |
 | `show_weather_forecast_card` | boolean | `true` | v1.4.0 | Legacy — durch `weather_presentation` abgelöst, wird weiter berücksichtigt |
+| `show_pollen_card` | boolean | `false` | v1.4.0 | DWD-Pollenflug-Karte unter der Wetterkarte (benötigt die HACS-Integration DWD Pollenflug; Toggle erscheint nur, wenn sie installiert ist) |
 | `weather_sensors` | object[] | `[]` | v1.4.0 | Inline Icon+Wert-Zeile oben in der Wetter-Section (siehe oben) |
 | `show_energy` | boolean | `true` | — | Energie-Section |
 | `show_energy_distribution_card` | boolean | `true` | v1.4.0 | Eingebaute `energy-distribution`-Karte. Auf `false` für komplett eigene Energie-Section |

@@ -123,6 +123,11 @@
     "events_animals": "Animals",
     "events_vehicles": "Vehicles"
   },
+  "pollen": {
+    "title": "Pollen count today",
+    "tomorrow": "tomorrow",
+    "none": "No significant pollen load today. 🌿"
+  },
   "room": {
     "cameras": "Cameras",
     "lighting": "Lighting",
@@ -163,6 +168,8 @@
     "no_weather_sensors": "No sensors configured. Use the picker below to add one.",
     "weather_entity": "Weather entity:",
     "weather_entity_auto": "Auto-detect (first available)",
+    "show_pollen_card": "Show pollen card (DWD)",
+    "show_pollen_card_desc": "Shows the current pollen load (today + tomorrow) below the weather card. Uses the DWD Pollenflug integration from HACS.",
     "hide_section_headings": "Hide section headings",
     "hide_section_headings_desc": "Hides individual section headings on the overview. Useful for compact mobile layouts where the headings add visual noise.",
     "heading_label_overview": "Hide \"Overview\" heading",

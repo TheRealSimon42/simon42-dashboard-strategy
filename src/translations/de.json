@@ -123,6 +123,11 @@
     "events_animals": "Tiere",
     "events_vehicles": "Fahrzeuge"
   },
+  "pollen": {
+    "title": "Pollenflug heute",
+    "tomorrow": "morgen",
+    "none": "Keine nennenswerte Belastung heute. 🌿"
+  },
   "room": {
     "cameras": "Kameras",
     "lighting": "Beleuchtung",
@@ -163,6 +168,8 @@
     "no_weather_sensors": "Keine Sensoren konfiguriert. Suche unten, um einen hinzuzufügen.",
     "weather_entity": "Wetter-Entität:",
     "weather_entity_auto": "Automatisch (erste verfügbare)",
+    "show_pollen_card": "Pollenflug-Karte (DWD) anzeigen",
+    "show_pollen_card_desc": "Zeigt die aktuelle Pollenbelastung (heute + morgen) unterhalb der Wetterkarte. Nutzt die DWD-Pollenflug-Integration aus HACS.",
     "hide_section_headings": "Abschnitts-Überschriften ausblenden",
     "hide_section_headings_desc": "Blendet einzelne Überschriften in der Übersicht aus. Praktisch für kompakte Mobil-Layouts, bei denen Überschriften überflüssig wirken.",
     "heading_label_overview": "Überschrift „Übersicht“ ausblenden",

@@ -59,6 +59,10 @@ export interface Simon42StrategyConfig {
   // Picks which built-in weather card the section renders. Use 'none' to omit
   // the built-in card and supply your own via custom_cards target=weather
   // (e.g. clock-weather-card, mini-weather, custom radar widget).
+  show_pollen_card?: boolean; // default: false — DWD Pollenflug card below
+  // the weather card (requires the HACS `dwd_pollenflug` integration;
+  // sensors discovered by platform + state_today_desc attribute, editor
+  // only offers the toggle when the integration is present)
   weather_sensors?: WeatherSensorConfig[]; // optional inline icon+value row
   // rendered at the top of the weather section. Useful for displaying local
   // outdoor sensors (temperature, humidity, wind, pressure...) alongside or
