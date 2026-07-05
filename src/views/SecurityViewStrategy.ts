@@ -347,9 +347,6 @@ export function buildSecuritySections(
   const { locks, doors, motorizedWindows, garages, windows, smokeGas, waterLeak } = entities;
   const sections: LovelaceSectionConfig[] = [];
 
-  // Cameras (lean cards; the rich blocks live in the CCTV view)
-  const camerasSection = buildCamerasSection(cameraBlocks, cameraViewEnabled);
-  if (camerasSection) sections.push(camerasSection);
 
   // Locks
   if (locks.length > 0) {
@@ -605,6 +602,12 @@ export function buildSecuritySections(
   }
 
     // Extra entities + optional activity section (both modes, trailing)
+    // Cameras after the device categories (lean cards; the rich blocks
+    // live in the CCTV view). The area-grouped mode keeps cameras leading
+    // each area block instead.
+    const camerasSection = buildCamerasSection(cameraBlocks, cameraViewEnabled);
+    if (camerasSection) sections.push(camerasSection);
+
     return appendTrailingSections(sections);
 }
 

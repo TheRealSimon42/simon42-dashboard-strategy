@@ -87,13 +87,23 @@ describe('cameras in security view', () => {
     expect(cameraHeading?.tap_action).toEqual({ action: 'navigate', navigation_path: 'cameras' });
   });
 
-  it('keeps the category sections intact alongside cameras', () => {
+  it('keeps the category sections intact and renders cameras after them', () => {
     const sections = build(makeHass(securitySpec()), { show_cameras_in_security: true });
     const lockTiles = allCards(sections).filter(
       (c) => c.type === 'tile' && c.entity === 'lock.haustuer'
     );
     expect(lockTiles).toHaveLength(1);
     expect(lockTiles[0].features).toEqual([{ type: 'lock-commands' }]);
+
+    // Cameras come last in category mode (Simon's call — HA-like glance
+    // stays, but the actionable device categories lead)
+    const cameraSectionIndex = sections.findIndex((s) =>
+      (s.cards || []).some((c) => c.type === 'picture-entity')
+    );
+    const lockSectionIndex = sections.findIndex((s) =>
+      (s.cards || []).some((c) => c.entity === 'lock.haustuer')
+    );
+    expect(cameraSectionIndex).toBeGreaterThan(lockSectionIndex);
   });
 });
 
