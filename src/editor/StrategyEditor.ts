@@ -1639,7 +1639,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
             (checked) => this._toggleChanged('show_cameras_in_security', checked, false))}
           <div class="description">${localize('editor.show_cameras_in_security_desc')}</div>
 
-          ${this._config.show_cameras_in_security === true ? this._renderSecurityCamerasPicker() : nothing}
+          ${this._config.show_cameras_in_security === true ? this._renderHiddenCamerasPicker() : nothing}
 
           ${this._renderCheckbox('group-security-by-areas', localize('editor.group_security_by_areas'), this._config.group_security_by_areas === true,
             (checked) => this._toggleChanged('group_security_by_areas', checked, false))}
@@ -1678,6 +1678,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
           ${this._renderCheckbox('show-camera-events', localize('editor.show_camera_events'), this._config.show_camera_events === true,
             (checked) => this._toggleChanged('show_camera_events', checked, false))}
           <div class="description">${localize('editor.show_camera_events_desc')}</div>
+
+          ${this._config.show_camera_view === true && this._config.show_cameras_in_security !== true
+            ? this._renderHiddenCamerasPicker()
+            : nothing}
         </div>
 
         ${this._renderCheckbox('show-battery-summary', localize('editor.show_battery_summary'), showBatterySummary,
@@ -1762,22 +1766,22 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this._fireConfigChanged(updated);
   }
 
-  private _securityCameraHiddenChanged(entityId: string, visible: boolean): void {
-    const hidden = new Set(this._config.security_hidden_cameras || []);
+  private _cameraHiddenChanged(entityId: string, visible: boolean): void {
+    const hidden = new Set(this._config.hidden_cameras || []);
     if (visible) hidden.delete(entityId);
     else hidden.add(entityId);
     const updated: Simon42StrategyConfig = { ...this._config };
     if (hidden.size === 0) {
-      delete updated.security_hidden_cameras;
+      delete updated.hidden_cameras;
     } else {
-      updated.security_hidden_cameras = [...hidden].sort();
+      updated.hidden_cameras = [...hidden].sort();
     }
     this._config = updated;
     this._fireConfigChanged(updated);
   }
 
   /** Per-camera visibility for the security view (security-only exclusion). */
-  private _renderSecurityCamerasPicker(): TemplateResult {
+  private _renderHiddenCamerasPicker(): TemplateResult {
     if (!this._hass) return html``;
     // Same dedup as the views (one camera per device, preferred stream);
     // Registry is initialized by the dashboard render, this is a no-op.
@@ -1785,7 +1789,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const blocks = collectCameraBlocks(this._hass);
     if (blocks.length === 0) return html``;
 
-    const hidden = new Set(this._config.security_hidden_cameras || []);
+    const hidden = new Set(this._config.hidden_cameras || []);
     return html`
       <div style="margin-left: 26px; margin-bottom: 8px;">
         <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
@@ -1802,7 +1806,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
             `security-camera-${block.cameraId}`,
             name,
             !hidden.has(block.cameraId),
-            (checked) => this._securityCameraHiddenChanged(block.cameraId, checked)
+            (checked) => this._cameraHiddenChanged(block.cameraId, checked)
           );
         })}
       </div>

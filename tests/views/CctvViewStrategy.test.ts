@@ -248,7 +248,7 @@ describe('recordings deep link', () => {
       return Promise.reject(new Error('media source not ready'));
     });
 
-    const sections = await buildCctvSections(hass, false);
+    const sections = await buildCctvSections(hass, {});
     const shortcuts = findCards(sections[0].cards, 'shortcut');
     const recordings = shortcuts.find(function isNavigate(card) {
       return card.tap_action?.action === 'navigate';
@@ -295,7 +295,7 @@ describe('buildCctvSections', () => {
     const hass = makeHass({ entities: [{ entity_id: 'light.flur' }] });
     initRegistry(hass);
 
-    const sections = await buildCctvSections(hass, false);
+    const sections = await buildCctvSections(hass, {});
     expect(sections).toHaveLength(1);
     expect(sections[0].cards?.[0].type).toBe('markdown');
   });
@@ -307,7 +307,7 @@ describe('buildCctvSections', () => {
       return Promise.resolve({ children: [camChild('entry_a', '0', 'Garten Kamera')] });
     });
 
-    const sections = await buildCctvSections(hass, false);
+    const sections = await buildCctvSections(hass, {});
     const shortcuts = findCards(sections[0].cards, 'shortcut');
     const recordings = shortcuts.find(function isNavigate(card) {
       return card.tap_action?.action === 'navigate';
@@ -315,6 +315,19 @@ describe('buildCctvSections', () => {
     expect(recordings?.tap_action?.navigation_path).toBe(
       `${ROOT_PATH}/${encodeURIComponent('playlist,media-source://reolink/CAM|entry_a|0')}`
     );
+  });
+
+  it('hides cameras listed in hidden_cameras (shared with the security view)', async () => {
+    const hass = makeHass(reolinkSpec());
+    initRegistry(hass);
+    withCallWS(hass, function browse() {
+      return Promise.resolve({ children: [] });
+    });
+
+    const sections = await buildCctvSections(hass, { hidden_cameras: ['camera.garten_sub'] });
+    // The only camera is hidden → the view falls back to the empty hint
+    expect(sections).toHaveLength(1);
+    expect(sections[0].cards?.[0].type).toBe('markdown');
   });
 
   it('appends LLM Vision timelines only when show_camera_events is on', async () => {
@@ -329,12 +342,12 @@ describe('buildCctvSections', () => {
       { type: 'llmvision-card' },
     ];
 
-    const withoutFlag = await buildCctvSections(hass, false);
+    const withoutFlag = await buildCctvSections(hass, {});
     expect(
       findCards(withoutFlag[withoutFlag.length - 1].cards, 'custom:llmvision-card')
     ).toHaveLength(0);
 
-    const withFlag = await buildCctvSections(hass, true);
+    const withFlag = await buildCctvSections(hass, { show_camera_events: true });
     expect(
       findCards(withFlag[withFlag.length - 1].cards, 'custom:llmvision-card')
     ).toHaveLength(3);

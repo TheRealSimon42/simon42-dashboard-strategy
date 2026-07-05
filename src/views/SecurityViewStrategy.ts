@@ -253,15 +253,15 @@ function buildAreaGroupedSections(
 
 /**
  * Camera blocks for the security view: the shared device dedup MINUS the
- * security-only exclusion list (security_hidden_cameras). Room and CCTV
- * views are deliberately unaffected by that list.
+ * hidden_cameras exclusion list (shared with the CCTV view — only room
+ * views keep showing those cameras).
  */
 function securityCameraBlocks(
   hass: HomeAssistant,
   dashboardConfig: Simon42StrategyConfig
 ): CameraBlock[] {
   if (dashboardConfig.show_cameras_in_security !== true) return [];
-  const hidden = new Set(dashboardConfig.security_hidden_cameras || []);
+  const hidden = new Set(dashboardConfig.hidden_cameras || []);
   return collectCameraBlocks(hass).filter(function notHidden(block) {
     return !hidden.has(block.cameraId);
   });

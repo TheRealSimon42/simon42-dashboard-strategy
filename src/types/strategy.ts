@@ -112,9 +112,10 @@ export interface Simon42StrategyConfig {
   // a normal section at the end so regular sections can use the full
   // width; 'sidebar' pins the log to the right edge instead (own tab on
   // narrow screens, HA-style) but reserves that column
-  security_hidden_cameras?: string[]; // default: [] — camera entity_ids
-  // excluded from the SECURITY view only (room/CCTV views unaffected);
-  // for hiding everywhere use the no_dboard label or the per-area filter
+  hidden_cameras?: string[]; // default: [] — camera entity_ids excluded
+  // from the security AND camera (CCTV) views; room views deliberately
+  // unaffected. For hiding everywhere use the no_dboard label or the
+  // per-area camera filter
   hide_mobile_app_batteries?: boolean; // default: false
   hide_battery_notes_entities?: boolean; // default: false
   battery_critical_threshold?: number; // default: 20

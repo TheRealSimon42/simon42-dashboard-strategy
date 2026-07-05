@@ -211,13 +211,13 @@ describe('activity sidebar', () => {
   });
 });
 
-describe('security_hidden_cameras', () => {
+describe('hidden_cameras', () => {
   it('hides excluded cameras from the security view and its logbook only', () => {
     const spec = securitySpec();
     spec.components = ['logbook'];
     const config: Simon42StrategyConfig = {
       show_cameras_in_security: true,
-      security_hidden_cameras: ['camera.garten_sub'],
+      hidden_cameras: ['camera.garten_sub'],
       security_activity_layout: 'sidebar',
     };
 
