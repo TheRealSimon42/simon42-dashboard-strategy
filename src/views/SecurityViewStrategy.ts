@@ -4,18 +4,14 @@
 
 import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import type { Simon42StrategyConfig } from '../types/strategy';
-import type {
-  LovelaceViewConfig,
-  LovelaceCardConfig,
-  LovelaceSectionConfig,
-  LovelaceViewSidebarConfig,
-} from '../types/lovelace';
+import type { LovelaceViewConfig, LovelaceCardConfig, LovelaceSectionConfig, LovelaceViewSidebarConfig } from '../types/lovelace';
+import type { FloorRegistryEntry } from '../types/registries';
+import type { CameraBlock } from './CctvViewStrategy';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
-import type { FloorRegistryEntry } from '../types/registries';
 import { getVisibleAreasFromHass } from '../utils/name-utils';
-import { collectCameraBlocks, cameraBlockAreaId, leanCameraCard, type CameraBlock } from './CctvViewStrategy';
+import { collectCameraBlocks, cameraBlockAreaId, leanCameraCard } from './CctvViewStrategy';
 import { defineViewStrategy } from './view-strategy-base';
 
 /** Reflect.get keeps dynamic state lookups off the object-injection radar. */

@@ -127,44 +127,46 @@ export function resetReolinkMediaCacheForTesting(): void {
 }
 
 async function browseReolinkCamItems(hass: HomeAssistant): Promise<ReolinkCamItem[]> {
-  // Cleared in finally — otherwise the loser of the race would reject
-  // AFTER the browse succeeded and surface as an unhandled rejection.
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
-    const timeout = new Promise<never>(function timeoutExecutor(_resolve, reject) {
-      timeoutId = setTimeout(function onBrowseTimeout() {
-        reject(new Error('media browse timeout'));
-      }, BROWSE_TIMEOUT_MS);
-    });
-    const result = await Promise.race([
-      hass.callWS<{ children?: BrowseMediaChild[] }>({
-        type: 'media_source/browse_media',
-        media_content_id: REOLINK_MEDIA_ROOT,
-      }),
-      timeout,
-    ]);
-
-    const items: ReolinkCamItem[] = [];
-    for (const child of result.children || []) {
-      const id = child.media_content_id || '';
-      if (!id.startsWith(`${REOLINK_MEDIA_ROOT}/`)) continue;
-      // Identifier scheme: CAM|<config_entry_id>|<channel>
-      const parts = id.substring(REOLINK_MEDIA_ROOT.length + 1).split('|');
-      if (parts.length < 3 || parts[0] !== 'CAM') continue;
-      items.push({
-        entryId: parts[1],
-        title: child.title || '',
-        mediaContentId: id,
-        mediaContentType: child.media_content_type || 'playlist',
+    // Cleared in finally — otherwise the loser of the race would reject
+    // AFTER the browse succeeded and surface as an unhandled rejection.
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const timeout = new Promise<never>(function timeoutExecutor(_resolve, reject) {
+        timeoutId = setTimeout(function onBrowseTimeout() {
+          reject(new Error('media browse timeout'));
+        }, BROWSE_TIMEOUT_MS);
       });
+      const result = await Promise.race([
+        hass.callWS<{ children?: BrowseMediaChild[] }>({
+          type: 'media_source/browse_media',
+          media_content_id: REOLINK_MEDIA_ROOT,
+        }),
+        timeout,
+      ]);
+
+      const items: ReolinkCamItem[] = [];
+      for (const child of result.children || []) {
+        const id = child.media_content_id || '';
+        if (!id.startsWith(`${REOLINK_MEDIA_ROOT}/`)) continue;
+        // Identifier scheme: CAM|<config_entry_id>|<channel>
+        const parts = id.substring(REOLINK_MEDIA_ROOT.length + 1).split('|');
+        if (parts.length < 3 || parts[0] !== 'CAM') continue;
+        items.push({
+          entryId: parts[1],
+          title: child.title || '',
+          mediaContentId: id,
+          mediaContentType: child.media_content_type || 'playlist',
+        });
+      }
+      return items;
+    } finally {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
     }
-    return items;
   } catch {
     // Media source unavailable (no SD card, integration still starting,
     // slow camera) — recordings links fall back to the Reolink root.
     return [];
-  } finally {
-    if (timeoutId !== undefined) clearTimeout(timeoutId);
   }
 }
 
