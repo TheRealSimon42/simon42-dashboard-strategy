@@ -140,6 +140,7 @@ export interface Simon42StrategyConfig {
   show_alerts_on_areas?: boolean; // default: false
   show_window_alerts_on_areas?: boolean; // default: false
   energy_link_dashboard?: boolean; // default: true
+  hide_unavailable_entities?: boolean; // default: false
   /**
    * Per-section conditional visibility. Keyed by SectionKey. When set, the
    * section is only rendered when hass.states[entity].state === state.

@@ -109,4 +109,24 @@ describe('createOverviewSection', () => {
     });
     expect(section).toMatchSnapshot();
   });
+
+  it('passes hide_unavailable_entities through to summary cards', () => {
+    const hass = makeHass({});
+    Registry.initialize(hass, {});
+    const section = createOverviewSection({
+      someSensorId: 'sensor.dummy',
+      showSearchCard: false,
+      config: { hide_unavailable_entities: true },
+      hass,
+    });
+
+    const summaryRow = section?.cards?.find((card) => card.type === 'horizontal-stack') as
+      | { cards?: Array<Record<string, unknown>> }
+      | undefined;
+
+    expect(summaryRow?.cards?.[0]).toMatchObject({
+      type: 'custom:simon42-summary-card',
+      hide_unavailable_entities: true,
+    });
+  });
 });

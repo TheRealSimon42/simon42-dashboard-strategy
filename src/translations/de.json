@@ -210,6 +210,8 @@
     "show_search_card": "Such-Karte anzeigen",
     "show_search_card_desc": "Zeigt die custom:search-card direkt unter der Uhr in der Übersicht an.",
     "show_search_card_missing": "Benötigt <strong>custom:search-card</strong> und <strong>card-tools</strong>. Bitte installieren Sie beide Komponenten — oder wechseln Sie unten zur Variante <em>Nativer Hinweis</em> (ohne zusätzliche Komponenten).",
+    "hide_unavailable_entities": "Nicht verfügbare Entitäten ausblenden",
+    "hide_unavailable_entities_desc": "Blendet Karten und Badges mit Status `unavailable` oder `unknown` dynamisch aus. Leere generierte Sections verschwinden automatisch, bis wieder mindestens eine referenzierte Entität verfügbar ist.",
     "show_person_badges": "Personen-Badges im Header anzeigen",
     "show_person_badges_desc": "Automatisch erzeugte Personen-Chips erscheinen standardmäßig im Übersicht-Header. Deaktivieren, wenn du eigene Personen-Badges über Eigene Badges einbindest.",
     "search_card_variant": "Such-Karten-Variante",

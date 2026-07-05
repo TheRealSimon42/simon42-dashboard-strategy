@@ -8,6 +8,7 @@ import { Registry } from '../Registry';
 import { trackHassUpdate, debugLog, timeStart, timeEnd } from '../utils/debug';
 import { localize } from '../utils/localize';
 import { getBatteryEntities, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
+import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 
 type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate';
 
@@ -16,6 +17,7 @@ interface SummaryCardConfig {
   hide_mobile_app_batteries?: boolean;
   hide_battery_notes_entities?: boolean;
   battery_critical_threshold?: number;
+  hide_unavailable_entities?: boolean;
 }
 
 interface DisplayConfig {
@@ -207,12 +209,14 @@ class Simon42SummaryCard extends LitElement {
     switch (this._config.summary_type) {
       case 'lights':
         for (const id of this._relevantEntityIds) {
+          if (!isEntityCurrentlyAvailable(hass, id, this._config)) continue;
           if (hass.states[id]?.state === 'on') count++;
         }
         return count;
 
       case 'covers':
         for (const id of this._relevantEntityIds) {
+          if (!isEntityCurrentlyAvailable(hass, id, this._config)) continue;
           const s = hass.states[id]?.state;
           if (s === 'open' || s === 'opening') count++;
         }
@@ -220,6 +224,7 @@ class Simon42SummaryCard extends LitElement {
 
       case 'security':
         for (const id of this._relevantEntityIds) {
+          if (!isEntityCurrentlyAvailable(hass, id, this._config)) continue;
           const state = hass.states[id];
           if (!state) continue;
           if (id.startsWith('lock.') && state.state === 'unlocked') count++;
@@ -235,19 +240,27 @@ class Simon42SummaryCard extends LitElement {
           if (!state) continue;
           if (id.startsWith('binary_sensor.')) {
             if (state.state === 'on') count++;
-          } else {
-            const unit = state.attributes?.unit_of_measurement;
-            if (unit && unit !== '%') continue;
-            const value = parseFloat(state.state);
-            const isUnavailable = state.state === 'unavailable' || state.state === 'unknown';
-            if (isUnavailable || (!isNaN(value) && value < critThreshold)) count++;
+            continue;
           }
+
+          const unit = state.attributes?.unit_of_measurement;
+          if (unit && unit !== '%') continue;
+
+          const isUnavailable = state.state === 'unavailable' || state.state === 'unknown';
+          if (isUnavailable) {
+            if (!this._config.hide_unavailable_entities) count++;
+            continue;
+          }
+
+          const value = parseFloat(state.state);
+          if (!isNaN(value) && value < critThreshold) count++;
         }
         return count;
       }
 
       case 'climate':
         for (const id of this._relevantEntityIds) {
+          if (!isEntityCurrentlyAvailable(hass, id, this._config)) continue;
           const s = hass.states[id]?.state;
           if (s && s !== 'off' && s !== 'unavailable' && s !== 'unknown') count++;
         }

@@ -9,6 +9,7 @@ import { Registry } from '../Registry';
 import { trackHassUpdate } from '../utils/debug';
 import { localize } from '../utils/localize';
 import { stripAreaName } from '../utils/name-utils';
+import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 
 declare global {
   interface Window {
@@ -202,6 +203,7 @@ class Simon42LightsGroupCard extends LitElement {
 
     const relevant: string[] = [];
     for (const id of sourceIds) {
+      if (!isEntityCurrentlyAvailable(this.hass, id, this._config.config)) continue;
       const state = this._getState(id);
       if (state && state.state === targetState) relevant.push(id);
     }

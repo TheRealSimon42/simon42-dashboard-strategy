@@ -210,6 +210,8 @@
     "show_search_card": "Show search card",
     "show_search_card_desc": "Shows the custom:search-card directly below the clock on the overview.",
     "show_search_card_missing": "Requires <strong>custom:search-card</strong> and <strong>card-tools</strong>. Please install both components, or switch the variant below to <em>Native tip</em> (no extra components needed).",
+    "hide_unavailable_entities": "Hide unavailable entities",
+    "hide_unavailable_entities_desc": "Dynamically hides cards and badges whose entity state is `unavailable` or `unknown`. Empty generated sections disappear automatically until at least one referenced entity becomes available again.",
     "show_person_badges": "Show person badges in the header",
     "show_person_badges_desc": "Auto-generated person chips appear in the overview header by default. Disable when you supply your own person badges via Custom Badges.",
     "search_card_variant": "Search card variant",
