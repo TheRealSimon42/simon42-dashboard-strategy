@@ -1633,6 +1633,14 @@ class Simon42DashboardStrategyEditor extends LitElement {
           (checked) => this._toggleChanged('show_security_summary', checked, true))}
 
         <div style="margin-left: 26px; margin-bottom: 8px;">
+          ${this._renderCheckbox('show-cameras-in-security', localize('editor.show_cameras_in_security'), this._config.show_cameras_in_security === true,
+            (checked) => this._toggleChanged('show_cameras_in_security', checked, false))}
+          <div class="description">${localize('editor.show_cameras_in_security_desc')}</div>
+
+          ${this._renderCheckbox('group-security-by-areas', localize('editor.group_security_by_areas'), this._config.group_security_by_areas === true,
+            (checked) => this._toggleChanged('group_security_by_areas', checked, false))}
+          <div class="description">${localize('editor.group_security_by_areas_desc')}</div>
+
           ${this._renderSecurityExtraEntitiesPicker()}
         </div>
 

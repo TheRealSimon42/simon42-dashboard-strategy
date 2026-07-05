@@ -28,6 +28,7 @@ import type {
 } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { StrategyBaseElement } from './view-strategy-base';
 
 // -- Camera stream preference (Reolink) --------------------------------
 // Reolink exposes several camera entities per device (sub/main streams,
@@ -414,6 +415,23 @@ function isAqaraDevice(deviceId: string | null): boolean {
 }
 
 /**
+ * Lean camera card à la HA security panel: still image, no name/state,
+ * half width. Used by the security view — the rich block with PTZ and
+ * recordings stays exclusive to the CCTV view. Exported for reuse.
+ */
+export function leanCameraCard(block: CameraBlock): LovelaceCardConfig {
+  return {
+    type: 'picture-entity',
+    entity: block.cameraId,
+    camera_image: block.cameraId,
+    camera_view: isAqaraDevice(block.deviceId) ? 'live' : 'auto',
+    show_state: false,
+    show_name: false,
+    grid_options: { columns: 6, rows: 2 },
+  };
+}
+
+/**
  * Build the section for one camera block. `recordingsPath` is the media
  * browser deep link (null = no recordings link). Exported for tests.
  */
@@ -584,12 +602,6 @@ export async function buildCctvSections(
 
   return sections;
 }
-
-// HTMLElement is absent in the vitest node environment — fall back to a
-// plain class so the pure builders above stay importable from tests.
-const StrategyBaseElement = (
-  typeof HTMLElement !== 'undefined' ? HTMLElement : class {}
-) as typeof HTMLElement;
 
 class Simon42ViewCctvStrategy extends StrategyBaseElement {
   static async generate(

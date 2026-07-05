@@ -268,7 +268,9 @@ strategy:
 
 **Kameras in Räumen** *(ab v1.4.0)* — Kamera-Streams in den Raum-Views sind standardmäßig an und können per Toggle deaktiviert werden.
 
-**Kamera-Ansicht (CCTV)** *(ab v1.4.0)* — Eine eigene Ansicht (`/cameras`, opt-in via `show_camera_view`) mit einem Block pro Kamera-**Gerät**:
+**Kameras in der Sicherheits-Ansicht** *(ab v1.4.0)* — Mit `show_cameras_in_security` erscheinen die Kameras als kompakte Standbild-Karten in der Sicherheits-Ansicht — dem Vorbild von Home Assistants Security-Panel folgend (dort gehören Kameras zu Alarm, Schlössern und Kontakten). Mit `group_security_by_areas` lässt sich die Sicherheits-Ansicht alternativ **nach Bereichen** gliedern statt nach Kategorien: pro Bereich eine Section, die Überschrift führt per Tap in die jeweilige Raum-Ansicht. Einzelne Kameras blendet man wie gewohnt aus (Label `no-dboard` oder die Kamera-Gruppe im Bereichs-Editor — wirkt überall).
+
+**Kamera-Ansicht (CCTV)** *(ab v1.4.0, **experimentell** — Details können sich noch ändern)* — Eine eigene Ansicht (`/cameras`, opt-in via `show_camera_view`) mit einem Block pro Kamera-**Gerät**:
 
 - **Kamerabild** — bei mehreren Streams pro Gerät (Reolink: Klar-/Standardauflösung) wird automatisch die Standardauflösung gewählt (bandbreitenschonend). Kein Live-Zwang: Standbilder mit Klick für Live-Stream.
 - **Scheinwerfer** — hat das Kamera-Gerät ein Licht, erscheint darunter eine Kachel (mit Helligkeitsregler, wenn unterstützt).
@@ -441,10 +443,12 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_covers_summary` | boolean | `true` | — | Rollo-Zusammenfassung |
 | `show_partially_open_covers` | boolean | `false` | — | Teiloffene Rollos separat anzeigen |
 | `show_security_summary` | boolean | `true` | — | Sicherheits-Zusammenfassung |
+| `show_cameras_in_security` | boolean | `false` | v1.4.0 | Kameras als kompakte Karten in der Sicherheits-Ansicht (Überschrift verlinkt zur Kamera-Ansicht, falls aktiviert) |
+| `group_security_by_areas` | boolean | `false` | v1.4.0 | Sicherheits-Ansicht nach Bereichen statt Kategorien gliedern (Überschrift führt in die Raum-Ansicht) |
 | `show_climate_summary` | boolean | `false` | — | Klima-Zusammenfassung |
 | `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
 | `show_battery_view` | boolean | `false` | v1.4.0 | Batterie-Unterseite (/batteries) auch ohne Batterie-Zusammenfassung bereitstellen |
-| `show_camera_view` | boolean | `false` | v1.4.0 | Kamera-Ansicht (/cameras) mit Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (siehe unten) |
+| `show_camera_view` | boolean | `false` | v1.4.0 | **Experimentell:** Kamera-Ansicht (/cameras) mit Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (siehe unten) |
 | `show_camera_events` | boolean | `false` | v1.4.0 | LLM Vision Ereignis-Timelines in der Kamera-Ansicht (Last-Hinweis siehe unten) |
 | `summaries_columns` | 2 \| 4 | `2` | — | Spalten-Layout der Zusammenfassungen |
 | `favorite_entities` | string[] | `[]` | — | Favoriten-Entitäten auf der Übersicht |

@@ -100,6 +100,11 @@ export interface Simon42StrategyConfig {
   // the CCTV view. Deliberately opt-in even when LLM Vision is installed:
   // the llmvision-card re-fetches its events API on EVERY hass update
   // (no debounce) — three timelines can hammer HA on busy systems
+  show_cameras_in_security?: boolean; // default: false — lean camera cards
+  // in the security view (à la HA's security panel); the heading links to
+  // the CCTV view when show_camera_view is enabled
+  group_security_by_areas?: boolean; // default: false — group the security
+  // view by areas (heading taps into the room view) instead of categories
   hide_mobile_app_batteries?: boolean; // default: false
   hide_battery_notes_entities?: boolean; // default: false
   battery_critical_threshold?: number; // default: 20
