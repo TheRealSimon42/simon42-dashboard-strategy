@@ -189,4 +189,37 @@ describe('activity sidebar', () => {
     spec.components = ['logbook'];
     expect(buildSidebar(spec, { show_security_activity: false })).toBeUndefined();
   });
+
+  it('renders as trailing section instead of sidebar with layout=section', () => {
+    const spec = securitySpec();
+    spec.components = ['logbook'];
+    const config: Simon42StrategyConfig = { security_activity_layout: 'section' };
+
+    expect(buildSidebar(spec, config)).toBeUndefined();
+
+    const sections = build(makeHass(spec), config);
+    const lastSection = sections[sections.length - 1];
+    expect((lastSection.cards || []).some((c) => c.type === 'logbook')).toBe(true);
+  });
+});
+
+describe('security_hidden_cameras', () => {
+  it('hides excluded cameras from the security view and its logbook only', () => {
+    const spec = securitySpec();
+    spec.components = ['logbook'];
+    const config: Simon42StrategyConfig = {
+      show_cameras_in_security: true,
+      security_hidden_cameras: ['camera.garten_sub'],
+    };
+
+    const sections = build(makeHass(spec), config);
+    expect(allCards(sections).some((c) => c.type === 'picture-entity')).toBe(false);
+
+    const hass = makeHass(spec);
+    Registry.resetForTesting();
+    Registry.initialize(hass, config);
+    const sidebar = buildSecurityActivitySidebar(hass, config);
+    const logbook = sidebar?.sections?.[0].cards?.find((c) => c.type === 'logbook');
+    expect(logbook?.target?.entity_id).not.toContain('camera.garten_sub');
+  });
 });

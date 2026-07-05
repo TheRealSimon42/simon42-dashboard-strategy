@@ -268,7 +268,7 @@ strategy:
 
 **Kameras in Räumen** *(ab v1.4.0)* — Kamera-Streams in den Raum-Views sind standardmäßig an und können per Toggle deaktiviert werden.
 
-**Aktivitäts-Verlauf in der Sicherheits-Ansicht** *(ab v1.4.0)* — Wie im Home Assistant Security-Panel zeigt eine Seitenleiste ein 24-Stunden-Logbuch über alle Sicherheits-Entitäten und Personen (auf schmalen Bildschirmen als eigener Tab „Aktivität"). Standardmäßig an; entfällt automatisch, wenn die Logbuch-Integration nicht geladen ist, und lässt sich per `show_security_activity: false` abschalten.
+**Aktivitäts-Verlauf in der Sicherheits-Ansicht** *(ab v1.4.0)* — Wie im Home Assistant Security-Panel zeigt ein 24-Stunden-Logbuch die Aktivität aller Sicherheits-Entitäten und Personen. Darstellung wählbar: als **Seitenleiste** rechts (Standard, eigener Tab auf schmalen Bildschirmen — belegt dafür die rechte Spalte) oder als **normale Section** am Ende, damit die übrigen Sections die volle Breite nutzen (`security_activity_layout`). Standardmäßig an; entfällt automatisch, wenn die Logbuch-Integration nicht geladen ist, und lässt sich per `show_security_activity: false` abschalten. Einzelne Kameras lassen sich zusätzlich **nur für die Sicherheits-Ansicht** abwählen (`security_hidden_cameras`, Checkboxen im Editor) — Raum- und Kamera-Ansicht bleiben davon unberührt.
 
 **Kameras in der Sicherheits-Ansicht** *(ab v1.4.0)* — Mit `show_cameras_in_security` erscheinen die Kameras als kompakte Standbild-Karten in der Sicherheits-Ansicht — dem Vorbild von Home Assistants Security-Panel folgend (dort gehören Kameras zu Alarm, Schlössern und Kontakten). Mit `group_security_by_areas` lässt sich die Sicherheits-Ansicht alternativ **nach Bereichen** gliedern statt nach Kategorien: pro Bereich eine Section, die Überschrift führt per Tap in die jeweilige Raum-Ansicht. Einzelne Kameras blendet man wie gewohnt aus (Label `no-dboard` oder die Kamera-Gruppe im Bereichs-Editor — wirkt überall).
 
@@ -447,7 +447,9 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_security_summary` | boolean | `true` | — | Sicherheits-Zusammenfassung |
 | `show_cameras_in_security` | boolean | `false` | v1.4.0 | Kameras als kompakte Karten in der Sicherheits-Ansicht (Überschrift verlinkt zur Kamera-Ansicht, falls aktiviert) |
 | `group_security_by_areas` | boolean | `false` | v1.4.0 | Sicherheits-Ansicht nach Bereichen statt Kategorien gliedern (Überschrift führt in die Raum-Ansicht) |
-| `show_security_activity` | boolean | `true` | v1.4.0 | Aktivitäts-Verlauf (24h-Logbuch) neben der Sicherheits-Ansicht; entfällt automatisch ohne Logbuch-Integration |
+| `show_security_activity` | boolean | `true` | v1.4.0 | Aktivitäts-Verlauf (24h-Logbuch) in der Sicherheits-Ansicht; entfällt automatisch ohne Logbuch-Integration |
+| `security_activity_layout` | `sidebar` \| `section` | `sidebar` | v1.4.0 | Aktivitäts-Verlauf rechts angepinnt (Seitenleiste) oder als normale Section am Ende |
+| `security_hidden_cameras` | string[] | `[]` | v1.4.0 | Kameras nur aus der Sicherheits-Ansicht ausblenden (Checkboxen im Editor; Raum-/Kamera-Ansicht unberührt) |
 | `show_climate_summary` | boolean | `false` | — | Klima-Zusammenfassung |
 | `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
 | `show_battery_view` | boolean | `false` | v1.4.0 | Batterie-Unterseite (/batteries) auch ohne Batterie-Zusammenfassung bereitstellen |

@@ -29,6 +29,8 @@ import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/sectio
 import { validateCustomSections } from '../sections/CustomSections';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
 import { localize } from '../utils/localize';
+import { Registry } from '../Registry';
+import { collectCameraBlocks } from '../views/CctvViewStrategy';
 import { isBadgeCandidate, isDefaultShowName, resolveShowName } from '../utils/badge-utils';
 
 // -- Supporting types for the editor ------------------------------------
@@ -1637,6 +1639,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
             (checked) => this._toggleChanged('show_cameras_in_security', checked, false))}
           <div class="description">${localize('editor.show_cameras_in_security_desc')}</div>
 
+          ${this._config.show_cameras_in_security === true ? this._renderSecurityCamerasPicker() : nothing}
+
           ${this._renderCheckbox('group-security-by-areas', localize('editor.group_security_by_areas'), this._config.group_security_by_areas === true,
             (checked) => this._toggleChanged('group_security_by_areas', checked, false))}
           <div class="description">${localize('editor.group_security_by_areas_desc')}</div>
@@ -1644,6 +1648,20 @@ class Simon42DashboardStrategyEditor extends LitElement {
           ${this._renderCheckbox('show-security-activity', localize('editor.show_security_activity'), this._config.show_security_activity !== false,
             (checked) => this._toggleChanged('show_security_activity', checked, true))}
           <div class="description">${localize('editor.show_security_activity_desc')}</div>
+
+          ${this._config.show_security_activity !== false ? html`
+            <div class="form-row" style="margin-left: 26px;">
+              <input type="radio" id="security-activity-sidebar" name="security-activity-layout" value="sidebar"
+                ?checked=${this._config.security_activity_layout !== 'section'}
+                @change=${() => this._securityActivityLayoutChanged('sidebar')} />
+              <label for="security-activity-sidebar">${localize('editor.security_activity_sidebar')}</label>
+              <input type="radio" id="security-activity-section" name="security-activity-layout" value="section"
+                ?checked=${this._config.security_activity_layout === 'section'}
+                @change=${() => this._securityActivityLayoutChanged('section')} />
+              <label for="security-activity-section">${localize('editor.security_activity_section')}</label>
+            </div>
+            <div class="description" style="margin-left: 26px;">${localize('editor.security_activity_layout_desc')}</div>
+          ` : nothing}
 
           ${this._renderSecurityExtraEntitiesPicker()}
         </div>
@@ -1730,6 +1748,65 @@ class Simon42DashboardStrategyEditor extends LitElement {
       updated.unavailable_batteries_bucket = bucket;
     }
     this._fireConfigChanged(updated);
+  }
+
+  private _securityActivityLayoutChanged(layout: 'sidebar' | 'section'): void {
+    const updated: Simon42StrategyConfig = { ...this._config };
+    // 'sidebar' is the default → omit the key when matching default
+    if (layout === 'sidebar') {
+      delete updated.security_activity_layout;
+    } else {
+      updated.security_activity_layout = layout;
+    }
+    this._config = updated;
+    this._fireConfigChanged(updated);
+  }
+
+  private _securityCameraHiddenChanged(entityId: string, visible: boolean): void {
+    const hidden = new Set(this._config.security_hidden_cameras || []);
+    if (visible) hidden.delete(entityId);
+    else hidden.add(entityId);
+    const updated: Simon42StrategyConfig = { ...this._config };
+    if (hidden.size === 0) {
+      delete updated.security_hidden_cameras;
+    } else {
+      updated.security_hidden_cameras = [...hidden].sort();
+    }
+    this._config = updated;
+    this._fireConfigChanged(updated);
+  }
+
+  /** Per-camera visibility for the security view (security-only exclusion). */
+  private _renderSecurityCamerasPicker(): TemplateResult {
+    if (!this._hass) return html``;
+    // Same dedup as the views (one camera per device, preferred stream);
+    // Registry is initialized by the dashboard render, this is a no-op.
+    Registry.initialize(this._hass, this._config);
+    const blocks = collectCameraBlocks(this._hass);
+    if (blocks.length === 0) return html``;
+
+    const hidden = new Set(this._config.security_hidden_cameras || []);
+    return html`
+      <div style="margin-left: 26px; margin-bottom: 8px;">
+        <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
+          ${localize('editor.security_cameras_visibility')}
+        </div>
+        <div class="description" style="margin-left: 0;">
+          ${localize('editor.security_cameras_visibility_desc')}
+        </div>
+        ${blocks.map((block) => {
+          const name =
+            (this._hass?.states[block.cameraId]?.attributes?.friendly_name as string | undefined) ||
+            block.cameraId;
+          return this._renderCheckbox(
+            `security-camera-${block.cameraId}`,
+            name,
+            !hidden.has(block.cameraId),
+            (checked) => this._securityCameraHiddenChanged(block.cameraId, checked)
+          );
+        })}
+      </div>
+    `;
   }
 
   private _renderSecurityExtraEntitiesPicker(): TemplateResult {

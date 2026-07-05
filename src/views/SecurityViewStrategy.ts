@@ -249,57 +249,75 @@ function buildAreaGroupedSections(
   return sections;
 }
 
-// -- Activity sidebar -----------------------------------------------------
+// -- Cameras shown in the security view -----------------------------------
 
 /**
- * Activity sidebar à la HA's security panel: a 24h logbook over all
- * security entities + persons. Renders as a right-hand pane on wide
- * screens and as its own tab on narrow ones (sections view sidebar,
- * HA 2026.x — older frontends simply ignore the extra key).
- * Auto-hides when the logbook integration is not loaded.
- * Exported for tests.
+ * Camera blocks for the security view: the shared device dedup MINUS the
+ * security-only exclusion list (security_hidden_cameras). Room and CCTV
+ * views are deliberately unaffected by that list.
+ */
+function securityCameraBlocks(
+  hass: HomeAssistant,
+  dashboardConfig: Simon42StrategyConfig
+): CameraBlock[] {
+  if (dashboardConfig.show_cameras_in_security !== true) return [];
+  const hidden = new Set(dashboardConfig.security_hidden_cameras || []);
+  return collectCameraBlocks(hass).filter(function notHidden(block) {
+    return !hidden.has(block.cameraId);
+  });
+}
+
+// -- Activity log (24h logbook à la HA's security panel) -------------------
+
+function buildActivitySection(hass: HomeAssistant, dashboardConfig: Simon42StrategyConfig): LovelaceSectionConfig | null {
+  if (dashboardConfig.show_security_activity === false) return null;
+  if (!hass.config?.components?.includes('logbook')) return null;
+
+  const entities = collectSecurityEntities(hass);
+  const logbookEntityIds = [
+    ...AREA_MODE_CATEGORY_ORDER.flatMap(function categoryIds(category) {
+      return entities[category];
+    }),
+    ...securityCameraBlocks(hass, dashboardConfig).map(function blockCameraId(block) {
+      return block.cameraId;
+    }),
+    ...Registry.getVisibleEntityIdsForDomain('person'),
+  ];
+  if (logbookEntityIds.length === 0) return null;
+
+  return {
+    type: 'grid',
+    cards: [
+      {
+        type: 'heading',
+        heading: localize('security.activity'),
+        heading_style: 'title',
+      },
+      {
+        type: 'logbook',
+        target: { entity_id: logbookEntityIds },
+        hours_to_show: 24,
+        grid_options: { columns: 12 },
+      },
+    ],
+  };
+}
+
+/**
+ * Activity log as view sidebar (default layout): pinned to the right on
+ * wide screens, own tab on narrow ones (sections view sidebar, HA 2026.x —
+ * older frontends simply ignore the extra key). Returns undefined when the
+ * user picked the section layout instead. Exported for tests.
  */
 export function buildSecurityActivitySidebar(
   hass: HomeAssistant,
   dashboardConfig: Simon42StrategyConfig
 ): LovelaceViewSidebarConfig | undefined {
-  if (dashboardConfig.show_security_activity === false) return undefined;
-  if (!hass.config?.components?.includes('logbook')) return undefined;
-
-  const entities = collectSecurityEntities(hass);
-  const cameraBlocks =
-    dashboardConfig.show_cameras_in_security === true ? collectCameraBlocks(hass) : [];
-
-  const logbookEntityIds = [
-    ...AREA_MODE_CATEGORY_ORDER.flatMap(function categoryIds(category) {
-      return entities[category];
-    }),
-    ...cameraBlocks.map(function blockCameraId(block) {
-      return block.cameraId;
-    }),
-    ...Registry.getVisibleEntityIdsForDomain('person'),
-  ];
-  if (logbookEntityIds.length === 0) return undefined;
-
+  if (dashboardConfig.security_activity_layout === 'section') return undefined;
+  const section = buildActivitySection(hass, dashboardConfig);
+  if (!section) return undefined;
   return {
-    sections: [
-      {
-        type: 'grid',
-        cards: [
-          {
-            type: 'heading',
-            heading: localize('security.activity'),
-            heading_style: 'title',
-          },
-          {
-            type: 'logbook',
-            target: { entity_id: logbookEntityIds },
-            hours_to_show: 24,
-            grid_options: { columns: 12 },
-          },
-        ],
-      },
-    ],
+    sections: [section],
     content_label: localize('security.devices'),
     sidebar_label: localize('security.activity'),
   };
@@ -313,15 +331,23 @@ export function buildSecuritySections(
   dashboardConfig: Simon42StrategyConfig
 ): LovelaceSectionConfig[] {
   const entities = collectSecurityEntities(hass);
-  const showCameras = dashboardConfig.show_cameras_in_security === true;
-  const cameraBlocks = showCameras ? collectCameraBlocks(hass) : [];
+  const cameraBlocks = securityCameraBlocks(hass, dashboardConfig);
   const cameraViewEnabled = dashboardConfig.show_camera_view === true;
 
-  if (dashboardConfig.group_security_by_areas === true) {
-    const sections = buildAreaGroupedSections(hass, dashboardConfig, entities, cameraBlocks);
+  const appendTrailingSections = (sections: LovelaceSectionConfig[]): LovelaceSectionConfig[] => {
     const extraSection = buildExtraEntitiesSection(hass, dashboardConfig);
     if (extraSection) sections.push(extraSection);
+    if (dashboardConfig.security_activity_layout === 'section') {
+      const activity = buildActivitySection(hass, dashboardConfig);
+      if (activity) sections.push(activity);
+    }
     return sections;
+  };
+
+  if (dashboardConfig.group_security_by_areas === true) {
+    return appendTrailingSections(
+      buildAreaGroupedSections(hass, dashboardConfig, entities, cameraBlocks)
+    );
   }
 
   const { locks, doors, motorizedWindows, garages, windows, smokeGas, waterLeak } = entities;
@@ -584,11 +610,8 @@ export function buildSecuritySections(
     if (cards.length > 0) sections.push({ type: 'grid', cards });
   }
 
-    // User-picked extra entities (smart appliances, custom sensors, etc.)
-    const extraSection = buildExtraEntitiesSection(hass, dashboardConfig);
-    if (extraSection) sections.push(extraSection);
-
-    return sections;
+    // Extra entities + optional activity section (both modes, trailing)
+    return appendTrailingSections(sections);
 }
 
 class Simon42ViewSecurityStrategy extends StrategyBaseElement {
