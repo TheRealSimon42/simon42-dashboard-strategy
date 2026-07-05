@@ -107,6 +107,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   const showSecuritySummary = config.show_security_summary !== false;
   const showBatterySummary = config.show_battery_summary !== false;
   const showClimateSummary = config.show_climate_summary === true;
+  const showMaintenanceSummary = config.show_maintenance_summary === true;
 
   // Build summary cards based on config
   const summaryCards: LovelaceCardConfig[] = [];
@@ -165,6 +166,23 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       areas_options: config.areas_options || {},
       ...(config.hide_unavailable_entities === true
         ? { hide_unavailable_entities: true }
+        : {}),
+    });
+  }
+
+  if (showMaintenanceSummary) {
+    const visibleUsers = config.maintenance_visible_users || [];
+    summaryCards.push({
+      type: 'custom:simon42-summary-card',
+      summary_type: 'maintenance',
+      areas_options: config.areas_options || {},
+      // battery params mirror the batteries tile so both count the same set
+      hide_mobile_app_batteries: config.hide_mobile_app_batteries,
+      hide_battery_notes_entities: config.hide_battery_notes_entities,
+      battery_critical_threshold: config.battery_critical_threshold,
+      // Native Lovelace user condition — display logic, not a security boundary
+      ...(visibleUsers.length > 0
+        ? { visibility: [{ condition: 'user', users: visibleUsers }] }
         : {}),
     });
   }

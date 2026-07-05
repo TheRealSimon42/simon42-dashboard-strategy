@@ -9,8 +9,9 @@ import { trackHassUpdate, debugLog, timeStart, timeEnd } from '../utils/debug';
 import { localize } from '../utils/localize';
 import { getBatteryEntities, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
+import { buildMaintenanceScan, countMaintenanceItems, type MaintenanceScan } from '../utils/maintenance-utils';
 
-type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate';
+type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate' | 'maintenance';
 
 interface SummaryCardConfig {
   summary_type: SummaryType;
@@ -50,6 +51,9 @@ class Simon42SummaryCard extends LitElement {
   private _count = 0;
   private _config!: SummaryCardConfig;
   private _relevantEntityIds: Set<string> | null = null;
+  // maintenance type only: cached id structure (updates, per-device groups,
+  // batteries) — invalidated together with _relevantEntityIds
+  private _maintenanceScan: MaintenanceScan | null = null;
 
   static styles = css`
     :host {
@@ -89,6 +93,7 @@ class Simon42SummaryCard extends LitElement {
   setConfig(config: SummaryCardConfig): void {
     this._config = config;
     this._relevantEntityIds = null;
+    this._maintenanceScan = null;
   }
 
   protected willUpdate(changedProps: PropertyValues): void {
@@ -99,6 +104,7 @@ class Simon42SummaryCard extends LitElement {
 
     if (!oldHass || oldHass.entities !== this.hass.entities) {
       this._relevantEntityIds = null;
+      this._maintenanceScan = null;
       debugLog(`summary-${this._config.summary_type}: cache invalidated (registry changed)`);
     }
 
@@ -188,6 +194,14 @@ class Simon42SummaryCard extends LitElement {
         );
         break;
 
+      case 'maintenance': {
+        // Cached id structure; the per-update count pass iterates update +
+        // battery ids and early-exits per device group (see maintenance-utils)
+        this._maintenanceScan = buildMaintenanceScan(hass, this._config);
+        result = [...this._maintenanceScan.updateIds, ...this._maintenanceScan.batteryIds];
+        break;
+      }
+
       default:
         result = [];
     }
@@ -201,6 +215,15 @@ class Simon42SummaryCard extends LitElement {
     if (!this.hass) return 0;
 
     this._getRelevantEntities();
+
+    // Maintenance counts device availability too, so it must not bail out
+    // on an empty entity set like the other types do.
+    if (this._config.summary_type === 'maintenance') {
+      if (!this._maintenanceScan) return 0;
+      const critThreshold = this._config.battery_critical_threshold ?? 20;
+      return countMaintenanceItems(this.hass, this._maintenanceScan, critThreshold);
+    }
+
     if (!this._relevantEntityIds || this._relevantEntityIds.size === 0) return 0;
 
     const hass = this.hass;
@@ -305,6 +328,12 @@ class Simon42SummaryCard extends LitElement {
         name: hasItems ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}` : localize('summary.climate_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'climate',
+      },
+      maintenance: {
+        icon: 'mdi:wrench',
+        name: hasItems ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}` : localize('summary.maintenance_ok'),
+        color: hasItems ? 'orange' : 'grey',
+        path: 'maintenance',
       },
     };
 

@@ -1986,8 +1986,76 @@ class Simon42DashboardStrategyEditor extends LitElement {
           </div>
           <div class="description">${localize('editor.unavailable_batteries_bucket_desc')}</div>
         </div>
+
+        ${this._renderCheckbox('show-maintenance-summary', localize('editor.show_maintenance_summary'), this._config.show_maintenance_summary === true,
+          (checked) => this._toggleChanged('show_maintenance_summary', checked, false))}
+        <div class="description">${localize('editor.show_maintenance_summary_desc')}</div>
+
+        ${this._config.show_maintenance_summary === true ? html`
+          <div style="margin-left: 26px; margin-bottom: 8px;">
+            ${this._renderMaintenanceUsersPicker()}
+          </div>
+        ` : nothing}
       </div>
     `;
+  }
+
+  /**
+   * User restriction for the maintenance tile/view. Options come from
+   * person entities carrying a user_id — no admin-only WS call needed.
+   * Empty selection state (no key in config) = visible to everyone.
+   */
+  private _renderMaintenanceUsersPicker(): TemplateResult {
+    if (!this._hass) return html``;
+    const options: { userId: string; name: string }[] = [];
+    for (const [entityId, state] of Object.entries(this._hass.states)) {
+      if (!entityId.startsWith('person.')) continue;
+      const userId = state.attributes?.user_id as string | undefined;
+      if (!userId) continue;
+      options.push({
+        userId,
+        name: (state.attributes?.friendly_name as string | undefined) || entityId,
+      });
+    }
+
+    const selected = this._config.maintenance_visible_users || [];
+    const allVisible = selected.length === 0;
+
+    return html`
+      <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
+        ${localize('editor.maintenance_visible_users')}
+      </div>
+      <div class="description" style="margin-left: 0;">
+        ${localize('editor.maintenance_visible_users_desc')}
+      </div>
+      ${options.length === 0
+        ? html`<div class="description" style="margin-left: 0;">${localize('editor.maintenance_visible_users_none')}</div>`
+        : options.map((opt) => this._renderCheckbox(
+            `maintenance-user-${opt.userId}`,
+            opt.name,
+            allVisible || selected.includes(opt.userId),
+            (checked) => this._maintenanceUserChanged(opt.userId, options.map((o) => o.userId), checked)
+          ))}
+    `;
+  }
+
+  private _maintenanceUserChanged(userId: string, allUserIds: string[], checked: boolean): void {
+    const current = this._config.maintenance_visible_users || [];
+    // No restriction stored = everyone checked; start from the full set
+    const effective = new Set(current.length > 0 ? current : allUserIds);
+    if (checked) effective.add(userId);
+    else effective.delete(userId);
+
+    const updated: Simon42StrategyConfig = { ...this._config };
+    const known = allUserIds.filter((id) => effective.has(id));
+    // Ids configured via YAML for users without a person entity — keep them
+    const unknown = [...effective].filter((id) => !allUserIds.includes(id));
+    if (unknown.length === 0 && known.length === allUserIds.length) {
+      delete updated.maintenance_visible_users; // everyone = no restriction
+    } else {
+      updated.maintenance_visible_users = [...known, ...unknown];
+    }
+    this._fireConfigChanged(updated);
   }
 
   private _unavailableBatteriesBucketChanged(bucket: 'critical' | 'good'): void {

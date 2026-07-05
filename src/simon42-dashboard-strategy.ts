@@ -31,6 +31,7 @@ const modulesPromise = Promise.all([
   import('./views/SecurityViewStrategy'),
   import('./views/BatteriesViewStrategy'),
   import('./views/ClimateViewStrategy'),
+  import('./views/MaintenanceViewStrategy'),
   import('./views/CctvViewStrategy'),
   import('./views/RoomViewStrategy'),
 ]);
@@ -106,6 +107,8 @@ class Simon42DashboardStrategy extends HTMLElement {
       icon: string;
       /** Never render as subview — for views without a summary-card entry point */
       alwaysInNav?: boolean;
+      /** Restrict the nav tab to specific HA users (native `visible` list) */
+      visibleUsers?: string[];
       resolve: () => Promise<LovelaceViewConfig>;
     }
     const utilityViewDefs: UtilityViewDef[] = [
@@ -120,6 +123,10 @@ class Simon42DashboardStrategy extends HTMLElement {
         resolve: () => getStrategy('ll-strategy-simon42-view-batteries').generate({ config }, hass) },
       { enabled: showClimate, title: localize('views.climate'), path: 'climate', icon: 'mdi:thermostat',
         resolve: () => getStrategy('ll-strategy-simon42-view-climate').generate({ config }, hass) },
+      { enabled: config.show_maintenance_summary === true,
+        title: localize('views.maintenance'), path: 'maintenance', icon: 'mdi:wrench',
+        visibleUsers: config.maintenance_visible_users,
+        resolve: () => getStrategy('ll-strategy-simon42-view-maintenance').generate({ config }, hass) },
       // alwaysInNav: no summary card deep-links here — as a subview the
       // camera view would be unreachable.
       { enabled: config.show_camera_view === true, alwaysInNav: true,
@@ -160,6 +167,9 @@ class Simon42DashboardStrategy extends HTMLElement {
         path: def.path,
         icon: def.icon,
         subview: def.alwaysInNav ? false : !showSummaryViews,
+        ...(def.visibleUsers && def.visibleUsers.length > 0
+          ? { visible: def.visibleUsers.map((user) => ({ user })) }
+          : {}),
         ...utilityConfigs[i],
       })),
       ...visibleAreas.map((area, i) => ({
@@ -174,7 +184,11 @@ class Simon42DashboardStrategy extends HTMLElement {
     // hide_unavailable_entities only touches GENERATED views — custom_views
     // are user YAML passthrough and stay untouched (same contract as
     // custom_sections/custom_cards: the card YAML is the user's).
-    const generatedViews = views.map((view) => withUnavailableEntitiesHidden(view, config));
+    // The maintenance view is exempt: surfacing unavailable devices is its
+    // whole point — the availability filter would hide exactly those tiles.
+    const generatedViews = views.map((view) =>
+      view.path === 'maintenance' ? view : withUnavailableEntitiesHidden(view, config)
+    );
 
     const customViews = config.custom_views || [];
     for (const cv of customViews) {

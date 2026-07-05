@@ -9,7 +9,8 @@
     "security": "Sicherheit",
     "batteries": "Batterien",
     "climate": "Klima",
-    "cameras": "Kameras"
+    "cameras": "Kameras",
+    "maintenance": "Wartung"
   },
   "sections": {
     "overview": "Übersicht",
@@ -60,7 +61,10 @@
     "batteries_ok": "Alle Batterien OK",
     "climate_active_one": "Thermostat aktiv",
     "climate_active_many": "Thermostate aktiv",
-    "climate_off": "Alle Thermostate aus"
+    "climate_off": "Alle Thermostate aus",
+    "maintenance_pending_one": "Wartungspunkt offen",
+    "maintenance_pending_many": "Wartungspunkte offen",
+    "maintenance_ok": "Keine Wartung fällig"
   },
   "lights": {
     "on": "Eingeschaltete Lichter",
@@ -148,6 +152,13 @@
     "title": "Pollenflug heute",
     "tomorrow": "morgen",
     "none": "Keine nennenswerte Belastung heute. 🌿"
+  },
+  "maintenance": {
+    "unavailable": "Nicht verfügbar",
+    "batteries_critical": "Kritische Batterien",
+    "all_ok": "Alles in Ordnung — keine Wartung fällig.",
+    "hacs_hint": "HACS ist installiert — Community-Updates erscheinen oben in der Update-Liste.",
+    "hacs_open": "HACS öffnen"
   },
   "room": {
     "cameras": "Kameras",
@@ -426,6 +437,11 @@
     "dense_section_placement": "Kompakte Anordnung der Abschnitte",
     "dense_section_placement_desc": "Füllt Lücken im Raster aller generierten Ansichten auf (dichte Anordnung). Abschnitte können dadurch von der konfigurierten Reihenfolge abweichen.",
     "camera_live_toggle": "Live-Stream per Play-Button (neue Kamera-Karte)",
-    "camera_live_toggle_desc": "Raum-Kameras starten als Standbild und streamen erst nach Klick auf den Play-Button — spart Bandbreite, z.B. auf Wandtablets. Standardmäßig aus: Kameras verhalten sich wie bisher (Vorschau mit automatischer Aktualisierung)."
+    "camera_live_toggle_desc": "Raum-Kameras starten als Standbild und streamen erst nach Klick auf den Play-Button — spart Bandbreite, z.B. auf Wandtablets. Standardmäßig aus: Kameras verhalten sich wie bisher (Vorschau mit automatischer Aktualisierung).",
+    "show_maintenance_summary": "Wartungs-Zusammenfassung anzeigen",
+    "show_maintenance_summary_desc": "Kachel „Wartung“ mit eigener Unterseite (/maintenance): anstehende Updates, nicht verfügbare Geräte, kritische Batterien und HA-Reparaturen (ab HA 2026.3, nur für Admins sichtbar).",
+    "maintenance_visible_users": "Sichtbar für",
+    "maintenance_visible_users_desc": "Ohne Einschränkung sehen alle Benutzer die Kachel und den Tab. Die Auswahl basiert auf Personen mit verknüpftem HA-Benutzer. Hinweis: reine Anzeigelogik, kein Zugriffsschutz — die Ansicht bleibt per URL erreichbar.",
+    "maintenance_visible_users_none": "Keine Personen mit verknüpftem HA-Benutzer gefunden — Einschränkung alternativ per YAML-Schlüssel maintenance_visible_users."
   }
 }
