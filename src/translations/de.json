@@ -28,6 +28,24 @@
     "vacuums": "Saug- & Mähroboter",
     "maintenance": "Anstehende Updates"
   },
+  "stacks": {
+    "ups": "USV",
+    "energy": "Energie",
+    "cameras": "Kameras",
+    "lights": "Lichter",
+    "locks": "Schlösser",
+    "climate": "Klima",
+    "covers": "Rollos & Abdeckungen",
+    "covers_curtain": "Vorhänge",
+    "covers_window": "Fenster",
+    "media": "Medien",
+    "scenes": "Szenen",
+    "vacuums": "Saug- & Mähroboter",
+    "misc": "Sonstiges",
+    "automations": "Automationen",
+    "scripts": "Skripte",
+    "room_pins": "Raum-Pins"
+  },
   "summary": {
     "lights_on_one": "Licht an",
     "lights_on_many": "Lichter an",
@@ -100,6 +118,9 @@
     "battery_one": "Batterie",
     "battery_many": "Batterien"
   },
+  "ups": {
+    "battery": "Akku"
+  },
   "climate": {
     "heating": "Heizen",
     "cooling": "Kühlen",
@@ -150,6 +171,9 @@
     "section_order": "Abschnitts-Reihenfolge",
     "section_order_desc": "Ziehe die Abschnitte per Drag & Drop in die gewünschte Reihenfolge. Leere Abschnitte werden automatisch ausgeblendet.",
     "section_hidden": "ausgeblendet",
+    "stack_order": "Reihenfolge der Raum-Blöcke",
+    "stack_order_desc": "Ziehe die Blöcke per Drag & Drop, um ihre Reihenfolge in dieser Raum-Ansicht festzulegen.",
+    "stack_order_inactive": "In diesem Raum nicht vorhanden",
     "energy_link_dashboard": "Energie-Dashboard verlinken",
     "show_weather_forecast_card": "Eingebaute Wetter-Karte anzeigen",
     "show_energy_distribution_card": "Eingebaute Energie-Karte anzeigen",
@@ -278,6 +302,7 @@
     "section_favorites": "Favoriten",
     "section_light_favorites": "Schnellzugriff Lampen",
     "light_favorites_desc": "Lichter auswählen, die als kompakte Toggle-Reihe in der Übersicht (oberhalb der regulären Favoriten) erscheinen sollen. Jede Lampe wird als Glance-Icon gerendert: Tippen schaltet um, Lang-Drücken öffnet die Details. Wird automatisch ausgeblendet, wenn keine Lampe ausgewählt ist. Nur `light.*`-Entitäten können hinzugefügt werden.",
+    "area_pin_nav": "In Navigation anzeigen",
     "select_entity": "Entität auswählen...",
     "add": "+ Hinzufügen",
     "favorites_desc": "Wähle Entitäten aus, die als Favoriten unter den Zusammenfassungen angezeigt werden sollen. Die Entitäten werden als Kacheln angezeigt.",
@@ -301,6 +326,8 @@
     "show_automations_in_rooms_desc": "Zeigt dem Bereich zugeordnete Automationen in den jeweiligen Raum-Ansichten an.",
     "show_scripts_in_rooms": "Skripte in Raum-Ansichten anzeigen",
     "show_scripts_in_rooms_desc": "Zeigt dem Bereich zugeordnete Skripte in den jeweiligen Raum-Ansichten an.",
+    "show_ups_in_rooms": "USV-Block in Raum-Ansichten anzeigen",
+    "show_ups_in_rooms_desc": "Zeigt pro erkannter USV einen eigenen Block mit Akku-Ladestand und zugehörigen Sensoren in der Raum-Ansicht. Erkannt werden dedizierte USV-Integrationen (NUT, apcupsd) sowie Geräte, deren Name „USV“ oder „UPS“ enthält.",
     "show_cameras_in_rooms": "Kameras in Raum-Ansichten anzeigen",
     "show_cameras_in_rooms_desc": "Zeigt dem Bereich zugeordnete Kameras in den jeweiligen Raum-Ansichten an. Deaktivieren, um Kameras aus dem Dashboard zu nehmen, ohne sie global auf „nicht sichtbar“ zu stellen.",
     "start_camera_stream": "Live-Stream starten",
@@ -390,6 +417,11 @@
     "badges_select_entity": "Entity auswählen...",
     "badges_remove": "Entfernen",
     "badges_show_name": "Entity-Name auf Badge anzeigen",
-    "badges_name_short": "Name"
+    "badges_name_short": "Name",
+    "show_energy_in_rooms": "Energie-Block in Raum-Ansichten anzeigen",
+    "show_energy_in_rooms_desc": "Zeigt Leistungs-, Energie-, Wasser- und Gas-Sensoren des Bereichs als eigenen Block in der Raum-Ansicht. Einzelne Sensoren lassen sich unten pro Bereich ausblenden.",
+    "domain_ups": "USV",
+    "domain_energy": "Energie-Sensoren",
+    "domain_group_disabled_hint": "Global deaktiviert — Schalter oben in den Raum-Einstellungen aktivieren."
   }
 }

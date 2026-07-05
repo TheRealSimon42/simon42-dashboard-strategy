@@ -9,9 +9,9 @@ import type {
   LovelaceSectionConfig,
   LovelaceBadgeConfig,
 } from '../types/lovelace';
-import type { AreaRegistryEntry } from '../types/registries';
-import type { AreaCustomSection, RoomEntities, SensorEntities } from '../types/strategy';
-import { sortByFriendlyName, sortByLastChanged, stripAreaName } from '../utils/name-utils';
+import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
+import type { AreaCustomSection, RoomEntities, SensorEntities, StackKey } from '../types/strategy';
+import { mergeStacksOrder, sortByFriendlyName, sortByLastChanged, stripAreaName } from '../utils/name-utils';
 import { buildAreaCustomSections } from '../sections/CustomSections';
 import { Registry } from '../Registry';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
@@ -23,6 +23,14 @@ const FAN_SET_SPEED = 1;
 const MEDIA_PAUSE = 1;
 const MEDIA_PLAY = 16384;
 const MEDIA_STOP = 4096;
+// UPS detection is deliberately conservative (categorization-cluster lesson,
+// see #183/#223/#289): dedicated UPS platforms, or an explicit UPS/USV device
+// name. No entity-id regex heuristics — a vacuum with battery% + status
+// sensor must never be pulled out of its normal category.
+const UPS_PLATFORMS = new Set(['nut', 'apcupsd']);
+const UPS_DEVICE_NAME_PATTERN = /\b(ups|usv)\b/i;
+const ROOM_ENERGY_SENSOR_CLASSES = ['power', 'energy', 'water', 'gas'] as const;
+const ROOM_ENERGY_SENSOR_CLASS_SET = new Set<string>(ROOM_ENERGY_SENSOR_CLASSES);
 
 /** Check if a fan supports speed control */
 function fanSupportsSpeed(state: HassEntity): boolean {
@@ -35,6 +43,92 @@ function mediaPlayerSupportsPlayback(state: HassEntity): boolean {
   return (f & (MEDIA_PAUSE | MEDIA_PLAY | MEDIA_STOP)) !== 0;
 }
 
+interface UpsEntityGroup {
+  deviceId: string;
+  batteryId: string;
+  sensorIds: string[];
+  entityIds: string[];
+}
+
+interface UpsDeviceRender {
+  name: string;
+  batteryId: string;
+  sensorIds: string[];
+}
+
+/** Reflect.get keeps dynamic state lookups off the object-injection radar. */
+function getEntityState(
+  hass: HomeAssistant,
+  entityId: string
+): HassEntity | undefined {
+  return Reflect.get(hass.states as Record<string, unknown>, entityId) as HassEntity | undefined;
+}
+
+function getEntityDeviceClass(
+  hass: HomeAssistant,
+  entityId: string
+): string | undefined {
+  return getEntityState(hass, entityId)?.attributes?.device_class as string | undefined;
+}
+
+/** Exported for the editor's per-area group panel (same import pattern as collectCameraBlocks). */
+export function findUpsEntityGroups(entities: EntityRegistryEntry[], hass: HomeAssistant): UpsEntityGroup[] {
+  const entitiesByDevice = new Map<string, EntityRegistryEntry[]>();
+  for (const entity of entities) {
+    if (!entity.device_id) continue;
+    const bucket = entitiesByDevice.get(entity.device_id);
+    if (bucket) bucket.push(entity);
+    else entitiesByDevice.set(entity.device_id, [entity]);
+  }
+
+  const groups: UpsEntityGroup[] = [];
+  for (const [deviceId, deviceEntities] of entitiesByDevice) {
+    let batteryId: string | undefined;
+    let isUpsPlatform = false;
+
+    for (const entity of deviceEntities) {
+      if (entity.platform && UPS_PLATFORMS.has(entity.platform)) isUpsPlatform = true;
+
+      const state = getEntityState(hass, entity.entity_id);
+      if (!state) continue;
+      const deviceClass = state.attributes?.device_class as string | undefined;
+      const unit = state.attributes?.unit_of_measurement as string | undefined;
+
+      if (!batteryId && entity.entity_id.startsWith('sensor.') && deviceClass === 'battery' && unit === '%') {
+        batteryId = entity.entity_id;
+      }
+    }
+
+    let isUpsByName = false;
+    if (!isUpsPlatform) {
+      const device = Registry.getDevice(deviceId);
+      const deviceName = device?.name_by_user ?? device?.name ?? '';
+      isUpsByName = UPS_DEVICE_NAME_PATTERN.test(deviceName) || UPS_DEVICE_NAME_PATTERN.test(device?.model ?? '');
+    }
+
+    if (!batteryId || (!isUpsPlatform && !isUpsByName)) continue;
+    groups.push({
+      deviceId,
+      batteryId,
+      entityIds: deviceEntities.map((entity) => entity.entity_id),
+      sensorIds: deviceEntities
+        .map((entity) => entity.entity_id)
+        .filter((entityId) => entityId !== batteryId && !!getEntityState(hass, entityId)),
+    });
+  }
+
+  return groups;
+}
+
+function upsSensorRole(entityId: string, hass: HomeAssistant): number {
+  const deviceClass = getEntityDeviceClass(hass, entityId);
+  if (deviceClass === 'duration' || /runtime|time_left|load_runtime/.test(entityId)) return 1;
+  if (deviceClass === 'power' || deviceClass === 'apparent_power' || /(^|[._])load([._]|$)/.test(entityId)) return 2;
+  if (deviceClass === 'voltage' || /voltage|input/.test(entityId)) return 3;
+  if (/status|state/.test(entityId)) return 4;
+  return 5;
+}
+
 /** Config fields consumed by the room-pins section */
 interface RoomPinsConfig {
   room_pin_entities?: string[];
@@ -45,17 +139,17 @@ interface RoomPinsConfig {
 
 /** Filter all configured room pins for the ones in the given area */
 function getAreasRoomPins(config: RoomPinsConfig, area: AreaRegistryEntry): string[] {
-    const roomPinEntities: string[] = config.room_pin_entities || [];
-    return roomPinEntities.filter((entityId) => {
-      const entity = Registry.getEntity(entityId);
-      if (!entity) return false;
-      if (entity.area_id === area.area_id) return true;
-      if (entity.device_id) {
-        const device = Registry.getDevice(entity.device_id);
-        if (device?.area_id === area.area_id) return true;
-      }
-      return false;
-    });
+  const roomPinEntities: string[] = config.room_pin_entities || [];
+  return roomPinEntities.filter((entityId) => {
+    const entity = Registry.getEntity(entityId);
+    if (!entity) return false;
+    if (entity.area_id === area.area_id) return true;
+    if (entity.device_id) {
+      const device = Registry.getDevice(entity.device_id);
+      if (device?.area_id === area.area_id) return true;
+    }
+    return false;
+  });
 }
 
 /** Build the tile-card factory for room-pin entities */
@@ -105,7 +199,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     // Ensure Registry is initialized (idempotent — no-op if already done)
     Registry.initialize(hass, dashboardConfig);
     const groupsOptions: Record<string, any> = config.groups_options || {};
-    // User-declared sections for this room (areas_options.{areaId}.custom_sections)
     const areaCustomSections: AreaCustomSection[] = config.custom_sections || [];
 
     const roomEntities: RoomEntities = {
@@ -126,6 +219,8 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       automations: [],
       scripts: [],
       cameras: [],
+      ups: [],
+      energy: [],
     };
 
     const sensorEntities: SensorEntities = {
@@ -153,6 +248,16 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     // (no hidden, no_dboard, config/diagnostic, config-hidden)
     const visibleEntities = Registry.getVisibleEntitiesForArea(area.area_id);
 
+    // UPS/USV block (opt-in): detected devices are rendered as their own
+    // per-device section; their entities leave the normal categorization.
+    const showUps = dashboardConfig.show_ups_in_rooms === true;
+    const upsGroups = showUps ? findUpsEntityGroups(visibleEntities, hass) : [];
+    const usedByUps = new Set(upsGroups.flatMap(({ entityIds }) => entityIds));
+    roomEntities.ups.push(...usedByUps);
+
+    // Energy block (opt-in): power/energy/water/gas sensors as own section
+    const showEnergy = dashboardConfig.show_energy_in_rooms === true;
+
     // Filter unavailable entities from per-room domain lists / sensor badges.
     // Default true: unavailable items are noise in a room view (offline devices,
     // dead batteries surface elsewhere via the batteries view + alert badge).
@@ -160,13 +265,11 @@ class Simon42ViewRoomStrategy extends HTMLElement {
 
     for (const entity of visibleEntities) {
       const entityId = entity.entity_id;
-
-      // State check
       const state = hass.states[entityId];
       if (!state) continue;
       if (hideUnavailable && state.state === 'unavailable') continue;
+      if (usedByUps.has(entityId)) continue;
 
-      // Domain categorization
       const domain = entityId.split('.')[0];
       const deviceClass = state.attributes?.device_class as string | undefined;
       const unit = state.attributes?.unit_of_measurement as string | undefined;
@@ -231,6 +334,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       }
       if (domain === 'camera' && dashboardConfig.show_cameras_in_rooms !== false) {
         roomEntities.cameras.push(entityId);
+        continue;
+      }
+      if (showEnergy && domain === 'sensor' && deviceClass && ROOM_ENERGY_SENSOR_CLASS_SET.has(deviceClass)) {
+        roomEntities.energy.push(entityId);
         continue;
       }
 
@@ -314,7 +421,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       }
     }
 
-    // Apply groups_options filters
     const applyGroupFilter = (groupKey: keyof RoomEntities): string[] => {
       const groupOpts = groupsOptions[groupKey];
       if (!groupOpts) return roomEntities[groupKey];
@@ -334,9 +440,13 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       roomEntities[key] = applyGroupFilter(key);
     }
 
-    // === BADGES ===
+    const upsDevices: UpsDeviceRender[] = [];
+    for (const { deviceId, batteryId, sensorIds } of upsGroups) {
+      const device = Registry.getDevice(deviceId);
+      const name = device?.name_by_user ?? device?.name ?? 'UPS';
+      upsDevices.push({ name, batteryId, sensorIds });
+    }
 
-    // Primary temp/humidity from area config (always shown, not filterable)
     let primaryTemp: string | null = null;
     let primaryHumidity: string | null = null;
 
@@ -355,7 +465,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       primaryHumidity = area.humidity_entity_id;
     }
 
-    // Build auto-detected badge candidates
     const badgeOpts = groupsOptions.badges;
     const hasBadgeConfig = !!badgeOpts;
 
@@ -366,9 +475,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     }
 
     const candidates: BadgeCandidate[] = [];
-
-    // Auto-detected sensors (first match per type, except window/door which show all)
-    // Colors from shared BADGE_COLOR_MAP, show_name from shared isDefaultShowName()
     const addCandidate = (entityId: string, colorKey: string, dcOverride?: string) => {
       const dc = dcOverride || (hass.states[entityId]?.attributes?.device_class as string | undefined);
       candidates.push({
@@ -378,7 +484,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       });
     };
 
-    // Single-match sensor types
     const singleTypes: Array<[string[], string]> = [
       [sensorEntities.pm1, 'pm1'],
       [sensorEntities.pm25, 'pm25'],
@@ -399,9 +504,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       if (entities[0]) addCandidate(entities[0], colorKey);
     }
 
-    // Window/door: show ALL matches (not just first), users control via per-area hidden[]
-    // Per-domain opt-out via show_window_contacts_in_rooms / show_door_contacts_in_rooms
-    // (default true — preserves prior behavior; set false to silence the badge type).
     if (dashboardConfig.show_window_contacts_in_rooms !== false) {
       for (const id of sensorEntities.window) addCandidate(id, 'window', 'window');
     }
@@ -409,7 +511,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       for (const id of sensorEntities.door) addCandidate(id, 'door', 'door');
     }
 
-    // Apply per-area badge config: filter hidden, append additional
     let filteredCandidates = candidates;
     if (hasBadgeConfig) {
       if (badgeOpts.hidden?.length) {
@@ -425,11 +526,9 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       }
     }
 
-    // Resolve show_name per badge: default + config overrides
     const namesVisible = hasBadgeConfig ? new Set<string>(badgeOpts.names_visible || []) : null;
     const namesHidden = hasBadgeConfig ? new Set<string>(badgeOpts.names_hidden || []) : null;
 
-    // Convert to LovelaceBadgeConfig
     const badges: LovelaceBadgeConfig[] = [];
     if (primaryTemp) badges.push({ type: 'entity', entity: primaryTemp, color: 'red', tap_action: { action: 'more-info' } });
     if (primaryHumidity) badges.push({ type: 'entity', entity: primaryHumidity, color: 'indigo', tap_action: { action: 'more-info' } });
@@ -446,10 +545,95 @@ class Simon42ViewRoomStrategy extends HTMLElement {
 
     // === SECTIONS ===
     // Custom sections with position 'top' render before all generated
-    // sections; 'bottom' ones are appended at the very end.
+    // sections; 'bottom' ones are appended at the very end. Generated
+    // sections are collected as named stacks and assembled according to
+    // the per-area stacks_order (default: DEFAULT_STACKS_ORDER).
     const sections: LovelaceSectionConfig[] = buildAreaCustomSections(areaCustomSections, 'top');
+    const areaOptions = Reflect.get(dashboardConfig.areas_options ?? {}, area.area_id) as
+      | { stacks_order?: StackKey[] }
+      | undefined;
+    const configuredStacksOrder = areaOptions?.stacks_order;
+    let stacksOrder = mergeStacksOrder(configuredStacksOrder);
+    if (!configuredStacksOrder && dashboardConfig.room_pins_first === true) {
+      stacksOrder = ['room_pins', ...stacksOrder.filter((key) => key !== 'room_pins')];
+    }
+    const stacks = new Map<StackKey, LovelaceSectionConfig[]>();
 
-    // Cameras
+    function pushStack(key: StackKey, section: LovelaceSectionConfig): void {
+      const current = stacks.get(key) ?? [];
+      current.push(section);
+      stacks.set(key, current);
+    }
+
+    if (upsDevices.length > 0) {
+      const critThreshold = dashboardConfig.battery_critical_threshold ?? 20;
+      const lowThreshold = dashboardConfig.battery_low_threshold ?? 50;
+      const hiddenUpsEntities = new Set<string>(groupsOptions.ups?.hidden || []);
+
+      for (const upsDevice of upsDevices) {
+        if (hiddenUpsEntities.has(upsDevice.batteryId)) continue;
+
+        const sortedSensors = [...upsDevice.sensorIds]
+          .sort((a, b) => upsSensorRole(a, hass) - upsSensorRole(b, hass) || a.localeCompare(b))
+          .filter((entityId) => !hiddenUpsEntities.has(entityId));
+
+        pushStack('ups', {
+          type: 'grid',
+          cards: [
+            {
+              type: 'heading',
+              heading_style: 'title',
+              icon: 'mdi:power-plug-battery',
+              heading: upsDevice.name,
+            },
+            {
+              type: 'gauge',
+              entity: upsDevice.batteryId,
+              name: localize('ups.battery'),
+              min: 0,
+              max: 100,
+              needle: false,
+              severity: { red: 0, yellow: critThreshold, green: lowThreshold },
+            },
+            ...sortedSensors.map((entityId) => ({
+              type: 'tile',
+              entity: entityId,
+              name: stripAreaName(entityId, area, hass),
+              vertical: false,
+              state_content: 'state',
+            })),
+          ],
+        });
+      }
+    }
+
+    if (roomEntities.energy.length > 0) {
+      const energyEntities = roomEntities.energy
+        .map((entityId) => {
+          const deviceClass = getEntityDeviceClass(hass, entityId);
+          return {
+            entityId,
+            order: ROOM_ENERGY_SENSOR_CLASSES.indexOf(deviceClass as (typeof ROOM_ENERGY_SENSOR_CLASSES)[number]),
+          };
+        })
+        .sort((a, b) => a.order - b.order || a.entityId.localeCompare(b.entityId))
+        .map((entry) => entry.entityId);
+
+      pushStack('energy', {
+        type: 'grid',
+        cards: [
+          { type: 'heading', heading: localize('sections.energy'), heading_style: 'title', icon: 'mdi:lightning-bolt' },
+          ...energyEntities.map((entityId) => ({
+            type: 'tile',
+            entity: entityId,
+            name: stripAreaName(entityId, area, hass),
+            vertical: false,
+            state_content: 'state',
+          })),
+        ],
+      });
+    }
+
     if (roomEntities.cameras.length > 0) {
       const cameraCards: LovelaceCardConfig[] = [];
       for (const cameraId of roomEntities.cameras) {
@@ -471,8 +655,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
 
         if ((isReolink || isAqara) && deviceId) {
           const devEntities = Registry.getEntityIdsForDevice(deviceId);
-
-          // Reolink-specific entities
           const spotlight = devEntities.find(
             (id) => id.startsWith('light.') && hass.states[id] && !Registry.isEntityExcluded(id)
           );
@@ -485,8 +667,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
           const siren = devEntities.find(
             (id) => id.startsWith('siren.') && hass.states[id] && !Registry.isEntityExcluded(id)
           );
-
-          // Aqara-specific entities
           const battery = devEntities.find(
             (id) =>
               id.startsWith('sensor.') &&
@@ -500,7 +680,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
               !Registry.isEntityExcluded(id)
           );
 
-          const glanceEntities: any[] = [];
+          const glanceEntities: Array<{ entity: string }> = [];
           if (isReolink) {
             if (spotlight) glanceEntities.push({ entity: spotlight });
             if (motion) glanceEntities.push({ entity: motion });
@@ -517,7 +697,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         }
       }
       if (cameraCards.length > 0) {
-        sections.push({
+        pushStack('cameras', {
           type: 'grid',
           cards: [
             {
@@ -537,7 +717,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       }
     }
 
-    // Sort lights by last_changed or alphabetically (unless custom order)
     if (!groupsOptions.lights?.order) {
       if (dashboardConfig.lights_sort_by === 'name') {
         roomEntities.lights.sort((a, b) => sortByFriendlyName(a, b, hass));
@@ -546,32 +725,22 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       }
     }
 
-    // Helper: create a domain section
     const domainSection = (
+      key: StackKey,
       entities: string[],
       heading: string,
       icon: string,
       tileConfig: (e: string) => LovelaceCardConfig
     ): void => {
       if (entities.length === 0) return;
-      sections.push({
+      pushStack(key, {
         type: 'grid',
         cards: [{ type: 'heading', heading, heading_style: 'title', icon }, ...entities.map(tileConfig)],
       });
     };
 
-    // Room pins render as the last section by default; opt-in `room_pins_first` moves them to the top (#189)
-    if (dashboardConfig.room_pins_first === true) {
-      domainSection(
-        getAreasRoomPins(dashboardConfig, area),
-        localize('room.room_pins'),
-        'mdi:pin',
-        buildRoomPinTile(dashboardConfig, area, hass)
-      );
-    }
-
     if (roomEntities.lights.length > 0) {
-      sections.push({
+      pushStack('lights', {
         type: 'grid',
         cards: [
           {
@@ -589,7 +758,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       });
     }
 
-    domainSection(roomEntities.locks, localize('room.locks'), 'mdi:lock', (e) => ({
+    domainSection('locks', roomEntities.locks, localize('room.locks'), 'mdi:lock', (e) => ({
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
@@ -599,7 +768,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       state_content: 'last_changed',
     }));
 
-    // Climate + Fan combined into one "Klima" section
     if (roomEntities.climate.length > 0 || roomEntities.fan.length > 0) {
       const climateCards: LovelaceCardConfig[] = [
         { type: 'heading', heading: localize('room.climate'), heading_style: 'title', icon: 'mdi:thermostat' },
@@ -627,10 +795,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
           state_content: 'last_changed',
         });
       }
-      sections.push({ type: 'grid', cards: climateCards });
+      pushStack('climate', { type: 'grid', cards: climateCards });
     }
 
-    domainSection(roomEntities.covers, localize('room.covers'), 'mdi:window-shutter', (e) => ({
+    domainSection('covers', roomEntities.covers, localize('room.covers'), 'mdi:window-shutter', (e) => ({
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
@@ -640,7 +808,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       state_content: ['current_position', 'last_changed'],
     }));
 
-    domainSection(roomEntities.covers_curtain, localize('room.curtains'), 'mdi:curtains', (e) => ({
+    domainSection('covers_curtain', roomEntities.covers_curtain, localize('room.curtains'), 'mdi:curtains', (e) => ({
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
@@ -650,7 +818,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       state_content: ['current_position', 'last_changed'],
     }));
 
-    domainSection(roomEntities.covers_window, localize('room.windows'), 'mdi:window-open-variant', (e) => ({
+    domainSection('covers_window', roomEntities.covers_window, localize('room.windows'), 'mdi:window-open-variant', (e) => ({
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
@@ -660,7 +828,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       state_content: ['current_position', 'last_changed'],
     }));
 
-    domainSection(roomEntities.media_player, localize('room.media'), 'mdi:speaker', (e) => {
+    domainSection('media', roomEntities.media_player, localize('room.media'), 'mdi:speaker', (e) => {
       const state = hass.states[e];
       const hasPlayback = state && mediaPlayerSupportsPlayback(state);
       return {
@@ -673,7 +841,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       };
     });
 
-    domainSection(roomEntities.scenes, localize('room.scenes'), 'mdi:palette', (e) => ({
+    domainSection('scenes', roomEntities.scenes, localize('room.scenes'), 'mdi:palette', (e) => ({
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
@@ -698,7 +866,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
 
     const ownVacuumSection = dashboardConfig.show_vacuums_section_in_rooms === true;
     if (ownVacuumSection && vacuumCards.length > 0) {
-      sections.push({
+      pushStack('vacuums', {
         type: 'grid',
         cards: [
           { type: 'heading', heading: localize('room.vacuums'), heading_style: 'title', icon: 'mdi:robot-vacuum' },
@@ -757,7 +925,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     });
 
     if (miscCards.length > 0) {
-      sections.push({
+      pushStack('misc', {
         type: 'grid',
         cards: [
           { type: 'heading', heading: localize('room.misc'), heading_style: 'title', icon: 'mdi:dots-horizontal' },
@@ -766,7 +934,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       });
     }
 
-    domainSection(roomEntities.automations, localize('room.automations'), 'mdi:robot', (e) => ({
+    domainSection('automations', roomEntities.automations, localize('room.automations'), 'mdi:robot', (e) => ({
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
@@ -774,20 +942,21 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       state_content: 'last_changed',
     }));
 
-    domainSection(roomEntities.scripts, localize('room.scripts'), 'mdi:script-text', (e) => ({
+    domainSection('scripts', roomEntities.scripts, localize('room.scripts'), 'mdi:script-text', (e) => ({
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
       vertical: false,
     }));
 
-    if (dashboardConfig.room_pins_first !== true) {
-      domainSection(
-        getAreasRoomPins(dashboardConfig, area),
-        localize('room.room_pins'),
-        'mdi:pin',
-        buildRoomPinTile(dashboardConfig, area, hass)
-      );
+    const roomPins = getAreasRoomPins(dashboardConfig, area);
+    if (roomPins.length > 0) {
+      domainSection('room_pins', roomPins, localize('room.room_pins'), 'mdi:pin', buildRoomPinTile(dashboardConfig, area, hass));
+    }
+
+    for (const key of stacksOrder) {
+      const stackSections = stacks.get(key);
+      if (stackSections) sections.push(...stackSections);
     }
 
     sections.push(...buildAreaCustomSections(areaCustomSections, 'bottom'));

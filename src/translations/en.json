@@ -28,6 +28,24 @@
     "vacuums": "Vacuums & Mowers",
     "maintenance": "Pending Updates"
   },
+  "stacks": {
+    "ups": "UPS",
+    "energy": "Energy",
+    "cameras": "Cameras",
+    "lights": "Lights",
+    "locks": "Locks",
+    "climate": "Climate",
+    "covers": "Blinds & Covers",
+    "covers_curtain": "Curtains",
+    "covers_window": "Windows",
+    "media": "Media",
+    "scenes": "Scenes",
+    "vacuums": "Vacuums & Mowers",
+    "misc": "Miscellaneous",
+    "automations": "Automations",
+    "scripts": "Scripts",
+    "room_pins": "Room Pins"
+  },
   "summary": {
     "lights_on_one": "light on",
     "lights_on_many": "lights on",
@@ -100,6 +118,9 @@
     "battery_one": "battery",
     "battery_many": "batteries"
   },
+  "ups": {
+    "battery": "Battery"
+  },
   "climate": {
     "heating": "Heating",
     "cooling": "Cooling",
@@ -150,6 +171,9 @@
     "section_order": "Section Order",
     "section_order_desc": "Drag sections to reorder them on the overview page. Empty sections are hidden automatically.",
     "section_hidden": "hidden",
+    "stack_order": "Room block order",
+    "stack_order_desc": "Drag blocks to set their order in this room view.",
+    "stack_order_inactive": "Not present in this room",
     "energy_link_dashboard": "Link to energy dashboard",
     "show_weather_forecast_card": "Show built-in forecast card",
     "show_energy_distribution_card": "Show built-in energy distribution card",
@@ -278,6 +302,7 @@
     "section_favorites": "Favorites",
     "section_light_favorites": "Quick lights",
     "light_favorites_desc": "Pick lights you want as a compact toggle row on the overview (above the regular favorites). Each light renders as a glance icon: tap to toggle on/off, long-press to open more-info. Auto-hidden when no light is selected. Only light.* entities can be added.",
+    "area_pin_nav": "Show in navigation",
     "select_entity": "Select entity...",
     "add": "+ Add",
     "favorites_desc": "Select entities to be shown as favorites below the summaries. Entities are displayed as tiles.",
@@ -301,6 +326,8 @@
     "show_automations_in_rooms_desc": "Shows automations assigned to the area in the respective room views.",
     "show_scripts_in_rooms": "Show scripts in room views",
     "show_scripts_in_rooms_desc": "Shows scripts assigned to the area in the respective room views.",
+    "show_ups_in_rooms": "Show UPS block in room views",
+    "show_ups_in_rooms_desc": "Shows one block per detected UPS with battery level and related sensors in the room view. Detection covers dedicated UPS integrations (NUT, apcupsd) and devices whose name contains “UPS”.",
     "show_cameras_in_rooms": "Show cameras in room views",
     "show_cameras_in_rooms_desc": "Shows cameras assigned to the area in the respective room views. Disable to keep cameras out of the dashboard without hiding them globally.",
     "start_camera_stream": "Start live stream",
@@ -390,6 +417,11 @@
     "badges_select_entity": "Select entity...",
     "badges_remove": "Remove",
     "badges_show_name": "Show entity name on badge",
-    "badges_name_short": "Name"
+    "badges_name_short": "Name",
+    "show_energy_in_rooms": "Show energy block in room views",
+    "show_energy_in_rooms_desc": "Shows the area's power, energy, water and gas sensors as their own block in the room view. Individual sensors can be hidden per area below.",
+    "domain_ups": "UPS",
+    "domain_energy": "Energy sensors",
+    "domain_group_disabled_hint": "Globally disabled — enable the toggle in the room settings above."
   }
 }
