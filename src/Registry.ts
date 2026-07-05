@@ -27,7 +27,8 @@ import { setupLocalize } from './utils/localize';
  * any other access.
  *
  * Reads directly from hass.entities/devices/areas (synchronous, no WebSocket
- * calls). All members are static, all maps are built once on initialize().
+ * calls). All members are static; maps are built on initialize() and rebuilt
+ * only when the hass registries change (reference compare).
  */
 class Registry {
   // Prevent instantiation
@@ -105,10 +106,16 @@ class Registry {
   /**
    * Initialize the registry from hass object and strategy config.
    * Synchronous — reads directly from hass.entities/devices/areas.
-   * Idempotent: skips if already initialized.
+   * Idempotent while the hass registry references are unchanged. When HA
+   * regenerates the strategy after a registry change (new/renamed entities,
+   * devices, areas, floors), the changed reference triggers a full rebuild —
+   * otherwise views would keep serving the snapshot from the first page load.
+   * The config is deliberately NOT part of the staleness check: standalone
+   * view strategies pass `config.config || {}` (a fresh object per call),
+   * which would clobber the dashboard config on every generate.
    */
   static initialize(hass: HomeAssistant, config: Simon42StrategyConfig): void {
-    if (Registry._initialized) return;
+    if (Registry._initialized && !Registry._registriesChanged(hass)) return;
 
     timeStart('registry-init');
     Registry._hass = hass;
@@ -141,6 +148,21 @@ class Registry {
       `Registry initialized: ${Registry._fetchedEntities.length} entities, ${Registry._fetchedDevices.length} devices, ${Registry._fetchedAreas.length} areas`
     );
     timeEnd('registry-init');
+  }
+
+  /**
+   * Whether the hass registries have changed since the last initialize().
+   * HA replaces the registry collections on hass (immutable updates), so a
+   * reference compare is sufficient and cheap — same pattern the SummaryCard
+   * uses for its entity cache invalidation.
+   */
+  private static _registriesChanged(hass: HomeAssistant): boolean {
+    return (
+      hass.entities !== Registry._hass.entities ||
+      hass.devices !== Registry._hass.devices ||
+      hass.areas !== Registry._hass.areas ||
+      hass.floors !== Registry._hass.floors
+    );
   }
 
   // =====================================================================

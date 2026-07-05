@@ -9,12 +9,6 @@ import { trackHassUpdate, debugLog, timeStart, timeEnd } from '../utils/debug';
 import { localize } from '../utils/localize';
 import { getBatteryEntities, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 
-declare global {
-  interface Window {
-    customCards?: Array<{ type: string; name: string; description: string }>;
-  }
-}
-
 type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate';
 
 interface SummaryCardConfig {
@@ -344,9 +338,6 @@ class Simon42SummaryCard extends LitElement {
 
 customElements.define('simon42-summary-card', Simon42SummaryCard);
 
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'simon42-summary-card',
-  name: 'Simon42 Summary Card',
-  description: 'Reactive summary card that counts entities dynamically',
-});
+// Deliberately NOT registered in window.customCards: the card only works
+// inside the strategy (Registry + localize lifecycle, see #147). Listing it
+// in the card picker would invite standalone use that breaks.

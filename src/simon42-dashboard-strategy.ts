@@ -36,6 +36,18 @@ const modulesPromise = Promise.all([
 void modulesPromise.then(() => { t('all chunks loaded'); });
 
 class Simon42DashboardStrategy extends HTMLElement {
+  // HA 2026.7+: only regenerate when one of these registries actually changed
+  // (reference compare on the hass object). Matches HA's current default set —
+  // declared explicitly because the Registry's staleness check relies on
+  // exactly these four references. Labels need no entry: label assignments
+  // live on entity registry entries, so they bump `entities`.
+  static registryDependencies = ['entities', 'devices', 'areas', 'floors'] as const;
+
+  // HA 2026.5+: suggested title/icon in the "new dashboard" dialog.
+  static getCreateSuggestions(): { title: string; icon: string } {
+    return { title: 'Simon42 Dashboard', icon: 'mdi:view-dashboard' };
+  }
+
   static async generate(config: Simon42StrategyConfig, hass: HomeAssistant): Promise<LovelaceConfig> {
     generateCallCount++;
     t(`generate() called (#${generateCallCount})`);
@@ -171,5 +183,29 @@ class Simon42DashboardStrategy extends HTMLElement {
 // Register strategy custom element IMMEDIATELY — no heavy imports needed.
 // This ensures HA's 5-second timeout is satisfied even on slow networks.
 customElements.define('ll-strategy-simon42-dashboard', Simon42DashboardStrategy);
+
+// HA 2026.5+: register in the "new dashboard" dialog (Community dashboards
+// section) so users can create the dashboard without the YAML detour. HA keeps
+// the same array reference, so push order vs. frontend load order is irrelevant.
+declare global {
+  interface Window {
+    customStrategies?: Array<{
+      type: string;
+      strategyType: 'dashboard' | 'view' | 'section';
+      name?: string;
+      description?: string;
+      documentationURL?: string;
+    }>;
+  }
+}
+window.customStrategies = window.customStrategies || [];
+window.customStrategies.push({
+  type: 'simon42-dashboard',
+  strategyType: 'dashboard',
+  name: 'Simon42 Dashboard',
+  description:
+    'Automatisch generiertes Dashboard aus deinen Bereichen, Geräten und Entitäten — mit Zusammenfassungen, Raum-Ansichten und flexibler Konfiguration.',
+  documentationURL: 'https://github.com/TheRealSimon42/simon42-dashboard-strategy',
+});
 
 console.log(`Simon42 Dashboard Strategy v${STRATEGY_VERSION} loaded`);
