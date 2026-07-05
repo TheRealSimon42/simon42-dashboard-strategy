@@ -332,6 +332,8 @@
     "domain_fan": "Ventilatoren",
     "domain_switches": "Schalter",
     "domain_locks": "Schlösser",
+    "domain_cameras": "Kameras",
+    "domain_cameras_disabled_hint": "Global deaktiviert — aktiviere zuerst „Kameras in Raum-Ansichten anzeigen“.",
     "domain_badges": "Raum-Badges",
     "badges_additional": "Zusätzliche Badges",
     "badges_add": "Hinzufügen",

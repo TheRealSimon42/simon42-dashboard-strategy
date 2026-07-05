@@ -332,6 +332,8 @@
     "domain_fan": "Вентиляторы",
     "domain_switches": "Переключатели",
     "domain_locks": "Замки",
+    "domain_cameras": "Камеры",
+    "domain_cameras_disabled_hint": "Отключено глобально — сначала включите «Показывать камеры в комнатах».",
     "domain_badges": "Бейджи комнаты",
     "badges_additional": "Дополнительные бейджи",
     "badges_add": "Добавить",

@@ -332,6 +332,8 @@
     "domain_fan": "Fans",
     "domain_switches": "Switches",
     "domain_locks": "Locks",
+    "domain_cameras": "Cameras",
+    "domain_cameras_disabled_hint": "Disabled globally — enable “Show cameras in room views” first.",
     "domain_badges": "Room Badges",
     "badges_additional": "Additional Badges",
     "badges_add": "Add",
