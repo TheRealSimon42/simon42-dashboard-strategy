@@ -303,6 +303,8 @@
     "show_scripts_in_rooms_desc": "Shows scripts assigned to the area in the respective room views.",
     "show_cameras_in_rooms": "Show cameras in room views",
     "show_cameras_in_rooms_desc": "Shows cameras assigned to the area in the respective room views. Disable to keep cameras out of the dashboard without hiding them globally.",
+    "start_camera_stream": "Start live stream",
+    "stop_camera_stream": "Stop live stream",
     "hide_unavailable_in_rooms": "Hide unavailable entities in room views",
     "hide_unavailable_in_rooms_desc": "Skips entities whose state is `unavailable` (offline integrations, dead batteries, disconnected ESPHome devices) when building room views. Default on — these entities show up elsewhere (Batteries view, the optional Unavailable alert badge) and tend to be noise in a room view. Disable to surface them in the room view too.",
     "show_window_contacts_in_rooms": "Show window contacts in room views",

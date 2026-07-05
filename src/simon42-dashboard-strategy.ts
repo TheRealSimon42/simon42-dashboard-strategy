@@ -24,6 +24,7 @@ const modulesPromise = Promise.all([
   import('./cards/SummaryCard'),
   import('./cards/LightsGroupCard'),
   import('./cards/CoversGroupCard'),
+  import('./cards/CameraCard'),
   import('./views/OverviewViewStrategy'),
   import('./views/LightsViewStrategy'),
   import('./views/CoversViewStrategy'),

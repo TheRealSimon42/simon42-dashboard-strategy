@@ -303,6 +303,8 @@
     "show_scripts_in_rooms_desc": "Zeigt dem Bereich zugeordnete Skripte in den jeweiligen Raum-Ansichten an.",
     "show_cameras_in_rooms": "Kameras in Raum-Ansichten anzeigen",
     "show_cameras_in_rooms_desc": "Zeigt dem Bereich zugeordnete Kameras in den jeweiligen Raum-Ansichten an. Deaktivieren, um Kameras aus dem Dashboard zu nehmen, ohne sie global auf „nicht sichtbar“ zu stellen.",
+    "start_camera_stream": "Live-Stream starten",
+    "stop_camera_stream": "Live-Stream stoppen",
     "hide_unavailable_in_rooms": "Nicht verfügbare Entitäten in Raum-Ansichten ausblenden",
     "hide_unavailable_in_rooms_desc": "Überspringt Entitäten mit Status `unavailable` (offline-Integrationen, leere Batterien, getrennte ESPHome-Geräte) beim Aufbau der Raum-Ansichten. Standardmäßig aktiv — diese Entitäten tauchen ohnehin in anderen Ansichten auf (Batterien-Ansicht, das optionale „Nicht verfügbar“-Badge) und sind in Raum-Ansichten meist nur Rauschen. Deaktivieren, um sie auch dort zu zeigen.",
     "show_window_contacts_in_rooms": "Fensterkontakte in Raum-Ansichten anzeigen",

@@ -78,6 +78,23 @@ function buildRoomPinTile(
   };
 }
 
+function buildNativeCameraCard(
+  entity: string,
+  name: string,
+  entities?: Array<string | Record<string, unknown>>,
+  liveDefault?: boolean
+): LovelaceCardConfig {
+  return {
+    type: 'custom:simon42-camera-card',
+    entity,
+    name,
+    ...(entities && entities.length > 0 ? { entities } : {}),
+    // Aqara cameras provide no snapshot — they must start in live mode
+    ...(liveDefault === true ? { live_default: true } : {}),
+    fit_mode: 'cover',
+  };
+}
+
 class Simon42ViewRoomStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
     const area: AreaRegistryEntry = config.area;
@@ -494,24 +511,9 @@ class Simon42ViewRoomStrategy extends HTMLElement {
             if (doorbell) glanceEntities.push({ entity: doorbell });
           }
 
-          cameraCards.push({
-            type: 'picture-glance',
-            camera_image: cameraId,
-            camera_view: isAqara ? 'live' : 'auto',
-            fit_mode: 'cover',
-            title: stripAreaName(cameraId, area, hass),
-            entities: glanceEntities,
-          });
+          cameraCards.push(buildNativeCameraCard(cameraId, stripAreaName(cameraId, area, hass), glanceEntities, isAqara));
         } else {
-          cameraCards.push({
-            type: 'picture-entity',
-            entity: cameraId,
-            camera_image: cameraId,
-            camera_view: 'auto',
-            name: stripAreaName(cameraId, area, hass),
-            show_name: true,
-            show_state: false,
-          });
+          cameraCards.push(buildNativeCameraCard(cameraId, stripAreaName(cameraId, area, hass)));
         }
       }
       if (cameraCards.length > 0) {
