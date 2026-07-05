@@ -139,7 +139,7 @@ export function buildPollenCard(hass: HomeAssistant): LovelaceCardConfig | null 
   for (const entity of Object.values(hass.entities)) {
     if (entity.platform !== 'dwd_pollenflug') continue;
     if (entity.hidden || entity.entity_category) continue;
-    if (entity.labels?.includes('no_dboard')) continue;
+    if (entity.labels.includes('no_dboard')) continue;
     if (!ENTITY_ID_RE.test(entity.entity_id)) continue;
 
     const state = hass.states[entity.entity_id];

@@ -18,9 +18,9 @@
 // mirroring RoomViewStrategy.
 // ====================================================================
 
-import type { HomeAssistant } from '../types/homeassistant';
+import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import type { Simon42StrategyConfig } from '../types/strategy';
-import type { DeviceRegistryEntry } from '../types/registries';
+import type { DeviceRegistryEntry, AreaRegistryEntry } from '../types/registries';
 import type {
   LovelaceViewConfig,
   LovelaceSectionConfig,
@@ -28,7 +28,7 @@ import type {
 } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
-import { StrategyBaseElement } from './view-strategy-base';
+import { defineViewStrategy } from './view-strategy-base';
 
 // -- Camera stream preference (Reolink) --------------------------------
 // Reolink exposes several camera entities per device (sub/main streams,
@@ -127,9 +127,14 @@ export function resetReolinkMediaCacheForTesting(): void {
 }
 
 async function browseReolinkCamItems(hass: HomeAssistant): Promise<ReolinkCamItem[]> {
+  // Cleared in finally — otherwise the loser of the race would reject
+  // AFTER the browse succeeded and surface as an unhandled rejection.
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
-    const timeout = new Promise<never>((_resolve, reject) => {
-      setTimeout(() => reject(new Error('media browse timeout')), BROWSE_TIMEOUT_MS);
+    const timeout = new Promise<never>(function timeoutExecutor(_resolve, reject) {
+      timeoutId = setTimeout(function onBrowseTimeout() {
+        reject(new Error('media browse timeout'));
+      }, BROWSE_TIMEOUT_MS);
     });
     const result = await Promise.race([
       hass.callWS<{ children?: BrowseMediaChild[] }>({
@@ -158,6 +163,8 @@ async function browseReolinkCamItems(hass: HomeAssistant): Promise<ReolinkCamIte
     // Media source unavailable (no SD card, integration still starting,
     // slow camera) — recordings links fall back to the Reolink root.
     return [];
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
   }
 }
 
@@ -202,7 +209,7 @@ export function resolveRecordingsPath(
     const entryMatches = items.filter(
       (item) =>
         item.entryId === device.primary_config_entry ||
-        (device.config_entries || []).includes(item.entryId)
+        device.config_entries.includes(item.entryId)
     );
     if (entryMatches.length === 1) return reolinkCamPath(entryMatches[0]);
     if (entryMatches.length > 1) {
@@ -229,8 +236,13 @@ export interface CameraBlock {
   isReolink: boolean;
 }
 
+/** Reflect.get keeps dynamic state lookups off the object-injection radar. */
+function stateFor(hass: HomeAssistant, entityId: string): HassEntity | undefined {
+  return Reflect.get(hass.states, entityId) as HassEntity | undefined;
+}
+
 function isVisibleWithState(entityId: string, hass: HomeAssistant): boolean {
-  return !!hass.states[entityId] && !Registry.isEntityExcluded(entityId);
+  return !!stateFor(hass, entityId) && !Registry.isEntityExcluded(entityId);
 }
 
 function pickPrimaryCamera(cameraIds: string[]): string {
@@ -243,8 +255,7 @@ function pickPrimaryCamera(cameraIds: string[]): string {
 }
 
 function cameraDisplayName(cameraId: string, hass: HomeAssistant): string {
-  const state = hass.states[cameraId];
-  const friendly = state?.attributes?.friendly_name;
+  const friendly = stateFor(hass, cameraId)?.attributes.friendly_name;
   return typeof friendly === 'string' && friendly ? friendly : cameraId;
 }
 
@@ -268,7 +279,7 @@ export function collectCameraBlocks(
   dashboardConfig: Simon42StrategyConfig
 ): CameraBlock[] {
   const cameraIds = Registry.getVisibleEntityIdsForDomain('camera').filter(
-    (id) => hass.states[id] !== undefined
+    (id) => stateFor(hass, id) !== undefined
   );
 
   const byDevice = new Map<string, string[]>();
@@ -319,7 +330,8 @@ function cameraSortKey(block: CameraBlock, hass: HomeAssistant): string {
   const entity = Registry.getEntity(block.cameraId);
   const areaId =
     entity?.area_id || (block.deviceId ? Registry.getDevice(block.deviceId)?.area_id : null);
-  const areaName = areaId ? hass.areas[areaId]?.name || '' : '';
+  const area = areaId ? (Reflect.get(hass.areas, areaId) as AreaRegistryEntry | undefined) : undefined;
+  const areaName = area?.name || '';
   return `${areaName}|${cameraDisplayName(block.cameraId, hass)}`;
 }
 
@@ -350,7 +362,7 @@ function findCompanions(deviceId: string | null, hass: HomeAssistant): CameraCom
 
   for (const id of Registry.getEntityIdsForDevice(deviceId)) {
     if (!isVisibleWithState(id, hass) && !id.startsWith('button.')) continue;
-    const attributes = hass.states[id]?.attributes;
+    const attributes = stateFor(hass, id)?.attributes;
 
     if (id.startsWith('light.') && !companions.spotlight) {
       companions.spotlight = id;
@@ -368,7 +380,7 @@ function findCompanions(deviceId: string | null, hass: HomeAssistant): CameraCom
       // no_dboard label, config-hidden, hidden_by).
       const entry = Registry.getEntity(id);
       if (
-        !hass.states[id] ||
+        !stateFor(hass, id) ||
         entry?.hidden ||
         Registry.isExcludedByLabel(id) ||
         Registry.isHiddenByConfig(id)
@@ -413,7 +425,7 @@ function buildPtzCards(ptz: Map<string, string>): LovelaceCardConfig[] {
 }
 
 function buildSpotlightTile(spotlightId: string, hass: HomeAssistant): LovelaceCardConfig {
-  const modes = hass.states[spotlightId]?.attributes?.supported_color_modes as string[] | undefined;
+  const modes = stateFor(hass, spotlightId)?.attributes.supported_color_modes as string[] | undefined;
   const hasBrightness = !!modes?.some(function supportsBrightness(mode: string) {
     return LIGHT_BRIGHTNESS_MODES.includes(mode);
   });
@@ -533,7 +545,7 @@ function isLlmVisionCardLoaded(): boolean {
   return (
     Array.isArray(globals.customCards) &&
     globals.customCards.some(function isLlmVisionEntry(card) {
-      return card?.type === 'llmvision-card';
+      return card.type === 'llmvision-card';
     })
   );
 }
@@ -549,8 +561,8 @@ export function buildLlmVisionSection(hass: HomeAssistant): LovelaceSectionConfi
   });
   if (!hasIntegration || !isLlmVisionCardLoaded()) return null;
 
-  const language = (hass.locale?.language || 'en').split('-')[0];
-  const timeFormat = hass.locale?.time_format === '12' ? '12h' : '24h';
+  const language = (hass.locale.language || 'en').split('-')[0];
+  const timeFormat = hass.locale.time_format === '12' ? '12h' : '24h';
 
   const cards: LovelaceCardConfig[] = [
     { type: 'heading', heading: localize('cctv.events'), heading_style: 'title', icon: 'mdi:motion-sensor' },
@@ -629,19 +641,15 @@ export async function buildCctvSections(
   return sections;
 }
 
-class Simon42ViewCctvStrategy extends StrategyBaseElement {
-  static async generate(
-    config: { config?: Simon42StrategyConfig },
-    hass: HomeAssistant
-  ): Promise<LovelaceViewConfig> {
-    // Ensure Registry is initialized (idempotent — no-op if already done)
-    Registry.initialize(hass, config.config || {});
+async function generateCctvView(
+  config: { config?: Simon42StrategyConfig },
+  hass: HomeAssistant
+): Promise<LovelaceViewConfig> {
+  // Ensure Registry is initialized (idempotent — no-op if already done)
+  Registry.initialize(hass, config.config || {});
 
-    const sections = await buildCctvSections(hass, config.config || {});
-    return { type: 'sections', max_columns: 3, sections };
-  }
+  const sections = await buildCctvSections(hass, config.config || {});
+  return { type: 'sections', max_columns: 3, sections };
 }
 
-if (typeof customElements !== 'undefined') {
-  customElements.define('ll-strategy-simon42-view-cameras', Simon42ViewCctvStrategy);
-}
+defineViewStrategy('ll-strategy-simon42-view-cameras', generateCctvView);

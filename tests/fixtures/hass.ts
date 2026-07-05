@@ -96,7 +96,13 @@ export function makeHass(spec: HassFixtureSpec = {}): HomeAssistant {
     };
   }
   for (const d of spec.devices ?? []) {
-    devices[d.id] = d;
+    devices[d.id] = {
+      ...d,
+      // Production device entries always carry these — default them so
+      // code under test can rely on the declared (non-optional) types.
+      config_entries: d.config_entries ?? [],
+      primary_config_entry: d.primary_config_entry ?? null,
+    };
   }
   for (const a of spec.areas ?? []) {
     areas[a.area_id] = a;

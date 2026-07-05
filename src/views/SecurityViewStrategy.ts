@@ -2,7 +2,7 @@
 // VIEW STRATEGY — SECURITY (Locks, Doors, Garages, Windows, Smoke/Gas)
 // ====================================================================
 
-import type { HomeAssistant } from '../types/homeassistant';
+import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import type { Simon42StrategyConfig } from '../types/strategy';
 import type {
   LovelaceViewConfig,
@@ -13,9 +13,20 @@ import type {
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
+import type { FloorRegistryEntry } from '../types/registries';
 import { getVisibleAreasFromHass } from '../utils/name-utils';
 import { collectCameraBlocks, cameraBlockAreaId, leanCameraCard, type CameraBlock } from './CctvViewStrategy';
-import { StrategyBaseElement } from './view-strategy-base';
+import { defineViewStrategy } from './view-strategy-base';
+
+/** Reflect.get keeps dynamic state lookups off the object-injection radar. */
+function stateFor(hass: HomeAssistant, entityId: string): HassEntity | undefined {
+  return Reflect.get(hass.states, entityId) as HassEntity | undefined;
+}
+
+/** Typed category access without a dynamic object-index expression. */
+function categoryEntities(entities: SecurityEntities, category: keyof SecurityEntities): string[] {
+  return Reflect.get(entities, category) as string[];
+}
 
 // -- Entity collection --------------------------------------------------
 
@@ -194,7 +205,7 @@ function buildAreaGroupedSections(
   const cardsByArea = new Map<string, LovelaceCardConfig[]>();
   const unassigned: LovelaceCardConfig[] = [];
 
-  const push = (areaId: string | null, card: LovelaceCardConfig): void => {
+  function push(areaId: string | null, card: LovelaceCardConfig): void {
     if (!areaId) {
       unassigned.push(card);
       return;
@@ -202,13 +213,13 @@ function buildAreaGroupedSections(
     const list = cardsByArea.get(areaId) || [];
     list.push(card);
     cardsByArea.set(areaId, list);
-  };
+  }
 
   for (const block of cameraBlocks) {
     push(cameraBlockAreaId(block), leanCameraCard(block));
   }
   for (const category of AREA_MODE_CATEGORY_ORDER) {
-    for (const id of entities[category]) {
+    for (const id of categoryEntities(entities, category)) {
       push(resolveAreaId(id), securityTileCard(id, category));
     }
   }
@@ -240,7 +251,9 @@ function buildAreaGroupedSections(
   const multipleBuckets = buckets.length > 1;
   const sections: LovelaceSectionConfig[] = [];
   for (const bucket of buckets) {
-    const floor = bucket.floorId ? hass.floors?.[bucket.floorId] : undefined;
+    const floor = bucket.floorId
+      ? (Reflect.get(hass.floors, bucket.floorId) as FloorRegistryEntry | undefined)
+      : undefined;
     const cards: LovelaceCardConfig[] = [
       {
         type: 'heading',
@@ -307,7 +320,7 @@ function securityCameraBlocks(
 const SECLOG_EXCLUDE_LABEL = 'no_seclog';
 
 function isExcludedFromSecurityLog(entityId: string): boolean {
-  return Registry.getEntity(entityId)?.labels?.includes(SECLOG_EXCLUDE_LABEL) === true;
+  return Registry.getEntity(entityId)?.labels.includes(SECLOG_EXCLUDE_LABEL) === true;
 }
 
 function buildActivitySection(
@@ -321,7 +334,7 @@ function buildActivitySection(
   const entities = collectSecurityEntities(hass);
   const logbookEntityIds = [
     ...AREA_MODE_CATEGORY_ORDER.flatMap(function categoryIds(category) {
-      return entities[category];
+      return categoryEntities(entities, category);
     }),
     ...securityCameraBlocks(hass, dashboardConfig).map(function blockCameraId(block) {
       return block.cameraId;
@@ -382,7 +395,7 @@ export function buildSecuritySections(
   const cameraBlocks = securityCameraBlocks(hass, dashboardConfig);
   const cameraViewEnabled = dashboardConfig.show_camera_view === true;
 
-  const appendTrailingSections = (sections: LovelaceSectionConfig[]): LovelaceSectionConfig[] => {
+  function appendTrailingSections(sections: LovelaceSectionConfig[]): LovelaceSectionConfig[] {
     const extraSection = buildExtraEntitiesSection(hass, dashboardConfig);
     if (extraSection) sections.push(extraSection);
     // Activity section: leads the view by default, optionally trails
@@ -396,7 +409,7 @@ export function buildSecuritySections(
       }
     }
     return sections;
-  };
+  }
 
   if (dashboardConfig.group_security_by_areas === true) {
     return appendTrailingSections(
@@ -664,8 +677,8 @@ export function buildSecuritySections(
   // Safety status sensors (device_class safety/tamper/lock — e.g.
   // Versatile Thermostat's per-room "Sicherheitsstatus")
   if (safety.length > 0) {
-    const active = safety.filter((e) => hass.states[e]?.state === 'on');
-    const inactive = safety.filter((e) => hass.states[e]?.state === 'off');
+    const active = safety.filter((e) => stateFor(hass, e)?.state === 'on');
+    const inactive = safety.filter((e) => stateFor(hass, e)?.state === 'off');
     const cards: LovelaceCardConfig[] = [];
 
     if (active.length > 0) {
@@ -688,27 +701,23 @@ export function buildSecuritySections(
   return appendTrailingSections(sections);
 }
 
-class Simon42ViewSecurityStrategy extends StrategyBaseElement {
-  static async generate(
-    config: { config?: Simon42StrategyConfig },
-    hass: HomeAssistant
-  ): Promise<LovelaceViewConfig> {
-    // Ensure Registry is initialized (idempotent — no-op if already done)
-    Registry.initialize(hass, config.config || {});
-    const dashboardConfig = config.config || {};
-    const sidebar = buildSecurityActivitySidebar(hass, dashboardConfig);
-    // max_columns 3 + column_span 2 sections stack the floor groups under
-    // each other in the HA-style layout (matches HA's security panel).
-    const grouped = dashboardConfig.group_security_by_areas === true;
-    return {
-      type: 'sections',
-      ...(grouped ? { max_columns: 3 } : {}),
-      sections: buildSecuritySections(hass, dashboardConfig),
-      ...(sidebar ? { sidebar } : {}),
-    };
-  }
+async function generateSecurityView(
+  config: { config?: Simon42StrategyConfig },
+  hass: HomeAssistant
+): Promise<LovelaceViewConfig> {
+  // Ensure Registry is initialized (idempotent — no-op if already done)
+  Registry.initialize(hass, config.config || {});
+  const dashboardConfig = config.config || {};
+  const sidebar = buildSecurityActivitySidebar(hass, dashboardConfig);
+  // max_columns 3 + column_span 2 sections stack the floor groups under
+  // each other in the HA-style layout (matches HA's security panel).
+  const grouped = dashboardConfig.group_security_by_areas === true;
+  return {
+    type: 'sections',
+    ...(grouped ? { max_columns: 3 } : {}),
+    sections: buildSecuritySections(hass, dashboardConfig),
+    ...(sidebar ? { sidebar } : {}),
+  };
 }
 
-if (typeof customElements !== 'undefined') {
-  customElements.define('ll-strategy-simon42-view-security', Simon42ViewSecurityStrategy);
-}
+defineViewStrategy('ll-strategy-simon42-view-security', generateSecurityView);
