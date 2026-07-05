@@ -16,6 +16,10 @@ jobs:
   hacs:
     name: HACS Validation
     runs-on: ubuntu-latest
+    # Bei Fork-PRs überspringen: hacs/action validiert sonst das FORK-Repo
+    # (kein Release mit Assets vorhanden → "not compliant", siehe PR #324).
+    # Push/Schedule/Dispatch und Same-Repo-PRs laufen weiter normal.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
       - uses: hacs/action@main
