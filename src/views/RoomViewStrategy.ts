@@ -17,6 +17,7 @@ import { Registry } from '../Registry';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
 import { localize } from '../utils/localize';
 import { BADGE_COLOR_MAP, getColorForEntity, isDefaultShowName, resolveShowName } from '../utils/badge-utils';
+import { densePlacement } from '../utils/view-builder';
 
 // HA supported_features bitmask values
 const FAN_SET_SPEED = 1;
@@ -965,7 +966,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       `Room ${area.area_id}: ${visibleEntities.length} visible entities, ${sections.length} sections, ${badges.length} badges`
     );
     timeEnd(`room-generate-${area.area_id}`);
-    return { type: 'sections', header: { badges_position: 'bottom' }, sections, badges };
+    return { type: 'sections', ...densePlacement(dashboardConfig), header: { badges_position: 'bottom' }, sections, badges };
   }
 }
 

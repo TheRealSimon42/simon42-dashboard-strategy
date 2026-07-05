@@ -6,6 +6,17 @@ import type { LovelaceViewConfig, LovelaceBadgeConfig, LovelaceSectionConfig } f
 import { localize } from './localize';
 
 /**
+ * Opt-in dense placement for sections views: HA fills gaps in the grid
+ * (masonry-like) instead of strictly following the section order.
+ * Applied uniformly to all generated sections views.
+ */
+export function densePlacement(
+  config?: { dense_section_placement?: boolean }
+): Partial<LovelaceViewConfig> {
+  return config?.dense_section_placement === true ? { dense_section_placement: true } : {};
+}
+
+/**
  * Creates the main overview view.
  *
  * - Badges and header are only included when personBadges has entries.
@@ -13,7 +24,8 @@ import { localize } from './localize';
  */
 export function createOverviewView(
   sections: LovelaceSectionConfig[],
-  personBadges: LovelaceBadgeConfig[]
+  personBadges: LovelaceBadgeConfig[],
+  strategyConfig?: { dense_section_placement?: boolean }
 ): LovelaceViewConfig {
   return {
     title: localize('views.overview'),
@@ -21,6 +33,7 @@ export function createOverviewView(
     icon: 'mdi:home',
     type: 'sections',
     max_columns: 3,
+    ...densePlacement(strategyConfig),
     badges: personBadges.length > 0 ? personBadges : undefined,
     header:
       personBadges.length > 0

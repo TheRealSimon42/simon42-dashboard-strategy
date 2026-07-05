@@ -3,6 +3,7 @@
 // ====================================================================
 
 import type { LovelaceViewConfig } from '../types/lovelace';
+import { densePlacement } from '../utils/view-builder';
 
 class Simon42ViewLightsStrategy extends HTMLElement {
   static async generate(config: any, _hass: any): Promise<LovelaceViewConfig> {
@@ -12,6 +13,7 @@ class Simon42ViewLightsStrategy extends HTMLElement {
 
     return {
       type: 'sections',
+      ...densePlacement(dashboardConfig),
       sections: [
         {
           type: 'grid',

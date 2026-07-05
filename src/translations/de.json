@@ -422,6 +422,8 @@
     "show_energy_in_rooms_desc": "Zeigt Leistungs-, Energie-, Wasser- und Gas-Sensoren des Bereichs als eigenen Block in der Raum-Ansicht. Einzelne Sensoren lassen sich unten pro Bereich ausblenden.",
     "domain_ups": "USV",
     "domain_energy": "Energie-Sensoren",
-    "domain_group_disabled_hint": "Global deaktiviert — Schalter oben in den Raum-Einstellungen aktivieren."
+    "domain_group_disabled_hint": "Global deaktiviert — Schalter oben in den Raum-Einstellungen aktivieren.",
+    "dense_section_placement": "Kompakte Anordnung der Abschnitte",
+    "dense_section_placement_desc": "Füllt Lücken im Raster aller generierten Ansichten auf (dichte Anordnung). Abschnitte können dadurch von der konfigurierten Reihenfolge abweichen."
   }
 }

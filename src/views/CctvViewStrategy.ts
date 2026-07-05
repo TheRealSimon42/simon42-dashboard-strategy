@@ -30,6 +30,7 @@ import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { debugLog } from '../utils/debug';
 import { defineViewStrategy } from './view-strategy-base';
+import { densePlacement } from '../utils/view-builder';
 
 // -- Camera stream preference (Reolink) --------------------------------
 // Reolink exposes several camera entities per device (sub/main streams,
@@ -653,7 +654,7 @@ async function generateCctvView(
   Registry.initialize(hass, config.config || {});
 
   const sections = await buildCctvSections(hass, config.config || {});
-  return { type: 'sections', max_columns: 3, sections };
+  return { type: 'sections', max_columns: 3, ...densePlacement(config.config), sections };
 }
 
 defineViewStrategy('ll-strategy-simon42-view-cameras', generateCctvView);

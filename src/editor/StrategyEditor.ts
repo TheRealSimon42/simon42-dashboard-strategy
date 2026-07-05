@@ -1726,6 +1726,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const showClockCard = this._config.show_clock_card !== false;
     const showSearchCard = this._config.show_search_card === true;
     const hideUnavailableEntities = this._config.hide_unavailable_entities === true;
+    const denseSectionPlacement = this._config.dense_section_placement === true;
     const showPersonBadges = this._config.show_person_badges !== false;
     const hasSearchCardDeps = this._checkSearchCardDependencies();
     const alarmEntity = this._config.alarm_entity || '';
@@ -1780,6 +1781,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderCheckbox('hide-unavailable-entities', localize('editor.hide_unavailable_entities'), hideUnavailableEntities,
           (checked) => this._toggleChanged('hide_unavailable_entities', checked, false))}
         <div class="description">${localize('editor.hide_unavailable_entities_desc')}</div>
+
+        ${this._renderCheckbox('dense-section-placement', localize('editor.dense_section_placement'), denseSectionPlacement,
+          (checked) => this._toggleChanged('dense_section_placement', checked, false))}
+        <div class="description">${localize('editor.dense_section_placement_desc')}</div>
 
         ${this._renderCheckbox('show-person-badges', localize('editor.show_person_badges'), showPersonBadges,
           (checked) => this._toggleChanged('show_person_badges', checked, true))}

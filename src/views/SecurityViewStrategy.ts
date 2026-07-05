@@ -13,6 +13,7 @@ import { SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 import { getVisibleAreasFromHass } from '../utils/name-utils';
 import { collectCameraBlocks, cameraBlockAreaId, leanCameraCard } from './CctvViewStrategy';
 import { defineViewStrategy } from './view-strategy-base';
+import { densePlacement } from '../utils/view-builder';
 
 /** Reflect.get keeps dynamic state lookups off the object-injection radar. */
 function stateFor(hass: HomeAssistant, entityId: string): HassEntity | undefined {
@@ -710,6 +711,7 @@ async function generateSecurityView(
   const grouped = dashboardConfig.group_security_by_areas === true;
   return {
     type: 'sections',
+    ...densePlacement(dashboardConfig),
     ...(grouped ? { max_columns: 3 } : {}),
     sections: buildSecuritySections(hass, dashboardConfig),
     ...(sidebar ? { sidebar } : {}),

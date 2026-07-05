@@ -369,7 +369,7 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
       ...sunBadges,
       ...updatesBadges,
       ...customBadges,
-    ]);
+    ], dashboardConfig);
   }
 }
 

@@ -222,6 +222,7 @@ export interface Simon42StrategyConfig {
   sections_order?: SectionOrderKey[]; // default: DEFAULT_SECTIONS_ORDER + custom keys
   summaries_columns?: 2 | 4; // default: 2
   hidden_section_headings?: HeadingKey[]; // default: []
+  dense_section_placement?: boolean; // default: false — fill grid gaps in all generated sections views
 
   // Favorites display
   favorites_show_state?: boolean; // default: false

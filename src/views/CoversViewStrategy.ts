@@ -4,6 +4,7 @@
 
 import type { LovelaceViewConfig } from '../types/lovelace';
 import { localize } from '../utils/localize';
+import { densePlacement } from '../utils/view-builder';
 
 class Simon42ViewCoversStrategy extends HTMLElement {
   static async generate(config: any, _hass: any): Promise<LovelaceViewConfig> {
@@ -130,6 +131,7 @@ class Simon42ViewCoversStrategy extends HTMLElement {
 
     return {
       type: 'sections',
+      ...densePlacement(config.config),
       sections: [{ type: 'grid', cards }],
     };
   }

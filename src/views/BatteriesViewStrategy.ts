@@ -7,6 +7,7 @@ import type { LovelaceViewConfig, LovelaceSectionConfig } from '../types/lovelac
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { getBatteryEntities } from '../utils/entity-filter';
+import { densePlacement } from '../utils/view-builder';
 
 function getAreaNameForEntity(entityId: string, hass: HomeAssistant): string | null {
   const entity = Registry.getEntity(entityId);
@@ -143,7 +144,7 @@ class Simon42ViewBatteriesStrategy extends HTMLElement {
     const goodSection = createBatterySection(good, 'good', `> ${lowThreshold}%`, hass, showArea);
     if (goodSection) sections.push(goodSection);
 
-    return { type: 'sections', sections };
+    return { type: 'sections', ...densePlacement(strategyConfig), sections };
   }
 }
 
