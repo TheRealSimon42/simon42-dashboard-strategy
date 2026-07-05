@@ -59,12 +59,14 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Etagen-Gruppierung** — Bereiche, Lichter und Rollos optional nach Etagen gliedern
 - **Favoriten** — Beliebige Entitäten als Kacheln auf der Übersicht anpinnen
 - **Alarm-Panel** — Optionale Alarmanlage neben der Uhr
-- **Granulare Filterung** — Per Label (`no-dboard`), pro Bereich, pro Domain, pro Entity
+- **Granulare Filterung** — Per Label (`no-dboard` fürs Dashboard, `no_seclog` fürs Sicherheits-Logbuch), pro Bereich, pro Domain, pro Entity
 - **Teiloffene Rollos** — Optionale dritte Gruppe (Offen / Teiloffen / Geschlossen) mit Live-Übergängen
 - **Alert-Icons** — Optionale Alert-Badges auf Bereichskarten (Bewegung, Feuchtigkeit, Rauch, Wärme u.a.)
 - **Rauch-, Gas- & Hitzemelder** — In der Sicherheits-Übersicht, im Security-Summary-Count und als Badges in Raum-Views
 - **Wetter flexibel** — Wetter-Entität wählbar, Darstellung umschaltbar (Forecast täglich/stündlich, Tile, eigene Karte), eigene Außensensoren als Inline-Zeile *(ab v1.4.0)*
-- **Kamera-Ansicht (CCTV)** — Opt-in View mit allen Kameras: Scheinwerfer-Steuerung, PTZ-Steuerkreuz und Aufnahmen-Link (Reolink), LLM Vision Ereignis-Timelines *(ab v1.4.0)*
+- **Sicherheits-Ansicht im HA-Style** — Alle Bereiche untereinander (nach Etagen), Aktivitäts-Verlauf (24h-Logbuch) als Seitenleiste oder Section, Kameras opt-in *(ab v1.4.0)*
+- **Kamera-Ansicht (CCTV, experimentell)** — Opt-in View mit allen Kameras: Scheinwerfer-Steuerung, PTZ-Steuerkreuz und Aufnahmen-Link (Reolink), LLM Vision Ereignis-Timelines *(ab v1.4.0)*
+- **Pollenflug-Karte (DWD)** — Aktuelle Pollenbelastung unter der Wetterkarte, automatisch erkannt via HACS-Integration *(ab v1.4.0)*
 - **Batch-Aktionen** — Heading-Badges für Gruppensteuerung (alle ein/aus, alle öffnen/schließen)
 - **Automationen & Skripte in Räumen** — Bereichs-zugeordnete Automationen und Skripte in Raum-Views anzeigen
 - **Eigene Karten** — Beliebige Karten via YAML auf der Übersicht einbinden, Ziel-Section frei wählbar
