@@ -163,7 +163,8 @@
     "sidebar_label": "System",
     "video_tips": "Expertentipps",
     "video_tip_watch": "Ansehen",
-    "video_tip_dismiss": "Gesehen — nicht mehr anzeigen"
+    "video_tip_dismiss": "Gesehen — nicht mehr anzeigen",
+    "activity": "Aktivität"
   },
   "room": {
     "cameras": "Kameras",
@@ -449,6 +450,8 @@
     "maintenance_visible_users_desc": "Ohne Einschränkung sehen alle Benutzer die Kachel und den Tab. Die Auswahl basiert auf Personen mit verknüpftem HA-Benutzer. Hinweis: reine Anzeigelogik, kein Zugriffsschutz — die Ansicht bleibt per URL erreichbar.",
     "maintenance_visible_users_none": "Keine Personen mit verknüpftem HA-Benutzer gefunden — Einschränkung alternativ per YAML-Schlüssel maintenance_visible_users.",
     "show_video_tips": "Expertentipps (Videos) anzeigen",
-    "show_video_tips_desc": "Zeigt in der Wartungs-Ansicht bis zu drei passende simon42-Videos zu deinen installierten Integrationen (deutschsprachig, feste Liste im Paket — es werden keine Daten abgerufen oder übertragen). Jeder Tipp lässt sich per „Gesehen“ dauerhaft ausblenden (pro Browser)."
+    "show_video_tips_desc": "Zeigt in der Wartungs-Ansicht bis zu drei passende simon42-Videos zu deinen installierten Integrationen (deutschsprachig, feste Liste im Paket — es werden keine Daten abgerufen oder übertragen). Jeder Tipp lässt sich per „Gesehen“ dauerhaft ausblenden (pro Browser).",
+    "show_maintenance_activity": "Aktivitätsverlauf anzeigen",
+    "show_maintenance_activity_desc": "Logbuch der letzten 24 Stunden in der Seitenleiste — nur für die Entitäten, die diese Ansicht gerade meldet (anstehende Updates, nicht verfügbare Geräte, kritische Batterien). Blendet sich ohne Logbuch-Integration oder ohne Meldungen automatisch aus."
   }
 }

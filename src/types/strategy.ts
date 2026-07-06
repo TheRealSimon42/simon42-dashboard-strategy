@@ -142,6 +142,10 @@ export interface Simon42StrategyConfig {
   // that see the maintenance tile + nav tab (native Lovelace user condition).
   // Display logic only — NOT a security boundary; the view stays reachable
   // by URL for everyone
+  show_maintenance_activity?: boolean; // default: true — logbook (24h) in
+  // the maintenance view sidebar, scoped to exactly the entities the view
+  // surfaces (pending updates, unavailable devices, critical batteries);
+  // auto-hides without the logbook integration or when nothing's wrong
   show_video_tips?: boolean; // default: true — "Expertentipps" in the
   // maintenance view (sidebar): curated simon42 videos matched to the
   // installed integrations (static list in the bundle, no runtime fetch,

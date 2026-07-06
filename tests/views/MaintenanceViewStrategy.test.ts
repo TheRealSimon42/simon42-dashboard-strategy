@@ -17,6 +17,7 @@ import {
   buildMaintenanceView,
   buildAdminCards,
   buildMaintenanceSidebar,
+  buildMaintenanceActivitySection,
   buildUpdatesFallbackSection,
   buildUnavailableSection,
   buildCriticalBatteriesSection,
@@ -197,6 +198,47 @@ describe('haVersionAtLeast', () => {
     expect(haVersionAtLeast(hass, 2026, 3)).toBe(true);
     cfg.version = undefined;
     expect(haVersionAtLeast(hass, 2026, 3)).toBe(false);
+  });
+});
+
+describe('buildMaintenanceActivitySection', () => {
+  it('scopes the logbook to exactly the reported entities', () => {
+    const hass = initHass({ ...maintenanceSpec(), components: ['logbook'] });
+    const cards = cardsOf(buildMaintenanceActivitySection(hass, {}));
+    const logbook = cards.find(function isLogbook(c) { return c.type === 'logbook'; });
+    expect(logbook).toBeDefined();
+    const ids: string[] = logbook?.target?.entity_id ?? [];
+    // pending update + dead-device representative + orphan + critical battery …
+    expect(ids).toContain('update.core');
+    expect(ids).toContain('sensor.dead_temp');
+    expect(ids).toContain('sensor.template_kaputt');
+    expect(ids).toContain('sensor.tuer_batterie');
+    // … but no healthy entities
+    expect(ids).not.toContain('light.wohnzimmer');
+    expect(ids).not.toContain('sensor.fenster_batterie');
+  });
+
+  it('hides without the logbook integration, when disabled, or when all clear', () => {
+    const noLogbook = initHass();
+    expect(buildMaintenanceActivitySection(noLogbook, {})).toBeNull();
+
+    const withLogbook = initHass({ ...maintenanceSpec(), components: ['logbook'] });
+    expect(buildMaintenanceActivitySection(withLogbook, { show_maintenance_activity: false })).toBeNull();
+
+    const allClear = initHass({
+      components: ['logbook'],
+      entities: [{ entity_id: 'light.ok', state: 'on' }],
+    });
+    expect(buildMaintenanceActivitySection(allClear, {})).toBeNull();
+  });
+
+  it('renders in the sidebar between the admin cards and the video tips', () => {
+    const hass = initHass({ ...maintenanceSpec(), components: ['logbook'] });
+    setHaVersion(hass, '2026.7.1');
+    const sidebarIcons = (buildMaintenanceSidebar(hass, {})?.sections || []).map(function headingIcon(s) {
+      return s.cards?.[0]?.icon ?? s.cards?.[0]?.type;
+    });
+    expect(sidebarIcons).toEqual(['repairs', 'mdi:history', 'mdi:school-outline']);
   });
 });
 

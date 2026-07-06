@@ -163,7 +163,8 @@
     "sidebar_label": "System",
     "video_tips": "Expert tips",
     "video_tip_watch": "Watch",
-    "video_tip_dismiss": "Seen — don’t show again"
+    "video_tip_dismiss": "Seen — don’t show again",
+    "activity": "Activity"
   },
   "room": {
     "cameras": "Cameras",
@@ -449,6 +450,8 @@
     "maintenance_visible_users_desc": "Without a selection every user sees the tile and tab. Options come from persons linked to an HA user. Note: display logic only, not access control — the view stays reachable by URL.",
     "maintenance_visible_users_none": "No persons linked to an HA user found — restrict via the maintenance_visible_users YAML key instead.",
     "show_video_tips": "Show expert tips (videos)",
-    "show_video_tips_desc": "Shows up to three matching simon42 videos (German language) for your installed integrations in the maintenance view. Static list shipped with the bundle — nothing is fetched or transmitted. Each tip can be dismissed permanently per browser."
+    "show_video_tips_desc": "Shows up to three matching simon42 videos (German language) for your installed integrations in the maintenance view. Static list shipped with the bundle — nothing is fetched or transmitted. Each tip can be dismissed permanently per browser.",
+    "show_maintenance_activity": "Show activity log",
+    "show_maintenance_activity_desc": "Logbook of the last 24 hours in the sidebar — scoped to the entities this view currently reports (pending updates, unavailable devices, critical batteries). Auto-hides without the logbook integration or when nothing is reported."
   }
 }

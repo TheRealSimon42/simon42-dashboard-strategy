@@ -1993,6 +1993,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
         ${this._config.show_maintenance_summary === true ? html`
           <div style="margin-left: 26px; margin-bottom: 8px;">
+            ${this._renderCheckbox('show-maintenance-activity', localize('editor.show_maintenance_activity'), this._config.show_maintenance_activity !== false,
+              (checked) => this._toggleChanged('show_maintenance_activity', checked, true))}
+            <div class="description">${localize('editor.show_maintenance_activity_desc')}</div>
+
             ${this._renderCheckbox('show-video-tips', localize('editor.show_video_tips'), this._config.show_video_tips !== false,
               (checked) => this._toggleChanged('show_video_tips', checked, true))}
             <div class="description">${localize('editor.show_video_tips_desc')}</div>

@@ -74,11 +74,58 @@ export function buildAdminCards(hass: HomeAssistant): LovelaceCardConfig[] {
   ];
 }
 
+/** Logbook queries get heavy with long entity lists — bound it. */
+const MAX_ACTIVITY_ENTITIES = 50;
+
 /**
- * Sidebar with the admin cards + HACS link + video tips — HA-Home-style
- * placement (HA puts repairs/updates/discovered in the overview sidebar
- * too). Only on HA >= 2026.3; older frontends have no built-in cards to
- * show, so everything stays in the main content there.
+ * Activity log scoped to exactly the entities this view surfaces:
+ * pending updates, unavailable devices (their representative entity)
+ * and critical batteries. Opt-out via show_maintenance_activity;
+ * auto-hides without the logbook integration or when nothing's wrong.
+ */
+export function buildMaintenanceActivitySection(
+  hass: HomeAssistant,
+  config: Simon42StrategyConfig,
+  logbookRows?: number
+): LovelaceSectionConfig | null {
+  if (config.show_maintenance_activity === false) return null;
+  if (!hass.config?.components?.includes('logbook')) return null;
+
+  const scan = buildMaintenanceScan(hass, config);
+  const criticalThreshold = config.battery_critical_threshold ?? 20;
+  const ids = new Set<string>([
+    ...pendingUpdateIds(hass, scan),
+    ...listUnavailableBlocks(hass, scan).map(function toRepresentative(block) {
+      return block.representativeId;
+    }),
+    ...criticalBatteryIds(hass, scan, criticalThreshold),
+  ]);
+  if (ids.size === 0) return null;
+
+  return {
+    type: 'grid',
+    cards: [
+      {
+        type: 'heading',
+        heading: localize('maintenance.activity'),
+        heading_style: 'title',
+        icon: 'mdi:history',
+      },
+      {
+        type: 'logbook',
+        target: { entity_id: [...ids].slice(0, MAX_ACTIVITY_ENTITIES) },
+        hours_to_show: 24,
+        grid_options: { columns: 12, ...(logbookRows ? { rows: logbookRows } : {}) },
+      },
+    ],
+  };
+}
+
+/**
+ * Sidebar with the admin cards + HACS link + activity log + video tips —
+ * HA-Home-style placement (HA puts repairs/updates/discovered in the
+ * overview sidebar too). Only on HA >= 2026.3; older frontends have no
+ * built-in cards to show, so everything stays in the main content there.
  */
 export function buildMaintenanceSidebar(
   hass: HomeAssistant,
@@ -92,6 +139,8 @@ export function buildMaintenanceSidebar(
   if (hacsCard) cards.push(hacsCard);
 
   const sections: LovelaceSectionConfig[] = [{ type: 'grid', cards }];
+  const activitySection = buildMaintenanceActivitySection(hass, config, 8);
+  if (activitySection) sections.push(activitySection);
   const videoTipsSection = buildVideoTipsSection(hass, config);
   if (videoTipsSection) sections.push(videoTipsSection);
 
@@ -280,8 +329,11 @@ export function buildMaintenanceView(
     });
   }
 
-  // Without the sidebar, video tips + HACS link trail the main content
+  // Without the sidebar, activity + video tips + HACS link trail the
+  // main content
   if (!sidebar) {
+    const activitySection = buildMaintenanceActivitySection(hass, config);
+    if (activitySection) sections.push(activitySection);
     const videoTipsSection = buildVideoTipsSection(hass, config);
     if (videoTipsSection) sections.push(videoTipsSection);
     const hacsCard = hacsHintCard(hass);
