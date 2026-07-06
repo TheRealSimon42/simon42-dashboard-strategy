@@ -20,10 +20,16 @@ function hasPlatformEntity(hass: HomeAssistant, platform: string): boolean {
 }
 
 function tipMatches(hass: HomeAssistant, tip: VideoTip): boolean {
+  const components = hass.config?.components;
   if (tip.componentsAny) {
-    const components = hass.config?.components;
     if (!components) return false;
     if (!tip.componentsAny.some(function isLoaded(domain) { return components.includes(domain); })) {
+      return false;
+    }
+  }
+  // Setup videos vanish once the thing they teach is already installed
+  if (tip.notComponentsAny && components) {
+    if (tip.notComponentsAny.some(function isLoaded(domain) { return components.includes(domain); })) {
       return false;
     }
   }

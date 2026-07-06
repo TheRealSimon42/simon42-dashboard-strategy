@@ -159,13 +159,13 @@ describe('admin cards + sidebar (HA version gate)', () => {
   it('returns no admin cards when hass has no version (older HA)', () => {
     const hass = initHass();
     expect(buildAdminCards(hass)).toEqual([]);
-    expect(buildMaintenanceSidebar(hass)).toBeUndefined();
+    expect(buildMaintenanceSidebar(hass, {})).toBeUndefined();
   });
 
   it('puts repairs + updates + discovered-devices full-width into the sidebar on HA >= 2026.3', () => {
     const hass = initHass();
     setHaVersion(hass, '2026.7.1');
-    const sidebar = buildMaintenanceSidebar(hass);
+    const sidebar = buildMaintenanceSidebar(hass, {});
     const cards = sidebar?.sections?.[0]?.cards || [];
     expect(cards.map(function toType(c) { return c.type; })).toEqual([
       'repairs',
@@ -180,7 +180,7 @@ describe('admin cards + sidebar (HA version gate)', () => {
   it('appends the HACS quick link to the sidebar when hacs is loaded', () => {
     const hass = initHass({ ...maintenanceSpec(), components: ['hacs'] });
     setHaVersion(hass, '2026.7.1');
-    const cards = buildMaintenanceSidebar(hass)?.sections?.[0]?.cards || [];
+    const cards = buildMaintenanceSidebar(hass, {})?.sections?.[0]?.cards || [];
     expect(cards[cards.length - 1].type).toBe('markdown');
   });
 });
@@ -200,15 +200,16 @@ describe('haVersionAtLeast', () => {
   });
 });
 
-describe('buildVideoTipsSection (opt-in)', () => {
-  it('returns null unless show_video_tips is enabled', () => {
+describe('buildVideoTipsSection (default on, opt-out)', () => {
+  it('renders by default and returns null when show_video_tips is false', () => {
     const hass = initHass({ ...maintenanceSpec(), components: ['hacs'] });
-    expect(buildVideoTipsSection(hass, {})).toBeNull();
+    expect(buildVideoTipsSection(hass, {})).not.toBeNull();
+    expect(buildVideoTipsSection(hass, { show_video_tips: false })).toBeNull();
   });
 
   it('renders matching tips as full-width cards with the tip id', () => {
     const hass = initHass({ ...maintenanceSpec(), components: ['hacs'] });
-    const cards = cardsOf(buildVideoTipsSection(hass, { show_video_tips: true }));
+    const cards = cardsOf(buildVideoTipsSection(hass, {}));
     const tipCards = cards.filter(function isTipCard(c) {
       return c.type === 'custom:simon42-video-tip-card';
     });
@@ -230,6 +231,19 @@ describe('matchVideoTips', () => {
     expect(withoutDismissed.map(function toId(t) { return t.id; })).not.toContain('haghs-check');
   });
 
+  it('hides setup videos once the taught integration is installed (notComponentsAny)', () => {
+    const withoutHaghs = initHass({ ...maintenanceSpec(), components: ['hacs'] });
+    expect(matchVideoTips(withoutHaghs, new Set()).map(function toId(t) { return t.id; })).toContain('haghs-check');
+
+    const withHaghs = initHass({ ...maintenanceSpec(), components: ['hacs', 'haghs'] });
+    expect(matchVideoTips(withHaghs, new Set()).map(function toId(t) { return t.id; })).not.toContain('haghs-check');
+
+    const withMcp = initHass({ ...maintenanceSpec(), components: ['mcp'] });
+    const mcpIds = matchVideoTips(withMcp, new Set()).map(function toId(t) { return t.id; });
+    expect(mcpIds).not.toContain('ha-mcp-setup');
+    expect(mcpIds).toContain('claude-bilanz');
+  });
+
   it('matches platform-based tips only when an entity of that platform exists', () => {
     const withShelly = initHass({
       entities: [{ entity_id: 'sensor.shelly_power', state: '5', platform: 'shelly' }],
@@ -245,14 +259,18 @@ describe('matchVideoTips', () => {
   it('caps the result at three tips', () => {
     const hass = initHass({
       ...maintenanceSpec(),
-      components: ['hacs', 'ollama', 'mcp', 'tailscale', 'bluetooth', 'duckdns'],
+      components: ['hacs', 'ollama', 'mcp'],
+      entities: [
+        ...maintenanceSpec().entities!,
+        { entity_id: 'sensor.shelly_power', state: '5', platform: 'shelly' },
+      ],
     });
     expect(matchVideoTips(hass, new Set()).length).toBeLessThanOrEqual(3);
   });
 });
 
 describe('buildMaintenanceView', () => {
-  it('orders main content updates(fallback) → batteries → unavailable without a sidebar', () => {
+  it('orders main content updates(fallback) → batteries → unavailable → tips without a sidebar', () => {
     const hass = initHass();
     const view = buildMaintenanceView(hass, {});
     expect(view.type).toBe('sections');
@@ -260,27 +278,32 @@ describe('buildMaintenanceView', () => {
     const headings = (view.sections || []).map(function firstCardType(s) {
       return s.cards?.[0]?.type === 'heading' ? s.cards?.[0]?.icon : s.cards?.[0]?.type;
     });
-    expect(headings).toEqual(['mdi:update', 'mdi:battery-alert', 'mdi:lan-disconnect']);
+    // fixture has no components → the MCP setup tip matches, trailing
+    expect(headings).toEqual(['mdi:update', 'mdi:battery-alert', 'mdi:lan-disconnect', 'mdi:school-outline']);
   });
 
-  it('moves updates into the sidebar on HA >= 2026.3 (no duplicate tiles section)', () => {
+  it('moves updates and video tips into the sidebar on HA >= 2026.3', () => {
     const hass = initHass();
     setHaVersion(hass, '2026.7.1');
     const view = buildMaintenanceView(hass, {});
     expect(view.sidebar).toBeDefined();
     const icons = (view.sections || []).map(function headingIcon(s) { return s.cards?.[0]?.icon; });
     expect(icons).not.toContain('mdi:update');
+    expect(icons).not.toContain('mdi:school-outline');
     expect(icons[icons.length - 1]).toBe('mdi:lan-disconnect');
+    // tips = second sidebar section, after the admin cards
+    const sidebarIcons = (view.sidebar?.sections || []).map(function headingIcon(s) { return s.cards?.[0]?.icon ?? s.cards?.[0]?.type; });
+    expect(sidebarIcons).toEqual(['repairs', 'mdi:school-outline']);
   });
 
-  it('shows a friendly all-clear card when nothing is pending', () => {
+  it('shows a friendly all-clear card when nothing is pending (tips may trail)', () => {
     const hass = initHass({
       entities: [{ entity_id: 'light.ok', state: 'on' }],
     });
     const view = buildMaintenanceView(hass, {});
-    expect(view.sections).toHaveLength(1);
-    const card = view.sections?.[0]?.cards?.[0];
-    expect(card?.type).toBe('markdown');
+    const first = view.sections?.[0]?.cards?.[0];
+    expect(first?.type).toBe('markdown');
+    expect(first?.content).toContain('✅');
   });
 });
 

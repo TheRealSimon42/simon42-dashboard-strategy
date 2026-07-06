@@ -75,11 +75,15 @@ export function buildAdminCards(hass: HomeAssistant): LovelaceCardConfig[] {
 }
 
 /**
- * Sidebar with the admin cards + HACS link — HA-Home-style placement
- * (HA puts repairs/updates/discovered in the overview sidebar too).
- * Only on HA >= 2026.3; older frontends have no built-in cards to show.
+ * Sidebar with the admin cards + HACS link + video tips — HA-Home-style
+ * placement (HA puts repairs/updates/discovered in the overview sidebar
+ * too). Only on HA >= 2026.3; older frontends have no built-in cards to
+ * show, so everything stays in the main content there.
  */
-export function buildMaintenanceSidebar(hass: HomeAssistant): LovelaceViewSidebarConfig | undefined {
+export function buildMaintenanceSidebar(
+  hass: HomeAssistant,
+  config: Simon42StrategyConfig
+): LovelaceViewSidebarConfig | undefined {
   const adminCards = buildAdminCards(hass);
   if (adminCards.length === 0) return undefined;
 
@@ -87,8 +91,12 @@ export function buildMaintenanceSidebar(hass: HomeAssistant): LovelaceViewSideba
   const hacsCard = hacsHintCard(hass);
   if (hacsCard) cards.push(hacsCard);
 
+  const sections: LovelaceSectionConfig[] = [{ type: 'grid', cards }];
+  const videoTipsSection = buildVideoTipsSection(hass, config);
+  if (videoTipsSection) sections.push(videoTipsSection);
+
   return {
-    sections: [{ type: 'grid', cards }],
+    sections,
     content_label: localize('maintenance.content_label'),
     sidebar_label: localize('maintenance.sidebar_label'),
   };
@@ -205,15 +213,15 @@ export function buildCriticalBatteriesSection(
 
 /**
  * "Expertentipps" — curated simon42 videos matched to the installed
- * integrations. Opt-in (show_video_tips), max 3 at once, each
- * dismissable ("seen" — stored per browser in localStorage; dismissed
- * tips are skipped on the next generate).
+ * integrations. Default ON (opt-out via show_video_tips: false), max 3
+ * at once, each dismissable ("seen" — stored per browser in
+ * localStorage; dismissed tips are skipped on the next generate).
  */
 export function buildVideoTipsSection(
   hass: HomeAssistant,
   config: Simon42StrategyConfig
 ): LovelaceSectionConfig | null {
-  if (config.show_video_tips !== true) return null;
+  if (config.show_video_tips === false) return null;
   const tips = matchVideoTips(hass, readDismissedTips());
   if (tips.length === 0) return null;
 
@@ -241,7 +249,7 @@ export function buildMaintenanceView(
   hass: HomeAssistant,
   config: Simon42StrategyConfig
 ): LovelaceViewConfig {
-  const sidebar = buildMaintenanceSidebar(hass);
+  const sidebar = buildMaintenanceSidebar(hass, config);
   const sections: LovelaceSectionConfig[] = [];
 
   // Updates tiles only when the sidebar (built-in updates card) is not
@@ -254,14 +262,12 @@ export function buildMaintenanceView(
   const batteriesSection = buildCriticalBatteriesSection(hass, config);
   if (batteriesSection) sections.push(batteriesSection);
 
-  const videoTipsSection = buildVideoTipsSection(hass, config);
-  if (videoTipsSection) sections.push(videoTipsSection);
-
   // Unavailable devices deliberately LAST — usually the longest list
   const unavailableSection = buildUnavailableSection(hass, config);
   if (unavailableSection) sections.push(unavailableSection);
 
   // All clear? Friendly empty state instead of a blank main column.
+  // Video tips don't count as maintenance content here.
   if (sections.length === 0) {
     sections.push({
       type: 'grid',
@@ -274,8 +280,10 @@ export function buildMaintenanceView(
     });
   }
 
-  // Without the sidebar the HACS link still deserves a home (main end)
+  // Without the sidebar, video tips + HACS link trail the main content
   if (!sidebar) {
+    const videoTipsSection = buildVideoTipsSection(hass, config);
+    if (videoTipsSection) sections.push(videoTipsSection);
     const hacsCard = hacsHintCard(hass);
     if (hacsCard) sections.push({ type: 'grid', cards: [hacsCard] });
   }

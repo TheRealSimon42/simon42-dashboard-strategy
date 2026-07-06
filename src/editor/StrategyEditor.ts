@@ -1993,8 +1993,8 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
         ${this._config.show_maintenance_summary === true ? html`
           <div style="margin-left: 26px; margin-bottom: 8px;">
-            ${this._renderCheckbox('show-video-tips', localize('editor.show_video_tips'), this._config.show_video_tips === true,
-              (checked) => this._toggleChanged('show_video_tips', checked, false))}
+            ${this._renderCheckbox('show-video-tips', localize('editor.show_video_tips'), this._config.show_video_tips !== false,
+              (checked) => this._toggleChanged('show_video_tips', checked, true))}
             <div class="description">${localize('editor.show_video_tips_desc')}</div>
 
             ${this._renderMaintenanceUsersPicker()}
