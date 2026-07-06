@@ -173,20 +173,52 @@ function buildRoomPinTile(
   };
 }
 
-function buildNativeCameraCard(
+/**
+ * Room camera card. Default: the classic direct picture-glance /
+ * picture-entity cards (camera_view auto, Aqara live). Opt-in via
+ * `camera_live_toggle`: the simon42-camera-card wrapper with a
+ * play/stop button — streams only run on demand.
+ */
+function buildRoomCameraCard(
   entity: string,
   name: string,
-  entities?: Array<string | Record<string, unknown>>,
-  liveDefault?: boolean
+  liveToggle: boolean,
+  entities?: Array<{ entity: string }>,
+  isAqara?: boolean
 ): LovelaceCardConfig {
+  if (liveToggle) {
+    return {
+      type: 'custom:simon42-camera-card',
+      entity,
+      name,
+      ...(entities && entities.length > 0 ? { entities } : {}),
+      // Aqara cameras provide no snapshot — they must start in live mode
+      ...(isAqara === true ? { live_default: true } : {}),
+      fit_mode: 'cover',
+    };
+  }
+
+  // Legacy cards (pre-#338 behavior): Reolink/Aqara always render as
+  // picture-glance (entities may be empty), everything else as picture-entity.
+  if (entities) {
+    return {
+      type: 'picture-glance',
+      camera_image: entity,
+      camera_view: isAqara === true ? 'live' : 'auto',
+      fit_mode: 'cover',
+      title: name,
+      entities,
+    };
+  }
+
   return {
-    type: 'custom:simon42-camera-card',
+    type: 'picture-entity',
     entity,
+    camera_image: entity,
+    camera_view: 'auto',
     name,
-    ...(entities && entities.length > 0 ? { entities } : {}),
-    // Aqara cameras provide no snapshot — they must start in live mode
-    ...(liveDefault === true ? { live_default: true } : {}),
-    fit_mode: 'cover',
+    show_name: true,
+    show_state: false,
   };
 }
 
@@ -636,6 +668,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     }
 
     if (roomEntities.cameras.length > 0) {
+      const cameraLiveToggle = dashboardConfig.camera_live_toggle === true;
       const cameraCards: LovelaceCardConfig[] = [];
       for (const cameraId of roomEntities.cameras) {
         if (!hass.states[cameraId]) continue;
@@ -692,9 +725,9 @@ class Simon42ViewRoomStrategy extends HTMLElement {
             if (doorbell) glanceEntities.push({ entity: doorbell });
           }
 
-          cameraCards.push(buildNativeCameraCard(cameraId, stripAreaName(cameraId, area, hass), glanceEntities, isAqara));
+          cameraCards.push(buildRoomCameraCard(cameraId, stripAreaName(cameraId, area, hass), cameraLiveToggle, glanceEntities, isAqara));
         } else {
-          cameraCards.push(buildNativeCameraCard(cameraId, stripAreaName(cameraId, area, hass)));
+          cameraCards.push(buildRoomCameraCard(cameraId, stripAreaName(cameraId, area, hass), cameraLiveToggle));
         }
       }
       if (cameraCards.length > 0) {

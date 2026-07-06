@@ -71,7 +71,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Automationen & Skripte in Räumen** — Bereichs-zugeordnete Automationen und Skripte in Raum-Views anzeigen
 - **Raum-Blöcke sortierbar** — Reihenfolge der automatisch erzeugten Blöcke (Kameras, Lichter, Klima, …) pro Raum per Drag & Drop *(ab v1.4.0)*
 - **USV- & Energie-Blöcke in Räumen** — opt-in: erkannte USVs mit Akku-Gauge, Energie-/Wasser-/Gas-Sensoren als eigener Block *(ab v1.4.0)*
-- **Kamera-Karte mit Live-Toggle** — Raum-Kameras starten als Standbild, Live-Stream per Play/Stopp-Button *(ab v1.4.0)*
+- **Kamera-Karte mit Live-Toggle** — opt-in: Raum-Kameras starten als Standbild, Live-Stream per Play/Stopp-Button *(ab v1.4.0)*
 - **Räume in der Navigation pinnen** — einzelne Raum-Views bleiben als Tab sichtbar, auch wenn Raum-Views sonst Subviews sind *(ab v1.4.0)*
 - **Nicht verfügbare Entitäten ausblenden** — opt-in: Karten und Badges mit `unavailable`/`unknown` verschwinden dynamisch *(ab v1.4.0)*
 - **Eigene Karten** — Beliebige Karten via YAML auf der Übersicht einbinden, Ziel-Section frei wählbar
@@ -277,7 +277,7 @@ strategy:
 
 **Fenster- & Türkontakte** — Fensterkontakte und Türkontakte erscheinen als Badges in den Raum-Views (standardmäßig an, per zwei getrennten Toggles im Editor abschaltbar). Absolute Luftfeuchtigkeit (z.B. von der Thermal Comfort Integration, `g/m³`) wird automatisch als Badge erkannt.
 
-**Kameras in Räumen** *(ab v1.4.0)* — Kameras in den Raum-Views sind standardmäßig an und können per Toggle deaktiviert werden. Die Kamera-Karte startet als Standbild und wechselt erst per **Play/Stopp-Button** in den Live-Stream — das spart Bandbreite und Last auf Wandtablets. Kameras ohne Standbild-Unterstützung (z.B. Aqara) starten automatisch im Live-Modus.
+**Kameras in Räumen** *(ab v1.4.0)* — Kameras in den Raum-Views sind standardmäßig an und können per Toggle deaktiviert werden. Optional (`camera_live_toggle`) startet die Kamera-Karte als Standbild und wechselt erst per **Play/Stopp-Button** in den Live-Stream — das spart Bandbreite und Last auf Wandtablets; Kameras ohne Standbild-Unterstützung (z.B. Aqara) starten dabei automatisch im Live-Modus. Standardmäßig verhalten sich die Kameras wie gewohnt (automatisch aktualisierte Vorschau).
 
 **Reihenfolge der Raum-Blöcke** *(ab v1.4.0)* — Die automatisch erzeugten Blöcke einer Raum-Ansicht (Kameras, Lichter, Schlösser, Klima, Rollos, Medien, Szenen, Sonstiges, …) lassen sich pro Raum per Drag & Drop sortieren: im Editor beim jeweiligen Bereich unter „Reihenfolge der Raum-Blöcke". In der Config landet das als `areas_options.{bereich}.stacks_order`. Nicht vorhandene Blöcke werden als inaktive Chips angezeigt; `room_pins_first` wird weiterhin berücksichtigt, solange keine eigene Reihenfolge gesetzt ist.
 
@@ -556,6 +556,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_automations_in_rooms` | boolean | `false` | — | Automationen in Raum-Views |
 | `show_scripts_in_rooms` | boolean | `false` | — | Skripte in Raum-Views |
 | `show_cameras_in_rooms` | boolean | `true` | v1.4.0 | Kamera-Streams in Raum-Views |
+| `camera_live_toggle` | boolean | `false` | v1.4.0 | Raum-Kameras als Standbild mit Play/Stopp-Button statt automatischer Vorschau |
 | `show_window_contacts_in_rooms` | boolean | `true` | v1.3.5 | Fensterkontakte als Badges in Raum-Views |
 | `show_door_contacts_in_rooms` | boolean | `true` | v1.3.5 | Türkontakte als Badges in Raum-Views |
 | `hide_unavailable_in_rooms` | boolean | `true` | v1.4.0 | Nicht verfügbare Entitäten in Raum-Views ausblenden |

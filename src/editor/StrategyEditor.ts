@@ -2606,6 +2606,14 @@ class Simon42DashboardStrategyEditor extends LitElement {
         ${this._renderCheckbox('show-cameras-in-rooms', localize('editor.show_cameras_in_rooms'), showCamerasInRooms,
           (checked) => this._toggleChanged('show_cameras_in_rooms', checked, true))}
         <div class="description">${localize('editor.show_cameras_in_rooms_desc')}</div>
+        ${showCamerasInRooms ? html`
+          <div style="margin-left: 26px;">
+            ${this._renderCheckbox('camera-live-toggle', localize('editor.camera_live_toggle'),
+              this._config.camera_live_toggle === true,
+              (checked) => this._toggleChanged('camera_live_toggle', checked, false))}
+            <div class="description">${localize('editor.camera_live_toggle_desc')}</div>
+          </div>
+        ` : nothing}
         ${this._renderCheckbox('hide-unavailable-in-rooms', localize('editor.hide_unavailable_in_rooms'),
           this._config.hide_unavailable_in_rooms !== false,
           (checked) => this._toggleChanged('hide_unavailable_in_rooms', checked, true))}

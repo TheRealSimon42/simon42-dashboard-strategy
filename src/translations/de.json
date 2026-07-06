@@ -424,6 +424,8 @@
     "domain_energy": "Energie-Sensoren",
     "domain_group_disabled_hint": "Global deaktiviert — Schalter oben in den Raum-Einstellungen aktivieren.",
     "dense_section_placement": "Kompakte Anordnung der Abschnitte",
-    "dense_section_placement_desc": "Füllt Lücken im Raster aller generierten Ansichten auf (dichte Anordnung). Abschnitte können dadurch von der konfigurierten Reihenfolge abweichen."
+    "dense_section_placement_desc": "Füllt Lücken im Raster aller generierten Ansichten auf (dichte Anordnung). Abschnitte können dadurch von der konfigurierten Reihenfolge abweichen.",
+    "camera_live_toggle": "Live-Stream per Play-Button (neue Kamera-Karte)",
+    "camera_live_toggle_desc": "Raum-Kameras starten als Standbild und streamen erst nach Klick auf den Play-Button — spart Bandbreite, z.B. auf Wandtablets. Standardmäßig aus: Kameras verhalten sich wie bisher (Vorschau mit automatischer Aktualisierung)."
   }
 }

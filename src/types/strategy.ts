@@ -175,6 +175,7 @@ export interface Simon42StrategyConfig {
   show_ups_in_rooms?: boolean; // default: false (opt-in, #310 section convention)
   show_energy_in_rooms?: boolean; // default: false (opt-in — power/energy/water/gas sensors as own room block)
   show_cameras_in_rooms?: boolean; // default: true
+  camera_live_toggle?: boolean; // default: false — wrapper card with play/stop button instead of the classic picture cards
   show_window_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide window contact badges)
   show_door_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide door contact badges)
   show_switches_on_areas?: boolean; // default: false
