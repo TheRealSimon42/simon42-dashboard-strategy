@@ -142,6 +142,10 @@ export interface Simon42StrategyConfig {
   // that see the maintenance tile + nav tab (native Lovelace user condition).
   // Display logic only — NOT a security boundary; the view stays reachable
   // by URL for everyone
+  show_video_tips?: boolean; // default: false — "Expertentipps" section in
+  // the maintenance view: curated simon42 videos matched to the installed
+  // integrations (static list in the bundle, no runtime fetch); each tip
+  // dismissable per browser via localStorage
   show_climate_summary?: boolean; // default: false
   show_camera_view?: boolean; // default: false — opt-in CCTV view (/cameras):
   // one block per camera device with spotlight tile, Reolink PTZ pad,

@@ -39,8 +39,24 @@ export interface MaintenanceScan {
   batteryIds: string[];
 }
 
+/**
+ * All dashboard-relevant update.* entities. Deliberately KEEPS
+ * config/diagnostic-category entities (mirrors getBatteryEntities):
+ * many integrations categorize their update entities (e.g. Shelly
+ * firmware = config), and HA's own updates card ignores the category
+ * too — filtering them out silently drops real pending updates.
+ */
+export function collectUpdateIds(): string[] {
+  return Registry.getEntityIdsForDomain('update').filter(function isDashboardRelevant(id) {
+    if (Registry.isExcludedByLabel(id)) return false;
+    if (Registry.isHiddenByConfig(id)) return false;
+    const entry = Registry.getEntity(id);
+    return !entry?.hidden;
+  });
+}
+
 export function buildMaintenanceScan(hass: HomeAssistant, config: Simon42StrategyConfig): MaintenanceScan {
-  const updateIds = Registry.getVisibleEntityIdsForDomain('update');
+  const updateIds = collectUpdateIds();
 
   const byDevice = new Map<string, string[]>();
   const orphanIds: string[] = [];

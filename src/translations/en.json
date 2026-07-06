@@ -158,7 +158,12 @@
     "batteries_critical": "Critical batteries",
     "all_ok": "All good — no maintenance due.",
     "hacs_hint": "HACS is installed — community updates show up in the updates list above.",
-    "hacs_open": "Open HACS"
+    "hacs_open": "Open HACS",
+    "content_label": "Maintenance",
+    "sidebar_label": "System",
+    "video_tips": "Expert tips",
+    "video_tip_watch": "Watch",
+    "video_tip_dismiss": "Seen — don’t show again"
   },
   "room": {
     "cameras": "Cameras",
@@ -442,6 +447,8 @@
     "show_maintenance_summary_desc": "Adds a “Maintenance” tile with its own subview (/maintenance): pending updates, unavailable devices, critical batteries and HA repairs (HA 2026.3+, admins only).",
     "maintenance_visible_users": "Visible to",
     "maintenance_visible_users_desc": "Without a selection every user sees the tile and tab. Options come from persons linked to an HA user. Note: display logic only, not access control — the view stays reachable by URL.",
-    "maintenance_visible_users_none": "No persons linked to an HA user found — restrict via the maintenance_visible_users YAML key instead."
+    "maintenance_visible_users_none": "No persons linked to an HA user found — restrict via the maintenance_visible_users YAML key instead.",
+    "show_video_tips": "Show expert tips (videos)",
+    "show_video_tips_desc": "Shows up to three matching simon42 videos (German language) for your installed integrations in the maintenance view. Static list shipped with the bundle — nothing is fetched or transmitted. Each tip can be dismissed permanently per browser."
   }
 }

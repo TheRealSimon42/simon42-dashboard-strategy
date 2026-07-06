@@ -158,7 +158,12 @@
     "batteries_critical": "Kritische Batterien",
     "all_ok": "Alles in Ordnung — keine Wartung fällig.",
     "hacs_hint": "HACS ist installiert — Community-Updates erscheinen oben in der Update-Liste.",
-    "hacs_open": "HACS öffnen"
+    "hacs_open": "HACS öffnen",
+    "content_label": "Wartung",
+    "sidebar_label": "System",
+    "video_tips": "Expertentipps",
+    "video_tip_watch": "Ansehen",
+    "video_tip_dismiss": "Gesehen — nicht mehr anzeigen"
   },
   "room": {
     "cameras": "Kameras",
@@ -442,6 +447,8 @@
     "show_maintenance_summary_desc": "Kachel „Wartung“ mit eigener Unterseite (/maintenance): anstehende Updates, nicht verfügbare Geräte, kritische Batterien und HA-Reparaturen (ab HA 2026.3, nur für Admins sichtbar).",
     "maintenance_visible_users": "Sichtbar für",
     "maintenance_visible_users_desc": "Ohne Einschränkung sehen alle Benutzer die Kachel und den Tab. Die Auswahl basiert auf Personen mit verknüpftem HA-Benutzer. Hinweis: reine Anzeigelogik, kein Zugriffsschutz — die Ansicht bleibt per URL erreichbar.",
-    "maintenance_visible_users_none": "Keine Personen mit verknüpftem HA-Benutzer gefunden — Einschränkung alternativ per YAML-Schlüssel maintenance_visible_users."
+    "maintenance_visible_users_none": "Keine Personen mit verknüpftem HA-Benutzer gefunden — Einschränkung alternativ per YAML-Schlüssel maintenance_visible_users.",
+    "show_video_tips": "Expertentipps (Videos) anzeigen",
+    "show_video_tips_desc": "Zeigt in der Wartungs-Ansicht bis zu drei passende simon42-Videos zu deinen installierten Integrationen (deutschsprachig, feste Liste im Paket — es werden keine Daten abgerufen oder übertragen). Jeder Tipp lässt sich per „Gesehen“ dauerhaft ausblenden (pro Browser)."
   }
 }

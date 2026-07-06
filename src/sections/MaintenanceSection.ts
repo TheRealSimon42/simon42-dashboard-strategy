@@ -7,8 +7,8 @@
 
 import type { HomeAssistant } from '../types/homeassistant';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
-import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { collectUpdateIds } from '../utils/maintenance-utils';
 
 export function createMaintenanceSection(
   hass: HomeAssistant,
@@ -17,7 +17,10 @@ export function createMaintenanceSection(
 ): LovelaceSectionConfig | null {
   if (!enabled) return null;
 
-  const pending = Registry.getVisibleEntityIdsForDomain('update').filter((id) => {
+  // Category-inclusive collection (see collectUpdateIds) — the plain
+  // visible filter silently drops categorized update entities (Shelly
+  // firmware = config category etc.)
+  const pending = collectUpdateIds().filter((id) => {
     return hass.states[id]?.state === 'on';
   });
   if (pending.length === 0) return null;
