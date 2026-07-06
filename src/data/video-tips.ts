@@ -18,6 +18,10 @@
 //                      loaded (hass.config.components)
 //   notComponentsAny — NONE of these domains may be loaded
 //   platform         — at least one registry entity from this platform
+//   deviceModelsAny  — at least one device whose model or model_id
+//                      CONTAINS one of these strings (case-insensitive);
+//                      for device-specific videos (e.g. Shelly Pro 3EM —
+//                      owning any Shelly is not enough)
 // A tip without conditions matches every installation.
 // ====================================================================
 
@@ -29,6 +33,7 @@ export interface VideoTip {
   readonly componentsAny?: readonly string[];
   readonly notComponentsAny?: readonly string[];
   readonly platform?: string;
+  readonly deviceModelsAny?: readonly string[];
 }
 
 /** Max tips rendered at once — never a wall of self-promotion. */
@@ -74,10 +79,12 @@ export const VIDEO_TIPS: readonly VideoTip[] = [
     componentsAny: ['mcp', 'mcp_server'],
   },
   {
-    // 21:34 — fixes a real data problem for Shelly 3EM owners
+    // 21:34 — fixes a real data problem SPECIFIC to the Shelly Pro 3EM;
+    // owning any Shelly is not enough (model "Shelly Pro 3EM",
+    // model_id SPEM-003CEBEU)
     id: 'shelly-3em',
     title: 'Der Shelly Pro 3EM hat ein Problem (so löst du es)',
     url: 'https://www.youtube.com/watch?v=RY-94ZUACOo',
-    platform: 'shelly',
+    deviceModelsAny: ['Pro 3EM', 'SPEM-'],
   },
 ];

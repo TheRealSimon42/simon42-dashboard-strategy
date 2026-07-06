@@ -19,6 +19,19 @@ function hasPlatformEntity(hass: HomeAssistant, platform: string): boolean {
   return false;
 }
 
+function hasDeviceModel(hass: HomeAssistant, needles: readonly string[]): boolean {
+  const lowered = needles.map(function toLower(n) { return n.toLowerCase(); });
+  for (const device of Object.values(hass.devices)) {
+    const model = (device.model ?? '').toLowerCase();
+    const modelId = (device.model_id ?? '').toLowerCase();
+    if (!model && !modelId) continue;
+    if (lowered.some(function contains(n) { return model.includes(n) || modelId.includes(n); })) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function tipMatches(hass: HomeAssistant, tip: VideoTip): boolean {
   const components = hass.config?.components;
   if (tip.componentsAny) {
@@ -34,6 +47,7 @@ function tipMatches(hass: HomeAssistant, tip: VideoTip): boolean {
     }
   }
   if (tip.platform && !hasPlatformEntity(hass, tip.platform)) return false;
+  if (tip.deviceModelsAny && !hasDeviceModel(hass, tip.deviceModelsAny)) return false;
   return true;
 }
 

@@ -244,16 +244,19 @@ describe('matchVideoTips', () => {
     expect(mcpIds).toContain('claude-bilanz');
   });
 
-  it('matches platform-based tips only when an entity of that platform exists', () => {
-    const withShelly = initHass({
-      entities: [{ entity_id: 'sensor.shelly_power', state: '5', platform: 'shelly' }],
+  it('matches device-model tips only for the specific model, not the whole brand', () => {
+    const withPro3em = initHass({
+      devices: [{ id: 'dev_3em', name: 'Stromzähler', model: 'Shelly Pro 3EM' }],
+      entities: [{ entity_id: 'sensor.pro3em_power', state: '5', device_id: 'dev_3em', platform: 'shelly' }],
     });
-    expect(matchVideoTips(withShelly, new Set()).map(function toId(t) { return t.id; })).toContain('shelly-3em');
+    expect(matchVideoTips(withPro3em, new Set()).map(function toId(t) { return t.id; })).toContain('shelly-3em');
 
-    const withoutShelly = initHass({
-      entities: [{ entity_id: 'light.ok', state: 'on' }],
+    // A Shelly plug is NOT a Pro 3EM — the video must not match
+    const withOtherShelly = initHass({
+      devices: [{ id: 'dev_plug', name: 'Steckdose', model: 'Shelly Plus Plug S' }],
+      entities: [{ entity_id: 'switch.plug', state: 'on', device_id: 'dev_plug', platform: 'shelly' }],
     });
-    expect(matchVideoTips(withoutShelly, new Set()).map(function toId(t) { return t.id; })).not.toContain('shelly-3em');
+    expect(matchVideoTips(withOtherShelly, new Set()).map(function toId(t) { return t.id; })).not.toContain('shelly-3em');
   });
 
   it('caps the result at three tips', () => {
