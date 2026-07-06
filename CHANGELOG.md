@@ -2,7 +2,12 @@
 All notable changes to this project will be documented in this file.  
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.9...HEAD).
+A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.10...HEAD).
+
+<a name="1.4.0-beta.10"></a>
+## [1.4.0-beta.10] - 2026-07-06 (Pre-Release)
+### Changes
+- rooms: the camera wrapper card with play/stop live toggle (introduced in beta.9) is now **opt-in** via `camera_live_toggle` (sub-toggle in the editor). By default room cameras render exactly as before beta.9: auto-refreshing picture-glance/picture-entity cards, Aqara cameras live ([#342](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/342))
 
 <a name="1.4.0-beta.9"></a>
 ## [1.4.0-beta.9] - 2026-07-06 (Pre-Release)
