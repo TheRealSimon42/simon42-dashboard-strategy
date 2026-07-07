@@ -209,11 +209,11 @@ npm run watch       # Dev + auto-rebuild on file changes
 Releases are cut by **release-please** — no manual version bumps, no manual CHANGELOG edits, no manual tags:
 
 1. On every push to `main`, `release-please.yml` maintains a permanent **Release PR** (runs under the `simon42-release-bot` GitHub App — GITHUB_TOKEN events don't trigger workflows, see the workflow header). The PR bumps `package.json`, `package-lock.json` and `STRATEGY_VERSION` (via the `// x-release-please-version` marker — **never remove that comment**) and writes the CHANGELOG entry from the Conventional-Commit squash titles since the last release
-2. Merging the Release PR makes release-please create a **draft** (pre-)release
-3. `release-build.yml` fires on the draft (`release: created`), builds, verifies (`verify-release-version.mjs`, `verify-release-bundle.mjs`), uploads all `dist/*.js` (+ `.gz`/`.br`/LICENSE) files as individual assets, then publishes the draft — release + assets appear atomically, HACS never sees an asset-less release
+2. Merging the Release PR makes release-please **publish** the (pre-)release directly. No draft: GitHub delivers no `release` workflow events for drafts, and release-please doesn't count drafts as released (learned the hard way on beta.13 — stalled pipeline + phantom next-version PR)
+3. `release-build.yml` fires on `release: published`, builds, verifies (`verify-release-version.mjs`, `verify-release-bundle.mjs`) and uploads all `dist/*.js` (+ `.gz`/`.br`/LICENSE) files as individual assets. The release is asset-less for the ~2 minutes the build takes — a HACS poll in that window fails once and self-heals
 4. HACS installs tagged versions from the release assets. `hide_default_branch: true` in `hacs.json` prevents installing `main`, which has no `dist/`
 
-- **Do not create GitHub releases or tags manually.** The legacy tag-push workflows (`release.yml`, `release-prerelease.yml`) remain only as a fallback until the release-please flow is verified end-to-end, then they get removed
+- **Do not create GitHub releases or tags manually.** The legacy tag-push workflows are removed — with direct publishing, the App-token tag push would have double-triggered them
 - Versioning is configured in `release-please-config.json`. During a beta cycle: `"versioning": "prerelease"` + `"prerelease-type": "beta"` increment `beta.N` on every `feat`/`fix`
 - **Cutting the stable release** (e.g. `v1.4.0`): flip `"prerelease"` to `false` and `"versioning"` to `"default"` in `release-please-config.json`; if the proposed version isn't the wanted one, force it with a `Release-As: 1.4.0` footer in an empty `chore` commit. Afterwards flip back for the next beta cycle
 - **Repair path**: build failed on a published release → `gh workflow run release-build.yml -f tag=vX.Y.Z`; failed while still draft → "Re-run failed jobs" on the workflow run

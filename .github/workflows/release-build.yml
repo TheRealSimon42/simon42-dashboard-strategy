@@ -1,27 +1,22 @@
 name: Release Build
 
-# Builds dist/ and attaches the JS assets to a release created by
-# release-please, then publishes it.
+# Builds dist/ and attaches the JS assets to a release published by
+# release-please.
 #
-# Trigger 1 (`release: created`): release-please creates its releases as
-# DRAFTS (`draft: true` in release-please-config.json). Drafts are invisible
-# to HACS and fire only `created`, never `published`. This job checks out the
-# release commit, builds, verifies, uploads all assets to the draft and flips
-# it live — release and assets appear atomically, so a HACS update poll can
-# never catch an asset-less release. (The old tag-push flow in
-# release.yml/release-prerelease.yml had the same atomicity; those workflows
-# stay as a manual fallback until this flow is verified, and cannot
-# double-fire: the tag created here comes from GITHUB_TOKEN, whose events
-# don't trigger workflows.)
+# Trigger 1 (`release: published`): release-please publishes its releases
+# directly (no draft — LESSON from the first live run: GitHub does NOT
+# deliver `release` workflow events for draft releases at all, and
+# release-please does not count drafts as released, so the draft design
+# stalled the pipeline and spawned a phantom next-version release PR).
+# Consequence: a just-published release is asset-less for the ~2 minutes
+# this build takes; a HACS poll in that window fails once and self-heals.
 #
 # Trigger 2 (`workflow_dispatch`): repair path — rebuild and re-attach assets
-# for an already-published release/tag. For a failed run on a still-draft
-# release, use "Re-run failed jobs" on the run instead (drafts have no tag to
-# dispatch against).
+# for an already-published release/tag.
 
 on:
   release:
-    types: [created]
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -43,10 +38,8 @@ jobs:
             echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
             echo "ref=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
           else
-            # Draft releases have no tag ref yet — release-please sets
-            # target_commitish to the release commit's SHA, so build that.
             echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
-            echo "ref=${{ github.event.release.target_commitish }}" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout
@@ -95,12 +88,3 @@ jobs:
           gh release upload "${{ steps.ref.outputs.tag }}" \
             dist/*.js dist/*.js.gz dist/*.js.br dist/*.js.LICENSE.txt \
             --clobber -R "${{ github.repository }}"
-
-      # Publishing the draft creates the git tag at target_commitish and makes
-      # the release (with all assets already attached) visible to HACS. The
-      # prerelease flag set by release-please is preserved.
-      - name: Publish release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "${{ steps.ref.outputs.tag }}" --draft=false -R "${{ github.repository }}"

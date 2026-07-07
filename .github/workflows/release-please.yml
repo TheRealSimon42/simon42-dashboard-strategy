@@ -5,9 +5,14 @@ name: Release Please
 # STRATEGY_VERSION (via the x-release-please-version marker in
 # src/simon42-dashboard-strategy.ts) and writes the CHANGELOG entry from the
 # Conventional-Commit squash titles since the last release. Merging that PR
-# makes release-please create a DRAFT GitHub (pre-)release on the next run;
-# release-build.yml then builds dist/, attaches the assets to the draft and
-# publishes it — so HACS never sees a release without assets.
+# makes release-please publish the GitHub (pre-)release on the next run;
+# release-build.yml then builds dist/ and attaches the assets (~2 min
+# asset-less window — a HACS poll there fails once and self-heals).
+#
+# Releases are published DIRECTLY (no draft): GitHub delivers no `release`
+# workflow events for drafts, and release-please does not count drafts as
+# released — the original draft design stalled the asset build and opened a
+# phantom next-version release PR (first live run, beta.13).
 #
 # Versioning is driven by release-please-config.json. While the 1.4.0 beta
 # cycle runs, `versioning: prerelease` + `prerelease-type: beta` increment
