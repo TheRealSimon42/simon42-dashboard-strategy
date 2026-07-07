@@ -634,6 +634,8 @@ Issues und Pull Requests sind willkommen! Bitte teste PRs gründlich in einem lo
 
 **Neue Übersichts-Section beisteuern?** Seit v1.4.0 sind die Sections registry-getrieben: Builder-Datei in `src/sections/` anlegen, einen Eintrag in `src/sections/section-registry.ts` ergänzen, den Builder in `views/OverviewViewStrategy.ts` verdrahten, Übersetzungen ergänzen — Editor-Panel, Toggle, Dropdown und Sortierung kommen automatisch. Das vollständige Rezept steht in der [CLAUDE.md](CLAUDE.md#adding-a-new-overview-section).
 
+**Mit KI-Unterstützung entwickeln?** Das Repo bringt einen Entwicklungs-Skill mit: [`.claude/skills/strategy-dev/SKILL.md`](.claude/skills/strategy-dev/SKILL.md) destilliert die Arbeitsweise, mit der diese Strategy entwickelt wird — Architektur-Leitplanken, Kreuzauswirkungs-Check, Qualitäts-Gates und die typischen Fallen. Wer mit [Claude Code](https://claude.com/claude-code) im Repo arbeitet, bekommt den Skill automatisch geladen; bei anderen KI-Tools die Datei (zusammen mit der [CLAUDE.md](CLAUDE.md)) einfach als Kontext mitgeben. Die Nutzung ist optional — sie hilft aber, dass KI-generierte PRs den Qualitätsmaßstäben des Projekts entsprechen.
+
 <details>
 <summary>Architektur</summary>
 
