@@ -143,7 +143,7 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
                 <label for="weather-entity">${localize('editor.weather_entity')}</label>
                 <select id="weather-entity"
                   .value=${weatherEntity}
-                  @change=${(ev: DragEvent) => weatherEntityChanged(host, ev)}>
+                  @change=${(e: Event) => weatherEntityChanged(host, e)}>
                   <option value="" ?selected=${!weatherEntity}>${localize('editor.weather_entity_auto')}</option>
                   ${weatherEntities.map((entity) => html`
                     <option value=${entity.entity_id} ?selected=${entity.entity_id === weatherEntity}>
@@ -179,7 +179,7 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
                   <label for="power-badge-entity" style="display: block; margin-bottom: 4px;">${localize('editor.power_badge_entity')}</label>
                   <select id="power-badge-entity"
                     style="width: 100%;"
-                    @change=${(ev: DragEvent) => powerBadgeEntityChanged(host, ev)}>
+                    @change=${(e: Event) => powerBadgeEntityChanged(host, e)}>
                     <option value="" ?selected=${!powerBadgeEntity}>${localize('editor.power_badge_none')}</option>
                     ${powerSensorEntities.map((entity) => html`
                       <option value=${entity.entity_id} ?selected=${entity.entity_id === powerBadgeEntity}>
