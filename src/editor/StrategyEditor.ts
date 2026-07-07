@@ -28,7 +28,7 @@ import type {
 import { DEFAULT_SECTIONS_ORDER, DEFAULT_STACKS_ORDER } from '../types/strategy';
 // Pure-data section registry (no builder imports — safe for the editor chunk)
 import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/section-registry';
-import { validateCustomSections } from '../sections/CustomSections';
+import { validateCustomSections, customSectionHasCards } from '../sections/CustomSections';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
 import { localize } from '../utils/localize';
 import { Registry } from '../Registry';
@@ -1179,7 +1179,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const custom = (this._config.custom_sections || []).find((cs) => cs.key === key);
     if (custom) {
       // custom sections auto-hide when they have no valid cards
-      return !Array.isArray(custom.parsed_config) || custom.parsed_config.length === 0;
+      return !customSectionHasCards(custom);
     }
     return isSectionHiddenByConfig(key as SectionKey, this._config);
   }
@@ -3106,19 +3106,11 @@ class Simon42DashboardStrategyEditor extends LitElement {
               placeholder=${localize('editor.custom_section_key_placeholder')}
               style="flex: 1;"
               @change=${(e: Event) => this._updateCustomSectionField(index, 'key', (e.target as HTMLInputElement).value.trim())} />
-            <input type="text" .value=${section.heading || ''}
-              placeholder=${localize('editor.custom_section_heading_placeholder')}
-              style="flex: 2;"
-              @change=${(e: Event) => this._updateCustomSectionField(index, 'heading', (e.target as HTMLInputElement).value)} />
-            <input type="text" .value=${section.icon || ''}
-              placeholder="mdi:view-grid-plus-outline"
-              style="flex: 1;"
-              @change=${(e: Event) => this._updateCustomSectionField(index, 'icon', (e.target as HTMLInputElement).value)} />
           </div>
           ${keyError
             ? html`<div class="custom-item-validation"><span style="color: var(--error-color);">&#x274C; ${keyError}</span></div>`
             : nothing}
-          <textarea rows="6" placeholder=${localize('editor.custom_section_yaml_placeholder')}
+          <textarea rows="8" placeholder=${localize('editor.custom_section_yaml_placeholder')}
             .value=${section.yaml || ''}
             style="width: 100%;"
             @change=${(e: Event) => this._updateCustomSectionYaml(index, (e.target as HTMLTextAreaElement).value)}></textarea>
@@ -3930,7 +3922,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _addCustomSection(): void {
     const sections: CustomSection[] = [...(this._config.custom_sections || [])];
-    sections.push({ key: '', heading: '', yaml: '', parsed_config: undefined } as CustomSection);
+    sections.push({ key: '', yaml: '', parsed_config: undefined } as CustomSection);
 
     const newConfig: Simon42StrategyConfig = { ...this._config, custom_sections: sections };
     this._config = newConfig;
@@ -3958,7 +3950,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this._fireConfigChanged(newConfig);
   }
 
-  private _updateCustomSectionField(index: number, field: 'key' | 'heading' | 'icon', value: string): void {
+  private _updateCustomSectionField(index: number, field: 'key', value: string): void {
     const sections: CustomSection[] = [...(this._config.custom_sections || [])];
     if (!sections[index]) return;
 
@@ -3993,11 +3985,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
     if (yamlString.trim()) {
       try {
         const parsed = yaml.load(yamlString);
-        if (Array.isArray(parsed)) {
-          updated.parsed_config = parsed as Record<string, any>[];
-        } else if (parsed && typeof parsed === 'object') {
-          // single card → wrap into an array
-          updated.parsed_config = [parsed as Record<string, any>];
+        if (parsed && typeof parsed === 'object') {
+          // complete section, single card or card list — normalized at build time
+          updated.parsed_config = parsed;
         } else {
           updated._yaml_error = localize('editor.custom_section_yaml_invalid');
           updated.parsed_config = undefined;
@@ -4058,7 +4048,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _addAreaCustomSection(areaId: string): void {
     const sections = [...this._getAreaCustomSections(areaId)];
-    sections.push({ heading: '', yaml: '', parsed_config: undefined } as AreaCustomSection);
+    sections.push({ yaml: '', parsed_config: undefined } as AreaCustomSection);
     this._setAreaCustomSections(areaId, sections);
   }
 
@@ -4068,15 +4058,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this._setAreaCustomSections(areaId, sections);
   }
 
-  private _updateAreaCustomSectionField(
-    areaId: string,
-    index: number,
-    field: 'heading' | 'icon' | 'position',
-    value: string
-  ): void {
+  private _updateAreaCustomSectionPosition(areaId: string, index: number, value: string): void {
     const sections = [...this._getAreaCustomSections(areaId)];
     if (!sections[index]) return;
-    sections[index] = { ...sections[index], [field]: value };
+    sections[index] = { ...sections[index], position: value === 'top' ? 'top' : 'bottom' };
     this._setAreaCustomSections(areaId, sections);
   }
 
@@ -4090,10 +4075,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
     if (yamlString.trim()) {
       try {
         const parsed = yaml.load(yamlString);
-        if (Array.isArray(parsed)) {
-          updated.parsed_config = parsed as Record<string, any>[];
-        } else if (parsed && typeof parsed === 'object') {
-          updated.parsed_config = [parsed as Record<string, any>];
+        if (parsed && typeof parsed === 'object') {
+          // complete section, single card or card list — normalized at build time
+          updated.parsed_config = parsed;
         } else {
           updated._yaml_error = localize('editor.custom_section_yaml_invalid');
           updated.parsed_config = undefined;
@@ -4146,21 +4130,13 @@ class Simon42DashboardStrategyEditor extends LitElement {
         </div>
         <div class="custom-item-fields">
           <div class="custom-item-row">
-            <input type="text" .value=${section.heading || ''}
-              placeholder=${localize('editor.custom_section_heading_placeholder')}
-              style="flex: 2;"
-              @change=${(e: Event) => this._updateAreaCustomSectionField(areaId, index, 'heading', (e.target as HTMLInputElement).value)} />
-            <input type="text" .value=${section.icon || ''}
-              placeholder="mdi:view-grid-plus-outline"
-              style="flex: 1;"
-              @change=${(e: Event) => this._updateAreaCustomSectionField(areaId, index, 'icon', (e.target as HTMLInputElement).value)} />
-            <select
-              @change=${(e: Event) => this._updateAreaCustomSectionField(areaId, index, 'position', (e.target as HTMLSelectElement).value)}>
+            <select style="flex: 1;"
+              @change=${(e: Event) => this._updateAreaCustomSectionPosition(areaId, index, (e.target as HTMLSelectElement).value)}>
               <option value="bottom" ?selected=${position === 'bottom'}>${localize('editor.custom_section_position_bottom')}</option>
               <option value="top" ?selected=${position === 'top'}>${localize('editor.custom_section_position_top')}</option>
             </select>
           </div>
-          <textarea rows="6" placeholder=${localize('editor.custom_section_yaml_placeholder')}
+          <textarea rows="8" placeholder=${localize('editor.custom_section_yaml_placeholder')}
             .value=${section.yaml || ''}
             style="width: 100%;"
             @change=${(e: Event) => this._updateAreaCustomSectionYaml(areaId, index, (e.target as HTMLTextAreaElement).value)}></textarea>

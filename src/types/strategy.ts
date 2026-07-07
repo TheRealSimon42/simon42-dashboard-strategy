@@ -400,17 +400,24 @@ export interface CustomCard {
 //   stability beats the new feature. Docs recommend a personal prefix.
 // - duplicate keys: first entry wins
 // - the section auto-hides when it has no cards (own or assigned)
+// - the YAML is a complete section config (type: grid + cards) and is
+//   passthrough — the contract is Lovelace's section schema, not ours.
+//   Bare cards/card lists are accepted and wrapped (see CustomSections.ts).
 
 export interface CustomSectionBase {
-  /** Heading text shown at the top of the section */
+  /** LEGACY (pre-beta.12 configs): heading text — only honored when the
+   *  YAML is a bare card/card list; complete-section YAML carries its own
+   *  heading card. No editor UI anymore. */
   heading?: string;
-  /** Optional MDI icon for the heading */
+  /** LEGACY: MDI icon for the synthesized heading card (see heading) */
   icon?: string;
-  /** Raw YAML string entered by the user in the editor — a single card or
-   *  a YAML list of cards */
+  /** Raw YAML string entered by the user in the editor — a complete
+   *  section config (`type: grid` + `cards:`); a bare card or list of
+   *  cards is also accepted and wrapped into a grid section */
   yaml?: string;
-  /** Parsed array of Lovelace card configs (derived from yaml) */
-  parsed_config?: Record<string, any>[] | null;
+  /** Parsed YAML (derived from yaml) — section object, card object or
+   *  card array; normalized in sections/CustomSections.ts at build time */
+  parsed_config?: unknown;
   /** YAML parse error message, if any */
   _yaml_error?: string;
 }

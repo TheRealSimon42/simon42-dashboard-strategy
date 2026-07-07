@@ -5,11 +5,21 @@
 // collision, duplicates), auto-hide, defensive card filtering and the
 // heading-only case for sections that exist purely as a custom_cards
 // target. Snapshot captures the assembled grid.
+//
+// Since beta.12 the YAML field takes a COMPLETE section config
+// (type: grid + cards) with section-level passthrough; bare cards and
+// card lists keep working via the legacy path (heading/icon synthesis).
 // ============================================================================
 
 import { describe, it, expect } from 'vitest';
 
-import { validateCustomSections, buildCustomSection, buildAreaCustomSections } from '../../src/sections/CustomSections';
+import {
+  validateCustomSections,
+  buildCustomSection,
+  buildAreaCustomSections,
+  normalizeSectionYaml,
+  customSectionHasCards,
+} from '../../src/sections/CustomSections';
 import type { CustomSection } from '../../src/types/strategy';
 
 function section(overrides: Partial<CustomSection> = {}): CustomSection {
@@ -109,6 +119,129 @@ describe('buildCustomSection', () => {
   });
 });
 
+describe('buildCustomSection — complete section YAML (since beta.12)', () => {
+  it('passes section-level props through (visibility, column_span)', () => {
+    const result = buildCustomSection(
+      section({
+        heading: undefined,
+        parsed_config: {
+          type: 'grid',
+          column_span: 2,
+          visibility: [{ condition: 'state', entity: 'binary_sensor.garage', state: 'on' }],
+          cards: [{ type: 'markdown', content: 'ok' }],
+        },
+      })
+    );
+    expect(result).toMatchObject({
+      type: 'grid',
+      column_span: 2,
+      visibility: [{ condition: 'state', entity: 'binary_sensor.garage', state: 'on' }],
+    });
+    expect(result?.cards).toEqual([{ type: 'markdown', content: 'ok' }]);
+  });
+
+  it('treats an object with cards but no type as a section (type defaults to grid)', () => {
+    const result = buildCustomSection(
+      section({ heading: undefined, parsed_config: { cards: [{ type: 'markdown', content: 'ok' }] } })
+    );
+    expect(result?.type).toBe('grid');
+    expect(result?.cards).toHaveLength(1);
+  });
+
+  it('ignores the legacy heading/icon fields in complete-section form', () => {
+    const result = buildCustomSection(
+      section({
+        heading: 'Legacy-Feld',
+        icon: 'mdi:star',
+        parsed_config: { type: 'grid', cards: [{ type: 'markdown', content: 'ok' }] },
+      })
+    );
+    // no synthesized heading card — the user's YAML is the section
+    expect(result?.cards).toEqual([{ type: 'markdown', content: 'ok' }]);
+  });
+
+  it('wraps a single non-grid card into a grid section', () => {
+    const result = buildCustomSection(
+      section({ heading: undefined, parsed_config: { type: 'custom:trash-card', entities: ['calendar.abfall'] } })
+    );
+    expect(result).toEqual({
+      type: 'grid',
+      cards: [{ type: 'custom:trash-card', entities: ['calendar.abfall'] }],
+    });
+  });
+
+  it('keeps a grid card inside a list as a card (escape hatch)', () => {
+    const result = buildCustomSection(
+      section({ heading: undefined, parsed_config: [{ type: 'grid', columns: 3, cards: [{ type: 'button' }] }] })
+    );
+    expect(result?.cards).toEqual([{ type: 'grid', columns: 3, cards: [{ type: 'button' }] }]);
+  });
+
+  it('filters malformed cards inside a complete section', () => {
+    const result = buildCustomSection(
+      section({
+        heading: undefined,
+        parsed_config: { type: 'grid', cards: [{ content: 'no type' }, { type: 'markdown', content: 'ok' }, null] },
+      })
+    );
+    expect(result?.cards).toEqual([{ type: 'markdown', content: 'ok' }]);
+  });
+
+  it('auto-hides a complete section without valid cards', () => {
+    expect(
+      buildCustomSection(section({ heading: undefined, parsed_config: { type: 'grid', cards: [] } }))
+    ).toBeNull();
+  });
+
+  it('keeps section props when empty but targeted by custom cards', () => {
+    const result = buildCustomSection(
+      section({ heading: undefined, parsed_config: { type: 'grid', column_span: 2, cards: [] } }),
+      true
+    );
+    expect(result).toMatchObject({ type: 'grid', column_span: 2 });
+    expect(result?.cards).toEqual([]);
+  });
+});
+
+describe('normalizeSectionYaml', () => {
+  it('returns null for scalars and empty values', () => {
+    expect(normalizeSectionYaml(undefined)).toBeNull();
+    expect(normalizeSectionYaml(null)).toBeNull();
+    expect(normalizeSectionYaml('text')).toBeNull();
+    expect(normalizeSectionYaml(42)).toBeNull();
+  });
+
+  it('classifies arrays as card lists', () => {
+    const result = normalizeSectionYaml([{ type: 'markdown' }]);
+    expect(result?.sectionProps).toBeNull();
+    expect(result?.cards).toHaveLength(1);
+  });
+
+  it('classifies grid objects with cards as sections', () => {
+    const result = normalizeSectionYaml({ type: 'grid', cards: [] });
+    expect(result?.sectionProps).not.toBeNull();
+  });
+
+  it('classifies other objects as single cards', () => {
+    const result = normalizeSectionYaml({ type: 'vertical-stack', cards: [{ type: 'button' }] });
+    expect(result?.sectionProps).toBeNull();
+    expect(result?.cards).toEqual([{ type: 'vertical-stack', cards: [{ type: 'button' }] }]);
+  });
+});
+
+describe('customSectionHasCards', () => {
+  it('is false for missing/empty/malformed configs', () => {
+    expect(customSectionHasCards(section({ parsed_config: undefined }))).toBe(false);
+    expect(customSectionHasCards(section({ parsed_config: { type: 'grid', cards: [] } }))).toBe(false);
+    expect(customSectionHasCards(section({ parsed_config: [{ content: 'no type' }] }))).toBe(false);
+  });
+
+  it('is true as soon as one valid card exists (both forms)', () => {
+    expect(customSectionHasCards(section({ parsed_config: [{ type: 'markdown' }] }))).toBe(true);
+    expect(customSectionHasCards(section({ parsed_config: { type: 'grid', cards: [{ type: 'markdown' }] } }))).toBe(true);
+  });
+});
+
 describe('buildAreaCustomSections', () => {
   function areaSection(overrides: Record<string, unknown> = {}): Record<string, unknown> {
     return {
@@ -149,5 +282,26 @@ describe('buildAreaCustomSections', () => {
       areaSection({ parsed_config: [{ content: 'no type' }] }),
     ];
     expect(buildAreaCustomSections(sections, 'bottom')).toHaveLength(0);
+  });
+
+  it('supports complete section YAML with position (since beta.12)', () => {
+    const sections = [
+      areaSection({
+        heading: undefined,
+        position: 'top',
+        parsed_config: {
+          type: 'grid',
+          visibility: [{ condition: 'state', entity: 'input_boolean.gaeste', state: 'on' }],
+          cards: [{ type: 'markdown', content: 'Heizung' }],
+        },
+      }),
+    ];
+    const top = buildAreaCustomSections(sections, 'top');
+    expect(top).toHaveLength(1);
+    expect(top[0]).toMatchObject({
+      type: 'grid',
+      visibility: [{ condition: 'state', entity: 'input_boolean.gaeste', state: 'on' }],
+    });
+    expect(top[0].cards).toEqual([{ type: 'markdown', content: 'Heizung' }]);
   });
 });

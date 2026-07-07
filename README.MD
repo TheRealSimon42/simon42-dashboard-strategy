@@ -271,7 +271,7 @@ strategy:
 
 **Raum-Pins** — Spezielle Entitäten die in ihren zugeordneten Räumen ganz oben erscheinen. Ideal für Entitäten die nicht automatisch erkannt werden (z.B. Wetterstationen).
 
-**Eigene Sections in Räumen** *(ab v1.4.0)* — Analog zu den eigenen Sections auf der Übersicht lassen sich auch in jeder Raum-Ansicht eigene Section-Blöcke einfügen: im Editor beim jeweiligen Bereich („Eigene Sections in diesem Raum"), mit Überschrift, Icon, YAML-Karten und wählbarer Position — **oberhalb** oder **unterhalb** der automatisch erzeugten Sections. Damit lassen sich z.B. spezielle Karten aus HACS (Versatile Thermostat, Saugroboter-Karten, …) direkt im Raum unterbringen. Tipp: Wer die Standard-Kachel einer Entität ersetzen will, blendet sie in der Domain-Gruppe des Raums aus und fügt die eigene Karte als Section hinzu.
+**Eigene Sections in Räumen** *(ab v1.4.0)* — Analog zu den eigenen Sections auf der Übersicht lassen sich auch in jeder Raum-Ansicht eigene Section-Blöcke einfügen: im Editor beim jeweiligen Bereich („Eigene Sections in diesem Raum"), mit komplettem Section-Code als YAML (siehe [Eigene Sections](#eigene-sections-ab-v140)) und wählbarer Position — **oberhalb** oder **unterhalb** der automatisch erzeugten Sections. Damit lassen sich z.B. spezielle Karten aus HACS (Versatile Thermostat, Saugroboter-Karten, …) direkt im Raum unterbringen. Tipp: Wer die Standard-Kachel einer Entität ersetzen will, blendet sie in der Domain-Gruppe des Raums aus und fügt die eigene Karte als Section hinzu.
 
 **Automationen & Skripte** — Optional können dem Bereich zugeordnete Automationen und Skripte in den Raum-Views angezeigt werden. Beide Optionen sind separat aktivierbar und standardmäßig aus.
 
@@ -330,23 +330,26 @@ content: "Willkommen zuhause!"
 
 #### Eigene Sections *(ab v1.4.0)*
 
-Komplette eigene Section-Blöcke auf der Übersicht — die Lücke zwischen „Karte in bestehende Section einfügen" (Eigene Karten) und „ganze View anlegen" (Custom Views). Jede eigene Section hat einen Key, eine Überschrift, optional ein Icon und eine YAML-Liste von Karten:
+Komplette eigene Section-Blöcke auf der Übersicht — die Lücke zwischen „Karte in bestehende Section einfügen" (Eigene Karten) und „ganze View anlegen" (Custom Views). Jede eigene Section hat einen Key und den **kompletten Section-Code als YAML** — exakt das, was der Raw-Editor eines beliebigen Dashboards für eine Section anzeigt. Einfach kopieren und einfügen:
 
 ```yaml
-strategy:
-  type: custom:simon42-dashboard
-  custom_sections:
-    - key: my_morgenroutine
-      heading: "Guten Morgen"
-      icon: mdi:weather-sunrise
-      # Karten als YAML im Editor eintragen; einzelne Karte oder Liste
+# Ins YAML-Feld der eigenen Section (Editor → Eigene Sections):
+type: grid
+cards:
+  - type: heading
+    heading: Guten Morgen
+    icon: mdi:weather-sunrise
+  - type: markdown
+    content: "Kaffee ist fertig!"
 ```
+
+Weil der Section-Code 1:1 durchgereicht wird, funktionieren auch alle **Section-Optionen von Home Assistant** — z.B. `visibility:` (die Section verschwindet zur Laufzeit mitsamt Überschrift, sobald die Bedingung nicht erfüllt ist) oder `column_span:`. Die Überschrift ist eine normale `heading`-Karte im YAML — ob und wie es eine gibt, entscheidest du. Wer nur eine einzelne Karte oder eine Kartenliste einfügt (ohne `type: grid`-Wrapper), bekommt sie automatisch in eine Section verpackt — kein Paste schlägt fehl. *(Bis v1.4.0-beta.11 nahm das Feld nur Karten plus separate Überschrift/Icon-Felder — solche Bestands-Configs funktionieren unverändert weiter.)*
 
 Der `key` verhält sich wie eine eingebaute Section:
 
 - **Positionierbar** — erscheint im Abschnitts-Reihenfolge-Panel (Drag & Drop) bzw. in `sections_order`
 - **Ziel für eigene Karten** — als `target_section` wählbar (Dropdown im Editor)
-- **Bedingte Sichtbarkeit** — funktioniert in `section_visibility` (z.B. Routine-Section nur an Werktagen)
+- **Bedingte Sichtbarkeit** — funktioniert in `section_visibility` (z.B. Routine-Section nur an Werktagen); zustandsabhängiges Ein-/Ausblenden zur Laufzeit geht direkt im Section-YAML über HAs `visibility:`
 - **Auto-Hide** — ohne Karten wird die Section nicht gerendert
 
 **Key-Regeln:** Keys, die mit eingebauten Sections kollidieren (`overview`, `areas`, `weather`, …), werden verworfen; bei doppelten Keys gewinnt der erste Eintrag. Empfehlung: ein persönliches Präfix wie `my_` verwenden — sollte eine spätere Version eine gleichnamige eingebaute Section einführen, behält deine eigene Section Vorrang (Config-Stabilität geht vor neuem Feature).
@@ -543,7 +546,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `areas_display.hidden` | string[] | `[]` | — | Ausgeblendete Bereiche |
 | `areas_display.order` | string[] | `[]` | — | Reihenfolge der Bereiche |
 | `areas_options` | object | `{}` | — | Entity-Filterung pro Bereich |
-| `areas_options.{id}.custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke in der Raum-Ansicht (`position: top\|bottom`, siehe oben) |
+| `areas_options.{id}.custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke in der Raum-Ansicht (kompletter Section-Code, `position: top\|bottom` — siehe oben) |
 | `areas_options.{id}.stacks_order` | string[] | Standard-Reihenfolge | v1.4.0 | Reihenfolge der automatisch erzeugten Raum-Blöcke (im Editor per Drag & Drop) |
 | `areas_display.nav_items` | string[] | `[]` | v1.4.0 | Raum-Views, die trotz Subview-Modus in der Navigation bleiben (Pin-Button im Editor) |
 | `show_ups_in_rooms` | boolean | `false` | v1.4.0 | USV-Block pro erkannter USV (NUT/apcupsd oder „USV"/„UPS" im Gerätenamen) |
@@ -581,7 +584,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `custom_cards` | object[] | `[]` | — | Eigene Karten via YAML; `target_section` wählt die Ziel-Section (Dropdown im Editor ab v1.4.0) |
 | `custom_cards_heading` | string | `"Eigene Karten"` | — | Überschrift der Custom Cards Section |
 | `custom_cards_icon` | string | `"mdi:cards"` | — | Icon der Custom Cards Section |
-| `custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke auf der Übersicht (Key, Überschrift, Icon, Karten — siehe oben) |
+| `custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke auf der Übersicht (Key + kompletter Section-Code als YAML — siehe oben) |
 | `custom_views` | object[] | `[]` | — | Eigene Views via YAML |
 
 </details>
