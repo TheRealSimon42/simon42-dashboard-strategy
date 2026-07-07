@@ -49,8 +49,11 @@ jobs:
           fetch-depth: 0
 
       - name: Ensure release commit is on main
+        # Full fetch: a shallow tip (--depth=1) breaks merge-base when main
+        # has moved past the tagged commit (e.g. a follow-up merge landed
+        # between tagging and this build).
         run: |
-          git fetch origin main --depth=1
+          git fetch origin main
           git merge-base --is-ancestor HEAD origin/main
 
       - name: Setup Node
