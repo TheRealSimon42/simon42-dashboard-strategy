@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.13](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.12...v1.4.0-beta.13) (2026-07-07)
+
+
+### Features
+
+* **editor:** collapsible panels with icons and remembered state ([#356](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/356)) ([cca24da](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/cca24dac8c11a12b173e35234ac75ee961996ffb))
+
 ## [1.4.0-beta.12] - 2026-07-07 (Pre-Release)
 ### Changes
 - **custom sections take complete section code** (overview + per-room): the YAML field now accepts a full section config (`type: grid` + `cards:` — exactly what HA's raw editor shows), and section-level options pass straight through, notably runtime `visibility` (hides the section including its heading when the condition is not met) and `column_span`. The heading is a regular `heading` card inside the YAML; the separate heading/icon editor fields are gone. Pasting a single card or a list of cards still works (auto-wrapped into a grid section), and configs created before beta.12 keep rendering unchanged via the legacy path ([#351](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/351))
