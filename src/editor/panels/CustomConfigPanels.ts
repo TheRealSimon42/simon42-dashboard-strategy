@@ -36,14 +36,6 @@ export function renderCustomCardsSection(host: StrategyEditorHost): TemplateResu
   const customCardsIcon = host._config.custom_cards_icon || '';
 
   return html`
-    <div class="section">
-      <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
-        ${localize('editor.section_custom_cards')}
-        <a href="https://github.com/TheRealSimon42/simon42-dashboard-strategy/blob/main/assets/Eigene-Karten-hinzufugen.gif"
-          target="_blank" rel="noopener"
-          style="color: var(--primary-color); text-decoration: none; font-size: 18px;"
-          title=${localize('editor.video_tutorial')}>&#x1F3AC;</a>
-      </div>
       <div class="custom-item-row" style="margin-bottom: 12px;">
         <input type="text" id="custom-cards-heading"
           .value=${customCardsHeading}
@@ -68,7 +60,6 @@ export function renderCustomCardsSection(host: StrategyEditorHost): TemplateResu
         ${localize('editor.add_custom_card')}
       </button>
       <div class="description">${localize('editor.custom_cards_help')}</div>
-    </div>
   `;
 }
 
@@ -216,14 +207,6 @@ export function renderCustomBadgesSection(host: StrategyEditorHost): TemplateRes
   const customBadges = host._config.custom_badges || [];
 
   return html`
-    <div class="section">
-      <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
-        ${localize('editor.section_custom_badges')}
-        <a href="https://github.com/TheRealSimon42/simon42-dashboard-strategy/blob/main/assets/Custom-Badges-hinzufugen.gif"
-          target="_blank" rel="noopener"
-          style="color: var(--primary-color); text-decoration: none; font-size: 18px;"
-          title=${localize('editor.video_tutorial')}>&#x1F3AC;</a>
-      </div>
 
       <div id="custom-badges-list">
         ${customBadges.length === 0
@@ -235,7 +218,6 @@ export function renderCustomBadgesSection(host: StrategyEditorHost): TemplateRes
         ${localize('editor.add_custom_badge')}
       </button>
       <div class="description">${localize('editor.custom_badges_help')}</div>
-    </div>
   `;
 }
 
@@ -327,14 +309,6 @@ export function renderCustomViewsSection(host: StrategyEditorHost): TemplateResu
   const customViews = host._config.custom_views || [];
 
   return html`
-    <div class="section">
-      <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
-        ${localize('editor.section_custom_views')}
-        <a href="https://github.com/TheRealSimon42/simon42-dashboard-strategy/blob/main/assets/Custom-View-hinzufugen.gif"
-          target="_blank" rel="noopener"
-          style="color: var(--primary-color); text-decoration: none; font-size: 18px;"
-          title=${localize('editor.video_tutorial')}>&#x1F3AC;</a>
-      </div>
 
       <div id="custom-views-list">
         ${customViews.length === 0
@@ -346,7 +320,6 @@ export function renderCustomViewsSection(host: StrategyEditorHost): TemplateResu
         ${localize('editor.add_custom_view')}
       </button>
       <div class="description">${localize('editor.custom_views_help')}</div>
-    </div>
   `;
 }
 
@@ -469,8 +442,6 @@ export function renderCustomSectionsSection(host: StrategyEditorHost): TemplateR
   const customSections = host._config.custom_sections || [];
 
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_custom_sections')}</div>
       <div class="description" style="margin-bottom: 8px;">${localize('editor.custom_sections_desc')}</div>
 
       <div id="custom-sections-list">
@@ -483,7 +454,6 @@ export function renderCustomSectionsSection(host: StrategyEditorHost): TemplateR
         ${localize('editor.add_custom_section')}
       </button>
       <div class="description">${localize('editor.custom_sections_help')}</div>
-    </div>
   `;
 }
 

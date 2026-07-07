@@ -34,8 +34,6 @@ export function renderWeatherSensorsSection(host: StrategyEditorHost): TemplateR
   const filteredEntities = getFilteredEntities(host._hass, host._weatherSensorSearch);
 
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_weather_sensors')}</div>
       <div class="description" style="margin-left: 0; margin-bottom: 12px;">
         ${localize('editor.weather_sensors_desc')}
       </div>
@@ -98,7 +96,6 @@ export function renderWeatherSensorsSection(host: StrategyEditorHost): TemplateR
           </div>
         ` : nothing}
       </div>
-    </div>
   `;
 }
 

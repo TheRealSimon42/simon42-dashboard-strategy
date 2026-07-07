@@ -23,6 +23,59 @@ export const EDITOR_STYLES = css`
     padding: 16px;
     transition: box-shadow 0.2s ease;
   }
+  /* -- Collapsible panel shell (#354) --------------------------------- */
+  .section.panel {
+    padding: 0;
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--primary-text-color);
+    text-align: left;
+    letter-spacing: 0.01em;
+  }
+  .panel-header:hover {
+    background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
+  }
+  .panel-icon {
+    --mdc-icon-size: 20px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+  }
+  .panel-title {
+    flex: 1;
+    min-width: 0;
+  }
+  .panel-tutorial {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .panel-chevron {
+    --mdc-icon-size: 22px;
+    color: var(--secondary-text-color);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .panel.collapsed .panel-chevron {
+    transform: rotate(-90deg);
+  }
+  .panel-body {
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--divider-color, #e8e8e8);
+  }
+
   .section-title {
     font-size: 15px;
     font-weight: 500;

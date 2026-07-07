@@ -41,8 +41,6 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
   const unavailableBatteriesBucket = host._config.unavailable_batteries_bucket === 'critical' ? 'critical' : 'good';
 
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_summaries')}</div>
 
       <div class="form-row">
         <input type="radio" id="summaries-2-columns" name="summaries-columns" value="2"
@@ -205,7 +203,6 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
           ${renderMaintenanceUsersPicker(host)}
         </div>
       ` : nothing}
-    </div>
   `;
 }
 

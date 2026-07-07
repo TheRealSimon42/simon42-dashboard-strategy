@@ -41,6 +41,11 @@ import {
 import { renderSectionOrderPanel } from './panels/SectionOrderPanel';
 import { renderSummariesSection } from './panels/SummariesPanel';
 import { renderAreasSection, areaOptionsFor } from './panels/AreasPanel';
+import {
+  renderCollapsiblePanel,
+  loadExpandedPanels,
+  type PanelMeta,
+} from './panels/panel-shell';
 import { mergeStacksOrder } from '../utils/name-utils';
 
 // -- Supporting types for the editor ------------------------------------
@@ -51,6 +56,25 @@ declare global {
     cardTools?: unknown;
   }
 }
+
+const ASSETS = 'https://github.com/TheRealSimon42/simon42-dashboard-strategy/blob/main/assets';
+
+/** Header meta for the collapsible panels. Keys are persisted — keep stable. */
+const PANELS: Record<string, PanelMeta> = {
+  overview: { key: 'overview', icon: 'mdi:view-dashboard-outline', labelKey: 'editor.section_overview' },
+  summaries: { key: 'summaries', icon: 'mdi:counter', labelKey: 'editor.section_summaries' },
+  favorites: { key: 'favorites', icon: 'mdi:star-outline', labelKey: 'editor.section_favorites' },
+  light_favorites: { key: 'light_favorites', icon: 'mdi:lightbulb-on-outline', labelKey: 'editor.section_light_favorites' },
+  areas: { key: 'areas', icon: 'mdi:floor-plan', labelKey: 'editor.section_areas' },
+  room_pins: { key: 'room_pins', icon: 'mdi:pin-outline', labelKey: 'editor.section_room_pins' },
+  views: { key: 'views', icon: 'mdi:tab', labelKey: 'editor.section_views' },
+  section_order: { key: 'section_order', icon: 'mdi:sort', labelKey: 'editor.section_order' },
+  weather_sensors: { key: 'weather_sensors', icon: 'mdi:weather-partly-cloudy', labelKey: 'editor.section_weather_sensors' },
+  custom_cards: { key: 'custom_cards', icon: 'mdi:card-plus-outline', labelKey: 'editor.section_custom_cards', tutorialUrl: `${ASSETS}/Eigene-Karten-hinzufugen.gif` },
+  custom_sections: { key: 'custom_sections', icon: 'mdi:view-grid-plus-outline', labelKey: 'editor.section_custom_sections' },
+  custom_badges: { key: 'custom_badges', icon: 'mdi:label-outline', labelKey: 'editor.section_custom_badges', tutorialUrl: `${ASSETS}/Custom-Badges-hinzufugen.gif` },
+  custom_views: { key: 'custom_views', icon: 'mdi:tab-plus', labelKey: 'editor.section_custom_views', tutorialUrl: `${ASSETS}/Custom-View-hinzufugen.gif` },
+};
 
 // ====================================================================
 // Editor Class
@@ -69,6 +93,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
 
   _config: Simon42StrategyConfig = {};
   _expandedAreas = new Set<string>();
+  _expandedPanels = loadExpandedPanels();
   _expandedGroups = new Map<string, Set<string>>();
 
   // Entity search state (NOT @state — we call requestUpdate manually)
@@ -112,10 +137,10 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
 
     return html`
       <div class="card-config">
-        ${renderOverviewSection(this)}
-        ${renderSummariesSection(this)}
-        ${renderFavoritesSection(this)}
-        ${renderLightFavoritesSection(this)}
+        ${renderCollapsiblePanel(this, PANELS.overview, () => renderOverviewSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.summaries, () => renderSummariesSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.favorites, () => renderFavoritesSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.light_favorites, () => renderLightFavoritesSection(this))}
 
         <div class="section-divider">
           <div class="section-divider-title">
@@ -123,9 +148,9 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
           </div>
         </div>
 
-        ${renderAreasSection(this)}
-        ${renderRoomPinsSection(this)}
-        ${renderViewsSection(this)}
+        ${renderCollapsiblePanel(this, PANELS.areas, () => renderAreasSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.room_pins, () => renderRoomPinsSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.views, () => renderViewsSection(this))}
 
         <div class="section-divider">
           <div class="section-divider-title">
@@ -133,12 +158,12 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
           </div>
         </div>
 
-        ${renderSectionOrderPanel(this)}
-        ${renderWeatherSensorsSection(this)}
-        ${renderCustomCardsSection(this)}
-        ${renderCustomSectionsSection(this)}
-        ${renderCustomBadgesSection(this)}
-        ${renderCustomViewsSection(this)}
+        ${renderCollapsiblePanel(this, PANELS.section_order, () => renderSectionOrderPanel(this))}
+        ${renderCollapsiblePanel(this, PANELS.weather_sensors, () => renderWeatherSensorsSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.custom_cards, () => renderCustomCardsSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.custom_sections, () => renderCustomSectionsSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.custom_badges, () => renderCustomBadgesSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.custom_views, () => renderCustomViewsSection(this))}
       </div>
     `;
   }

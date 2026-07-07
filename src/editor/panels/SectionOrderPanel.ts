@@ -97,8 +97,6 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
   const powerSensorEntities = getPowerSensorEntities(host._hass);
 
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_order')}</div>
       <div class="description" style="margin-left: 0; margin-bottom: 12px;">
         ${localize('editor.section_order_desc')}
       </div>
@@ -217,6 +215,11 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
               <label for="hide-heading-${hk}">${localize('editor.heading_label_' + hk)}</label>
             </div>
           `)}
+        </div>
+      </details>
+
+      <details style="margin-top: 12px;">
+        <summary style="cursor: pointer; font-size: 13px; font-weight: 500; color: var(--primary-text-color); padding: 4px 0;">
           ${localize('editor.section_visibility')}
         </summary>
         <div style="margin-left: 14px; margin-top: 6px;">
@@ -269,7 +272,6 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
           (checked) => host._toggleChanged('show_updates_badge', checked, false))}
         <div class="description">${localize('editor.show_updates_badge_desc')}</div>
       </div>
-    </div>
   `;
 }
 

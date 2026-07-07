@@ -41,8 +41,6 @@ export function renderRoomPinsSection(host: StrategyEditorHost): TemplateResult 
   const filteredEntities = getFilteredEntities(host._hass, host._roomPinSearch, true);
 
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_room_pins')}</div>
 
       <div id="room-pins-list" style="margin-bottom: 12px;">
         ${roomPinEntities.length === 0
@@ -108,7 +106,6 @@ export function renderRoomPinsSection(host: StrategyEditorHost): TemplateResult 
 
       ${host._renderCheckbox('room-pins-first', localize('editor.room_pins_first'), roomPinsFirst,
         (checked) => host._toggleChanged('room_pins_first', checked, false))}
-    </div>
   `;
 }
 

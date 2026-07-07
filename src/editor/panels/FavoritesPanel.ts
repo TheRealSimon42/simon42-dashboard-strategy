@@ -31,8 +31,6 @@ export function renderLightFavoritesSection(host: StrategyEditorHost): TemplateR
   const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
   const filtered = getFilteredEntities(host._hass, host._lightFavSearch).filter((e) => e.entity_id.startsWith('light.'));
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_light_favorites')}</div>
 
       ${lightFavs.length > 0 ? html`
         <div class="entity-list-container" style="margin-bottom: 8px;">
@@ -73,7 +71,6 @@ export function renderLightFavoritesSection(host: StrategyEditorHost): TemplateR
         ` : nothing}
       </div>
       <div class="description">${localize('editor.light_favorites_desc')}</div>
-    </div>
   `;
 }
 
@@ -105,8 +102,6 @@ export function renderFavoritesSection(host: StrategyEditorHost): TemplateResult
   const filteredEntities = getFilteredEntities(host._hass, host._favoriteSearch);
 
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_favorites')}</div>
 
       <div id="favorites-list" style="margin-bottom: 12px;">
         ${favoriteEntities.length === 0
@@ -164,7 +159,6 @@ export function renderFavoritesSection(host: StrategyEditorHost): TemplateResult
 
       ${host._renderCheckbox('favorites-hide-last-changed', localize('editor.hide_last_changed'), favoritesHideLastChanged,
         (checked) => host._toggleChanged('favorites_hide_last_changed', checked, false))}
-    </div>
   `;
 }
 

@@ -38,6 +38,8 @@ export interface StrategyEditorHost {
   _config: Simon42StrategyConfig;
 
   // -- Reactive UI state --------------------------------------------------
+  /** Expanded editor panels (persisted via panels/panel-shell.ts). */
+  _expandedPanels: Set<string>;
   _expandedAreas: Set<string>;
   _expandedGroups: Map<string, Set<string>>;
 

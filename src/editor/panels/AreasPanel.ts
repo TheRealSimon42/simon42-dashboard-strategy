@@ -70,8 +70,6 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const navItems = host._config.areas_display?.nav_items || [];
 
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_areas')}</div>
 
       ${host._renderCheckbox('group-by-floors', localize('editor.group_by_floors'), groupByFloors,
         (checked) => host._toggleChanged('group_by_floors', checked, false))}
@@ -188,7 +186,6 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
           })}
         </div>
       </details>
-    </div>
   `;
 }
 

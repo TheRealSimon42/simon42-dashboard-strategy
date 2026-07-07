@@ -28,8 +28,6 @@ export function renderOverviewSection(host: StrategyEditorHost): TemplateResult 
   const alarmEntities = getAlarmEntities(host._hass);
 
   return html`
-    <div class="section">
-      <div class="section-title">${localize('editor.section_overview')}</div>
 
       ${host._renderCheckbox('show-clock-card', localize('editor.show_clock_card'), showClockCard,
         (checked) => host._toggleChanged('show_clock_card', checked, true))}
@@ -102,7 +100,6 @@ export function renderOverviewSection(host: StrategyEditorHost): TemplateResult 
           })}
         </div>
       ` : nothing}
-    </div>
   `;
 }
 
