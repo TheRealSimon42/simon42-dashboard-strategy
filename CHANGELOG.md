@@ -2,7 +2,16 @@
 All notable changes to this project will be documented in this file.  
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.10...HEAD).
+A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.11...HEAD).
+
+<a name="1.4.0-beta.11"></a>
+## [1.4.0-beta.11] - 2026-07-07 (Pre-Release)
+### Features
+- **experimental** maintenance summary tile + view (`show_maintenance_summary`, `/maintenance`): critical batteries and unavailable devices (one tile per device — flagged only when ALL of its visible entities are unavailable) in the main content; on HA ≥ 2026.3 a sidebar with HA's built-in repairs/updates/discovered-devices cards (admin-only, self-hiding), a HACS quick link, a 24h activity log scoped to exactly the reported entities (`show_maintenance_activity`) and curated simon42 video tips matched to the installed integrations (`show_video_tips` — static list in the bundle, no fetch/tracking, dismissable per browser); updates render as tiles on older HA versions ([#344](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/344))
+- maintenance tile/view visibility restrictable to selected users (`maintenance_visible_users`, native Lovelace user condition; person-based picker in the editor — display logic, not access control)
+
+### Bug Fixes
+- updates collection is now category-inclusive: update entities carrying an `entity_category` (e.g. Shelly firmware = config) were silently dropped from the pending-updates overview section — now counted consistently in the overview section, the maintenance view and the tile counter ([#344](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/344))
 
 <a name="1.4.0-beta.10"></a>
 ## [1.4.0-beta.10] - 2026-07-06 (Pre-Release)
