@@ -27,7 +27,7 @@ import type { StrategyEditorHost } from '../editor-host';
 import { renderStackOrderPanel } from './StackOrderPanel';
 
 /** Injection-safe areas_options lookup (see CLAUDE.md Codacy pitfalls). */
-function areaOptionsFor(config: Simon42StrategyConfig, areaId: string): AreaOptions | undefined {
+export function areaOptionsFor(config: Simon42StrategyConfig, areaId: string): AreaOptions | undefined {
   return config.areas_options
     ? (Reflect.get(config.areas_options, areaId) as AreaOptions | undefined)
     : undefined;
@@ -292,7 +292,8 @@ function renderAreaEntities(host: StrategyEditorHost,
     namesHidden,
   } = data;
 
-  const hass = host._hass!;
+  const hass = host._hass;
+  if (!hass) return html``;
 
   const domainGroups: DomainGroup[] = [
     { key: 'lights', label: localize('editor.domain_lights'), icon: 'mdi:lightbulb' },
@@ -414,15 +415,16 @@ function renderBadgeGroup(host: StrategyEditorHost,
   const totalCount = badgeCandidates.length + additionalBadges.length;
   if (totalCount === 0) return html``;
 
-  const hiddenInBadges = hiddenEntities['badges'] || [];
+  const hiddenInBadges = (Reflect.get(hiddenEntities, 'badges') as string[] | undefined) || [];
   const allHidden = badgeCandidates.length > 0 && badgeCandidates.every((e) => hiddenInBadges.includes(e));
   const someHidden = badgeCandidates.some((e) => hiddenInBadges.includes(e)) && !allHidden;
 
-  const namesVisibleSet = new Set(namesVisible || []);
-  const namesHiddenSet = new Set(namesHidden || []);
+  const namesVisibleSet = new Set(namesVisible);
+  const namesHiddenSet = new Set(namesHidden);
 
-  const isNameShown = (entityId: string): boolean =>
-    resolveShowName(entityId, defaultShowNames.has(entityId), namesVisibleSet, namesHiddenSet);
+  function isNameShown(entityId: string): boolean {
+    return resolveShowName(entityId, defaultShowNames.has(entityId), namesVisibleSet, namesHiddenSet);
+  }
 
   const isGroupExpanded = expandedGroups.has('badges');
 

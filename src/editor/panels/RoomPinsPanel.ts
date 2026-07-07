@@ -21,9 +21,11 @@ import {
 } from './entity-list-dnd';
 
 export function renderRoomPinsSection(host: StrategyEditorHost): TemplateResult {
+  const hass = host._hass;
+  if (!hass) return html``;
   const roomPinEntities = host._config.room_pin_entities || [];
-  const allEntities = getAllEntitiesForSelect(host._hass);
-  const allAreas = Object.values(host._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
+  const allEntities = getAllEntitiesForSelect(hass);
+  const allAreas = Object.values(hass.areas).sort((a, b) => a.name.localeCompare(b.name));
   const roomPinsShowState = host._config.room_pins_show_state === true;
   const roomPinsHideLastChanged = host._config.room_pins_hide_last_changed === true;
   const roomPinsFirst = host._config.room_pins_first === true;

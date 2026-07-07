@@ -160,9 +160,10 @@ function removeCustomCard(host: StrategyEditorHost, index: number): void {
 
 function updateCustomCardField(host: StrategyEditorHost, index: number, field: string, value: string): void {
   const customCards: CustomCard[] = [...(host._config.custom_cards || [])];
-  if (!customCards[index]) return;
+  const existing = customCards.at(index);
+  if (!existing) return;
 
-  customCards[index] = { ...customCards[index], [field]: value };
+  customCards.splice(index, 1, { ...existing, [field]: value });
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_cards: customCards };
   host._config = newConfig;
@@ -171,9 +172,10 @@ function updateCustomCardField(host: StrategyEditorHost, index: number, field: s
 
 function updateCustomCardYaml(host: StrategyEditorHost, index: number, yamlString: string): void {
   const customCards: CustomCard[] = [...(host._config.custom_cards || [])];
-  if (!customCards[index]) return;
+  const existing = customCards.at(index);
+  if (!existing) return;
 
-  const updated: CustomCard = { ...customCards[index], yaml: yamlString };
+  const updated: CustomCard = { ...existing, yaml: yamlString };
   delete updated._yaml_error;
 
   if (yamlString.trim()) {
@@ -194,7 +196,7 @@ function updateCustomCardYaml(host: StrategyEditorHost, index: number, yamlStrin
     updated.parsed_config = undefined;
   }
 
-  customCards[index] = updated;
+  customCards.splice(index, 1, updated);
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_cards: customCards };
   host._config = newConfig;
@@ -280,9 +282,10 @@ function removeCustomBadge(host: StrategyEditorHost, index: number): void {
 
 function updateCustomBadgeYaml(host: StrategyEditorHost, index: number, yamlString: string): void {
   const customBadges: CustomBadge[] = [...(host._config.custom_badges || [])];
-  if (!customBadges[index]) return;
+  const existing = customBadges.at(index);
+  if (!existing) return;
 
-  const updated: CustomBadge = { ...customBadges[index], yaml: yamlString };
+  const updated: CustomBadge = { ...existing, yaml: yamlString };
   delete updated._yaml_error;
 
   if (yamlString.trim()) {
@@ -303,7 +306,7 @@ function updateCustomBadgeYaml(host: StrategyEditorHost, index: number, yamlStri
     updated.parsed_config = undefined;
   }
 
-  customBadges[index] = updated;
+  customBadges.splice(index, 1, updated);
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_badges: customBadges };
   host._config = newConfig;
@@ -408,9 +411,10 @@ function removeCustomView(host: StrategyEditorHost, index: number): void {
 
 function updateCustomViewField(host: StrategyEditorHost, index: number, field: string, value: string): void {
   const customViews: CustomView[] = [...(host._config.custom_views || [])];
-  if (!customViews[index]) return;
+  const existing = customViews.at(index);
+  if (!existing) return;
 
-  customViews[index] = { ...customViews[index], [field]: value };
+  customViews.splice(index, 1, { ...existing, [field]: value });
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_views: customViews };
   host._config = newConfig;
@@ -419,9 +423,10 @@ function updateCustomViewField(host: StrategyEditorHost, index: number, field: s
 
 function updateCustomViewYaml(host: StrategyEditorHost, index: number, yamlString: string): void {
   const customViews: CustomView[] = [...(host._config.custom_views || [])];
-  if (!customViews[index]) return;
+  const existing = customViews.at(index);
+  if (!existing) return;
 
-  const updated: CustomView = { ...customViews[index], yaml: yamlString };
+  const updated: CustomView = { ...existing, yaml: yamlString };
   delete updated._yaml_error;
 
   if (yamlString.trim()) {
@@ -442,7 +447,7 @@ function updateCustomViewYaml(host: StrategyEditorHost, index: number, yamlStrin
     updated.parsed_config = undefined;
   }
 
-  customViews[index] = updated;
+  customViews.splice(index, 1, updated);
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_views: customViews };
   host._config = newConfig;
@@ -533,7 +538,7 @@ function addCustomSection(host: StrategyEditorHost): void {
 
 function removeCustomSection(host: StrategyEditorHost, index: number): void {
   const sections: CustomSection[] = [...(host._config.custom_sections || [])];
-  const removedKey = sections[index]?.key;
+  const removedKey = sections.at(index)?.key;
   sections.splice(index, 1);
 
   const newConfig: Simon42StrategyConfig = { ...host._config };
@@ -556,8 +561,10 @@ function updateCustomSectionField(host: StrategyEditorHost, index: number, field
   const sections: CustomSection[] = [...(host._config.custom_sections || [])];
   if (!sections[index]) return;
 
-  const previousKey = sections[index].key;
-  sections[index] = { ...sections[index], [field]: value };
+  const existing = sections.at(index);
+  if (!existing) return;
+  const previousKey = existing.key;
+  sections.splice(index, 1, { ...existing, [field]: value });
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_sections: sections };
   // Key rename: keep a persisted sections_order position and re-targeted
@@ -579,9 +586,10 @@ function updateCustomSectionField(host: StrategyEditorHost, index: number, field
 
 function updateCustomSectionYaml(host: StrategyEditorHost, index: number, yamlString: string): void {
   const sections: CustomSection[] = [...(host._config.custom_sections || [])];
-  if (!sections[index]) return;
+  const existing = sections.at(index);
+  if (!existing) return;
 
-  const updated: CustomSection = { ...sections[index], yaml: yamlString };
+  const updated: CustomSection = { ...existing, yaml: yamlString };
   delete updated._yaml_error;
 
   if (yamlString.trim()) {
@@ -603,7 +611,7 @@ function updateCustomSectionYaml(host: StrategyEditorHost, index: number, yamlSt
     updated.parsed_config = undefined;
   }
 
-  sections[index] = updated;
+  sections.splice(index, 1, updated);
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_sections: sections };
   host._config = newConfig;

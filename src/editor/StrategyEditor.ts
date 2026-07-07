@@ -34,7 +34,7 @@ import {
 } from './panels/CustomConfigPanels';
 import { renderSectionOrderPanel } from './panels/SectionOrderPanel';
 import { renderSummariesSection } from './panels/SummariesPanel';
-import { renderAreasSection } from './panels/AreasPanel';
+import { renderAreasSection, areaOptionsFor } from './panels/AreasPanel';
 import { mergeStacksOrder } from '../utils/name-utils';
 
 // -- Supporting types for the editor ------------------------------------
@@ -188,7 +188,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   // -- Section order drag & drop -----------------------------------------
 
   _getStacksOrder(areaId: string): StackKey[] {
-    return mergeStacksOrder(this._config.areas_options?.[areaId]?.stacks_order);
+    return mergeStacksOrder(areaOptionsFor(this._config, areaId)?.stacks_order);
   }
 
   // -- Overview section --------------------------------------------------

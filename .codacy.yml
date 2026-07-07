@@ -1,4 +1,8 @@
----
+# Codacy engine configuration. Adopted from TheDave94/oriel-dashboard, which
+# hit the same wall: the legacy "eslint" (ESLint 8) engine ships name-heuristic
+# rules (xss/no-mixed-html, security/detect-object-injection, ...) that mass-
+# flag lit-html code as false positives. eslint9 runs the repository's own
+# eslint.config.mjs; opengrep covers the security-pattern scanning.
 engines:
   # Modern Linting & Security
   eslint9:

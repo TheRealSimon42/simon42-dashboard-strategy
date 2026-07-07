@@ -222,7 +222,7 @@ function updateWeatherSensor(
   const current = host._config.weather_sensors || [];
   if (index < 0 || index >= current.length) return;
 
-  const target = { ...current[index] } as WeatherSensorConfig;
+  const target = { ...current.at(index) } as WeatherSensorConfig;
   const trimmed = rawValue.trim();
 
   if (field === 'round') {
@@ -244,7 +244,7 @@ function updateWeatherSensor(
   }
 
   const next = [...current];
-  next[index] = target;
+  next.splice(index, 1, target);
   const newConfig: Simon42StrategyConfig = { ...host._config, weather_sensors: next };
   host._config = newConfig;
   host._fireConfigChanged(newConfig);

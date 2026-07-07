@@ -177,7 +177,9 @@ function handleStackDragEnd(host: StrategyEditorHost, ev: DragEvent): void {
 
   host.shadowRoot
     ?.querySelectorAll('.section-order-item.drag-over')
-    .forEach((el) => el.classList.remove('drag-over'));
+    .forEach((el) => {
+      el.classList.remove('drag-over');
+    });
   host._stackDraggedElement = null;
 }
 
