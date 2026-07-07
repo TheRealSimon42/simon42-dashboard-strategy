@@ -41,11 +41,15 @@ src/
 │   ├── SecurityViewStrategy.ts      #   Security overview (locks, doors, windows, garages, smoke/gas detectors)
 │   ├── BatteriesViewStrategy.ts     #   Battery status (critical/low/ok)
 │   └── ClimateViewStrategy.ts       #   Climate/thermostat overview (heating/cooling/idle/off)
-└── editor/                          # Configuration UI
-    ├── StrategyEditor.ts            #   Editor class (largest file — config form, state management)
-    ├── editor-handlers.ts           #   Event listeners, drag/drop area reordering
-    ├── editor-template.ts           #   HTML template generation
-    └── editor-styles.ts             #   CSS styling
+└── editor/                          # Configuration UI (module split, #355)
+    ├── StrategyEditor.ts            #   Host element: state, config plumbing, render() skeleton
+    ├── editor-host.ts               #   StrategyEditorHost interface — the contract panels program against
+    ├── editor-styles.ts             #   CSS styling
+    ├── entity-options.ts            #   Pure entity-picker helpers (+ stateFor())
+    └── panels/                      #   One module per panel: renderX(host) functions
+        ├── panel-shell.ts           #   Collapsible card shell w/ icon header + localStorage state (#354)
+        ├── AreasPanel.ts            #   Per-area editor (largest; incl. entity cache + area helpers)
+        └── *.ts                     #   Overview, Summaries, SectionOrder, StackOrder, Favorites, ...
 ```
 
 Output:
@@ -178,7 +182,13 @@ npm run watch       # Dev + auto-rebuild on file changes
 - No dynamic `obj[variable]` lookups on config objects — use `Map`/`Reflect.get` (detect-object-injection). **`hass.states[someVar]` in new/changed lines counts too** — use the `stateFor()`/`Reflect.get` helpers.
 - **Always bind the catch parameter in async functions**: `catch (error: unknown)` — Codacy's security-node rule doesn't know optional catch binding (`catch {`).
 - Codacy's API can report ghost findings pinned to lines that no longer block the quality gate — when a finding looks inexplicable, check the PR check status first instead of contorting the code.
-- Findings without auth: `https://app.codacy.com/api/v3/analysis/organizations/gh/TheRealSimon42/repositories/simon42-dashboard-strategy/pull-requests/<N>/issues`
+- **The quality gate is `issueThreshold: 0`** — EVERY new finding blocks, Warning severity included, and **moved lines count as new lines** (refactor PRs get fully rescanned). Budget for this before large moves.
+- **Reproduce the type-aware rules locally instead of API whack-a-mole:** temporary eslint flat config with `parserOptions.project` enabling `@typescript-eslint/no-unnecessary-condition` + `no-non-null-assertion`, run on the touched files. One pass finds everything (the PR-issues API paginates at 100 and hides findings).
+- **Record-type lookups lie** (`tsconfig` has no `noUncheckedIndexedAccess`): `no-unnecessary-condition` demands removing `?.` on `Record` values that CAN be absent at runtime (e.g. `groups_options.badges`). Do NOT drop the guard — rewrite as `Reflect.get(obj, key) as T | undefined` so the condition stays type-honest. Only drop `?.`/fallbacks where the API really guarantees presence (`hass.states[x].attributes`, `hass.areas/devices/entities`, `EntityRegistryEntry.labels` — HA floor 2024.7).
+- Array index access `arr[i]` also triggers detect-object-injection — use `arr.at(i)` (lib ES2022) + `splice(i, 1, next)` for writes.
+- `xss/no-mixed-html` and `@typescript-eslint/no-confusing-void-expression` are file-level disabled in `src/editor/**` (mass false positives on lit-html / house-style event arrows); a no-op stub plugin in `eslint.config.mjs` keeps the directives valid locally. The `.codacy.yml` engine switch (adopted from oriel-dashboard) is currently NOT honored by our Codacy setup — disabling the legacy ESLint8 engine in the Codacy UI would supersede the inline disables.
+- Semgrep flags `yaml.load()` as RCE — false positive for js-yaml v4 (safe schema by default); suppress with `// nosemgrep` on the call line.
+- Findings without auth: `https://app.codacy.com/api/v3/analysis/organizations/gh/TheRealSimon42/repositories/simon42-dashboard-strategy/pull-requests/<N>/issues` (paginated via `cursor`!)
 
 ## Git & Release Workflow
 
