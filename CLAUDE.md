@@ -173,9 +173,11 @@ npm run watch       # Dev + auto-rebuild on file changes
 
 ## Codacy Pitfalls (CI blocks on "high" findings)
 
-- **No module-level `const fn = () => ...` arrow functions** — Biome's Qwik rule false-positives on them ("Non-serializable expression must be wrapped with $(...)"). Use `function` declarations instead. Applies to src AND test files (hit 3x so far).
+- **No `const fn = () => ...` arrow function assignments** — Biome's Qwik rule false-positives on them ("Non-serializable expression must be wrapped with $(...)"). Use `function` declarations instead. Applies to src AND test files, and to **function-local** const arrows too, not just module level (hit repeatedly, latest in #336).
 - No `any` in new signatures (`Record<string, unknown>` over `Record<string, any>`)
-- No dynamic `obj[variable]` lookups on config objects — use `Map`/`Reflect.get` (detect-object-injection)
+- No dynamic `obj[variable]` lookups on config objects — use `Map`/`Reflect.get` (detect-object-injection). **`hass.states[someVar]` in new/changed lines counts too** — use the `stateFor()`/`Reflect.get` helpers.
+- **Always bind the catch parameter in async functions**: `catch (error: unknown)` — Codacy's security-node rule doesn't know optional catch binding (`catch {`).
+- Codacy's API can report ghost findings pinned to lines that no longer block the quality gate — when a finding looks inexplicable, check the PR check status first instead of contorting the code.
 - Findings without auth: `https://app.codacy.com/api/v3/analysis/organizations/gh/TheRealSimon42/repositories/simon42-dashboard-strategy/pull-requests/<N>/issues`
 
 ## Git & Release Workflow
@@ -188,36 +190,25 @@ npm run watch       # Dev + auto-rebuild on file changes
 3. **Source only — `dist/` is gitignored and never committed.** HACS serves the built files as release assets (see Release Automation below); old tags (≤ v1.3.4-beta.9) still carry their committed `dist/`
 4. `git push -u origin feature/<name>`
 5. Create PR from feature branch → `main` (triggers validation workflows: translation lint, build + bundle check. NOTE: hacs/action cannot be used here — it validates the branch TREE only and the tree deliberately has no `dist/`; real HACS installs from release assets instead)
-6. Wait for CI to pass, then merge
-7. Delete feature branch (local + remote)
+6. **PR titles must be Conventional Commits** (`feat: …`, `fix: …`, `feat(scope)!: …`, `chore: …`) — squash merges make the PR title the commit message, and release-please derives version bumps and CHANGELOG entries from it. `feat`/`fix` trigger a release; `chore`/`docs`/`ci`/`refactor` don't. Runtime-relevant dependency bumps should therefore be merged as `fix(deps): …`, not `chore(deps): …`, or they never reach a release
+7. Wait for CI to pass, then merge
+8. Delete feature branch (local + remote)
 
-### Release Automation (since the dist/ removal, #190)
-- Pushing a tag `vX.Y.Z` triggers `.github/workflows/release.yml`: CI checks the tag is on `main`, builds, verifies version consistency (`scripts/verify-release-version.mjs`) and bundle completeness (`scripts/verify-release-bundle.mjs`), then publishes a GitHub Release with all `dist/*.js` (+ `.gz`/`.br`/LICENSE) files as individual assets
-- Pushing a tag `vX.Y.Z-beta.N` triggers `release-prerelease.yml` (same steps, published as Pre-Release)
-- **Do not create GitHub releases manually anymore — only push the tag.** The workflow creates the release; a manually pre-created release would be updated in place
-- HACS installs tagged versions from the release assets (verified against HACS source: all assets of the release are downloaded). `hide_default_branch: true` in `hacs.json` prevents installing `main`, which has no `dist/`
+### Release Automation (release-please, since #353; dist/ removal history: #190)
 
-### Beta Releases
-- Beta versions are tagged as **Pre-Release** on GitHub (e.g. `v1.3.0-beta.1`)
-- Each beta builds on the previous one — everything flows into `main`
-- Increment beta number: `beta.1` → `beta.2` → `beta.3`
-- When stable: tag `v1.3.0` as a regular release
-- **Minor bump** (`v1.3.0`) for new features, **patch bump** (`v1.2.1`) for pure bugfixes
+Releases are cut by **release-please** — no manual version bumps, no manual CHANGELOG edits, no manual tags:
 
-### Version Checklist (before every release/beta)
+1. On every push to `main`, `release-please.yml` maintains a permanent **Release PR** (runs under the `simon42-release-bot` GitHub App — GITHUB_TOKEN events don't trigger workflows, see the workflow header). The PR bumps `package.json`, `package-lock.json` and `STRATEGY_VERSION` (via the `// x-release-please-version` marker — **never remove that comment**) and writes the CHANGELOG entry from the Conventional-Commit squash titles since the last release
+2. Merging the Release PR makes release-please create a **draft** (pre-)release
+3. `release-build.yml` fires on the draft (`release: created`), builds, verifies (`verify-release-version.mjs`, `verify-release-bundle.mjs`), uploads all `dist/*.js` (+ `.gz`/`.br`/LICENSE) files as individual assets, then publishes the draft — release + assets appear atomically, HACS never sees an asset-less release
+4. HACS installs tagged versions from the release assets. `hide_default_branch: true` in `hacs.json` prevents installing `main`, which has no `dist/`
 
-The following locations must be updated for a new version:
-
-| File | Field | Example |
-|------|-------|---------|
-| `package.json` | `"version"` | `"1.3.0"` |
-| `src/simon42-dashboard-strategy.ts` | `STRATEGY_VERSION` | `'1.3.0-beta.5'` |
-| `package-lock.json` | updated automatically via `npm install` | — |
-| **Git tag** | create on release | `v1.3.0-beta.5` or `v1.3.0` |
+- **Do not create GitHub releases or tags manually.** The legacy tag-push workflows (`release.yml`, `release-prerelease.yml`) remain only as a fallback until the release-please flow is verified end-to-end, then they get removed
+- Versioning is configured in `release-please-config.json`. During a beta cycle: `"versioning": "prerelease"` + `"prerelease-type": "beta"` increment `beta.N` on every `feat`/`fix`
+- **Cutting the stable release** (e.g. `v1.4.0`): flip `"prerelease"` to `false` and `"versioning"` to `"default"` in `release-please-config.json`; if the proposed version isn't the wanted one, force it with a `Release-As: 1.4.0` footer in an empty `chore` commit. Afterwards flip back for the next beta cycle
+- **Repair path**: build failed on a published release → `gh workflow run release-build.yml -f tag=vX.Y.Z`; failed while still draft → "Re-run failed jobs" on the workflow run
 
 **Important:** `STRATEGY_VERSION` is logged to the browser console — useful for asking users which version they have installed.
-
-The release workflow enforces this checklist: `verify-release-version.mjs` fails the release if `package.json`, `STRATEGY_VERSION` and the tag name disagree — so bump both files and merge to `main` BEFORE pushing the tag.
 
 ### Porting Community PRs
 When PRs were created against the old codebase and cannot be merged directly:

@@ -2,14 +2,11 @@
 All notable changes to this project will be documented in this file.  
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-A list of unreleased changes can be found [here](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.12...HEAD).
 
-<a name="1.4.0-beta.12"></a>
 ## [1.4.0-beta.12] - 2026-07-07 (Pre-Release)
 ### Changes
 - **custom sections take complete section code** (overview + per-room): the YAML field now accepts a full section config (`type: grid` + `cards:` — exactly what HA's raw editor shows), and section-level options pass straight through, notably runtime `visibility` (hides the section including its heading when the condition is not met) and `column_span`. The heading is a regular `heading` card inside the YAML; the separate heading/icon editor fields are gone. Pasting a single card or a list of cards still works (auto-wrapped into a grid section), and configs created before beta.12 keep rendering unchanged via the legacy path ([#351](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/351))
 
-<a name="1.4.0-beta.11"></a>
 ## [1.4.0-beta.11] - 2026-07-07 (Pre-Release)
 ### Features
 - **experimental** maintenance summary tile + view (`show_maintenance_summary`, `/maintenance`): critical batteries and unavailable devices (one tile per device — flagged only when ALL of its visible entities are unavailable) in the main content; on HA ≥ 2026.3 a sidebar with HA's built-in repairs/updates/discovered-devices cards (admin-only, self-hiding), a HACS quick link, a 24h activity log scoped to exactly the reported entities (`show_maintenance_activity`) and curated simon42 video tips matched to the installed integrations (`show_video_tips` — static list in the bundle, no fetch/tracking, dismissable per browser); updates render as tiles on older HA versions ([#344](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/344))
@@ -18,12 +15,10 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 ### Bug Fixes
 - updates collection is now category-inclusive: update entities carrying an `entity_category` (e.g. Shelly firmware = config) were silently dropped from the pending-updates overview section — now counted consistently in the overview section, the maintenance view and the tile counter ([#344](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/344))
 
-<a name="1.4.0-beta.10"></a>
 ## [1.4.0-beta.10] - 2026-07-06 (Pre-Release)
 ### Changes
 - rooms: the camera wrapper card with play/stop live toggle (introduced in beta.9) is now **opt-in** via `camera_live_toggle` (sub-toggle in the editor). By default room cameras render exactly as before beta.9: auto-refreshing picture-glance/picture-entity cards, Aqara cameras live ([#342](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/342))
 
-<a name="1.4.0-beta.9"></a>
 ## [1.4.0-beta.9] - 2026-07-06 (Pre-Release)
 ### Features
 - rooms: per-area block ordering (`areas_options.{id}.stacks_order`) — drag & drop panel per area in the editor reorders the generated room sections (cameras, lights, climate, …); closes [#293](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/293) (ported from [#327](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/327)/[#328](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/328) by @Cyberhunter88)
@@ -34,7 +29,6 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 - opt-in `hide_unavailable_entities` — generated cards/badges hide dynamically while their entity is `unavailable`/`unknown`, fully affected sections auto-hide, summary counts follow; custom cards/sections/views stay untouched (ported from [#325](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/325) by @Cyberhunter88)
 - opt-in `dense_section_placement` — fill grid gaps in all generated sections views (ported from [#334](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/334) by @simatec)
 
-<a name="1.4.0-beta.8"></a>
 ## [1.4.0-beta.8] - 2026-07-05 (Pre-Release)
 ### Features
 - security view: opt-in cameras (`show_cameras_in_security`) as lean still-image cards à la HA's security panel — one card per camera device with the preferred Reolink stream; the cameras heading deep-links to the camera view when enabled ([#336](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/336))
@@ -45,33 +39,27 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 - **experimental** camera view (`show_camera_view`, `/cameras`): per camera device a live picture, spotlight tile (with brightness slider when supported), Reolink PTZ pad (detected via translation_key) and a recordings deep-link into the media browser; optional LLM Vision event timelines (`show_camera_events`, default off — the card re-fetches on every state change, see [llmvision-card#112](https://github.com/valentinfrlch/llmvision-card/issues/112)); cameras headings in room views link to the camera view when enabled
 - weather: opt-in DWD Pollenflug card (`show_pollen_card`) below the weather card — live pollen load (today + tomorrow) from the HACS `dwd_pollenflug` integration, sensors auto-discovered, toggle only offered while the integration is installed
 
-<a name="1.4.0-beta.7"></a>
 ## [1.4.0-beta.7] - 2026-07-05 (Pre-Release)
 ### Features
 - HA 2026.x alignment: registry staleness fix (views no longer serve stale entity/area data until hard-reload), strategy appears in HA's "new dashboard" dialog, `registryDependencies` declared, summary card removed from the card picker ([#329](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/329))
 - rooms: opt-in vacuum & mower section (`show_vacuums_section_in_rooms`), `lawn_mower` entities now categorized in room views, cameras toggleable per room ([#330](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/330))
 
-<a name="1.4.0-beta.6"></a>
 ## [1.4.0-beta.6] - 2026-07-05 (Pre-Release)
 ### Features
 - `lights_sort_by: name` sorts lights alphabetically instead of by last change — lights view, room views and nested groups (ported from [#250](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/250) by @TheDave94, refs [#168](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/168))
 
-<a name="1.4.0-beta.5"></a>
 ## [1.4.0-beta.5] - 2026-07-05 (Pre-Release)
 ### Features
 - `show_battery_view`: keep the /batteries subview available even when the battery summary is hidden — for badges/links that deep-link to the page (closes [#315](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/315))
 
-<a name="1.4.0-beta.4"></a>
 ## [1.4.0-beta.4] - 2026-07-05 (Pre-Release)
 ### Features
 - per-room custom sections: `areas_options.{areaId}.custom_sections[]` renders user-declared section blocks above or below the generated room sections (`position: top|bottom`), editable per area in the editor (closes [#222](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/222), [#210](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/210); per-area idea from [#298](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/298) by @Cyberhunter88)
 
-<a name="1.4.0-beta.3"></a>
 ## [1.4.0-beta.3] - 2026-07-05 (Pre-Release)
 ### Features
 - `custom_sections`: user-declared overview sections without forking — key works in sections_order (drag & drop panel), as custom_cards target_section and in section_visibility rules; built-in collision guard, duplicate keys first-wins, auto-hide when empty; full editor panel with inline key/YAML validation (closes [#153](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/153); design from [#283](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/283) by @TheDave94)
 
-<a name="1.4.0-beta.2"></a>
 ## [1.4.0-beta.2] - 2026-07-04 (Pre-Release)
 ### Refactoring
 - section registry as single source of truth for overview sections — adding a section no longer requires manual editor wiring; missing wiring is now a compile error. No user-visible changes ([#312](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/312))
@@ -82,7 +70,6 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 ### Chores
 - ci: ignore the new HACS license check — CC BY-NC-SA 4.0 is a deliberate license choice but not SPDX-detectable by GitHub's licensee (would block every PR)
 
-<a name="1.4.0-beta.1"></a>
 ## [1.4.0-beta.1] - 2026-07-04 (Pre-Release)
 ### Features
 - six new opt-in overview sections: plants, agenda, todos, persons, vacuums, maintenance — all with auto-hide ([#310](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/310), ported from [#270](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/270))
@@ -98,7 +85,6 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 ### Tests
 - vitest foundation: section-builder + entity-filter unit tests with snapshots ([#308](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/308), based on [#278](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/278))
 
-<a name="1.3.5"></a>
 ## [1.3.5] - 2026-07-02
 ### Features
 - room pins can render at the top of room views via `room_pins_first` ([#301](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/301), ported from [#191](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/191))
@@ -116,13 +102,11 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 - release automation via GitHub Actions — `dist/` removed from the repo, HACS installs from release assets ([#303](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/303), closes [#190](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/190))
 - translation lint in CI: JSON validity, duplicate keys, locale parity ([#301](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/301), ported from [#277](https://github.com/TheRealSimon42/simon42-dashboard-strategy/pull/277))
 
-<a name="1.3.3"></a>
 ## [1.3.3] - 2026-04-10
 ### Features
 - video tutorial links in editor for custom cards/badges/views [`333596a`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/333596aed40891e708d70efe5f930b9e7425a145)
 
 
-<a name="1.3.2"></a>
 ## [1.3.2] - 2026-04-10
 ### Bugfixes
 - show all door/window contact badges in room views ([#116](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/116)) [`87f5fde`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/87f5fdefd618962668ddb9178a159db179513071)
@@ -131,7 +115,6 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 - bump version to 1.3.2 [`ff6e661`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/ff6e661dbf4847d781ba5cb6c02881345e8f8e27)
 
 
-<a name="1.3.1"></a>
 ## [1.3.1] - 2026-04-10
 ### Features
 - configurable alert icons on area cards ([#114](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/114)) [`cdd5035`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/cdd5035b2455e6a009bf63e282a5e23fa65db5aa)
@@ -147,7 +130,6 @@ A list of unreleased changes can be found [here](https://github.com/TheRealSimon
 - clarify setup steps and raw editor exit flow ([#100](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/100)) [`7bd36de`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/7bd36deb9032689a1b00d1b534289e265e6774ed)
 
 
-<a name="1.3.0"></a>
 ## [1.3.0] - 2026-04-09
 ### Features
 - add Aqara camera support in room views [`4d9b758`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/4d9b7580f152f0187da119237e0439349b456ad6)
@@ -226,7 +208,6 @@ collapsible architecture section, full config reference table
 - Version bump to v1.3.0-beta.9
 
 
-<a name="1.2.0"></a>
 ## [1.2.0] - 2026-04-08
 ### Features
 - custom views with YAML editor support [`7061216`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/7061216ab760193e22683602cd98b8df988fa4fd)
@@ -245,7 +226,6 @@ collapsible architecture section, full config reference table
 - document performance-critical area-card patterns in README [`216369b`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/216369be9fc2d2082391836bfdeacb40d9569b6e)
 
 
-<a name="1.1.0"></a>
 ## [1.1.0] - 2026-04-06
 ### Features
 - add option to hide covers summary card [`2407061`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/2407061e62a1ee92f1eeaf2f085a75825af9aee3)
@@ -268,13 +248,10 @@ collapsible architecture section, full config reference table
 - add room pins feature to README [`d6fe04c`](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/d6fe04c26d94fbd855f15af37ba7c51580929c6c)
 
 
-<a name="1.0.2"></a>
 ## [1.0.2] - 2025-10-31
 
-<a name="1.0.1"></a>
 ## [1.0.1] - 2025-10-29
 
-<a name="1.0.0"></a>
 ## [1.0.0] - 2025-10-15
 
 [1.3.3]: https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.3.2...v1.3.3

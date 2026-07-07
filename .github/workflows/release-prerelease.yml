@@ -1,5 +1,7 @@
 name: Pre-Release
 
+# LEGACY manual fallback — see the note in release.yml. Only fires on a
+# human-pushed tag; remove once the release-please flow is verified.
 on:
   push:
     tags:

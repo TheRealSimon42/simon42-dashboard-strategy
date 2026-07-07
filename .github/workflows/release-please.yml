@@ -1,0 +1,90 @@
+name: Release Please
+
+# Automates the bump ritual. On every push to main, release-please maintains a
+# permanent "Release PR" that bumps package.json + package-lock.json +
+# STRATEGY_VERSION (via the x-release-please-version marker in
+# src/simon42-dashboard-strategy.ts) and writes the CHANGELOG entry from the
+# Conventional-Commit squash titles since the last release. Merging that PR
+# makes release-please create a DRAFT GitHub (pre-)release on the next run;
+# release-build.yml then builds dist/, attaches the assets to the draft and
+# publishes it — so HACS never sees a release without assets.
+#
+# Versioning is driven by release-please-config.json. While the 1.4.0 beta
+# cycle runs, `versioning: prerelease` + `prerelease-type: beta` increment
+# beta.N. To cut the stable release, flip `prerelease` to false and
+# `versioning` to "default" in the config (and force an exact version with a
+# `Release-As: 1.4.0` commit footer if needed).
+#
+# ## Why a GitHub App token (not GITHUB_TOKEN)
+#
+# GitHub suppresses workflow triggers on events created with GITHUB_TOKEN
+# (documented anti-loop guarantee). Under GITHUB_TOKEN neither the release
+# PR's required checks (HACS Validation, Unit Tests) would run, nor would the
+# `release: created` event fire release-build.yml. Running release-please
+# under a GitHub App identity avoids both traps. Pattern adopted from
+# TheDave94/oriel-dashboard (docs/RELEASE-INFRASTRUCTURE.md there), which hit
+# exactly these failure modes.
+#
+# ## One-time setup (admin, GitHub UI)
+#
+# 1. Settings → Developer settings → GitHub Apps → New GitHub App
+#    Name: simon42-release-bot (must be globally unique), Homepage: repo URL,
+#    Webhook: DISABLED.
+# 2. Repository permissions (exactly these, nothing more):
+#    Contents: Read and write / Pull requests: Read and write /
+#    Actions: Read and write / Metadata: Read (automatic)
+# 3. Create the App, note the Client ID (looks like Iv23li…), then
+#    Private keys → Generate a private key (.pem downloads once).
+# 4. Install App → only on this repository.
+# 5. gh secret set RELEASE_APP_CLIENT_ID --body '<Client ID>'
+#    gh secret set RELEASE_APP_PRIVATE_KEY < <downloaded>.pem
+#
+# Until both secrets exist, this workflow no-ops with a notice — merging it
+# before the App is set up is safe.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      # Secrets are not readable in job-level `if:` conditions, so gate via a
+      # first step. Missing secrets = graceful skip, not a red run.
+      - name: Check for App credentials
+        id: creds
+        env:
+          CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "$CLIENT_ID" ] || [ -z "$PRIVATE_KEY" ]; then
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::RELEASE_APP_CLIENT_ID / RELEASE_APP_PRIVATE_KEY not configured — skipping release-please. See the setup instructions in this workflow's header."
+          else
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Mints a short-lived (1h) installation token scoped to this repo with
+      # the App's permissions. `client-id` is the newer input; `app-id` is
+      # deprecated since v3.x of the action.
+      - name: Mint release-bot token
+        if: steps.creds.outputs.have == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Release Please
+        if: steps.creds.outputs.have == 'true'
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

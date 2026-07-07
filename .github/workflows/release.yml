@@ -1,4 +1,11 @@
 name: Release
+
+# LEGACY manual fallback: releases are normally cut by release-please
+# (release-please.yml → release-build.yml). This workflow only fires on a
+# HUMAN-pushed tag — the tag release-build.yml creates when publishing a
+# draft comes from GITHUB_TOKEN, whose events never trigger workflows, so the
+# two paths cannot double-fire. Remove this file once the release-please flow
+# has shipped a release end-to-end.
 on:
   push:
     tags:
