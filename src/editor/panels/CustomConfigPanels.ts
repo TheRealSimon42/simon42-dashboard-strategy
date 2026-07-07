@@ -563,8 +563,6 @@ function removeCustomSection(host: StrategyEditorHost, index: number): void {
 
 function updateCustomSectionField(host: StrategyEditorHost, index: number, field: 'key', value: string): void {
   const sections: CustomSection[] = [...(host._config.custom_sections || [])];
-  if (!sections[index]) return;
-
   const existing = sections.at(index);
   if (!existing) return;
   const previousKey = existing.key;
@@ -573,7 +571,7 @@ function updateCustomSectionField(host: StrategyEditorHost, index: number, field
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_sections: sections };
   // Key rename: keep a persisted sections_order position and re-targeted
   // custom cards in sync instead of silently orphaning them
-  if (field === 'key' && previousKey && previousKey !== value) {
+  if (previousKey && previousKey !== value) {
     if (newConfig.sections_order?.includes(previousKey)) {
       newConfig.sections_order = newConfig.sections_order.map((k) => (k === previousKey ? value : k));
     }

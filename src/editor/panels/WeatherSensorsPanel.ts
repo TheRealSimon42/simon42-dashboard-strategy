@@ -242,8 +242,8 @@ function updateWeatherSensor(
   } else if (field === 'unit') {
     if (trimmed === '') delete target.unit;
     else target.unit = trimmed;
-  } else if (field === 'entity') {
-    // entity is read-only via this method; ignore
+  } else {
+    // remaining field is 'entity' — read-only via this method; ignore
     return;
   }
 

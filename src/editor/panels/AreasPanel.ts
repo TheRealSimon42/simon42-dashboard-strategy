@@ -60,7 +60,9 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const showCamerasInRooms = host._config.show_cameras_in_rooms !== false;
   const useDefaultAreaSort = host._config.use_default_area_sort === true;
 
-  const allAreas = Object.values(host._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
+  const hassRef = host._hass;
+  if (!hassRef) return html``;
+  const allAreas = Object.values(hassRef.areas).sort((a, b) => a.name.localeCompare(b.name));
   const hiddenAreas = host._config.areas_display?.hidden || [];
   const areaOrder = host._config.areas_display?.order || [];
   const navItems = host._config.areas_display?.nav_items || [];
@@ -325,8 +327,8 @@ function renderAreaEntities(host: StrategyEditorHost,
     ['energy', host._config.show_energy_in_rooms !== true],
   ]);
 
-  const hasEntities = domainGroups.some((g) => (groupedEntities[g.key]?.length ?? 0) > 0);
-  const hasBadges = (badgeCandidates?.length ?? 0) > 0 || (additionalBadges?.length ?? 0) > 0;
+  const hasEntities = domainGroups.some((g) => ((Reflect.get(groupedEntities, g.key) as string[] | undefined)?.length ?? 0) > 0);
+  const hasBadges = badgeCandidates.length > 0 || additionalBadges.length > 0;
 
   if (!hasEntities && !hasBadges) {
     return html`<div class="empty-state">${localize('editor.no_entities_in_area')}</div>`;
@@ -415,7 +417,8 @@ function renderBadgeGroup(host: StrategyEditorHost,
   namesHidden: string[],
   expandedGroups: Set<string>
 ): TemplateResult {
-  const hass = host._hass!;
+  const hass = host._hass;
+  if (!hass) return html``;
   const totalCount = badgeCandidates.length + additionalBadges.length;
   if (totalCount === 0) return html``;
 
@@ -638,16 +641,18 @@ function removeAreaCustomSection(host: StrategyEditorHost, areaId: string, index
 
 function updateAreaCustomSectionPosition(host: StrategyEditorHost, areaId: string, index: number, value: string): void {
   const sections = [...getAreaCustomSections(host, areaId)];
-  if (!sections[index]) return;
-  sections[index] = { ...sections[index], position: value === 'top' ? 'top' : 'bottom' };
+  const existing = sections.at(index);
+  if (!existing) return;
+  sections.splice(index, 1, { ...existing, position: value === 'top' ? 'top' : 'bottom' });
   setAreaCustomSections(host, areaId, sections);
 }
 
 function updateAreaCustomSectionYaml(host: StrategyEditorHost, areaId: string, index: number, yamlString: string): void {
   const sections = [...getAreaCustomSections(host, areaId)];
-  if (!sections[index]) return;
+  const existing = sections.at(index);
+  if (!existing) return;
 
-  const updated: AreaCustomSection = { ...sections[index], yaml: yamlString };
+  const updated: AreaCustomSection = { ...existing, yaml: yamlString };
   delete updated._yaml_error;
 
   if (yamlString.trim()) {
@@ -669,7 +674,7 @@ function updateAreaCustomSectionYaml(host: StrategyEditorHost, areaId: string, i
     updated.parsed_config = undefined;
   }
 
-  sections[index] = updated;
+  sections.splice(index, 1, updated);
   setAreaCustomSections(host, areaId, sections);
 }
 
@@ -929,8 +934,6 @@ function updateEntityConfig(host: StrategyEditorHost, areaId: string, group: str
 }
 
 function badgeAdditionalChanged(host: StrategyEditorHost, areaId: string, entityId: string, isAdd: boolean): void {
-  if (!host._config) return;
-
   const currentAreaOptions = areaOptionsFor(host._config, areaId) || {};
   const currentGroupsOptions = currentAreaOptions.groups_options || {};
   const currentBadgeOptions = currentGroupsOptions['badges'] || {};
@@ -994,7 +997,7 @@ function badgeAdditionalChanged(host: StrategyEditorHost, areaId: string, entity
 }
 
 function badgeShowNameChanged(host: StrategyEditorHost, areaId: string, entityId: string, showName: boolean): void {
-  if (!host._config || !host._hass) return;
+  if (!host._hass) return;
 
   const currentAreaOptions = areaOptionsFor(host._config, areaId) || {};
   const currentGroupsOptions = currentAreaOptions.groups_options || {};
@@ -1045,9 +1048,9 @@ function badgeShowNameChanged(host: StrategyEditorHost, areaId: string, entityId
 
 function addBadgeFromPicker(host: StrategyEditorHost, e: Event, areaId: string): void {
   e.stopPropagation();
-  const picker = host.shadowRoot!.querySelector(
+  const picker = (host.shadowRoot?.querySelector(
     `.badge-entity-picker[data-area-id="${areaId}"]`
-  ) as HTMLSelectElement | null;
+  ) ?? null) as HTMLSelectElement | null;
   if (!picker || !picker.value) return;
 
   const entityId = picker.value;
@@ -1083,7 +1086,7 @@ function handleDragEnd(host: StrategyEditorHost, ev: DragEvent): void {
   }
 
   // Remove all drag-over classes
-  const areaList = host.shadowRoot!.querySelector('#area-list');
+  const areaList = host.shadowRoot?.querySelector('#area-list');
   if (areaList) {
     areaList.querySelectorAll('.area-item').forEach((item) => {
       item.classList.remove('drag-over');
