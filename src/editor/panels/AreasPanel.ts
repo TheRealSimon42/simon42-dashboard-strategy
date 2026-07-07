@@ -1193,7 +1193,7 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
   };
 
   const excludeLabels = entities
-    .filter((e: EntityRegistryEntry) => e.labels?.includes('no_dboard'))
+    .filter((e: EntityRegistryEntry) => e.labels.includes('no_dboard'))
     .map((e: EntityRegistryEntry) => e.entity_id);
 
   const areaEntries: EntityRegistryEntry[] = [];
