@@ -444,7 +444,7 @@
     "dense_section_placement_desc": "Fills gaps in the grid of all generated views (masonry-like). Sections may deviate from the configured order as a result.",
     "camera_live_toggle": "Live stream via play button (new camera card)",
     "camera_live_toggle_desc": "Room cameras start as stills and only stream after tapping the play button — saves bandwidth, e.g. on wall tablets. Off by default: cameras behave as before (auto-refreshing preview).",
-    "show_maintenance_summary": "Show maintenance summary",
+    "show_maintenance_summary": "Show maintenance summary — experimental",
     "show_maintenance_summary_desc": "Adds a “Maintenance” tile with its own subview (/maintenance): pending updates, unavailable devices, critical batteries and HA repairs (HA 2026.3+, admins only).",
     "maintenance_visible_users": "Visible to",
     "maintenance_visible_users_desc": "Without a selection every user sees the tile and tab. Options come from persons linked to an HA user. Note: display logic only, not access control — the view stays reachable by URL.",
