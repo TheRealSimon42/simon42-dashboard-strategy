@@ -8,10 +8,12 @@
 // moved lines hardened per the CLAUDE.md Codacy pitfalls.
 // ====================================================================
 
-/* eslint-disable xss/no-mixed-html --
+/* eslint-disable xss/no-mixed-html, @typescript-eslint/no-confusing-void-expression --
    False positive: lit-html's `html` tag escapes every interpolation by
    construction. Codacy's legacy ESLint 8 engine misreads lit render
-   functions, DOM Element locals and input event payloads as raw HTML. */
+   functions, DOM Element locals and input event payloads as raw HTML. The
+   void-expression rule fights the codebase's established concise event-
+   handler arrows (`(checked) => host._toggleChanged(...)`). */
 import { html, nothing, type TemplateResult } from 'lit';
 import type { Simon42StrategyConfig } from '../../types/strategy';
 import { localize } from '../../utils/localize';
@@ -217,11 +219,11 @@ function renderMaintenanceUsersPicker(host: StrategyEditorHost): TemplateResult 
   const options: { userId: string; name: string }[] = [];
   for (const [entityId, state] of Object.entries(host._hass.states)) {
     if (!entityId.startsWith('person.')) continue;
-    const userId = state.attributes?.user_id as string | undefined;
+    const userId = state.attributes.user_id as string | undefined;
     if (!userId) continue;
     options.push({
       userId,
-      name: (state.attributes?.friendly_name as string | undefined) || entityId,
+      name: (state.attributes.friendly_name as string | undefined) || entityId,
     });
   }
 
@@ -322,7 +324,7 @@ function renderHiddenCamerasPicker(host: StrategyEditorHost): TemplateResult {
       </div>
       ${blocks.map((block) => {
         const name =
-          (host._hass ? stateFor(host._hass, block.cameraId)?.attributes?.friendly_name as string | undefined : undefined) ||
+          (host._hass ? stateFor(host._hass, block.cameraId)?.attributes.friendly_name as string | undefined : undefined) ||
           block.cameraId;
         return host._renderCheckbox(
           `security-camera-${block.cameraId}`,

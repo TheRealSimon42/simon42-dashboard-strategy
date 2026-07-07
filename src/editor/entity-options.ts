@@ -51,7 +51,7 @@ export function getAllEntitiesForSelect(hass: HomeAssistant | null): EntitySelec
 
       return {
         entity_id: entityId,
-        name: stateObj?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        name: stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
         area_id: areaId,
         device_area_id: areaId,
       };
@@ -67,7 +67,7 @@ export function getAlarmEntities(hass: HomeAssistant | null): AlarmEntityOption[
       const stateObj = stateFor(hass, entityId);
       return {
         entity_id: entityId,
-        name: stateObj?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        name: stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -81,7 +81,7 @@ export function getWeatherEntities(hass: HomeAssistant | null): AlarmEntityOptio
       const stateObj = stateFor(hass, entityId);
       return {
         entity_id: entityId,
-        name: stateObj?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        name: stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -94,15 +94,15 @@ export function getPowerSensorEntities(hass: HomeAssistant | null): AlarmEntityO
     .filter((entityId) => {
       if (!entityId.startsWith('sensor.')) return false;
       const stateObj = stateFor(hass, entityId);
-      const dc = stateObj?.attributes?.device_class;
-      const unit = stateObj?.attributes?.unit_of_measurement;
+      const dc = stateObj?.attributes.device_class;
+      const unit = stateObj?.attributes.unit_of_measurement;
       return dc === 'power' || unit === 'W' || unit === 'kW';
     })
     .map((entityId) => {
       const stateObj = stateFor(hass, entityId);
       return {
         entity_id: entityId,
-        name: stateObj?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        name: stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));

@@ -5,10 +5,12 @@
 // and room pins). Extracted verbatim from StrategyEditor.ts.
 // ====================================================================
 
-/* eslint-disable xss/no-mixed-html --
+/* eslint-disable xss/no-mixed-html, @typescript-eslint/no-confusing-void-expression --
    False positive: lit-html's `html` tag escapes every interpolation by
    construction. Codacy's legacy ESLint 8 engine misreads lit render
-   functions, DOM Element locals and input event payloads as raw HTML. */
+   functions, DOM Element locals and input event payloads as raw HTML. The
+   void-expression rule fights the codebase's established concise event-
+   handler arrows (`(checked) => host._toggleChanged(...)`). */
 import type { Simon42StrategyConfig } from '../../types/strategy';
 import type { StrategyEditorHost } from '../editor-host';
 

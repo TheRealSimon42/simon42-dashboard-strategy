@@ -8,10 +8,12 @@
 // lines hardened per the CLAUDE.md Codacy pitfalls.
 // ====================================================================
 
-/* eslint-disable xss/no-mixed-html --
+/* eslint-disable xss/no-mixed-html, @typescript-eslint/no-confusing-void-expression --
    False positive: lit-html's `html` tag escapes every interpolation by
    construction. Codacy's legacy ESLint 8 engine misreads lit render
-   functions, DOM Element locals and input event payloads as raw HTML. */
+   functions, DOM Element locals and input event payloads as raw HTML. The
+   void-expression rule fights the codebase's established concise event-
+   handler arrows (`(checked) => host._toggleChanged(...)`). */
 import { html, nothing, type TemplateResult } from 'lit';
 import yaml from 'js-yaml';
 import type { HomeAssistant } from '../../types/homeassistant';
@@ -342,7 +344,7 @@ function renderAreaEntities(host: StrategyEditorHost,
         const entities = Reflect.get(groupedEntities, group.key) as string[] | undefined;
         if (!entities || entities.length === 0) return nothing;
 
-        const hiddenInGroup = (Reflect.get(hiddenEntities, group.key) || []) as string[];
+        const hiddenInGroup = (Reflect.get(hiddenEntities, group.key) as string[] | undefined) || [];
         const allHidden = entities.every((e) => hiddenInGroup.includes(e));
         const someHidden = entities.some((e) => hiddenInGroup.includes(e)) && !allHidden;
         const isGroupExpanded = expandedGroups.has(group.key);
@@ -567,9 +569,11 @@ function refreshAllAreaCaches(host: StrategyEditorHost): void {
 }
 
 function refreshAreaCache(host: StrategyEditorHost, areaId: string): void {
-  if (!host._hass || !host._areaEntitiesCache.has(areaId)) return;
+  if (!host._hass) return;
+  const cached = host._areaEntitiesCache.get(areaId);
+  if (!cached) return;
 
-  const groupedEntities = host._areaEntitiesCache.get(areaId)!.groupedEntities;
+  const groupedEntities = cached.groupedEntities;
   const hiddenEntities = getHiddenEntitiesForArea(areaId, host._config);
   const entityOrders = getEntityOrdersForArea(areaId, host._config);
   const badgeCandidates = getAreaBadgeCandidates(areaId, host._hass, host._config);
@@ -657,6 +661,7 @@ function updateAreaCustomSectionYaml(host: StrategyEditorHost, areaId: string, i
 
   if (yamlString.trim()) {
     try {
+      // nosemgrep -- js-yaml v4 load() uses the safe schema by default; no code-executing types exist
       const parsed = yaml.load(yamlString);
       if (parsed && typeof parsed === 'object') {
         // complete section, single card or card list — normalized at build time
@@ -936,7 +941,7 @@ function updateEntityConfig(host: StrategyEditorHost, areaId: string, group: str
 function badgeAdditionalChanged(host: StrategyEditorHost, areaId: string, entityId: string, isAdd: boolean): void {
   const currentAreaOptions = areaOptionsFor(host._config, areaId) || {};
   const currentGroupsOptions = currentAreaOptions.groups_options || {};
-  const currentBadgeOptions = currentGroupsOptions['badges'] || {};
+  const currentBadgeOptions = (Reflect.get(currentGroupsOptions, 'badges') as GroupOptions | undefined) || {};
 
   let additional = [...(currentBadgeOptions.additional || [])];
 
@@ -1001,13 +1006,13 @@ function badgeShowNameChanged(host: StrategyEditorHost, areaId: string, entityId
 
   const currentAreaOptions = areaOptionsFor(host._config, areaId) || {};
   const currentGroupsOptions = currentAreaOptions.groups_options || {};
-  const currentBadgeOptions = currentGroupsOptions['badges'] || {};
+  const currentBadgeOptions = (Reflect.get(currentGroupsOptions, 'badges') as GroupOptions | undefined) || {};
 
   let namesVisible = [...(currentBadgeOptions.names_visible || [])];
   let namesHidden = [...(currentBadgeOptions.names_hidden || [])];
 
   const stateObj = stateFor(host._hass, entityId);
-  const dc = stateObj?.attributes?.device_class as string | undefined;
+  const dc = stateObj?.attributes.device_class as string | undefined;
   const defaultShowName = isDefaultShowName(dc);
 
   if (showName === defaultShowName) {
@@ -1096,7 +1101,7 @@ function handleDragEnd(host: StrategyEditorHost, ev: DragEvent): void {
 
 function handleDragOver(host: StrategyEditorHost, ev: DragEvent): void {
   ev.preventDefault();
-  ev.dataTransfer!.dropEffect = 'move';
+  if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
 
   const item = (ev.currentTarget as HTMLElement);
   if (item !== host._draggedElement) {
@@ -1138,7 +1143,7 @@ function getAreaOrder(host: StrategyEditorHost): string[] {
   if (!host._hass) return [];
   const configOrder = host._config.areas_display?.order;
   if (configOrder && configOrder.length > 0) return [...configOrder];
-  return Object.keys(host._hass.areas || {});
+  return Object.keys(host._hass.areas);
 }
 
 function updateAreaOrder(host: StrategyEditorHost, newOrder: string[]): void {
@@ -1160,8 +1165,8 @@ function updateAreaOrder(host: StrategyEditorHost, newOrder: string[]): void {
 // ====================================================================
 
 async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Promise<RoomEntities> {
-  const devices = Object.values(hass.devices || {});
-  const entities = Object.values(hass.entities || {});
+  const devices = Object.values(hass.devices);
+  const entities = Object.values(hass.entities);
 
   const areaDevices = new Set<string>();
   for (const device of devices) {
@@ -1211,9 +1216,8 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
     if (!stateFor(hass, entity.entity_id)) continue;
     if (entity.hidden) continue;
 
-    const entityRegistry = hass.entities
-      ? (Reflect.get(hass.entities, entity.entity_id) as EntityRegistryEntry | undefined)
-      : undefined;
+    const entityRegistry = Reflect.get(hass.entities, entity.entity_id) as
+      EntityRegistryEntry | undefined;
     if (entityRegistry?.hidden) continue;
 
     areaEntries.push(entity);
@@ -1230,7 +1234,7 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
 
     const domain = entity.entity_id.split('.')[0];
     const stateObj = stateFor(hass, entity.entity_id);
-    const deviceClass = stateObj?.attributes?.device_class;
+    const deviceClass = stateObj?.attributes.device_class;
 
     if (domain === 'light') {
       roomEntities.lights.push(entity.entity_id);
@@ -1277,8 +1281,8 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
 }
 
 function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Simon42StrategyConfig): string[] {
-  const devices = Object.values(hass.devices || {});
-  const entities = Object.values(hass.entities || {});
+  const devices = Object.values(hass.devices);
+  const entities = Object.values(hass.entities);
 
   const areaDevices = new Set<string>();
   for (const device of devices) {
@@ -1293,13 +1297,13 @@ function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Sim
     else if (entity.device_id && areaDevices.has(entity.device_id)) belongsToArea = true;
     if (!belongsToArea) continue;
     if (entity.hidden) continue;
-    if (entity.labels?.includes('no_dboard')) continue;
+    if (entity.labels.includes('no_dboard')) continue;
     if (!stateFor(hass, entity.entity_id)) continue;
 
     const domain = entity.entity_id.split('.')[0];
     const stateObj = stateFor(hass, entity.entity_id);
-    const dc = stateObj?.attributes?.device_class as string | undefined;
-    const unit = stateObj?.attributes?.unit_of_measurement as string | undefined;
+    const dc = stateObj?.attributes.device_class as string | undefined;
+    const unit = stateObj?.attributes.unit_of_measurement as string | undefined;
 
     if (!isBadgeCandidate(domain, dc, unit, entity.entity_id)) continue;
 
@@ -1322,7 +1326,9 @@ function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Sim
 }
 
 function getAdditionalBadgesForArea(areaId: string, config: Simon42StrategyConfig): string[] {
-  return areaOptionsFor(config, areaId)?.groups_options?.badges?.additional || [];
+  const groups = areaOptionsFor(config, areaId)?.groups_options;
+  const badges = groups ? (Reflect.get(groups, 'badges') as GroupOptions | undefined) : undefined;
+  return badges?.additional || [];
 }
 
 function getAvailableBadgeEntities(
@@ -1331,8 +1337,8 @@ function getAvailableBadgeEntities(
   existingCandidates: string[],
   existingAdditional: string[]
 ): Array<{ entity_id: string; name: string }> {
-  const devices = Object.values(hass.devices || {});
-  const entities = Object.values(hass.entities || {});
+  const devices = Object.values(hass.devices);
+  const entities = Object.values(hass.entities);
   const excludeSet = new Set([...existingCandidates, ...existingAdditional]);
 
   const areaDevices = new Set<string>();
@@ -1355,7 +1361,7 @@ function getAvailableBadgeEntities(
     if (excludeSet.has(entity.entity_id)) continue;
 
     const stateObj = stateFor(hass, entity.entity_id);
-    const name = (stateObj?.attributes?.friendly_name as string) || entity.entity_id.split('.')[1].replace(/_/g, ' ');
+    const name = (stateObj?.attributes.friendly_name as string) || entity.entity_id.split('.')[1].replace(/_/g, ' ');
     available.push({ entity_id: entity.entity_id, name });
   }
 
@@ -1368,7 +1374,7 @@ function getDefaultShowNameEntities(badgeCandidates: string[], hass: HomeAssista
   for (const entityId of badgeCandidates) {
     const stateObj = stateFor(hass, entityId);
     if (!stateObj) continue;
-    const dc = stateObj?.attributes?.device_class as string | undefined;
+    const dc = stateObj.attributes.device_class as string | undefined;
     if (isDefaultShowName(dc)) result.add(entityId);
   }
   return result;
@@ -1378,7 +1384,8 @@ function getBadgeNamesConfig(
   areaId: string,
   config: Simon42StrategyConfig
 ): { namesVisible: string[]; namesHidden: string[] } {
-  const opts = areaOptionsFor(config, areaId)?.groups_options?.badges;
+  const groups = areaOptionsFor(config, areaId)?.groups_options;
+  const opts = groups ? (Reflect.get(groups, 'badges') as GroupOptions | undefined) : undefined;
   return {
     namesVisible: opts?.names_visible || [],
     namesHidden: opts?.names_hidden || [],
