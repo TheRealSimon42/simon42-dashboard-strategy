@@ -117,7 +117,7 @@ class Simon42VideoTipCard extends LitElement {
           <button
             class="dismiss"
             title=${localize('maintenance.video_tip_dismiss')}
-            @click=${() => this._dismiss()}
+            @click=${() => { this._dismiss(); }}
           >
             <ha-icon icon="mdi:check"></ha-icon>
           </button>
