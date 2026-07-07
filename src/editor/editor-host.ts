@@ -73,6 +73,8 @@ export interface StrategyEditorHost {
   _getSectionsOrder(): SectionOrderKey[];
   _getStacksOrder(areaId: string): StackKey[];
   _validCustomSectionKeys(): string[];
+  /** Display meta (icon/label) for a section key incl. custom sections. */
+  _sectionDisplayMeta(key: SectionOrderKey): { icon: string; label: string } | null;
   _refreshAreaCache(areaId: string): void;
   _refreshAllAreaCaches(): void;
 }
