@@ -55,6 +55,9 @@ export interface StrategyEditorHost {
   _stackDraggedElement: HTMLElement | null;
   _entityDraggedId: string | null;
 
+  /** Shadow root of the host element (LitElement render root). */
+  readonly shadowRoot: ShadowRoot | null;
+
   // -- Plumbing (implemented by the host element) -------------------------
   requestUpdate(): void;
   _fireConfigChanged(config: Simon42StrategyConfig): void;

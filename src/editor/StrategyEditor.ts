@@ -17,12 +17,11 @@ import type {
   SectionKey,
   SectionOrderKey,
   StackKey,
-  WeatherPresentation,
 } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER, DEFAULT_STACKS_ORDER } from '../types/strategy';
 // Pure-data section registry (no builder imports — safe for the editor chunk)
-import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/section-registry';
-import { validateCustomSections, customSectionHasCards } from '../sections/CustomSections';
+import { SECTION_META_BY_KEY } from '../sections/section-registry';
+import { validateCustomSections } from '../sections/CustomSections';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
 import { localize } from '../utils/localize';
 import { EDITOR_STYLES } from './editor-styles';
@@ -38,10 +37,9 @@ import {
   renderCustomViewsSection,
   renderCustomSectionsSection,
 } from './panels/CustomConfigPanels';
+import { renderSectionOrderPanel } from './panels/SectionOrderPanel';
 import {
   getAllEntitiesForSelect,
-  getWeatherEntities,
-  getPowerSensorEntities,
   getFilteredEntities,
 } from './entity-options';
 import { Registry } from '../Registry';
@@ -146,7 +144,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
           </div>
         </div>
 
-        ${this._renderSectionOrderPanel()}
+        ${renderSectionOrderPanel(this)}
         ${renderWeatherSensorsSection(this)}
         ${renderCustomCardsSection(this)}
         ${renderCustomSectionsSection(this)}
@@ -190,15 +188,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
     return result;
   }
 
-  private _updateSectionsOrder(newOrder: SectionOrderKey[]): void {
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      sections_order: newOrder,
-    };
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
   // Section metadata (icon, label, visibility toggle) derives from the
   // section registry — a new built-in section needs no editor changes at
   // all. Custom sections get synthesized display meta from their config.
@@ -213,344 +202,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
     return null;
   }
 
-  private _isSectionDisabled(key: SectionOrderKey): boolean {
-    // custom_cards has no toggle: its visibility derives from content
-    if (key === 'custom_cards') {
-      return (this._config.custom_cards || []).length === 0;
-    }
-    const custom = (this._config.custom_sections || []).find((cs) => cs.key === key);
-    if (custom) {
-      // custom sections auto-hide when they have no valid cards
-      return !customSectionHasCards(custom);
-    }
-    return isSectionHiddenByConfig(key as SectionKey, this._config);
-  }
-
-  private _isSectionToggleable(key: SectionOrderKey): boolean {
-    return SECTION_META_BY_KEY.get(key as SectionKey)?.toggle !== undefined;
-  }
-
-  private _toggleSectionVisibility(key: SectionOrderKey, visible: boolean): void {
-    const toggle = SECTION_META_BY_KEY.get(key as SectionKey)?.toggle;
-    if (toggle) {
-      this._toggleChanged(toggle.flag, visible, toggle.defaultOn);
-    }
-  }
-
-  /**
-   * Persist a weather_presentation pick. Migrates off the legacy boolean:
-   * sets weather_presentation explicitly and deletes the deprecated
-   * `show_weather_forecast_card` field so the YAML reflects user intent.
-   */
-  private _setWeatherPresentation(presentation: WeatherPresentation): void {
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      weather_presentation: presentation,
-    };
-    delete newConfig.show_weather_forecast_card;
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  private _renderSectionOrderPanel(): TemplateResult {
-    const order = this._getSectionsOrder();
-    const energyLinkDashboard = this._config.energy_link_dashboard !== false;
-    const showEnergy = this._config.show_energy !== false;
-    const showWeather = this._config.show_weather !== false;
-    const showEnergyDistributionCard = this._config.show_energy_distribution_card !== false;
-    // weather_presentation supersedes the legacy show_weather_forecast_card
-    // boolean. Resolution mirrors createWeatherSection:
-    //   explicit weather_presentation → use it
-    //   else show_weather_forecast_card === false → 'none'
-    //   else 'forecast_daily'
-    const weatherPresentation: WeatherPresentation =
-      this._config.weather_presentation ??
-      (this._config.show_weather_forecast_card === false ? 'none' : 'forecast_daily');
-    const weatherEntity = this._config.weather_entity || '';
-    const weatherEntities = getWeatherEntities(this._hass);
-    const hiddenHeadings = new Set(this._config.hidden_section_headings || []);
-    const powerBadgeEntity = this._config.power_badge_entity || '';
-    const powerSensorEntities = getPowerSensorEntities(this._hass);
-
-    return html`
-      <div class="section">
-        <div class="section-title">${localize('editor.section_order')}</div>
-        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
-          ${localize('editor.section_order_desc')}
-        </div>
-        <div class="section-order-list" id="section-order-list">
-          ${order.map((key) => {
-            const meta = this._sectionDisplayMeta(key);
-            if (!meta) return nothing;
-            const disabled = this._isSectionDisabled(key);
-            const toggleable = this._isSectionToggleable(key);
-            return html`
-              <div class="section-order-item ${disabled ? 'disabled' : ''}"
-                data-section-key=${key}
-                draggable="true"
-                @dragstart=${this._handleSectionDragStart}
-                @dragend=${this._handleSectionDragEnd}
-                @dragover=${this._handleSectionDragOver}
-                @dragleave=${this._handleSectionDragLeave}
-                @drop=${this._handleSectionDrop}>
-                <span class="drag-handle" draggable="true">&#x2630;</span>
-                <ha-icon class="section-icon" icon=${meta.icon}></ha-icon>
-                <span class="section-label">${meta.label}</span>
-                ${disabled && !toggleable ? html`<span class="section-hidden-tag">(${localize('editor.section_hidden')})</span>` : nothing}
-                ${toggleable ? html`
-                  <label class="section-toggle" @mousedown=${(e: Event) => { e.stopPropagation(); }}>
-                    <input type="checkbox"
-                      ?checked=${!disabled}
-                      @change=${(e: Event) => { this._toggleSectionVisibility(key, (e.target as HTMLInputElement).checked); }}
-                      @dragstart=${(e: Event) => { e.stopPropagation(); }} />
-                  </label>
-                ` : nothing}
-              </div>
-              ${key === 'weather' && showWeather ? html`
-                <div class="section-order-sub" style="flex-wrap: wrap;">
-                  <label for="weather-presentation">${localize('editor.weather_presentation')}</label>
-                  <select id="weather-presentation"
-                    .value=${weatherPresentation}
-                    @change=${(e: Event) => this._setWeatherPresentation((e.target as HTMLSelectElement).value as WeatherPresentation)}>
-                    <option value="forecast_daily" ?selected=${weatherPresentation === 'forecast_daily'}>${localize('editor.weather_presentation_forecast_daily')}</option>
-                    <option value="forecast_hourly" ?selected=${weatherPresentation === 'forecast_hourly'}>${localize('editor.weather_presentation_forecast_hourly')}</option>
-                    <option value="forecast_twice_daily" ?selected=${weatherPresentation === 'forecast_twice_daily'}>${localize('editor.weather_presentation_forecast_twice_daily')}</option>
-                    <option value="tile" ?selected=${weatherPresentation === 'tile'}>${localize('editor.weather_presentation_tile')}</option>
-                    <option value="none" ?selected=${weatherPresentation === 'none'}>${localize('editor.weather_presentation_none')}</option>
-                  </select>
-                </div>
-              ` : nothing}
-              ${key === 'weather' && showWeather && weatherEntities.length > 1 ? html`
-                <div class="section-order-sub" style="flex-wrap: wrap;">
-                  <label for="weather-entity">${localize('editor.weather_entity')}</label>
-                  <select id="weather-entity"
-                    .value=${weatherEntity}
-                    @change=${this._weatherEntityChanged}>
-                    <option value="" ?selected=${!weatherEntity}>${localize('editor.weather_entity_auto')}</option>
-                    ${weatherEntities.map((entity) => html`
-                      <option value=${entity.entity_id} ?selected=${entity.entity_id === weatherEntity}>
-                        ${entity.name}
-                      </option>
-                    `)}
-                  </select>
-                </div>
-              ` : nothing}
-              ${key === 'weather' && showWeather && this._hasDwdPollenflug() ? html`
-                <div class="section-order-sub" style="flex-wrap: wrap;">
-                  ${this._renderCheckbox('show-pollen-card', localize('editor.show_pollen_card'), this._config.show_pollen_card === true,
-                    (checked) => this._toggleChanged('show_pollen_card', checked, false))}
-                </div>
-                <div class="description" style="margin-left: 26px;">${localize('editor.show_pollen_card_desc')}</div>
-              ` : nothing}
-              ${key === 'energy' && showEnergy ? html`
-                <div class="section-order-sub">
-                  <input type="checkbox" id="energy-link-dashboard"
-                    ?checked=${energyLinkDashboard}
-                    @change=${(e: Event) => { this._toggleChanged('energy_link_dashboard', (e.target as HTMLInputElement).checked, true); }} />
-                  <label for="energy-link-dashboard">${localize('editor.energy_link_dashboard')}</label>
-                </div>
-                <div class="section-order-sub">
-                  <input type="checkbox" id="show-energy-distribution-card"
-                    ?checked=${showEnergyDistributionCard}
-                    @change=${(e: Event) => { this._toggleChanged('show_energy_distribution_card', (e.target as HTMLInputElement).checked, true); }} />
-                  <label for="show-energy-distribution-card">${localize('editor.show_energy_distribution_card')}</label>
-                </div>
-
-                ${powerSensorEntities.length > 0 ? html`
-                  <div class="section-order-sub" style="display: block;">
-                    <label for="power-badge-entity" style="display: block; margin-bottom: 4px;">${localize('editor.power_badge_entity')}</label>
-                    <select id="power-badge-entity"
-                      style="width: 100%;"
-                      @change=${this._powerBadgeEntityChanged}>
-                      <option value="" ?selected=${!powerBadgeEntity}>${localize('editor.power_badge_none')}</option>
-                      ${powerSensorEntities.map((entity) => html`
-                        <option value=${entity.entity_id} ?selected=${entity.entity_id === powerBadgeEntity}>
-                          ${entity.name}
-                        </option>
-                      `)}
-                    </select>
-                    <div class="description">${localize('editor.power_badge_entity_desc')}</div>
-                  </div>
-                ` : nothing}
-              ` : nothing}
-            `;
-          })}
-        </div>
-
-        <details style="margin-top: 12px;">
-          <summary style="cursor: pointer; font-size: 13px; font-weight: 500; color: var(--primary-text-color); padding: 4px 0;">
-            ${localize('editor.hide_section_headings')}
-          </summary>
-          <div style="margin-left: 14px; margin-top: 6px;">
-            <div class="description" style="margin-left: 0; margin-bottom: 8px;">
-              ${localize('editor.hide_section_headings_desc')}
-            </div>
-            ${(['overview', 'summaries', 'favorites', 'custom_cards', 'areas', 'areas_other', 'weather', 'energy'] as const).map((hk) => html`
-              <div class="form-row">
-                <input type="checkbox" id="hide-heading-${hk}"
-                  ?checked=${hiddenHeadings.has(hk)}
-                  @change=${(e: Event) => { this._toggleHiddenHeading(hk, (e.target as HTMLInputElement).checked); }} />
-                <label for="hide-heading-${hk}">${localize('editor.heading_label_' + hk)}</label>
-              </div>
-            `)}
-            ${localize('editor.section_visibility')}
-          </summary>
-          <div style="margin-left: 14px; margin-top: 6px;">
-            <div class="description" style="margin-left: 0; margin-bottom: 8px;">
-              ${localize('editor.section_visibility_desc')}
-            </div>
-            ${order.map((key) => {
-              const meta = this._sectionDisplayMeta(key);
-              if (!meta) return nothing;
-              const rule = this._config.section_visibility?.[key];
-              return html`
-                <div style="border: 1px solid var(--divider-color); border-radius: 6px; padding: 8px; margin-bottom: 8px;">
-                  <div style="font-weight: 500; margin-bottom: 6px;">${meta.label}</div>
-                  <div class="form-row">
-                    <label for="visibility-entity-${key}" style="min-width: 80px; font-size: 12px;">${localize('editor.section_visibility_entity')}</label>
-                    <input type="text" id="visibility-entity-${key}" style="flex: 1;"
-                      placeholder="calendar.workday_sensor"
-                      .value=${rule?.entity || ''}
-                      @change=${(e: Event) => this._sectionVisibilityChanged(key, 'entity', (e.target as HTMLInputElement).value)} />
-                  </div>
-                  <div class="form-row">
-                    <label for="visibility-state-${key}" style="min-width: 80px; font-size: 12px;">${localize('editor.section_visibility_state')}</label>
-                    <input type="text" id="visibility-state-${key}" style="flex: 1;"
-                      placeholder="on"
-                      .value=${rule?.state || ''}
-                      @change=${(e: Event) => this._sectionVisibilityChanged(key, 'state', (e.target as HTMLInputElement).value)} />
-                  </div>
-                </div>
-              `;
-            })}
-          </div>
-        </details>
-
-        <div style="margin-top: 12px;">
-          ${this._renderCheckbox('show-unavailable-alert-badge', localize('editor.show_unavailable_alert_badge'),
-            this._config.show_unavailable_alert_badge === true,
-            (checked) => this._toggleChanged('show_unavailable_alert_badge', checked, false))}
-          <div class="description">${localize('editor.show_unavailable_alert_badge_desc')}</div>
-          ${this._renderCheckbox('show-now-playing-badge', localize('editor.show_now_playing_badge'),
-            this._config.show_now_playing_badge === true,
-            (checked) => this._toggleChanged('show_now_playing_badge', checked, false))}
-          <div class="description">${localize('editor.show_now_playing_badge_desc')}</div>
-          ${this._renderCheckbox('show-sun-badge', localize('editor.show_sun_badge'),
-            this._config.show_sun_badge === true,
-            (checked) => this._toggleChanged('show_sun_badge', checked, false))}
-          <div class="description">${localize('editor.show_sun_badge_desc')}</div>
-          ${this._renderCheckbox('show-updates-badge', localize('editor.show_updates_badge'),
-            this._config.show_updates_badge === true,
-            (checked) => this._toggleChanged('show_updates_badge', checked, false))}
-          <div class="description">${localize('editor.show_updates_badge_desc')}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  private _toggleHiddenHeading(key: string, hide: boolean): void {
-    const current = new Set(this._config.hidden_section_headings || []);
-    if (hide) {
-      current.add(key as any);
-    } else {
-      current.delete(key as any);
-    }
-    const next = [...current];
-    const updated: Simon42StrategyConfig = { ...this._config };
-    if (next.length === 0) {
-      delete updated.hidden_section_headings;
-    } else {
-      updated.hidden_section_headings = next;
-    }
-    this._fireConfigChanged(updated);
-  }
-
-  private _sectionVisibilityChanged(sectionKey: string, field: 'entity' | 'state', value: string): void {
-    const updated: Simon42StrategyConfig = { ...this._config };
-    const current = { ...(updated.section_visibility || {}) };
-    const rule = { ...(current[sectionKey] || { entity: '', state: '' }) };
-    rule[field] = value.trim();
-    if (!rule.entity && !rule.state) {
-      delete current[sectionKey];
-    } else {
-      current[sectionKey] = rule;
-    }
-    if (Object.keys(current).length === 0) {
-      delete updated.section_visibility;
-    } else {
-      updated.section_visibility = current;
-    }
-    this._fireConfigChanged(updated);
-  }
-
   // -- Section order drag & drop -----------------------------------------
-
-  private _handleSectionDragStart = (ev: DragEvent): void => {
-    const dragHandle = (ev.target as HTMLElement).closest('.drag-handle');
-    if (!dragHandle) { ev.preventDefault(); return; }
-
-    const item = (ev.target as HTMLElement).closest('.section-order-item') as HTMLElement | null;
-    if (!item) { ev.preventDefault(); return; }
-
-    item.classList.add('dragging');
-    if (ev.dataTransfer) {
-      ev.dataTransfer.effectAllowed = 'move';
-      ev.dataTransfer.setData('text/plain', item.dataset.sectionKey || '');
-    }
-    this._sectionDraggedElement = item;
-  };
-
-  private _handleSectionDragEnd = (ev: DragEvent): void => {
-    const item = (ev.target as HTMLElement).closest('.section-order-item') as HTMLElement | null;
-    if (item) item.classList.remove('dragging');
-
-    const list = this.shadowRoot?.querySelector('#section-order-list');
-    if (list) {
-      list.querySelectorAll('.section-order-item').forEach((el) => {
-        el.classList.remove('drag-over');
-      });
-    }
-    this._sectionDraggedElement = null;
-  };
-
-  private _handleSectionDragOver = (ev: DragEvent): void => {
-    ev.preventDefault();
-    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
-
-    const item = ev.currentTarget as HTMLElement;
-    if (item !== this._sectionDraggedElement) {
-      item.classList.add('drag-over');
-    }
-  };
-
-  private _handleSectionDragLeave = (ev: DragEvent): void => {
-    (ev.currentTarget as HTMLElement).classList.remove('drag-over');
-  };
-
-  private _handleSectionDrop = (ev: DragEvent): void => {
-    ev.stopPropagation();
-    ev.preventDefault();
-
-    const dropTarget = ev.currentTarget as HTMLElement;
-    dropTarget.classList.remove('drag-over');
-
-    if (!this._sectionDraggedElement || this._sectionDraggedElement === dropTarget) return;
-
-    const draggedKey = this._sectionDraggedElement.dataset.sectionKey as SectionOrderKey | undefined;
-    const dropKey = dropTarget.dataset.sectionKey as SectionOrderKey | undefined;
-    if (!draggedKey || !dropKey) return;
-
-    const currentOrder = this._getSectionsOrder();
-    const draggedIndex = currentOrder.indexOf(draggedKey);
-    const dropIndex = currentOrder.indexOf(dropKey);
-    if (draggedIndex === -1 || dropIndex === -1) return;
-
-    const newOrder = [...currentOrder];
-    newOrder.splice(draggedIndex, 1);
-    newOrder.splice(dropIndex, 0, draggedKey);
-
-    this._updateSectionsOrder(newOrder);
-  };
 
   _getStacksOrder(areaId: string): StackKey[] {
     return mergeStacksOrder(this._config.areas_options?.[areaId]?.stacks_order);
@@ -1018,14 +670,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
       updated.unavailable_batteries_bucket = bucket;
     }
     this._fireConfigChanged(updated);
-  }
-
-  /** DWD Pollenflug (HACS) installed? Gates the pollen card toggle. */
-  private _hasDwdPollenflug(): boolean {
-    if (!this._hass) return false;
-    return Object.values(this._hass.entities).some(function isPollenEntity(entity) {
-      return entity.platform === 'dwd_pollenflug';
-    });
   }
 
   private _securityActivityPositionChanged(atEnd: boolean): void {
@@ -1789,34 +1433,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
     this._config = newConfig;
     this._fireConfigChanged(newConfig);
   }
-
-  private _weatherEntityChanged(e: Event): void {
-    if (!this._hass) return;
-
-    const entityId = (e.target as HTMLSelectElement).value;
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      weather_entity: entityId,
-    };
-
-    if (!entityId || entityId === '') {
-      delete newConfig.weather_entity;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  private _powerBadgeEntityChanged = (e: Event): void => {
-    const entityId = (e.target as HTMLSelectElement).value;
-    const newConfig: Simon42StrategyConfig = { ...this._config };
-    if (entityId) {
-      newConfig.power_badge_entity = entityId;
-    } else {
-      delete newConfig.power_badge_entity;
-    }
-    this._fireConfigChanged(newConfig);
-  };
 
   private _batteryCriticalChanged(e: Event): void {
     const value = parseInt((e.target as HTMLInputElement).value, 10);
