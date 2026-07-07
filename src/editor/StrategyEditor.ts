@@ -31,6 +31,16 @@ import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/sectio
 import { validateCustomSections, customSectionHasCards } from '../sections/CustomSections';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
 import { localize } from '../utils/localize';
+import { EDITOR_STYLES } from './editor-styles';
+import type { StrategyEditorHost, AreaEntitiesCacheEntry } from './editor-host';
+import {
+  getAllEntitiesForSelect,
+  getAlarmEntities,
+  getWeatherEntities,
+  getPowerSensorEntities,
+  getFilteredEntities,
+  type EntitySelectOption,
+} from './entity-options';
 import { Registry } from '../Registry';
 import { collectCameraBlocks } from '../views/CctvViewStrategy';
 import { findUpsEntityGroups } from '../views/RoomViewStrategy';
@@ -38,18 +48,6 @@ import { isBadgeCandidate, isDefaultShowName, resolveShowName } from '../utils/b
 import { mergeStacksOrder } from '../utils/name-utils';
 
 // -- Supporting types for the editor ------------------------------------
-
-interface AlarmEntityOption {
-  entity_id: string;
-  name: string;
-}
-
-interface EntitySelectOption {
-  entity_id: string;
-  name: string;
-  area_id?: string | null;
-  device_area_id?: string | null;
-}
 
 interface DomainGroup {
   key: string;
@@ -68,7 +66,7 @@ declare global {
 // Editor Class
 // ====================================================================
 
-class Simon42DashboardStrategyEditor extends LitElement {
+class Simon42DashboardStrategyEditor extends LitElement implements StrategyEditorHost {
   static properties = {
     _config: { state: true },
     _expandedAreas: { state: true },
@@ -76,7 +74,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
   };
 
   // hass is set externally by HA — use a setter, not a Lit property
-  private _hass: HomeAssistant | null = null;
+  _hass: HomeAssistant | null = null;
   private _isUpdatingConfig = false;
 
   _config: Simon42StrategyConfig = {};
@@ -84,29 +82,19 @@ class Simon42DashboardStrategyEditor extends LitElement {
   _expandedGroups = new Map<string, Set<string>>();
 
   // Entity search state (NOT @state — we call requestUpdate manually)
-  private _favoriteSearch = '';
-  private _roomPinSearch = '';
-  private _weatherSensorSearch = '';
-  private _securityExtraSearch = '';
-  private _lightFavSearch = '';
+  _favoriteSearch = '';
+  _roomPinSearch = '';
+  _weatherSensorSearch = '';
+  _securityExtraSearch = '';
+  _lightFavSearch = '';
 
   // Cache for loaded area entities (avoid re-fetching on every render)
-  private _areaEntitiesCache = new Map<string, {
-    groupedEntities: Record<string, string[]>;
-    hiddenEntities: Record<string, string[]>;
-    entityOrders: Record<string, string[]>;
-    badgeCandidates: string[];
-    additionalBadges: string[];
-    availableEntities: Array<{ entity_id: string; name: string }>;
-    defaultShowNames: Set<string>;
-    namesVisible: string[];
-    namesHidden: string[];
-  }>();
+  _areaEntitiesCache = new Map<string, AreaEntitiesCacheEntry>();
 
   // Drag state (not reactive — no render needed)
-  private _draggedElement: HTMLElement | null = null;
-  private _sectionDraggedElement: HTMLElement | null = null;
-  private _stackDraggedElement: HTMLElement | null = null;
+  _draggedElement: HTMLElement | null = null;
+  _sectionDraggedElement: HTMLElement | null = null;
+  _stackDraggedElement: HTMLElement | null = null;
 
   // -- Lifecycle --------------------------------------------------------
 
@@ -129,952 +117,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
     return hasSearchCard && hasCardTools;
   }
 
-  // -- Entity helpers ---------------------------------------------------
-
-  private _getAllEntitiesForSelect(): EntitySelectOption[] {
-    if (!this._hass) return [];
-
-    const entities = Object.values(this._hass.entities);
-    const devices = Object.values(this._hass.devices);
-
-    // Build device-to-area lookup
-    const deviceAreaMap = new Map<string, string>();
-    devices.forEach((device) => {
-      if (device.area_id) {
-        deviceAreaMap.set(device.id, device.area_id);
-      }
-    });
-
-    const hass = this._hass;
-    return Object.keys(hass.states)
-      .map((entityId) => {
-        const stateObj = hass.states[entityId];
-        const entity = entities.find((e) => e.entity_id === entityId);
-
-        let areaId = entity?.area_id;
-        if (!areaId && entity?.device_id) {
-          areaId = deviceAreaMap.get(entity.device_id) ?? null;
-        }
-
-        return {
-          entity_id: entityId,
-          name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
-          area_id: areaId,
-          device_area_id: areaId,
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  private _getAlarmEntities(): AlarmEntityOption[] {
-    if (!this._hass) return [];
-    return Object.keys(this._hass.states)
-      .filter((entityId) => entityId.startsWith('alarm_control_panel.'))
-      .map((entityId) => {
-        const stateObj = this._hass!.states[entityId];
-        return {
-          entity_id: entityId,
-          name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  private _getWeatherEntities(): AlarmEntityOption[] {
-    if (!this._hass) return [];
-    return Object.keys(this._hass.states)
-      .filter((entityId) => entityId.startsWith('weather.'))
-      .map((entityId) => {
-        const stateObj = this._hass!.states[entityId];
-        return {
-          entity_id: entityId,
-          name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  /** Sensor entities reporting power (W / kW). For the optional live power badge. */
-  private _getPowerSensorEntities(): AlarmEntityOption[] {
-    if (!this._hass) return [];
-    return Object.keys(this._hass.states)
-      .filter((entityId) => {
-        if (!entityId.startsWith('sensor.')) return false;
-        const stateObj = this._hass!.states[entityId];
-        const dc = stateObj?.attributes?.device_class;
-        const unit = stateObj?.attributes?.unit_of_measurement;
-        return dc === 'power' || unit === 'W' || unit === 'kW';
-      })
-      .map((entityId) => {
-        const stateObj = this._hass!.states[entityId];
-        return {
-          entity_id: entityId,
-          name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  private _getFilteredEntities(query: string, filterWithArea = false): EntitySelectOption[] {
-    if (!this._hass || query.length < 2) return [];
-    const q = query.toLowerCase();
-    const all = this._getAllEntitiesForSelect();
-    const filtered = all.filter((entity) => {
-      if (filterWithArea && !entity.area_id && !entity.device_area_id) return false;
-      return entity.name.toLowerCase().includes(q) || entity.entity_id.toLowerCase().includes(q);
-    });
-    // Prioritize: exact match > starts-with > contains
-    filtered.sort((a, b) => {
-      const aName = a.name.toLowerCase();
-      const bName = b.name.toLowerCase();
-      const aId = a.entity_id.toLowerCase();
-      const bId = b.entity_id.toLowerCase();
-      const aExact = aName === q || aId === q;
-      const bExact = bName === q || bId === q;
-      if (aExact !== bExact) return aExact ? -1 : 1;
-      const aStarts = aName.startsWith(q) || aId.startsWith(q) || aId.split('.')[1]?.startsWith(q);
-      const bStarts = bName.startsWith(q) || bId.startsWith(q) || bId.split('.')[1]?.startsWith(q);
-      if (aStarts !== bStarts) return aStarts ? -1 : 1;
-      return aName.localeCompare(bName);
-    });
-    return filtered.slice(0, 21);
-  }
-
   // -- Styles -----------------------------------------------------------
 
-  static styles = css`
-    /* -- Base layout --------------------------------------------------- */
-    .card-config {
-      padding: 16px;
-      font-family: var(--paper-font-body1_-_font-family, Roboto, sans-serif);
-      font-size: var(--mdc-typography-body1-font-size, 14px);
-      color: var(--primary-text-color);
-    }
-    .section {
-      margin-bottom: 16px;
-      background: var(--card-background-color, #fff);
-      border: 1px solid var(--divider-color, #e8e8e8);
-      border-radius: var(--ha-card-border-radius, 12px);
-      padding: 16px;
-      transition: box-shadow 0.2s ease;
-    }
-    .section-title {
-      font-size: 15px;
-      font-weight: 500;
-      margin: 0 0 12px 0;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--divider-color, #e8e8e8);
-      color: var(--primary-text-color);
-      letter-spacing: 0.01em;
-    }
-
-    /* -- Form rows ----------------------------------------------------- */
-    .form-row {
-      display: flex;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .form-row input[type="checkbox"],
-    .form-row input[type="radio"] {
-      margin-right: 8px;
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--primary-color);
-    }
-    .form-row input[type="checkbox"]:disabled,
-    .form-row input[type="radio"]:disabled {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-    .form-row label {
-      cursor: pointer;
-      user-select: none;
-      font-size: 14px;
-      color: var(--primary-text-color);
-    }
-    .form-row label.disabled-label {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-    .form-row .alarm-select {
-      flex: 1;
-      max-width: 300px;
-    }
-    .description {
-      font-size: 12px;
-      color: var(--secondary-text-color);
-      margin: 2px 0 12px 26px;
-      line-height: 1.4;
-    }
-    .description strong {
-      font-weight: 600;
-      color: var(--primary-text-color);
-    }
-
-    /* -- Native <select> — HA-like ------------------------------------- */
-    select,
-    .form-row select {
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 14px;
-      padding: 10px 32px 10px 12px;
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      background-color: var(--card-background-color);
-      color: var(--primary-text-color);
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236e6e6e' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      background-size: 16px;
-      transition: border-color 0.2s ease;
-    }
-    select:focus,
-    .form-row select:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 1px var(--primary-color);
-    }
-    select:hover,
-    .form-row select:hover {
-      border-color: var(--primary-color);
-    }
-
-    /* -- Native <input type="text/number"> — HA-like ------------------- */
-    input[type="text"],
-    input[type="number"] {
-      font-family: inherit;
-      font-size: 14px;
-      padding: 10px 12px;
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      background: var(--card-background-color);
-      color: var(--primary-text-color);
-      transition: border-color 0.2s ease;
-      box-sizing: border-box;
-    }
-    input[type="text"]:focus,
-    input[type="number"]:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 1px var(--primary-color);
-    }
-    input[type="text"]:hover,
-    input[type="number"]:hover {
-      border-color: var(--primary-color);
-    }
-    input[type="text"]::placeholder {
-      color: var(--secondary-text-color);
-      opacity: 0.7;
-    }
-
-    /* -- Native <textarea> — YAML editors ------------------------------ */
-    textarea {
-      font-family: "Roboto Mono", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
-      font-size: 12px;
-      line-height: 1.5;
-      padding: 12px;
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      background: var(--card-background-color);
-      color: var(--primary-text-color);
-      resize: vertical;
-      min-height: 80px;
-      box-sizing: border-box;
-      transition: border-color 0.2s ease;
-      tab-size: 2;
-    }
-    textarea:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 1px var(--primary-color);
-    }
-    textarea:hover {
-      border-color: var(--primary-color);
-    }
-    textarea::placeholder {
-      color: var(--secondary-text-color);
-      opacity: 0.7;
-      font-family: inherit;
-    }
-
-    /* -- Buttons — HA-like --------------------------------------------- */
-    button {
-      font-family: inherit;
-      font-size: 14px;
-    }
-    .btn-primary {
-      padding: 10px 20px;
-      border-radius: var(--ha-card-border-radius, 12px);
-      border: none;
-      background: var(--primary-color);
-      color: var(--text-primary-color, #fff);
-      cursor: pointer;
-      font-weight: 500;
-      transition: opacity 0.2s ease, box-shadow 0.2s ease;
-      white-space: nowrap;
-    }
-    .btn-primary:hover {
-      opacity: 0.85;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-    }
-    .btn-primary:active {
-      opacity: 0.75;
-    }
-    .btn-remove {
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--divider-color);
-      background: var(--card-background-color);
-      color: var(--secondary-text-color);
-      cursor: pointer;
-      font-size: 14px;
-      transition: color 0.2s ease, border-color 0.2s ease;
-      line-height: 1;
-    }
-    .btn-remove:hover {
-      color: var(--error-color, #db4437);
-      border-color: var(--error-color, #db4437);
-    }
-
-    /* -- Area list ----------------------------------------------------- */
-    .area-list {
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      overflow: hidden;
-    }
-    .area-item {
-      border-bottom: 1px solid var(--divider-color);
-      background: var(--card-background-color);
-    }
-    .area-item:last-child {
-      border-bottom: none;
-    }
-    .area-item.dragging {
-      opacity: 0.5;
-    }
-    .area-item.drag-over {
-      border-top: 2px solid var(--primary-color);
-    }
-    .area-header {
-      display: flex;
-      align-items: center;
-      padding: 12px 16px;
-    }
-    .drag-handle {
-      margin-right: 12px;
-      color: var(--secondary-text-color);
-      cursor: grab;
-      user-select: none;
-      padding: 4px;
-    }
-    .drag-handle:active {
-      cursor: grabbing;
-    }
-    .area-checkbox {
-      margin-right: 12px;
-      accent-color: var(--primary-color);
-    }
-    .area-name {
-      flex: 1;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .area-icon {
-      margin-left: 8px;
-      margin-right: 12px;
-      color: var(--secondary-text-color);
-    }
-    .nav-pin-button {
-      background: none;
-      border: none;
-      color: var(--secondary-text-color);
-      cursor: pointer;
-      padding: 4px;
-      margin-right: 8px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      transition: color 0.15s ease, background 0.15s ease;
-    }
-    .nav-pin-button.pinned {
-      color: var(--primary-color);
-    }
-    .nav-pin-button:hover:not(:disabled) {
-      background: var(--secondary-background-color);
-    }
-    .nav-pin-button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-    .expand-button {
-      background: none;
-      border: none;
-      padding: 4px 8px;
-      cursor: pointer;
-      color: var(--secondary-text-color);
-      transition: transform 0.2s;
-    }
-    .expand-button:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-    .expand-button.expanded .expand-icon {
-      transform: rotate(90deg);
-    }
-    .expand-icon {
-      display: inline-block;
-      transition: transform 0.2s;
-    }
-    .area-content {
-      padding: 0 12px 12px 48px;
-      background: var(--secondary-background-color);
-    }
-    .loading-placeholder {
-      padding: 12px;
-      text-align: center;
-      color: var(--secondary-text-color);
-      font-style: italic;
-    }
-
-    /* -- Section order list --------------------------------------------- */
-    .section-order-list {
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      overflow: hidden;
-    }
-    .section-order-item {
-      display: flex;
-      align-items: center;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--divider-color);
-      background: var(--card-background-color);
-      transition: opacity 0.2s;
-    }
-    .section-order-item:last-child {
-      border-bottom: none;
-    }
-    .section-order-item.dragging {
-      opacity: 0.4;
-    }
-    .section-order-item.drag-over {
-      border-top: 2px solid var(--primary-color);
-    }
-    .section-order-item.disabled {
-      opacity: 0.5;
-    }
-    .section-order-item .drag-handle {
-      margin-right: 12px;
-      color: var(--secondary-text-color);
-      cursor: grab;
-      user-select: none;
-      padding: 4px;
-    }
-    .section-order-item .drag-handle:active {
-      cursor: grabbing;
-    }
-    .section-order-item .section-icon {
-      margin-right: 10px;
-      color: var(--secondary-text-color);
-      --mdc-icon-size: 20px;
-    }
-    .section-order-item .section-label {
-      flex: 1;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .section-order-item .section-hidden-tag {
-      font-size: 12px;
-      color: var(--secondary-text-color);
-      font-style: italic;
-      margin-left: 8px;
-    }
-    .section-order-item .section-toggle {
-      margin-left: auto;
-      cursor: pointer;
-    }
-    .section-order-item .section-toggle input {
-      cursor: pointer;
-      width: 16px;
-      height: 16px;
-    }
-    .section-order-sub {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px 8px 56px;
-      border-bottom: 1px solid var(--divider-color);
-      font-size: 13px;
-      color: var(--secondary-text-color);
-    }
-    .section-order-sub input {
-      cursor: pointer;
-    }
-    .section-order-sub label {
-      cursor: pointer;
-    }
-
-    /* -- Entity groups ------------------------------------------------- */
-    .entity-groups {
-      padding-top: 8px;
-    }
-    .entity-group {
-      margin-bottom: 8px;
-      border: 1px solid var(--divider-color);
-      border-radius: 8px;
-      background: var(--card-background-color);
-      overflow: hidden;
-    }
-    .entity-group.disabled {
-      opacity: 0.5;
-    }
-    .entity-group-header {
-      display: flex;
-      align-items: center;
-      padding: 10px 12px;
-      cursor: pointer;
-      user-select: none;
-      transition: background-color 0.15s ease;
-    }
-    .entity-group-header:hover {
-      background: var(--secondary-background-color);
-    }
-    .group-checkbox {
-      margin-right: 8px;
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-      accent-color: var(--primary-color);
-    }
-    .group-checkbox[data-indeterminate="true"] {
-      opacity: 0.6;
-    }
-    .entity-group-header ha-icon {
-      margin-right: 8px;
-      --mdc-icon-size: 18px;
-      color: var(--secondary-text-color);
-    }
-    .group-name {
-      flex: 1;
-      font-weight: 500;
-      font-size: 14px;
-    }
-    .entity-count {
-      color: var(--secondary-text-color);
-      font-size: 12px;
-      margin-right: 8px;
-    }
-    .expand-button-small {
-      background: none;
-      border: none;
-      padding: 4px;
-      cursor: pointer;
-      color: var(--secondary-text-color);
-    }
-    .expand-button-small.expanded .expand-icon-small {
-      transform: rotate(90deg);
-    }
-    .expand-icon-small {
-      display: inline-block;
-      font-size: 12px;
-      transition: transform 0.2s;
-    }
-
-    /* -- Entity list --------------------------------------------------- */
-    .entity-list {
-      padding: 8px 12px 8px 36px;
-      border-top: 1px solid var(--divider-color);
-    }
-    .entity-item {
-      display: flex;
-      align-items: center;
-      padding: 6px 0;
-    }
-    .entity-checkbox {
-      margin-right: 8px;
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-      accent-color: var(--primary-color);
-    }
-    .entity-name {
-      flex: 1;
-      font-size: 14px;
-    }
-    .entity-id {
-      font-size: 11px;
-      color: var(--secondary-text-color);
-      font-family: "Roboto Mono", monospace;
-      margin-left: 8px;
-    }
-    .empty-state {
-      padding: 24px;
-      text-align: center;
-      color: var(--secondary-text-color);
-      font-style: italic;
-    }
-
-    /* -- Badge entity management --------------------------------------- */
-    .badge-separator {
-      padding: 8px 0 4px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--secondary-text-color);
-      border-top: 1px dashed var(--divider-color);
-      margin-top: 4px;
-    }
-    .badge-additional-item {
-      padding-left: 0;
-    }
-    .badge-remove-btn {
-      background: none;
-      border: none;
-      padding: 2px 6px;
-      cursor: pointer;
-      color: var(--error-color, #db4437);
-      font-size: 14px;
-      margin-left: 8px;
-      border-radius: 4px;
-      transition: background-color 0.15s ease;
-    }
-    .badge-remove-btn:hover {
-      background: var(--secondary-background-color);
-    }
-    .badge-add-section {
-      display: flex;
-      gap: 8px;
-      padding: 8px 0 4px;
-      align-items: center;
-    }
-    .badge-entity-picker {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid var(--divider-color);
-      border-radius: 8px;
-      background: var(--card-background-color);
-      color: var(--primary-text-color);
-      font-size: 13px;
-    }
-    .badge-add-button {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 8px;
-      background: var(--primary-color);
-      color: var(--text-primary-color, #fff);
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      white-space: nowrap;
-      transition: opacity 0.2s ease;
-    }
-    .badge-add-button:hover {
-      opacity: 0.85;
-    }
-    .badge-name-checkbox {
-      margin-left: auto;
-      margin-right: 2px;
-      width: 14px;
-      height: 14px;
-      cursor: pointer;
-      accent-color: var(--primary-color);
-    }
-    .badge-name-label {
-      font-size: 11px;
-      color: var(--secondary-text-color);
-      margin-right: 8px;
-      white-space: nowrap;
-    }
-
-    /* -- Entity search picker ------------------------------------------ */
-    .entity-search-picker {
-      position: relative;
-      flex: 1;
-      min-width: 0;
-    }
-    .entity-search-input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      background: var(--card-background-color);
-      color: var(--primary-text-color);
-      font-family: inherit;
-      font-size: 14px;
-      box-sizing: border-box;
-      transition: border-color 0.2s ease;
-    }
-    .entity-search-input:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 1px var(--primary-color);
-    }
-    .entity-search-input::placeholder {
-      color: var(--secondary-text-color);
-      opacity: 0.7;
-    }
-    .entity-search-results {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      z-index: 10;
-      margin-top: 4px;
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      background: var(--card-background-color);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-      overflow: hidden;
-      max-height: 320px;
-      overflow-y: auto;
-    }
-    .entity-search-result {
-      display: flex;
-      flex-direction: column;
-      padding: 10px 14px;
-      cursor: pointer;
-      transition: background-color 0.1s ease;
-      border-bottom: 1px solid var(--divider-color);
-    }
-    .entity-search-result:last-child {
-      border-bottom: none;
-    }
-    .entity-search-result:hover {
-      background: var(--secondary-background-color);
-    }
-    .entity-search-result .entity-search-name {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--primary-text-color);
-    }
-    .entity-search-result .entity-search-id {
-      font-size: 11px;
-      color: var(--secondary-text-color);
-      font-family: "Roboto Mono", monospace;
-      margin-top: 2px;
-    }
-    .entity-search-no-results {
-      padding: 12px 14px;
-      color: var(--secondary-text-color);
-      font-style: italic;
-      font-size: 13px;
-    }
-
-    /* -- Favorites / Room Pins list items ------------------------------ */
-    .entity-list-container {
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      overflow: hidden;
-    }
-    .entity-list-item {
-      display: flex;
-      align-items: center;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--divider-color);
-      background: var(--card-background-color);
-      transition: background-color 0.1s ease;
-    }
-    .entity-list-item:last-child {
-      border-bottom: none;
-    }
-    .entity-list-item:hover {
-      background: var(--secondary-background-color);
-    }
-    .entity-list-item .drag-icon {
-      margin-right: 12px;
-      color: var(--secondary-text-color);
-      font-size: 16px;
-      cursor: grab;
-      user-select: none;
-      padding: 4px;
-    }
-    .entity-list-item .drag-icon:active {
-      cursor: grabbing;
-    }
-    .entity-list-item.dragging {
-      opacity: 0.5;
-    }
-    .entity-list-item.drag-over {
-      border-top: 2px solid var(--primary-color);
-    }
-    .entity-list-item .item-info {
-      flex: 1;
-      min-width: 0;
-      font-size: 14px;
-    }
-    .entity-list-item .item-name {
-      font-weight: 500;
-      color: var(--primary-text-color);
-    }
-    .entity-list-item .item-entity-id {
-      margin-left: 8px;
-      font-size: 12px;
-      color: var(--secondary-text-color);
-      font-family: "Roboto Mono", monospace;
-    }
-    .entity-list-item .item-area {
-      display: block;
-      font-size: 11px;
-      color: var(--secondary-text-color);
-      margin-top: 2px;
-    }
-
-    /* -- Custom view/card/badge items ---------------------------------- */
-    .custom-item {
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-card-border-radius, 12px);
-      padding: 16px;
-      margin-bottom: 12px;
-      background: var(--card-background-color);
-    }
-    .custom-item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .custom-item-header strong {
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .custom-item-fields {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .custom-card-target {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-    }
-    .custom-card-target label {
-      color: var(--secondary-text-color);
-      white-space: nowrap;
-    }
-    .custom-card-target select {
-      flex: 1;
-      padding: 4px 8px;
-      border: 1px solid var(--divider-color);
-      border-radius: 4px;
-      background: var(--card-background-color);
-      color: var(--primary-text-color);
-      font-size: 13px;
-    }
-    .custom-item-row {
-      display: flex;
-      gap: 8px;
-    }
-    .custom-item-validation {
-      font-size: 12px;
-      min-height: 16px;
-    }
-
-    /* -- Section dividers ---------------------------------------------- */
-    .section-divider {
-      margin: 28px 0 12px;
-      padding: 0;
-    }
-    .section-divider-title {
-      font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--secondary-text-color);
-    }
-
-    /* -- Mobile responsive --------------------------------------------- */
-    @media (max-width: 600px) {
-      .card-config {
-        padding: 12px 8px;
-      }
-      .section {
-        margin-bottom: 16px;
-      }
-      .section-title {
-        font-size: 15px;
-        margin-bottom: 8px;
-      }
-      .form-row {
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-      .form-row label {
-        font-size: 13px;
-      }
-      .description {
-        margin-left: 26px;
-        margin-bottom: 12px;
-        font-size: 11px;
-      }
-
-      select,
-      .form-row select {
-        width: 100%;
-        min-width: 0;
-        font-size: 13px;
-        padding: 8px 28px 8px 10px;
-      }
-      input[type="text"],
-      input[type="number"] {
-        width: 100%;
-        font-size: 13px;
-        padding: 8px 10px;
-      }
-      textarea {
-        font-size: 11px;
-        padding: 10px;
-        min-height: 60px;
-      }
-
-      .entity-search-picker {
-        width: 100%;
-      }
-      .entity-search-results {
-        max-height: 240px;
-      }
-      .entity-search-result {
-        padding: 8px 10px;
-      }
-
-      .area-header {
-        padding: 10px 12px;
-      }
-      .area-content {
-        padding: 0 8px 8px 24px;
-      }
-      .entity-list {
-        padding: 6px 8px 6px 16px;
-      }
-
-      .custom-item {
-        padding: 12px;
-      }
-      .custom-item-row {
-        flex-direction: column;
-      }
-
-      .entity-list-item {
-        padding: 8px 10px;
-      }
-      .entity-list-item .item-entity-id {
-        display: block;
-        margin-left: 0;
-        margin-top: 2px;
-      }
-
-      .badge-add-section {
-        flex-wrap: wrap;
-      }
-
-      .btn-primary {
-        padding: 8px 16px;
-        font-size: 13px;
-      }
-    }
-  `;
+  static styles = EDITOR_STYLES;
 
   // -- Main render ------------------------------------------------------
 
@@ -1121,11 +166,11 @@ class Simon42DashboardStrategyEditor extends LitElement {
   // -- Section order panel -----------------------------------------------
 
   /** Keys of valid user-declared custom sections (collisions/duplicates dropped). */
-  private _validCustomSectionKeys(): string[] {
+  _validCustomSectionKeys(): string[] {
     return validateCustomSections(this._config.custom_sections).map((cs) => cs.key);
   }
 
-  private _getSectionsOrder(): SectionOrderKey[] {
+  _getSectionsOrder(): SectionOrderKey[] {
     // Mirrors the view's normalization: configured order (invalid keys
     // dropped), then missing built-ins, then unpositioned custom sections —
     // so new custom sections show up in the drag & drop panel immediately.
@@ -1225,10 +270,10 @@ class Simon42DashboardStrategyEditor extends LitElement {
       this._config.weather_presentation ??
       (this._config.show_weather_forecast_card === false ? 'none' : 'forecast_daily');
     const weatherEntity = this._config.weather_entity || '';
-    const weatherEntities = this._getWeatherEntities();
+    const weatherEntities = getWeatherEntities(this._hass);
     const hiddenHeadings = new Set(this._config.hidden_section_headings || []);
     const powerBadgeEntity = this._config.power_badge_entity || '';
-    const powerSensorEntities = this._getPowerSensorEntities();
+    const powerSensorEntities = getPowerSensorEntities(this._hass);
 
     return html`
       <div class="section">
@@ -1510,7 +555,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this._updateSectionsOrder(newOrder);
   };
 
-  private _getStacksOrder(areaId: string): StackKey[] {
+  _getStacksOrder(areaId: string): StackKey[] {
     return mergeStacksOrder(this._config.areas_options?.[areaId]?.stacks_order);
   }
 
@@ -1730,7 +775,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     const showPersonBadges = this._config.show_person_badges !== false;
     const hasSearchCardDeps = this._checkSearchCardDependencies();
     const alarmEntity = this._config.alarm_entity || '';
-    const alarmEntities = this._getAlarmEntities();
+    const alarmEntities = getAlarmEntities(this._hass);
 
     return html`
       <div class="section">
@@ -2146,9 +1191,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _renderSecurityExtraEntitiesPicker(): TemplateResult {
     const extras = this._config.security_extra_entities || [];
-    const allEntities = this._getAllEntitiesForSelect();
+    const allEntities = getAllEntitiesForSelect(this._hass);
     const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-    const filtered = this._getFilteredEntities(this._securityExtraSearch);
+    const filtered = getFilteredEntities(this._hass, this._securityExtraSearch);
     return html`
       <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
         ${localize('editor.security_extra_entities')}
@@ -2217,9 +1262,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _renderLightFavoritesSection(): TemplateResult {
     const lightFavs = this._config.light_favorite_entities || [];
-    const allEntities = this._getAllEntitiesForSelect();
+    const allEntities = getAllEntitiesForSelect(this._hass);
     const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-    const filtered = this._getFilteredEntities(this._lightFavSearch).filter((e) => e.entity_id.startsWith('light.'));
+    const filtered = getFilteredEntities(this._hass, this._lightFavSearch).filter((e) => e.entity_id.startsWith('light.'));
     return html`
       <div class="section">
         <div class="section-title">${localize('editor.section_light_favorites')}</div>
@@ -2285,12 +1330,12 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _renderFavoritesSection(): TemplateResult {
     const favoriteEntities = this._config.favorite_entities || [];
-    const allEntities = this._getAllEntitiesForSelect();
+    const allEntities = getAllEntitiesForSelect(this._hass);
     const favoritesShowState = this._config.favorites_show_state === true;
     const favoritesHideLastChanged = this._config.favorites_hide_last_changed === true;
 
     const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-    const filteredEntities = this._getFilteredEntities(this._favoriteSearch);
+    const filteredEntities = getFilteredEntities(this._hass, this._favoriteSearch);
 
     return html`
       <div class="section">
@@ -2369,9 +1414,9 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _renderWeatherSensorsSection(): TemplateResult {
     const sensors = this._config.weather_sensors || [];
-    const allEntities = this._getAllEntitiesForSelect();
+    const allEntities = getAllEntitiesForSelect(this._hass);
     const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-    const filteredEntities = this._getFilteredEntities(this._weatherSensorSearch);
+    const filteredEntities = getFilteredEntities(this._hass, this._weatherSensorSearch);
 
     return html`
       <div class="section">
@@ -2763,7 +1808,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
   private _renderRoomPinsSection(): TemplateResult {
     const roomPinEntities = this._config.room_pin_entities || [];
-    const allEntities = this._getAllEntitiesForSelect();
+    const allEntities = getAllEntitiesForSelect(this._hass);
     const allAreas = Object.values(this._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
     const roomPinsShowState = this._config.room_pins_show_state === true;
     const roomPinsHideLastChanged = this._config.room_pins_hide_last_changed === true;
@@ -2771,7 +1816,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
 
     const entityMap = new Map(allEntities.map((e) => [e.entity_id, e]));
     const areaMap = new Map(allAreas.map((a) => [a.area_id, a.name]));
-    const filteredEntities = this._getFilteredEntities(this._roomPinSearch, true);
+    const filteredEntities = getFilteredEntities(this._hass, this._roomPinSearch, true);
 
     return html`
       <div class="section">
@@ -2965,7 +2010,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
   // ITEM RENDERERS
   // ====================================================================
 
-  private _renderCheckbox(
+  _renderCheckbox(
     id: string,
     label: string,
     checked: boolean,
@@ -3501,13 +2546,13 @@ class Simon42DashboardStrategyEditor extends LitElement {
   }
 
   /** Re-derive cached per-area data for all loaded areas (e.g. after a global toggle changed) */
-  private _refreshAllAreaCaches(): void {
+  _refreshAllAreaCaches(): void {
     for (const areaId of this._areaEntitiesCache.keys()) {
       this._refreshAreaCache(areaId);
     }
   }
 
-  private _refreshAreaCache(areaId: string): void {
+  _refreshAreaCache(areaId: string): void {
     if (!this._hass || !this._areaEntitiesCache.has(areaId)) return;
 
     const groupedEntities = this._areaEntitiesCache.get(areaId)!.groupedEntities;
@@ -3549,7 +2594,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
     this._fireConfigChanged(newConfig);
   }
 
-  private _toggleChanged(key: string, value: boolean, defaultValue: boolean): void {
+  _toggleChanged(key: string, value: boolean, defaultValue: boolean): void {
     if (!this._hass) return;
 
     const newConfig: Simon42StrategyConfig = {
@@ -4711,7 +3756,7 @@ class Simon42DashboardStrategyEditor extends LitElement {
   // CONFIG DISPATCH
   // ====================================================================
 
-  private _fireConfigChanged(config: Simon42StrategyConfig): void {
+  _fireConfigChanged(config: Simon42StrategyConfig): void {
     this._isUpdatingConfig = true;
 
     // Strip internal fields before saving
