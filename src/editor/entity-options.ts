@@ -6,7 +6,7 @@
 // change is `this._hass` becoming an explicit `hass` parameter.
 // ====================================================================
 
-import type { HomeAssistant } from '../types/homeassistant';
+import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 
 export interface AlarmEntityOption {
   entity_id: string;
@@ -18,6 +18,11 @@ export interface EntitySelectOption {
   name: string;
   area_id?: string | null;
   device_area_id?: string | null;
+}
+
+/** Injection-safe state lookup (see CLAUDE.md Codacy pitfalls). */
+export function stateFor(hass: HomeAssistant, entityId: string): HassEntity | undefined {
+  return Reflect.get(hass.states, entityId) as HassEntity | undefined;
 }
 
 export function getAllEntitiesForSelect(hass: HomeAssistant | null): EntitySelectOption[] {
@@ -36,7 +41,7 @@ export function getAllEntitiesForSelect(hass: HomeAssistant | null): EntitySelec
 
   return Object.keys(hass.states)
     .map((entityId) => {
-      const stateObj = hass.states[entityId];
+      const stateObj = stateFor(hass, entityId);
       const entity = entities.find((e) => e.entity_id === entityId);
 
       let areaId = entity?.area_id;
@@ -46,7 +51,7 @@ export function getAllEntitiesForSelect(hass: HomeAssistant | null): EntitySelec
 
       return {
         entity_id: entityId,
-        name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        name: stateObj?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
         area_id: areaId,
         device_area_id: areaId,
       };
@@ -59,10 +64,10 @@ export function getAlarmEntities(hass: HomeAssistant | null): AlarmEntityOption[
   return Object.keys(hass.states)
     .filter((entityId) => entityId.startsWith('alarm_control_panel.'))
     .map((entityId) => {
-      const stateObj = hass.states[entityId];
+      const stateObj = stateFor(hass, entityId);
       return {
         entity_id: entityId,
-        name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        name: stateObj?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -73,10 +78,10 @@ export function getWeatherEntities(hass: HomeAssistant | null): AlarmEntityOptio
   return Object.keys(hass.states)
     .filter((entityId) => entityId.startsWith('weather.'))
     .map((entityId) => {
-      const stateObj = hass.states[entityId];
+      const stateObj = stateFor(hass, entityId);
       return {
         entity_id: entityId,
-        name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        name: stateObj?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -88,16 +93,16 @@ export function getPowerSensorEntities(hass: HomeAssistant | null): AlarmEntityO
   return Object.keys(hass.states)
     .filter((entityId) => {
       if (!entityId.startsWith('sensor.')) return false;
-      const stateObj = hass.states[entityId];
+      const stateObj = stateFor(hass, entityId);
       const dc = stateObj?.attributes?.device_class;
       const unit = stateObj?.attributes?.unit_of_measurement;
       return dc === 'power' || unit === 'W' || unit === 'kW';
     })
     .map((entityId) => {
-      const stateObj = hass.states[entityId];
+      const stateObj = stateFor(hass, entityId);
       return {
         entity_id: entityId,
-        name: stateObj.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+        name: stateObj?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));

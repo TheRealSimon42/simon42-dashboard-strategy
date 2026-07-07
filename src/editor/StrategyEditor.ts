@@ -5,8 +5,7 @@
 // vanilla HTMLElement + innerHTML pattern.
 // ====================================================================
 
-import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import yaml from 'js-yaml';
 
 import type { HomeAssistant } from '../types/homeassistant';
@@ -23,7 +22,6 @@ import type {
   SectionOrderKey,
   StackKey,
   WeatherPresentation,
-  WeatherSensorConfig,
 } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER, DEFAULT_STACKS_ORDER } from '../types/strategy';
 // Pure-data section registry (no builder imports — safe for the editor chunk)
@@ -33,13 +31,16 @@ import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries
 import { localize } from '../utils/localize';
 import { EDITOR_STYLES } from './editor-styles';
 import type { StrategyEditorHost, AreaEntitiesCacheEntry } from './editor-host';
+import { renderViewsSection } from './panels/ViewsPanel';
+import { renderOverviewSection } from './panels/OverviewPanel';
+import { renderFavoritesSection, renderLightFavoritesSection } from './panels/FavoritesPanel';
+import { renderRoomPinsSection } from './panels/RoomPinsPanel';
+import { renderWeatherSensorsSection } from './panels/WeatherSensorsPanel';
 import {
   getAllEntitiesForSelect,
-  getAlarmEntities,
   getWeatherEntities,
   getPowerSensorEntities,
   getFilteredEntities,
-  type EntitySelectOption,
 } from './entity-options';
 import { Registry } from '../Registry';
 import { collectCameraBlocks } from '../views/CctvViewStrategy';
@@ -111,12 +112,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
 
   // -- Dependency check -------------------------------------------------
 
-  private _checkSearchCardDependencies(): boolean {
-    const hasSearchCard = customElements.get('search-card') !== undefined;
-    const hasCardTools = customElements.get('card-tools') !== undefined;
-    return hasSearchCard && hasCardTools;
-  }
-
   // -- Styles -----------------------------------------------------------
 
   static styles = EDITOR_STYLES;
@@ -128,10 +123,10 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
 
     return html`
       <div class="card-config">
-        ${this._renderOverviewSection()}
+        ${renderOverviewSection(this)}
         ${this._renderSummariesSection()}
-        ${this._renderFavoritesSection()}
-        ${this._renderLightFavoritesSection()}
+        ${renderFavoritesSection(this)}
+        ${renderLightFavoritesSection(this)}
 
         <div class="section-divider">
           <div class="section-divider-title">
@@ -140,8 +135,8 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
         </div>
 
         ${this._renderAreasSection()}
-        ${this._renderRoomPinsSection()}
-        ${this._renderViewsSection()}
+        ${renderRoomPinsSection(this)}
+        ${renderViewsSection(this)}
 
         <div class="section-divider">
           <div class="section-divider-title">
@@ -150,7 +145,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
         </div>
 
         ${this._renderSectionOrderPanel()}
-        ${this._renderWeatherSensorsSection()}
+        ${renderWeatherSensorsSection(this)}
         ${this._renderCustomCardsSection()}
         ${this._renderCustomSectionsSection()}
         ${this._renderCustomBadgesSection()}
@@ -767,105 +762,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
 
   // -- Overview section --------------------------------------------------
 
-  private _renderOverviewSection(): TemplateResult {
-    const showClockCard = this._config.show_clock_card !== false;
-    const showSearchCard = this._config.show_search_card === true;
-    const hideUnavailableEntities = this._config.hide_unavailable_entities === true;
-    const denseSectionPlacement = this._config.dense_section_placement === true;
-    const showPersonBadges = this._config.show_person_badges !== false;
-    const hasSearchCardDeps = this._checkSearchCardDependencies();
-    const alarmEntity = this._config.alarm_entity || '';
-    const alarmEntities = getAlarmEntities(this._hass);
-
-    return html`
-      <div class="section">
-        <div class="section-title">${localize('editor.section_overview')}</div>
-
-        ${this._renderCheckbox('show-clock-card', localize('editor.show_clock_card'), showClockCard,
-          (checked) => this._toggleChanged('show_clock_card', checked, true))}
-        <div class="description">${localize('editor.show_clock_card_desc')}</div>
-
-        <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
-          ${localize('editor.person_badge_layout')}
-        </div>
-        ${(['minimal', 'with_state', 'with_state_and_time'] as const).map((opt) => {
-          const current = this._config.person_badge_layout || 'with_state';
-          return html`
-            <div class="form-row">
-              <input type="radio" id="person-badge-${opt}" name="person-badge-layout" value=${opt}
-                ?checked=${current === opt}
-                @change=${() => this._personBadgeLayoutChanged(opt)} />
-              <label for="person-badge-${opt}">${localize('editor.person_badge_layout_' + opt)}</label>
-            </div>
-          `;
-        })}
-        <div class="description">${localize('editor.person_badge_layout_desc')}</div>
-
-        <div class="form-row">
-          <label for="alarm-entity" style="margin-right: 8px; min-width: 120px;">${localize('editor.alarm_entity')}</label>
-          <select id="alarm-entity"
-            style="flex: 1;"
-            @change=${this._alarmEntityChanged}>
-            <option value="" ?selected=${!alarmEntity}>${localize('editor.alarm_none')}</option>
-            ${alarmEntities.map((entity) => html`
-              <option value=${entity.entity_id} ?selected=${entity.entity_id === alarmEntity}>
-                ${entity.name}
-              </option>
-            `)}
-          </select>
-        </div>
-        <div class="description">${localize('editor.alarm_desc')}</div>
-
-        ${this._renderCheckbox('show-search-card', localize('editor.show_search_card'), showSearchCard,
-          (checked) => { this._toggleChanged('show_search_card', checked, false); })}
-        <div class="description">
-          ${hasSearchCardDeps
-            ? localize('editor.show_search_card_desc')
-            : html`<span>&#x26A0;&#xFE0F; ${unsafeHTML(localize('editor.show_search_card_missing'))}</span>`}
-        </div>
-        ${this._renderCheckbox('hide-unavailable-entities', localize('editor.hide_unavailable_entities'), hideUnavailableEntities,
-          (checked) => this._toggleChanged('hide_unavailable_entities', checked, false))}
-        <div class="description">${localize('editor.hide_unavailable_entities_desc')}</div>
-
-        ${this._renderCheckbox('dense-section-placement', localize('editor.dense_section_placement'), denseSectionPlacement,
-          (checked) => this._toggleChanged('dense_section_placement', checked, false))}
-        <div class="description">${localize('editor.dense_section_placement_desc')}</div>
-
-        ${this._renderCheckbox('show-person-badges', localize('editor.show_person_badges'), showPersonBadges,
-          (checked) => this._toggleChanged('show_person_badges', checked, true))}
-        <div class="description">${localize('editor.show_person_badges_desc')}</div>
-        ${showSearchCard ? html`
-          <div style="margin-left: 26px; margin-bottom: 8px;">
-            <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
-              ${localize('editor.search_card_variant')}
-            </div>
-            ${(['custom', 'tip'] as const).map((opt) => {
-              const current = this._config.search_card_variant === 'tip' ? 'tip' : 'custom';
-              return html`
-                <div class="form-row">
-                  <input type="radio" id="search-variant-${opt}" name="search-card-variant" value=${opt}
-                    ?checked=${current === opt}
-                    @change=${() => this._searchCardVariantChanged(opt)} />
-                  <label for="search-variant-${opt}">${localize('editor.search_card_variant_' + opt)}</label>
-                </div>
-              `;
-            })}
-          </div>
-        ` : nothing}
-      </div>
-    `;
-  }
-
-  private _searchCardVariantChanged(variant: 'custom' | 'tip'): void {
-    const updated: Simon42StrategyConfig = { ...this._config };
-    if (variant === 'custom') {
-      delete updated.search_card_variant;
-    } else {
-      updated.search_card_variant = variant;
-    }
-    this._fireConfigChanged(updated);
-  }
-
   private _renderSummariesSection(): TemplateResult {
     const summariesColumns = this._config.summaries_columns || 2;
     const showLightSummary = this._config.show_light_summary !== false;
@@ -1260,147 +1156,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
     this._fireConfigChanged(updated);
   }
 
-  private _renderLightFavoritesSection(): TemplateResult {
-    const lightFavs = this._config.light_favorite_entities || [];
-    const allEntities = getAllEntitiesForSelect(this._hass);
-    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-    const filtered = getFilteredEntities(this._hass, this._lightFavSearch).filter((e) => e.entity_id.startsWith('light.'));
-    return html`
-      <div class="section">
-        <div class="section-title">${localize('editor.section_light_favorites')}</div>
-
-        ${lightFavs.length > 0 ? html`
-          <div class="entity-list-container" style="margin-bottom: 8px;">
-            ${lightFavs.map((entityId) => {
-              const name = entityMap.get(entityId) || entityId;
-              return html`
-                <div class="entity-list-item" data-entity-id=${entityId}>
-                  <span class="item-info">
-                    <span class="item-name">${name}</span>
-                    <span class="item-entity-id">${entityId}</span>
-                  </span>
-                  <button class="btn-remove" @click=${() => this._removeLightFavorite(entityId)}>&#x2715;</button>
-                </div>
-              `;
-            })}
-          </div>
-        ` : nothing}
-
-        <div class="entity-search-picker">
-          <input type="text" class="entity-search-input"
-            placeholder=${localize('editor.select_entity') + '...'}
-            .value=${this._lightFavSearch}
-            @input=${(e: Event) => { this._lightFavSearch = (e.target as HTMLInputElement).value; this.requestUpdate(); }}
-            @blur=${() => { setTimeout(() => { this._lightFavSearch = ''; this.requestUpdate(); }, 200); }}
-          />
-          ${this._lightFavSearch.length >= 2 ? html`
-            <div class="entity-search-results">
-              ${filtered.length > 0
-                ? filtered.map((entity) => html`
-                  <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); this._addLightFavorite(entity.entity_id); this._lightFavSearch = ''; this.requestUpdate(); }}>
-                    <span class="entity-search-name">${entity.name}</span>
-                    <span class="entity-search-id">${entity.entity_id}</span>
-                  </div>
-                `)
-                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
-              }
-            </div>
-          ` : nothing}
-        </div>
-        <div class="description">${localize('editor.light_favorites_desc')}</div>
-      </div>
-    `;
-  }
-
-  private _addLightFavorite(entityId: string): void {
-    const current = this._config.light_favorite_entities || [];
-    if (current.includes(entityId)) return;
-    const updated: Simon42StrategyConfig = { ...this._config, light_favorite_entities: [...current, entityId] };
-    this._fireConfigChanged(updated);
-  }
-
-  private _removeLightFavorite(entityId: string): void {
-    const current = this._config.light_favorite_entities || [];
-    const next = current.filter((e) => e !== entityId);
-    const updated: Simon42StrategyConfig = { ...this._config };
-    if (next.length === 0) delete updated.light_favorite_entities;
-    else updated.light_favorite_entities = next;
-    this._fireConfigChanged(updated);
-  }
-
-  private _renderFavoritesSection(): TemplateResult {
-    const favoriteEntities = this._config.favorite_entities || [];
-    const allEntities = getAllEntitiesForSelect(this._hass);
-    const favoritesShowState = this._config.favorites_show_state === true;
-    const favoritesHideLastChanged = this._config.favorites_hide_last_changed === true;
-
-    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-    const filteredEntities = getFilteredEntities(this._hass, this._favoriteSearch);
-
-    return html`
-      <div class="section">
-        <div class="section-title">${localize('editor.section_favorites')}</div>
-
-        <div id="favorites-list" style="margin-bottom: 12px;">
-          ${favoriteEntities.length === 0
-            ? html`<div class="empty-state">${localize('editor.no_favorites')}</div>`
-            : html`
-              <div class="entity-list-container">
-                ${favoriteEntities.map((entityId) => {
-                  const name = entityMap.get(entityId) || entityId;
-                  return html`
-                    <div class="entity-list-item" data-entity-id=${entityId}
-                      draggable="true"
-                      @dragstart=${(ev: DragEvent) => this._handleEntityDragStart(ev, 'favorites')}
-                      @dragend=${this._handleEntityDragEnd}
-                      @dragover=${this._handleEntityDragOver}
-                      @dragleave=${this._handleEntityDragLeave}
-                      @drop=${(ev: DragEvent) => this._handleEntityDrop(ev, 'favorites')}>
-                      <span class="drag-icon">&#x2630;</span>
-                      <span class="item-info">
-                        <span class="item-name">${name}</span>
-                        <span class="item-entity-id">${entityId}</span>
-                      </span>
-                      <button class="btn-remove" @click=${() => this._removeFavoriteEntity(entityId)}>&#x2715;</button>
-                    </div>
-                  `;
-                })}
-              </div>
-            `}
-        </div>
-
-        <div class="entity-search-picker">
-          <input type="text" class="entity-search-input"
-            placeholder=${localize('editor.select_entity') + '...'}
-            .value=${this._favoriteSearch}
-            @input=${(e: Event) => { this._favoriteSearch = (e.target as HTMLInputElement).value; this.requestUpdate(); }}
-            @blur=${() => { setTimeout(() => { this._favoriteSearch = ''; this.requestUpdate(); }, 200); }}
-          />
-          ${this._favoriteSearch.length >= 2 ? html`
-            <div class="entity-search-results">
-              ${filteredEntities.length > 0
-                ? filteredEntities.map((entity) => html`
-                  <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); this._addFavoriteEntity(entity.entity_id); this._favoriteSearch = ''; this.requestUpdate(); }}>
-                    <span class="entity-search-name">${entity.name}</span>
-                    <span class="entity-search-id">${entity.entity_id}</span>
-                  </div>
-                `)
-                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
-              }
-            </div>
-          ` : nothing}
-        </div>
-        <div class="description">${localize('editor.favorites_desc')}</div>
-
-        ${this._renderCheckbox('favorites-show-state', localize('editor.show_state'), favoritesShowState,
-          (checked) => this._toggleChanged('favorites_show_state', checked, false))}
-
-        ${this._renderCheckbox('favorites-hide-last-changed', localize('editor.hide_last_changed'), favoritesHideLastChanged,
-          (checked) => this._toggleChanged('favorites_hide_last_changed', checked, false))}
-      </div>
-    `;
-  }
-
   // -- Weather sensors editor -------------------------------------------
   //
   // Per-row structured editor for the `weather_sensors` config array.
@@ -1411,238 +1166,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   // The picker filters to numeric-ish sensors by default but does not hard-
   // restrict — any entity domain is accepted (the markdown row in the
   // section renderer just calls `states(...)` against the id).
-
-  private _renderWeatherSensorsSection(): TemplateResult {
-    const sensors = this._config.weather_sensors || [];
-    const allEntities = getAllEntitiesForSelect(this._hass);
-    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-    const filteredEntities = getFilteredEntities(this._hass, this._weatherSensorSearch);
-
-    return html`
-      <div class="section">
-        <div class="section-title">${localize('editor.section_weather_sensors')}</div>
-        <div class="description" style="margin-left: 0; margin-bottom: 12px;">
-          ${localize('editor.weather_sensors_desc')}
-        </div>
-
-        <div id="weather-sensors-list" style="margin-bottom: 12px;">
-          ${sensors.length === 0
-            ? html`<div class="empty-state">${localize('editor.no_weather_sensors')}</div>`
-            : sensors.map((sensor, index) => {
-                const name = entityMap.get(sensor.entity) || sensor.entity;
-                return html`
-                  <div class="custom-item" data-sensor-index=${index}>
-                    <div class="custom-item-header">
-                      <strong>
-                        ${name}
-                        <span class="item-entity-id" style="font-weight: normal; margin-left: 8px;">
-                          ${sensor.entity}
-                        </span>
-                      </strong>
-                      <button class="btn-remove" @click=${() => this._removeWeatherSensor(index)}>&#x2715;</button>
-                    </div>
-                    <div class="custom-item-fields">
-                      <div class="custom-item-row">
-                        <input type="text" style="flex: 2;"
-                          placeholder=${localize('editor.weather_sensors_icon')}
-                          .value=${sensor.icon || ''}
-                          @change=${(e: Event) => this._updateWeatherSensor(index, 'icon', (e.target as HTMLInputElement).value)} />
-                        <input type="text" style="flex: 1;"
-                          placeholder=${localize('editor.weather_sensors_unit')}
-                          .value=${sensor.unit || ''}
-                          @change=${(e: Event) => this._updateWeatherSensor(index, 'unit', (e.target as HTMLInputElement).value)} />
-                        <input type="number" style="flex: 1;" min="0" max="6" step="1"
-                          placeholder=${localize('editor.weather_sensors_round')}
-                          .value=${sensor.round !== undefined ? String(sensor.round) : ''}
-                          @change=${(e: Event) => this._updateWeatherSensor(index, 'round', (e.target as HTMLInputElement).value)} />
-                      </div>
-                    </div>
-                  </div>
-                `;
-              })}
-        </div>
-
-        <div class="entity-search-picker">
-          <input type="text" class="entity-search-input"
-            placeholder=${localize('editor.weather_sensors_add')}
-            .value=${this._weatherSensorSearch}
-            @input=${(e: Event) => { this._weatherSensorSearch = (e.target as HTMLInputElement).value; this.requestUpdate(); }}
-            @blur=${() => { setTimeout(() => { this._weatherSensorSearch = ''; this.requestUpdate(); }, 200); }}
-          />
-          ${this._weatherSensorSearch.length >= 2 ? html`
-            <div class="entity-search-results">
-              ${filteredEntities.length > 0
-                ? filteredEntities.map((entity) => html`
-                  <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); this._addWeatherSensor(entity.entity_id); this._weatherSensorSearch = ''; this.requestUpdate(); }}>
-                    <span class="entity-search-name">${entity.name}</span>
-                    <span class="entity-search-id">${entity.entity_id}</span>
-                  </div>
-                `)
-                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
-              }
-            </div>
-          ` : nothing}
-        </div>
-      </div>
-    `;
-  }
-
-  // Per device-class defaults used when adding a sensor via the picker.
-  // Each entry covers:
-  //   icon    — MDI fallback when the entity has no explicit attributes.icon
-  //   round   — display precision matching how that quantity is normally read
-  //             (humidity in whole percent, temperature in 0.1 °C steps, etc.)
-  // Users can still override any field afterwards in the editor row.
-  private static readonly _DEVICE_CLASS_DEFAULTS: Record<
-    string,
-    { icon: string; round?: number }
-  > = {
-    temperature: { icon: 'mdi:thermometer', round: 1 },
-    apparent_temperature: { icon: 'mdi:thermometer-lines', round: 1 },
-    humidity: { icon: 'mdi:water-percent', round: 0 },
-    moisture: { icon: 'mdi:water-percent', round: 0 },
-    pressure: { icon: 'mdi:gauge', round: 0 },
-    atmospheric_pressure: { icon: 'mdi:gauge', round: 0 },
-    wind_speed: { icon: 'mdi:weather-windy', round: 1 },
-    wind_direction: { icon: 'mdi:compass', round: 0 },
-    illuminance: { icon: 'mdi:brightness-5', round: 0 },
-    irradiance: { icon: 'mdi:weather-sunny', round: 0 },
-    precipitation: { icon: 'mdi:weather-rainy', round: 1 },
-    precipitation_intensity: { icon: 'mdi:weather-pouring', round: 1 },
-    voc: { icon: 'mdi:cloud-outline', round: 0 },
-    pm25: { icon: 'mdi:weather-fog', round: 0 },
-    pm10: { icon: 'mdi:weather-fog', round: 0 },
-    co2: { icon: 'mdi:molecule-co2', round: 0 },
-    co: { icon: 'mdi:molecule-co', round: 1 },
-    aqi: { icon: 'mdi:air-filter', round: 0 },
-    ozone: { icon: 'mdi:cloud-outline', round: 0 },
-    sulphur_dioxide: { icon: 'mdi:cloud-outline', round: 0 },
-    nitrogen_dioxide: { icon: 'mdi:cloud-outline', round: 0 },
-    nitrogen_monoxide: { icon: 'mdi:cloud-outline', round: 0 },
-    ammonia: { icon: 'mdi:cloud-outline', round: 0 },
-    distance: { icon: 'mdi:ruler', round: 1 },
-    speed: { icon: 'mdi:speedometer', round: 1 },
-    uv_index: { icon: 'mdi:weather-sunny-alert', round: 1 },
-  };
-
-  // Validation regex mirrors the runtime guard in WeatherEnergySection.
-  // Only icons that pass this go into the saved config — keeps malformed
-  // pre-fills from being silently accepted.
-  private static readonly _ICON_RE = /^[a-z]+:[a-z0-9-]+$/;
-
-  /**
-   * Derive sensible defaults for icon, unit, round from the entity's HA
-   * registry / state attributes. Used as pre-fill when a sensor is added
-   * via the picker; the user can still edit any field afterwards.
-   *
-   * Resolution order:
-   *   icon  — entity.attributes.icon → device_class lookup → omitted
-   *   unit  — entity.attributes.unit_of_measurement → omitted
-   *   round — device_class lookup → omitted (no inference from state)
-   *
-   * Inferring round from the current state value is unreliable (`37` and
-   * `37.0` both happen for the same humidity sensor), so the table above
-   * is the single source of truth.
-   */
-  private _inferWeatherSensorDefaults(entityId: string): {
-    icon?: string;
-    unit?: string;
-    round?: number;
-  } {
-    const state = this._hass?.states[entityId];
-    const attrs = (state?.attributes || {}) as Record<string, unknown>;
-    const out: { icon?: string; unit?: string; round?: number } = {};
-
-    const deviceClass = typeof attrs.device_class === 'string' ? attrs.device_class : undefined;
-    const classDefaults = deviceClass
-      ? Simon42DashboardStrategyEditor._DEVICE_CLASS_DEFAULTS[deviceClass]
-      : undefined;
-
-    // Icon: prefer explicit entity icon → device_class map → omit
-    const explicitIcon = typeof attrs.icon === 'string' ? attrs.icon : undefined;
-    const icon = explicitIcon || classDefaults?.icon;
-    if (icon && Simon42DashboardStrategyEditor._ICON_RE.test(icon)) {
-      out.icon = icon;
-    }
-
-    // Unit: straight passthrough of unit_of_measurement if present
-    const unit = typeof attrs.unit_of_measurement === 'string' ? attrs.unit_of_measurement : undefined;
-    if (unit && unit.length > 0) out.unit = unit;
-
-    // Decimals: device_class table only — no state-precision inference
-    if (classDefaults && classDefaults.round !== undefined) {
-      out.round = classDefaults.round;
-    }
-
-    return out;
-  }
-
-  private _addWeatherSensor(entityId: string): void {
-    if (!this._hass) return;
-    const current = this._config.weather_sensors || [];
-    if (current.some((s) => s.entity === entityId)) return;
-
-    const defaults = this._inferWeatherSensorDefaults(entityId);
-    const newEntry: WeatherSensorConfig = { entity: entityId, ...defaults };
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      weather_sensors: [...current, newEntry],
-    };
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  private _removeWeatherSensor(index: number): void {
-    const current = this._config.weather_sensors || [];
-    if (index < 0 || index >= current.length) return;
-
-    const next = [...current.slice(0, index), ...current.slice(index + 1)];
-    const newConfig: Simon42StrategyConfig = { ...this._config };
-    if (next.length > 0) {
-      newConfig.weather_sensors = next;
-    } else {
-      delete newConfig.weather_sensors;
-    }
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  private _updateWeatherSensor(
-    index: number,
-    field: keyof WeatherSensorConfig,
-    rawValue: string
-  ): void {
-    const current = this._config.weather_sensors || [];
-    if (index < 0 || index >= current.length) return;
-
-    const target = { ...current[index] } as WeatherSensorConfig;
-    const trimmed = rawValue.trim();
-
-    if (field === 'round') {
-      if (trimmed === '') {
-        delete target.round;
-      } else {
-        const n = Number.parseInt(trimmed, 10);
-        if (Number.isFinite(n) && n >= 0) target.round = n;
-      }
-    } else if (field === 'icon' || field === 'unit') {
-      if (trimmed === '') {
-        delete target[field];
-      } else {
-        target[field] = trimmed;
-      }
-    } else if (field === 'entity') {
-      // entity is read-only via this method; ignore
-      return;
-    }
-
-    const next = [...current];
-    next[index] = target;
-    const newConfig: Simon42StrategyConfig = { ...this._config, weather_sensors: next };
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
 
   private _renderAreasSection(): TemplateResult {
     const groupByFloors = this._config.group_by_floors === true;
@@ -1806,109 +1329,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
     this._fireConfigChanged(updated);
   }
 
-  private _renderRoomPinsSection(): TemplateResult {
-    const roomPinEntities = this._config.room_pin_entities || [];
-    const allEntities = getAllEntitiesForSelect(this._hass);
-    const allAreas = Object.values(this._hass!.areas).sort((a, b) => a.name.localeCompare(b.name));
-    const roomPinsShowState = this._config.room_pins_show_state === true;
-    const roomPinsHideLastChanged = this._config.room_pins_hide_last_changed === true;
-    const roomPinsFirst = this._config.room_pins_first === true;
-
-    const entityMap = new Map(allEntities.map((e) => [e.entity_id, e]));
-    const areaMap = new Map(allAreas.map((a) => [a.area_id, a.name]));
-    const filteredEntities = getFilteredEntities(this._hass, this._roomPinSearch, true);
-
-    return html`
-      <div class="section">
-        <div class="section-title">${localize('editor.section_room_pins')}</div>
-
-        <div id="room-pins-list" style="margin-bottom: 12px;">
-          ${roomPinEntities.length === 0
-            ? html`<div class="empty-state">${localize('editor.no_room_pins')}</div>`
-            : html`
-              <div class="entity-list-container">
-                ${roomPinEntities.map((entityId) => {
-                  const entity = entityMap.get(entityId);
-                  const name = entity?.name || entityId;
-                  const areaId = entity?.area_id || entity?.device_area_id;
-                  const areaName = areaId ? areaMap.get(areaId) || areaId : localize('editor.no_room');
-
-                  return html`
-                    <div class="entity-list-item" data-entity-id=${entityId}
-                      draggable="true"
-                      @dragstart=${(ev: DragEvent) => this._handleEntityDragStart(ev, 'room_pins')}
-                      @dragend=${this._handleEntityDragEnd}
-                      @dragover=${this._handleEntityDragOver}
-                      @dragleave=${this._handleEntityDragLeave}
-                      @drop=${(ev: DragEvent) => this._handleEntityDrop(ev, 'room_pins')}>
-                      <span class="drag-icon">&#x2630;</span>
-                      <span class="item-info">
-                        <span class="item-name">${name}</span>
-                        <span class="item-entity-id">${entityId}</span>
-                        <span class="item-area">&#x1F4CD; ${areaName}</span>
-                      </span>
-                      <button class="btn-remove" @click=${() => this._removeRoomPinEntity(entityId)}>&#x2715;</button>
-                    </div>
-                  `;
-                })}
-              </div>
-            `}
-        </div>
-
-        <div class="entity-search-picker">
-          <input type="text" class="entity-search-input"
-            placeholder=${localize('editor.select_entity') + '...'}
-            .value=${this._roomPinSearch}
-            @input=${(e: Event) => { this._roomPinSearch = (e.target as HTMLInputElement).value; this.requestUpdate(); }}
-            @blur=${() => { setTimeout(() => { this._roomPinSearch = ''; this.requestUpdate(); }, 200); }}
-          />
-          ${this._roomPinSearch.length >= 2 ? html`
-            <div class="entity-search-results">
-              ${filteredEntities.length > 0
-                ? filteredEntities.map((entity) => html`
-                  <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); this._addRoomPinEntity(entity.entity_id); this._roomPinSearch = ''; this.requestUpdate(); }}>
-                    <span class="entity-search-name">${entity.name}</span>
-                    <span class="entity-search-id">${entity.entity_id}</span>
-                  </div>
-                `)
-                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
-              }
-            </div>
-          ` : nothing}
-        </div>
-        <div class="description">${unsafeHTML(localize('editor.room_pins_desc'))}</div>
-
-        ${this._renderCheckbox('room-pins-show-state', localize('editor.show_state'), roomPinsShowState,
-          (checked) => this._toggleChanged('room_pins_show_state', checked, false))}
-
-        ${this._renderCheckbox('room-pins-hide-last-changed', localize('editor.hide_last_changed'), roomPinsHideLastChanged,
-          (checked) => this._toggleChanged('room_pins_hide_last_changed', checked, false))}
-
-        ${this._renderCheckbox('room-pins-first', localize('editor.room_pins_first'), roomPinsFirst,
-          (checked) => this._toggleChanged('room_pins_first', checked, false))}
-      </div>
-    `;
-  }
-
-
-  private _renderViewsSection(): TemplateResult {
-    const showSummaryViews = this._config.show_summary_views === true;
-    const showRoomViews = this._config.show_room_views === true;
-
-    return html`
-      <div class="section">
-        <div class="section-title">${localize('editor.section_views')}</div>
-
-        ${this._renderCheckbox('show-summary-views', localize('editor.show_summary_views'), showSummaryViews,
-          (checked) => this._toggleChanged('show_summary_views', checked, false))}
-        <div class="description">${localize('editor.show_summary_views_desc')}</div>
-
-        ${this._renderCheckbox('show-room-views', localize('editor.show_room_views'), showRoomViews,
-          (checked) => this._toggleChanged('show_room_views', checked, false))}
-        <div class="description">${localize('editor.show_room_views_desc')}</div>
-      </div>
-    `;
-  }
 
   private _renderCustomCardsSection(): TemplateResult {
     const customCards = this._config.custom_cards || [];
@@ -2627,33 +2047,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
     this._fireConfigChanged(newConfig);
   }
 
-  private _personBadgeLayoutChanged(layout: 'minimal' | 'with_state' | 'with_state_and_time'): void {
-    const updated: Simon42StrategyConfig = { ...this._config };
-    if (layout === 'with_state') {
-      delete updated.person_badge_layout;
-    } else {
-      updated.person_badge_layout = layout;
-    }
-    this._fireConfigChanged(updated);
-  }
-
-  private _alarmEntityChanged(e: Event): void {
-    if (!this._hass) return;
-
-    const entityId = (e.target as HTMLSelectElement).value;
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      alarm_entity: entityId,
-    };
-
-    if (!entityId || entityId === '') {
-      delete newConfig.alarm_entity;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
   private _weatherEntityChanged(e: Event): void {
     if (!this._hass) return;
 
@@ -2702,85 +2095,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
 
   // -- Favorites --------------------------------------------------------
 
-  private _addFavoriteFromSelect(): void {
-    const select = this.shadowRoot!.querySelector('#favorite-entity-select') as HTMLSelectElement | null;
-    if (!select || !select.value) return;
-    this._addFavoriteEntity(select.value);
-    select.value = '';
-  }
-
-  private _addFavoriteEntity(entityId: string): void {
-    if (!this._hass) return;
-    const currentFavorites = this._config.favorite_entities || [];
-    if (currentFavorites.includes(entityId)) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      favorite_entities: [...currentFavorites, entityId],
-    };
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  private _removeFavoriteEntity(entityId: string): void {
-    if (!this._hass) return;
-    const currentFavorites = this._config.favorite_entities || [];
-    const newFavorites = currentFavorites.filter((id) => id !== entityId);
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      favorite_entities: newFavorites.length > 0 ? newFavorites : undefined,
-    };
-
-    if (newFavorites.length === 0) {
-      delete newConfig.favorite_entities;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
   // -- Room Pins --------------------------------------------------------
-
-  private _addRoomPinFromSelect(): void {
-    const select = this.shadowRoot!.querySelector('#room-pin-entity-select') as HTMLSelectElement | null;
-    if (!select || !select.value) return;
-    this._addRoomPinEntity(select.value);
-    select.value = '';
-  }
-
-  private _addRoomPinEntity(entityId: string): void {
-    if (!this._hass) return;
-    const currentPins = this._config.room_pin_entities || [];
-    if (currentPins.includes(entityId)) return;
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      room_pin_entities: [...currentPins, entityId],
-    };
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
-
-  private _removeRoomPinEntity(entityId: string): void {
-    if (!this._hass) return;
-    const currentPins = this._config.room_pin_entities || [];
-    const newPins = currentPins.filter((id) => id !== entityId);
-
-    const newConfig: Simon42StrategyConfig = {
-      ...this._config,
-      room_pin_entities: newPins.length > 0 ? newPins : undefined,
-    };
-
-    if (newPins.length === 0) {
-      delete newConfig.room_pin_entities;
-    }
-
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  }
 
   // -- Custom Views -----------------------------------------------------
 
@@ -3691,66 +3006,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   // ENTITY LIST DRAG & DROP (Favorites / Room Pins)
   // ====================================================================
 
-  private _entityDraggedId: string | null = null;
-
-  private _handleEntityDragStart = (ev: DragEvent, _listType: 'favorites' | 'room_pins'): void => {
-    const item = (ev.target as HTMLElement).closest('.entity-list-item') as HTMLElement | null;
-    if (!item) { ev.preventDefault(); return; }
-
-    item.classList.add('dragging');
-    this._entityDraggedId = item.dataset.entityId || null;
-    if (ev.dataTransfer) {
-      ev.dataTransfer.effectAllowed = 'move';
-      ev.dataTransfer.setData('text/plain', this._entityDraggedId || '');
-    }
-  };
-
-  private _handleEntityDragEnd = (ev: DragEvent): void => {
-    const item = (ev.target as HTMLElement).closest('.entity-list-item') as HTMLElement | null;
-    if (item) item.classList.remove('dragging');
-    this._entityDraggedId = null;
-  };
-
-  private _handleEntityDragOver = (ev: DragEvent): void => {
-    ev.preventDefault();
-    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
-    const item = (ev.currentTarget as HTMLElement);
-    if (item.dataset.entityId !== this._entityDraggedId) {
-      item.classList.add('drag-over');
-    }
-  };
-
-  private _handleEntityDragLeave = (ev: DragEvent): void => {
-    (ev.currentTarget as HTMLElement).classList.remove('drag-over');
-  };
-
-  private _handleEntityDrop = (ev: DragEvent, listType: 'favorites' | 'room_pins'): void => {
-    ev.stopPropagation();
-    ev.preventDefault();
-
-    const dropTarget = ev.currentTarget as HTMLElement;
-    dropTarget.classList.remove('drag-over');
-
-    const draggedId = this._entityDraggedId;
-    const dropId = dropTarget.dataset.entityId;
-    if (!draggedId || !dropId || draggedId === dropId) return;
-
-    const currentList = listType === 'favorites'
-      ? [...(this._config.favorite_entities || [])]
-      : [...(this._config.room_pin_entities || [])];
-
-    const draggedIndex = currentList.indexOf(draggedId);
-    const dropIndex = currentList.indexOf(dropId);
-    if (draggedIndex === -1 || dropIndex === -1) return;
-
-    currentList.splice(draggedIndex, 1);
-    currentList.splice(dropIndex, 0, draggedId);
-
-    const key = listType === 'favorites' ? 'favorite_entities' : 'room_pin_entities';
-    const newConfig: Simon42StrategyConfig = { ...this._config, [key]: currentList };
-    this._config = newConfig;
-    this._fireConfigChanged(newConfig);
-  };
+  _entityDraggedId: string | null = null;
 
   // ====================================================================
   // CONFIG DISPATCH

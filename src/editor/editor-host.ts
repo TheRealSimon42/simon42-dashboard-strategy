@@ -53,6 +53,7 @@ export interface StrategyEditorHost {
   _draggedElement: HTMLElement | null;
   _sectionDraggedElement: HTMLElement | null;
   _stackDraggedElement: HTMLElement | null;
+  _entityDraggedId: string | null;
 
   // -- Plumbing (implemented by the host element) -------------------------
   requestUpdate(): void;
