@@ -64,6 +64,7 @@ class Simon42DashboardStrategy extends HTMLElement {
     const { localize } = await import('./utils/localize');
     const { withUnavailableEntitiesHidden } = await import('./utils/availability-utils');
     const { applyViewVisibility } = await import('./utils/view-visibility');
+    const { resolveCustomViews } = await import('./utils/custom-view-ref');
     t('imports done');
 
     const getStrategy = (tag: string): any => customElements.get(tag);
@@ -186,17 +187,11 @@ class Simon42DashboardStrategy extends HTMLElement {
       view.path === 'maintenance' ? view : withUnavailableEntitiesHidden(view, config)
     );
 
+    // YAML views are appended as-is; reference views (#169) are resolved
+    // against their source dashboard via WebSocket at generate time.
     const customViews = config.custom_views || [];
-    for (const cv of customViews) {
-      if (cv.parsed_config && cv.title && cv.path) {
-        generatedViews.push({
-          ...cv.parsed_config,
-          title: cv.title,
-          path: cv.path,
-          icon: cv.icon || 'mdi:card-text-outline',
-        });
-      }
-    }
+    generatedViews.push(...(await resolveCustomViews(customViews, hass)));
+    t('custom views resolved');
 
     t(`generate() done — ${generatedViews.length} views`);
 

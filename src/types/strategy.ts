@@ -366,6 +366,16 @@ export interface CustomView {
   parsed_config?: Record<string, any> | null;
   /** YAML parse error message, if any */
   _yaml_error?: string;
+  /**
+   * Reference mode (#169): url_path of the source dashboard whose view is
+   * embedded at generate time. `'lovelace'` = the default dashboard (its
+   * real url_path is null; safe as sentinel because HA requires a hyphen
+   * in custom dashboard url_paths). When set, `yaml`/`parsed_config` are
+   * ignored for this view.
+   */
+  ref_dashboard?: string;
+  /** Reference mode: view path in the source dashboard, or the stringified view index for views without a path */
+  ref_view?: string;
 }
 
 // -- Custom Badges ----------------------------------------------------

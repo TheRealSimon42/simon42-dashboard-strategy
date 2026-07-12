@@ -26,7 +26,7 @@ import { SECTION_META_BY_KEY } from '../sections/section-registry';
 import { validateCustomSections } from '../sections/CustomSections';
 import { localize } from '../utils/localize';
 import { EDITOR_STYLES } from './editor-styles';
-import type { StrategyEditorHost, AreaEntitiesCacheEntry } from './editor-host';
+import type { StrategyEditorHost, AreaEntitiesCacheEntry, RefDashboardOption } from './editor-host';
 import { renderViewsSection } from './panels/ViewsPanel';
 import { renderViewVisibilitySection } from './panels/ViewVisibilityPanel';
 import { renderOverviewSection } from './panels/OverviewPanel';
@@ -107,6 +107,11 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
 
   // Cache for loaded area entities (avoid re-fetching on every render)
   _areaEntitiesCache = new Map<string, AreaEntitiesCacheEntry>();
+
+  // Referenceable dashboards for custom view references (#169);
+  // loaded lazily on first use, session-lifetime cache
+  _refDashboards: RefDashboardOption[] | null = null;
+  _refDashboardsLoading = false;
 
   // Drag state (not reactive — no render needed)
   _draggedElement: HTMLElement | null = null;

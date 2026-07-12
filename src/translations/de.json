@@ -459,6 +459,23 @@
     "show_video_tips": "Expertentipps (Videos) anzeigen",
     "show_video_tips_desc": "Zeigt in der Wartungs-Ansicht bis zu drei passende simon42-Videos zu deinen installierten Integrationen (deutschsprachig, feste Liste im Paket — es werden keine Daten abgerufen oder übertragen). Jeder Tipp lässt sich per „Gesehen“ dauerhaft ausblenden (pro Browser).",
     "show_maintenance_activity": "Aktivitätsverlauf anzeigen",
-    "show_maintenance_activity_desc": "Logbuch der letzten 24 Stunden in der Seitenleiste — nur für die Entitäten, die diese Ansicht gerade meldet (anstehende Updates, nicht verfügbare Geräte, kritische Batterien). Blendet sich ohne Logbuch-Integration oder ohne Meldungen automatisch aus."
+    "show_maintenance_activity_desc": "Logbuch der letzten 24 Stunden in der Seitenleiste — nur für die Entitäten, die diese Ansicht gerade meldet (anstehende Updates, nicht verfügbare Geräte, kritische Batterien). Blendet sich ohne Logbuch-Integration oder ohne Meldungen automatisch aus.",
+    "add_custom_view_ref": "+ View aus Dashboard referenzieren",
+    "custom_views_ref_help": "Referenzierte Views werden bei jedem Laden live aus dem Quell-Dashboard übernommen – Änderungen dort erscheinen automatisch auch hier. Dashboards, die selbst von einer Strategy generiert werden, können nicht referenziert werden.",
+    "ref_loading": "Dashboards werden geladen …",
+    "ref_no_dashboards": "Keine referenzierbaren Dashboards gefunden",
+    "ref_select_dashboard": "Dashboard wählen …",
+    "ref_select_view": "View wählen …",
+    "ref_view_untitled": "View",
+    "ref_default_dashboard": "Standard-Dashboard",
+    "ref_dashboard_missing": "Das referenzierte Dashboard existiert nicht mehr oder ist nicht mehr referenzierbar",
+    "ref_valid": "Referenz gültig",
+    "ref_incomplete": "Dashboard und View auswählen, um die Referenz zu vervollständigen"
+  },
+  "custom_views": {
+    "ref_error_title": "Referenzierte View konnte nicht geladen werden",
+    "ref_error_dashboard": "Das Quell-Dashboard existiert nicht mehr oder konnte nicht geladen werden. Bitte die Referenz im Dashboard-Editor prüfen.",
+    "ref_error_strategy": "Das Quell-Dashboard wird von einer Strategy generiert und kann nicht referenziert werden.",
+    "ref_error_view": "Die referenzierte View existiert im Quell-Dashboard nicht mehr. Bitte die Referenz im Dashboard-Editor prüfen."
   }
 }

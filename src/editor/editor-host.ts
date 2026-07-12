@@ -32,6 +32,14 @@ export interface AreaEntitiesCacheEntry {
   namesHidden: string[];
 }
 
+/** One referenceable dashboard for the custom view reference dropdowns (#169). */
+export interface RefDashboardOption {
+  /** Dashboard url_path ('lovelace' sentinel = default dashboard). */
+  url_path: string;
+  title: string;
+  views: Array<{ path?: string; title?: string; icon?: string; index: number }>;
+}
+
 export interface StrategyEditorHost {
   // -- Core state -------------------------------------------------------
   _hass: HomeAssistant | null;
@@ -52,6 +60,9 @@ export interface StrategyEditorHost {
 
   // -- Caches / drag handles ---------------------------------------------
   _areaEntitiesCache: Map<string, AreaEntitiesCacheEntry>;
+  /** Referenceable dashboards (#169); null = not loaded yet. */
+  _refDashboards: RefDashboardOption[] | null;
+  _refDashboardsLoading: boolean;
   _draggedElement: HTMLElement | null;
   _sectionDraggedElement: HTMLElement | null;
   _stackDraggedElement: HTMLElement | null;
