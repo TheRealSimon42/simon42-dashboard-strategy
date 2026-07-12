@@ -202,6 +202,17 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
     });
   }
 
+  // Wraps one row of tiles; the stack hides when every tile in it is
+  // hidden for the current user (union rule), avoiding empty gaps.
+  function pushRow(rowCards: LovelaceCardConfig[], rowRules: (string[] | undefined)[]): void {
+    const rowConditions = userVisibilityConditions(unionVisibleUsers(rowRules));
+    cards.push({
+      type: 'horizontal-stack',
+      cards: rowCards,
+      ...(rowConditions ? { visibility: rowConditions } : {}),
+    });
+  }
+
   // Only show summaries heading and cards if at least one is enabled
   if (summaryCards.length > 0) {
     if (!hidden.has('summaries')) {
@@ -212,17 +223,6 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
         type: 'heading',
         heading: localize('sections.summaries'),
         ...(headingConditions ? { visibility: headingConditions } : {}),
-      });
-    }
-
-    // Wraps one row of tiles; the stack hides when every tile in it is
-    // hidden for the current user (union rule), avoiding empty gaps.
-    function pushRow(rowCards: LovelaceCardConfig[], rowRules: (string[] | undefined)[]): void {
-      const rowConditions = userVisibilityConditions(unionVisibleUsers(rowRules));
-      cards.push({
-        type: 'horizontal-stack',
-        cards: rowCards,
-        ...(rowConditions ? { visibility: rowConditions } : {}),
       });
     }
 
