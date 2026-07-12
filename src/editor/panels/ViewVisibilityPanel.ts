@@ -34,6 +34,9 @@ export function renderViewVisibilitySection(host: StrategyEditorHost): TemplateR
     <div class="description" style="margin-left: 0; color: var(--error-color, #db4437); font-weight: 500;">
       &#9888;&#65039; ${localize('editor.view_visibility_warning')}
     </div>
+    <div class="description" style="margin-left: 0;">
+      ${localize('editor.view_visibility_reload_hint')}
+    </div>
     ${users.length === 0
       ? html`<div class="description" style="margin-left: 0;">${localize('editor.view_visibility_no_users')}</div>`
       : html`
