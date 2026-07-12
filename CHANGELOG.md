@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.15](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.14...v1.4.0-beta.15) (2026-07-12)
+
+
+### Features
+
+* per-view and per-section user visibility (tabs, entry points, sections) ([#370](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/370)) ([317e107](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/317e1079ba26184880b59d7eda19b08583674491))
+
 ## [1.4.0-beta.14](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.13...v1.4.0-beta.14) (2026-07-12)
 
 
