@@ -26,6 +26,7 @@ import { createPersonsSection } from '../sections/PersonsSection';
 import { createVacuumsSection } from '../sections/VacuumsSection';
 import { createMaintenanceSection } from '../sections/MaintenanceSection';
 import { createOverviewView } from '../utils/view-builder';
+import { getSectionVisibleUsers, userVisibilityConditions } from '../utils/view-visibility';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
 
 /**
@@ -234,11 +235,19 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
           ? buildCustomSection(customSection, (customCardsBySection.get(key)?.length ?? 0) > 0)
           : null;
       if (!result) continue;
-      if (Array.isArray(result)) {
-        overviewSections.push(...result);
-      } else {
-        overviewSections.push(result);
+      // Per-user section visibility (section_visible_users): native runtime
+      // condition on the section, appended to any user-authored visibility
+      // (custom section passthrough) — conditions AND together. Unlike the
+      // generate-time section_visibility skip above, this evaluates per
+      // logged-in user in the browser.
+      const userConditions = userVisibilityConditions(getSectionVisibleUsers(dashboardConfig, key));
+      const built = Array.isArray(result) ? result : [result];
+      if (userConditions) {
+        for (const section of built) {
+          section.visibility = [...(section.visibility ?? []), ...userConditions];
+        }
       }
+      overviewSections.push(...built);
       // Append custom cards assigned to this section (skip 'custom_cards' — handled by createCustomCardsSection)
       if (key !== 'custom_cards') {
         const assigned = customCardsBySection.get(key);

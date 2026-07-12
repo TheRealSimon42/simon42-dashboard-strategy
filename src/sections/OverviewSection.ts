@@ -11,7 +11,18 @@ import type { HomeAssistant } from '../types/homeassistant';
 import type { Simon42StrategyConfig, CustomCard } from '../types/strategy';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { localize } from '../utils/localize';
-import { getViewVisibleUsers } from '../utils/view-visibility';
+import { getViewVisibleUsers, userVisibilityConditions, unionVisibleUsers } from '../utils/view-visibility';
+
+/**
+ * Spreadable user-visibility for a summary tile: the tile is the overview
+ * entry point of its target view, so it follows the view's
+ * view_visible_users rule (native runtime condition — display logic, not
+ * a security boundary). No rule → no visibility key at all.
+ */
+function tileUserVisibility(config: Simon42StrategyConfig, viewPath: string): Partial<LovelaceCardConfig> {
+  const conditions = userVisibilityConditions(getViewVisibleUsers(config, viewPath));
+  return conditions ? { visibility: conditions } : {};
+}
 
 export interface OverviewSectionParams {
   someSensorId: string | null;
@@ -110,11 +121,19 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   const showClimateSummary = config.show_climate_summary === true;
   const showMaintenanceSummary = config.show_maintenance_summary === true;
 
-  // Build summary cards based on config
+  // Build summary cards based on config. Each tile carries the
+  // view_visible_users rule of the view it deep-links to (entry-point
+  // parity with the nav tab); ruleFor mirrors the tiles for the
+  // union conditions on the heading and the stack rows below.
   const summaryCards: LovelaceCardConfig[] = [];
+  const summaryRules: (string[] | undefined)[] = [];
+  function pushSummary(viewPath: string, card: LovelaceCardConfig): void {
+    summaryCards.push({ ...card, ...tileUserVisibility(config, viewPath) });
+    summaryRules.push(getViewVisibleUsers(config, viewPath));
+  }
 
   if (showLightSummary) {
-    summaryCards.push({
+    pushSummary('lights', {
       type: 'custom:simon42-summary-card',
       summary_type: 'lights',
       areas_options: config.areas_options || {},
@@ -125,7 +144,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   }
 
   if (showCoversSummary) {
-    summaryCards.push({
+    pushSummary('covers', {
       type: 'custom:simon42-summary-card',
       summary_type: 'covers',
       areas_options: config.areas_options || {},
@@ -136,7 +155,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   }
 
   if (showSecuritySummary) {
-    summaryCards.push({
+    pushSummary('security', {
       type: 'custom:simon42-summary-card',
       summary_type: 'security',
       areas_options: config.areas_options || {},
@@ -147,7 +166,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   }
 
   if (showBatterySummary) {
-    summaryCards.push({
+    pushSummary('batteries', {
       type: 'custom:simon42-summary-card',
       summary_type: 'batteries',
       areas_options: config.areas_options || {},
@@ -161,7 +180,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   }
 
   if (showClimateSummary) {
-    summaryCards.push({
+    pushSummary('climate', {
       type: 'custom:simon42-summary-card',
       summary_type: 'climate',
       areas_options: config.areas_options || {},
@@ -172,8 +191,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   }
 
   if (showMaintenanceSummary) {
-    const visibleUsers = getViewVisibleUsers(config, 'maintenance');
-    summaryCards.push({
+    pushSummary('maintenance', {
       type: 'custom:simon42-summary-card',
       summary_type: 'maintenance',
       areas_options: config.areas_options || {},
@@ -181,37 +199,41 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       hide_mobile_app_batteries: config.hide_mobile_app_batteries,
       hide_battery_notes_entities: config.hide_battery_notes_entities,
       battery_critical_threshold: config.battery_critical_threshold,
-      // Native Lovelace user condition — display logic, not a security boundary
-      ...(visibleUsers !== undefined
-        ? { visibility: [{ condition: 'user', users: visibleUsers }] }
-        : {}),
     });
   }
 
   // Only show summaries heading and cards if at least one is enabled
   if (summaryCards.length > 0) {
     if (!hidden.has('summaries')) {
+      // Heading hides for users who can't see ANY summary tile (union of
+      // the tile rules; one unrestricted tile keeps it unconditional).
+      const headingConditions = userVisibilityConditions(unionVisibleUsers(summaryRules));
       cards.push({
         type: 'heading',
         heading: localize('sections.summaries'),
+        ...(headingConditions ? { visibility: headingConditions } : {}),
+      });
+    }
+
+    // Wraps one row of tiles; the stack hides when every tile in it is
+    // hidden for the current user (union rule), avoiding empty gaps.
+    function pushRow(rowCards: LovelaceCardConfig[], rowRules: (string[] | undefined)[]): void {
+      const rowConditions = userVisibilityConditions(unionVisibleUsers(rowRules));
+      cards.push({
+        type: 'horizontal-stack',
+        cards: rowCards,
+        ...(rowConditions ? { visibility: rowConditions } : {}),
       });
     }
 
     // Layout logic: adapt to number of cards
     if (summariesColumns === 4) {
       // 4 columns: all cards in a single row
-      cards.push({
-        type: 'horizontal-stack',
-        cards: summaryCards,
-      });
+      pushRow(summaryCards, summaryRules);
     } else {
       // 2 columns: split into rows of 2
       for (let i = 0; i < summaryCards.length; i += 2) {
-        const rowCards = summaryCards.slice(i, i + 2);
-        cards.push({
-          type: 'horizontal-stack',
-          cards: rowCards,
-        });
+        pushRow(summaryCards.slice(i, i + 2), summaryRules.slice(i, i + 2));
       }
     }
   }

@@ -2,8 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Simon42StrategyConfig } from '../../src/types/strategy';
 import type { StrategyEditorHost } from '../../src/editor/editor-host';
-import { viewUserChanged } from '../../src/editor/panels/ViewVisibilityPanel';
-import { removeCustomView, updateCustomViewField } from '../../src/editor/panels/CustomConfigPanels';
+import { viewUserChanged, ruleUserChanged } from '../../src/editor/panels/ViewVisibilityPanel';
+import {
+  removeCustomView,
+  updateCustomViewField,
+  removeCustomSection,
+  updateCustomSectionField,
+} from '../../src/editor/panels/CustomConfigPanels';
 
 function makeHost(config: Simon42StrategyConfig): StrategyEditorHost {
   return {
@@ -58,5 +63,45 @@ describe('view visibility editor updates', () => {
     });
     removeCustomView(host, 0);
     expect(emittedConfig(host).view_visible_users).toBeUndefined();
+  });
+});
+
+describe('section visibility editor updates', () => {
+  it('stores a section rule when a user is unchecked', () => {
+    const host = makeHost({});
+    ruleUserChanged(host, 'section', 'energy', 'user-a', ['user-a', 'user-b'], false);
+    expect(emittedConfig(host).section_visible_users).toEqual({ energy: ['user-b'] });
+    expect(emittedConfig(host).view_visible_users).toBeUndefined();
+  });
+
+  it('removes the section rule when all known users are selected again', () => {
+    const host = makeHost({ section_visible_users: { energy: ['user-a'] } });
+    ruleUserChanged(host, 'section', 'energy', 'user-b', ['user-a', 'user-b'], true);
+    expect(emittedConfig(host).section_visible_users).toBeUndefined();
+  });
+
+  it('does not touch maintenance_visible_users for section rules', () => {
+    const host = makeHost({ maintenance_visible_users: ['legacy'] });
+    ruleUserChanged(host, 'section', 'maintenance', 'user-a', ['user-a'], false);
+    expect(emittedConfig(host).maintenance_visible_users).toEqual(['legacy']);
+    expect(emittedConfig(host).section_visible_users).toEqual({ maintenance: [] });
+  });
+
+  it('moves a custom section rule when its key changes', () => {
+    const host = makeHost({
+      custom_sections: [{ key: 'old-key', yaml: '', parsed_config: undefined }],
+      section_visible_users: { 'old-key': ['user-a'] },
+    });
+    updateCustomSectionField(host, 0, 'key', 'new-key');
+    expect(emittedConfig(host).section_visible_users).toEqual({ 'new-key': ['user-a'] });
+  });
+
+  it('drops a custom section rule with the section', () => {
+    const host = makeHost({
+      custom_sections: [{ key: 'gone', yaml: '', parsed_config: undefined }],
+      section_visible_users: { gone: [] },
+    });
+    removeCustomSection(host, 0);
+    expect(emittedConfig(host).section_visible_users).toBeUndefined();
   });
 });

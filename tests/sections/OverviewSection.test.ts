@@ -130,3 +130,60 @@ describe('createOverviewSection', () => {
     });
   });
 });
+
+describe('summary tile user visibility (view_visible_users entry points)', () => {
+  function tilesOf(config: Record<string, unknown>) {
+    const hass = makeHass({ entities: [{ entity_id: 'sensor.dummy', state: '1' }] });
+    Registry.initialize(hass, config);
+    const section = createOverviewSection({
+      someSensorId: 'sensor.dummy',
+      showSearchCard: false,
+      config,
+      hass,
+    });
+    const stacks = (section?.cards ?? []).filter((c) => c.type === 'horizontal-stack');
+    return {
+      section,
+      stacks,
+      tiles: stacks.flatMap((s) => (s.cards ?? []) as Record<string, unknown>[]),
+    };
+  }
+
+  it('adds the view rule as a user condition on the matching tile only', () => {
+    const { tiles } = tilesOf({ view_visible_users: { climate: ['u1'] }, show_climate_summary: true });
+    const climate = tiles.find((t) => t.summary_type === 'climate');
+    const lights = tiles.find((t) => t.summary_type === 'lights');
+    expect(climate?.visibility).toEqual([{ condition: 'user', users: ['u1'] }]);
+    expect(lights).toBeDefined();
+    expect(lights?.visibility).toBeUndefined();
+  });
+
+  it('keeps the maintenance tile on the shared rule (legacy fallback)', () => {
+    const { tiles } = tilesOf({ show_maintenance_summary: true, maintenance_visible_users: ['legacy'] });
+    const maintenance = tiles.find((t) => t.summary_type === 'maintenance');
+    expect(maintenance?.visibility).toEqual([{ condition: 'user', users: ['legacy'] }]);
+  });
+
+  it('hides a stack row only when every tile in it is restricted', () => {
+    // default tiles: lights, covers, security, batteries → rows [lights,covers], [security,batteries]
+    const { stacks } = tilesOf({ view_visible_users: { lights: ['u1'], covers: ['u2'] } });
+    expect(stacks[0]?.visibility).toEqual([{ condition: 'user', users: ['u1', 'u2'] }]);
+    expect(stacks[1]?.visibility).toBeUndefined();
+  });
+
+  it('applies the union rule to the summaries heading only when all tiles are restricted', () => {
+    const partial = tilesOf({ view_visible_users: { lights: ['u1'] } });
+    const partialHeading = (partial.section?.cards ?? []).find(
+      (c) => c.type === 'heading' && c.heading !== undefined && !('heading_style' in c)
+    );
+    expect(partialHeading?.visibility).toBeUndefined();
+
+    const full = tilesOf({
+      view_visible_users: { lights: ['u1'], covers: ['u1'], security: ['u2'], batteries: [] },
+    });
+    const fullHeading = (full.section?.cards ?? []).find(
+      (c) => c.type === 'heading' && c.heading !== undefined && !('heading_style' in c)
+    );
+    expect(fullHeading?.visibility).toEqual([{ condition: 'user', users: ['u1', 'u2'] }]);
+  });
+});

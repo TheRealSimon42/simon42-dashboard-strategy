@@ -2,15 +2,17 @@ import { html, type TemplateResult } from 'lit';
 
 import { getVisibleAreasFromHass } from '../../utils/name-utils';
 import { localize } from '../../utils/localize';
-import { getViewVisibleUsers } from '../../utils/view-visibility';
+import { getViewVisibleUsers, getSectionVisibleUsers } from '../../utils/view-visibility';
+import { SECTION_REGISTRY, isSectionHiddenByConfig } from '../../sections/section-registry';
 import type { Simon42StrategyConfig } from '../../types/strategy';
 import type { StrategyEditorHost } from '../editor-host';
 
 /* eslint-disable xss/no-mixed-html, @typescript-eslint/no-confusing-void-expression --
    lit-html escapes interpolations; concise checkbox handlers are the editor convention. */
 
-interface ViewOption {
-  path: string;
+interface RuleOption {
+  /** Rule key: view path (view_visible_users) or section key (section_visible_users) */
+  key: string;
   title: string;
 }
 
@@ -23,14 +25,32 @@ export function renderViewVisibilitySection(host: StrategyEditorHost): TemplateR
   if (!host._hass) return html``;
   const users = getUserOptions(host);
   const views = getViewOptions(host);
+  const sections = getSectionOptions(host);
 
   return html`
     <div class="description" style="margin-left: 0;">
       ${localize('editor.view_visibility_desc')}
     </div>
+    <div class="description" style="margin-left: 0; color: var(--error-color, #db4437); font-weight: 500;">
+      &#9888;&#65039; ${localize('editor.view_visibility_warning')}
+    </div>
     ${users.length === 0
       ? html`<div class="description" style="margin-left: 0;">${localize('editor.view_visibility_no_users')}</div>`
-      : views.map((view) => renderViewUsers(host, view, users))}
+      : html`
+          <div class="option-group-title" style="margin-top: 8px;">
+            <ha-icon icon="mdi:tab"></ha-icon>
+            ${localize('editor.view_visibility_views_title')}
+          </div>
+          ${views.map((view) => renderRuleUsers(host, view, users, 'view'))}
+          <div class="option-group-title" style="margin-top: 16px;">
+            <ha-icon icon="mdi:view-grid-outline"></ha-icon>
+            ${localize('editor.view_visibility_sections_title')}
+          </div>
+          <div class="description" style="margin-left: 0;">
+            ${localize('editor.view_visibility_sections_desc')}
+          </div>
+          ${sections.map((section) => renderRuleUsers(host, section, users, 'section'))}
+        `}
   `;
 }
 
@@ -49,12 +69,12 @@ function getUserOptions(host: StrategyEditorHost): UserOption[] {
   return options.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function getViewOptions(host: StrategyEditorHost): ViewOption[] {
+function getViewOptions(host: StrategyEditorHost): RuleOption[] {
   if (!host._hass) return [];
   const config = host._config;
-  const views: ViewOption[] = [{ path: 'home', title: localize('views.overview') }];
-  function add(enabled: boolean, path: string, titleKey: string): void {
-    if (enabled) views.push({ path, title: localize(titleKey) });
+  const views: RuleOption[] = [{ key: 'home', title: localize('views.overview') }];
+  function add(enabled: boolean, key: string, titleKey: string): void {
+    if (enabled) views.push({ key, title: localize(titleKey) });
   }
 
   add(config.show_light_summary !== false, 'lights', 'views.lights');
@@ -72,46 +92,84 @@ function getViewOptions(host: StrategyEditorHost): ViewOption[] {
       if (!rule || !rule.entity) return true;
       return host._hass?.states[rule.entity]?.state === rule.state;
     });
-  for (const area of areas) views.push({ path: area.area_id, title: area.name });
+  for (const area of areas) views.push({ key: area.area_id, title: area.name });
 
   for (const view of config.custom_views || []) {
     if (view.parsed_config && view.title && view.path) {
-      views.push({ path: view.path, title: view.title });
+      views.push({ key: view.path, title: view.title });
     }
   }
   return views;
 }
 
-function renderViewUsers(host: StrategyEditorHost, view: ViewOption, users: UserOption[]): TemplateResult {
-  const configured = getViewVisibleUsers(host._config, view.path);
+/**
+ * Overview sections offered for per-user rules: all registry sections
+ * currently enabled by their toggle, plus the user's custom sections.
+ * Skips 'overview' (clock/summaries hub — hiding it per user belongs to
+ * the individual tiles) — but keeps everything else, incl. weather/energy.
+ */
+function getSectionOptions(host: StrategyEditorHost): RuleOption[] {
+  const config = host._config;
+  const sections: RuleOption[] = [];
+  for (const meta of SECTION_REGISTRY) {
+    if (meta.key === 'overview' || meta.key === 'custom_cards') continue;
+    if (isSectionHiddenByConfig(meta.key, config)) continue;
+    sections.push({ key: meta.key, title: localize(meta.labelKey) });
+  }
+  for (const section of config.custom_sections || []) {
+    if (typeof section.key === 'string' && section.key.trim() !== '') {
+      sections.push({ key: section.key, title: section.heading || section.key });
+    }
+  }
+  return sections;
+}
+
+function renderRuleUsers(
+  host: StrategyEditorHost,
+  option: RuleOption,
+  users: UserOption[],
+  kind: 'view' | 'section',
+): TemplateResult {
+  const configured = kind === 'view'
+    ? getViewVisibleUsers(host._config, option.key)
+    : getSectionVisibleUsers(host._config, option.key);
   const selected = configured === undefined ? users.map((user) => user.userId) : configured;
 
   return html`
     <div class="option-group">
       <div class="option-group-title">
-        <ha-icon icon="mdi:tab"></ha-icon>
-        ${view.title} <span class="entity-id">/${view.path}</span>
+        <ha-icon icon=${kind === 'view' ? 'mdi:tab' : 'mdi:view-grid-outline'}></ha-icon>
+        ${option.title} <span class="entity-id">${kind === 'view' ? `/${option.key}` : option.key}</span>
       </div>
       ${users.map((user) => host._renderCheckbox(
-        `view-${view.path}-user-${user.userId}`,
+        `${kind}-${option.key}-user-${user.userId}`,
         user.name,
         selected.includes(user.userId),
-        (checked) => { viewUserChanged(host, view.path, user.userId, users.map((option) => option.userId), checked); },
+        (checked) => { ruleUserChanged(host, kind, option.key, user.userId, users.map((o) => o.userId), checked); },
       ))}
     </div>
   `;
 }
 
-export function viewUserChanged(
+/**
+ * Shared checkbox handler for both rule maps. "All known users checked and
+ * no unknown ids" = no restriction → the rule is removed entirely; anything
+ * else writes the explicit allow-list (unknown ids — users without person
+ * entity, set via YAML — are preserved).
+ */
+export function ruleUserChanged(
   host: StrategyEditorHost,
-  path: string,
+  kind: 'view' | 'section',
+  key: string,
   userId: string,
   knownUserIds: string[],
   checked: boolean,
 ): void {
-  const currentMap = host._config.view_visible_users || {};
-  const hasRule = Object.hasOwn(currentMap, path);
-  const configured = getViewVisibleUsers(host._config, path);
+  const currentMap = (kind === 'view' ? host._config.view_visible_users : host._config.section_visible_users) || {};
+  const hasRule = Object.hasOwn(currentMap, key);
+  const configured = kind === 'view'
+    ? getViewVisibleUsers(host._config, key)
+    : getSectionVisibleUsers(host._config, key);
   const effective = new Set(hasRule || configured !== undefined ? (configured || []) : knownUserIds);
   if (checked) effective.add(userId);
   else effective.delete(userId);
@@ -120,14 +178,31 @@ export function viewUserChanged(
   const unknown = [...effective].filter((id) => !knownUserIds.includes(id));
   const nextMap = { ...currentMap };
   if (unknown.length === 0 && known.length === knownUserIds.length) {
-    Reflect.deleteProperty(nextMap, path);
+    Reflect.deleteProperty(nextMap, key);
   } else {
-    Reflect.set(nextMap, path, [...known, ...unknown]);
+    Reflect.set(nextMap, key, [...known, ...unknown]);
   }
 
   const updated: Simon42StrategyConfig = { ...host._config };
-  if (path === 'maintenance') delete updated.maintenance_visible_users;
-  if (Object.keys(nextMap).length === 0) delete updated.view_visible_users;
-  else updated.view_visible_users = nextMap;
+  if (kind === 'view') {
+    if (key === 'maintenance') delete updated.maintenance_visible_users;
+    if (Object.keys(nextMap).length === 0) delete updated.view_visible_users;
+    else updated.view_visible_users = nextMap;
+  } else if (Object.keys(nextMap).length === 0) {
+    delete updated.section_visible_users;
+  } else {
+    updated.section_visible_users = nextMap;
+  }
   host._fireConfigChanged(updated);
+}
+
+/** Backwards-compatible wrapper (kept for the existing unit tests / callers). */
+export function viewUserChanged(
+  host: StrategyEditorHost,
+  path: string,
+  userId: string,
+  knownUserIds: string[],
+  checked: boolean,
+): void {
+  ruleUserChanged(host, 'view', path, userId, knownUserIds, checked);
 }

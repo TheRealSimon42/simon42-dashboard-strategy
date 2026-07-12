@@ -218,8 +218,14 @@ export interface Simon42StrategyConfig {
    */
   room_visibility?: Record<string, { entity: string; state: string }>;
   /** Per-view native Lovelace visibility, keyed by view path. Missing = all
-   * users; an explicit empty array = no users. Display logic only. */
+   * users; an explicit empty array = no users. Display logic only — the view
+   * stays reachable via its URL. Also applied to the view's overview entry
+   * points (summary tiles, area cards) as runtime user conditions. */
   view_visible_users?: Record<string, string[]>;
+  /** Per-overview-section native Lovelace visibility, keyed by SectionKey or
+   * custom section key. Same semantics as view_visible_users: missing = all
+   * users, empty array = no users. Display logic only. */
+  section_visible_users?: Record<string, string[]>;
   show_person_badges?: boolean; // default: true — set false to suppress the
   // auto-generated person chip badges (useful when supplying replacement
   // badges via custom_badges)

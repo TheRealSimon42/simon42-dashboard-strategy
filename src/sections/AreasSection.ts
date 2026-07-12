@@ -7,10 +7,11 @@
 // ====================================================================
 
 import type { HomeAssistant } from '../types/homeassistant';
-import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
+import type { LovelaceCardConfig, LovelaceCondition, LovelaceSectionConfig } from '../types/lovelace';
 import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { getViewVisibleUsers, userVisibilityConditions, unionVisibleUsers } from '../utils/view-visibility';
 
 // Area control domains to check (same set as HA, with optional 'switch').
 // Array order = render order of the shortcut icons on the area cards.
@@ -140,6 +141,11 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
     ? getAreaAlertClasses(area.area_id, hass, showAlerts, showWindowAlerts)
     : undefined;
 
+  // Entry-point parity with the room view's nav tab: the card follows the
+  // room view's view_visible_users rule (runtime user condition — display
+  // logic; the room view stays reachable via URL).
+  const userConditions = userVisibilityConditions(getViewVisibleUsers(Registry.config, area.area_id));
+
   return {
     type: 'area',
     area: area.area_id,
@@ -151,7 +157,20 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
     navigation_path: area.area_id,
     vertical: false,
     grid_options: { columns: 'full' },
+    ...(userConditions ? { visibility: userConditions } : {}),
   };
+}
+
+/**
+ * Union user condition for a heading above a group of area cards: hides
+ * for users who can't see ANY of the areas beneath it (one unrestricted
+ * area keeps the heading unconditional).
+ */
+function areaHeadingVisibility(areas: AreaRegistryEntry[]): { visibility: LovelaceCondition[] } | Record<string, never> {
+  const conditions = userVisibilityConditions(
+    unionVisibleUsers(areas.map((area) => getViewVisibleUsers(Registry.config, area.area_id)))
+  );
+  return conditions ? { visibility: conditions } : {};
 }
 
 /**
@@ -190,6 +209,7 @@ export function createAreasSection(
         type: 'heading',
         heading_style: 'title',
         heading: localize('sections.areas'),
+        ...areaHeadingVisibility(visibleAreas),
       });
     }
     for (const area of visibleAreas) cards.push(buildAreaCard(area, hass as HomeAssistant));
@@ -234,6 +254,7 @@ export function createAreasSection(
           heading_style: 'title',
           heading: floorName,
           icon: floorIcon,
+          ...areaHeadingVisibility(areas),
         },
         ...areas.map((area) => buildAreaCard(area, hass)),
       ],
@@ -249,6 +270,7 @@ export function createAreasSection(
         heading_style: 'title',
         heading: localize('sections.areas_other'),
         icon: 'mdi:home-outline',
+        ...areaHeadingVisibility(areasWithoutFloor),
       });
     }
     for (const area of areasWithoutFloor) cards.push(buildAreaCard(area, hass));

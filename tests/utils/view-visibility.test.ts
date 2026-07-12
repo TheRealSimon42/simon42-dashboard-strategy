@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyViewVisibility, getViewVisibleUsers } from '../../src/utils/view-visibility';
+import {
+  applyViewVisibility,
+  getViewVisibleUsers,
+  getSectionVisibleUsers,
+  userVisibilityConditions,
+  unionVisibleUsers,
+} from '../../src/utils/view-visibility';
 
 describe('view visibility', () => {
   it('preserves a view when no rule exists', () => {
@@ -36,5 +42,39 @@ describe('view visibility', () => {
       ...config,
       view_visible_users: { maintenance: [] },
     }, 'maintenance')).toEqual([]);
+  });
+});
+
+describe('section visibility rules', () => {
+  it('returns undefined without a rule and the list with one', () => {
+    expect(getSectionVisibleUsers({}, 'energy')).toBeUndefined();
+    expect(getSectionVisibleUsers({ section_visible_users: { energy: ['u1'] } }, 'energy')).toEqual(['u1']);
+    expect(getSectionVisibleUsers({ section_visible_users: { energy: [] } }, 'energy')).toEqual([]);
+  });
+
+  it('has no maintenance legacy fallback', () => {
+    expect(getSectionVisibleUsers({ maintenance_visible_users: ['legacy'] }, 'maintenance')).toBeUndefined();
+  });
+});
+
+describe('userVisibilityConditions', () => {
+  it('emits no condition without a rule', () => {
+    expect(userVisibilityConditions(undefined)).toBeUndefined();
+  });
+
+  it('maps a rule to a native user condition (empty = hidden for everyone)', () => {
+    expect(userVisibilityConditions(['u1'])).toEqual([{ condition: 'user', users: ['u1'] }]);
+    expect(userVisibilityConditions([])).toEqual([{ condition: 'user', users: [] }]);
+  });
+});
+
+describe('unionVisibleUsers', () => {
+  it('is unconditional as soon as one child has no rule', () => {
+    expect(unionVisibleUsers([['u1'], undefined])).toBeUndefined();
+    expect(unionVisibleUsers([])).toEqual([]);
+  });
+
+  it('unions and dedupes the child rules', () => {
+    expect(unionVisibleUsers([['u1', 'u2'], ['u2', 'u3'], []])).toEqual(['u1', 'u2', 'u3']);
   });
 });
