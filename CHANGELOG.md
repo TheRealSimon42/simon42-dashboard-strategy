@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.14](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.13...v1.4.0-beta.14) (2026-07-12)
+
+
+### Bug Fixes
+
+* **editor:** let entity picker dropdowns escape expanded panels ([#367](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/367)) ([9332405](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/9332405bd85b4081e9ba6aa31b9a1c81d60149f5))
+
 ## [1.4.0-beta.13](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.12...v1.4.0-beta.13) (2026-07-07)
 
 
