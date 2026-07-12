@@ -375,9 +375,9 @@ function addCustomView(host: StrategyEditorHost): void {
   host._fireConfigChanged(newConfig);
 }
 
-function removeCustomView(host: StrategyEditorHost, index: number): void {
+export function removeCustomView(host: StrategyEditorHost, index: number): void {
   const customViews: CustomView[] = [...(host._config.custom_views || [])];
-  customViews.splice(index, 1);
+  const removed = customViews.splice(index, 1)[0];
 
   const newConfig: Simon42StrategyConfig = { ...host._config };
   if (customViews.length === 0) {
@@ -385,12 +385,18 @@ function removeCustomView(host: StrategyEditorHost, index: number): void {
   } else {
     newConfig.custom_views = customViews;
   }
+  if (removed?.path && Object.prototype.hasOwnProperty.call(newConfig.view_visible_users || {}, removed.path)) {
+    const nextVisibility = { ...(newConfig.view_visible_users || {}) };
+    delete nextVisibility[removed.path];
+    if (Object.keys(nextVisibility).length === 0) delete newConfig.view_visible_users;
+    else newConfig.view_visible_users = nextVisibility;
+  }
 
   host._config = newConfig;
   host._fireConfigChanged(newConfig);
 }
 
-function updateCustomViewField(host: StrategyEditorHost, index: number, field: string, value: string): void {
+export function updateCustomViewField(host: StrategyEditorHost, index: number, field: string, value: string): void {
   const customViews: CustomView[] = [...(host._config.custom_views || [])];
   const existing = customViews.at(index);
   if (!existing) return;
@@ -398,6 +404,15 @@ function updateCustomViewField(host: StrategyEditorHost, index: number, field: s
   customViews.splice(index, 1, { ...existing, [field]: value });
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_views: customViews };
+  if (field === 'path' && existing.path && existing.path !== value
+      && Object.prototype.hasOwnProperty.call(newConfig.view_visible_users || {}, existing.path)) {
+    const nextVisibility = { ...(newConfig.view_visible_users || {}) };
+    const users = nextVisibility[existing.path] || [];
+    delete nextVisibility[existing.path];
+    if (value) nextVisibility[value] = users;
+    if (Object.keys(nextVisibility).length === 0) delete newConfig.view_visible_users;
+    else newConfig.view_visible_users = nextVisibility;
+  }
   host._config = newConfig;
   host._fireConfigChanged(newConfig);
 }

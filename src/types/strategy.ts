@@ -217,6 +217,9 @@ export interface Simon42StrategyConfig {
    * room views and nav tabs.
    */
   room_visibility?: Record<string, { entity: string; state: string }>;
+  /** Per-view native Lovelace visibility, keyed by view path. Missing = all
+   * users; an explicit empty array = no users. Display logic only. */
+  view_visible_users?: Record<string, string[]>;
   show_person_badges?: boolean; // default: true — set false to suppress the
   // auto-generated person chip badges (useful when supplying replacement
   // badges via custom_badges)

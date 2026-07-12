@@ -11,6 +11,7 @@ import type { HomeAssistant } from '../types/homeassistant';
 import type { Simon42StrategyConfig, CustomCard } from '../types/strategy';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { localize } from '../utils/localize';
+import { getViewVisibleUsers } from '../utils/view-visibility';
 
 export interface OverviewSectionParams {
   someSensorId: string | null;
@@ -171,7 +172,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   }
 
   if (showMaintenanceSummary) {
-    const visibleUsers = config.maintenance_visible_users || [];
+    const visibleUsers = getViewVisibleUsers(config, 'maintenance');
     summaryCards.push({
       type: 'custom:simon42-summary-card',
       summary_type: 'maintenance',
@@ -181,7 +182,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       hide_battery_notes_entities: config.hide_battery_notes_entities,
       battery_critical_threshold: config.battery_critical_threshold,
       // Native Lovelace user condition — display logic, not a security boundary
-      ...(visibleUsers.length > 0
+      ...(visibleUsers !== undefined
         ? { visibility: [{ condition: 'user', users: visibleUsers }] }
         : {}),
     });

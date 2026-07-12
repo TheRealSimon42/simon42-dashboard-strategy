@@ -28,6 +28,7 @@ import { localize } from '../utils/localize';
 import { EDITOR_STYLES } from './editor-styles';
 import type { StrategyEditorHost, AreaEntitiesCacheEntry } from './editor-host';
 import { renderViewsSection } from './panels/ViewsPanel';
+import { renderViewVisibilitySection } from './panels/ViewVisibilityPanel';
 import { renderOverviewSection } from './panels/OverviewPanel';
 import { renderFavoritesSection, renderLightFavoritesSection } from './panels/FavoritesPanel';
 import { renderRoomPinsSection } from './panels/RoomPinsPanel';
@@ -68,6 +69,7 @@ const PANELS: Record<string, PanelMeta> = {
   areas: { key: 'areas', icon: 'mdi:floor-plan', labelKey: 'editor.section_areas' },
   room_pins: { key: 'room_pins', icon: 'mdi:pin-outline', labelKey: 'editor.section_room_pins' },
   views: { key: 'views', icon: 'mdi:tab', labelKey: 'editor.section_views' },
+  view_visibility: { key: 'view_visibility', icon: 'mdi:account-eye-outline', labelKey: 'editor.section_view_visibility' },
   section_order: { key: 'section_order', icon: 'mdi:sort', labelKey: 'editor.section_order' },
   weather_sensors: { key: 'weather_sensors', icon: 'mdi:weather-partly-cloudy', labelKey: 'editor.section_weather_sensors' },
   custom_cards: { key: 'custom_cards', icon: 'mdi:card-plus-outline', labelKey: 'editor.section_custom_cards', tutorialUrl: `${ASSETS}/Eigene-Karten-hinzufugen.gif` },
@@ -151,6 +153,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
         ${renderCollapsiblePanel(this, PANELS.areas, () => renderAreasSection(this))}
         ${renderCollapsiblePanel(this, PANELS.room_pins, () => renderRoomPinsSection(this))}
         ${renderCollapsiblePanel(this, PANELS.views, () => renderViewsSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.view_visibility, () => renderViewVisibilitySection(this))}
 
         <div class="section-divider">
           <div class="section-divider-title">

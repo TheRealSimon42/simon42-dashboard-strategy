@@ -63,6 +63,7 @@ class Simon42DashboardStrategy extends HTMLElement {
     const { getVisibleAreasFromHass } = await import('./utils/name-utils');
     const { localize } = await import('./utils/localize');
     const { withUnavailableEntitiesHidden } = await import('./utils/availability-utils');
+    const { applyViewVisibility } = await import('./utils/view-visibility');
     t('imports done');
 
     const getStrategy = (tag: string): any => customElements.get(tag);
@@ -108,8 +109,6 @@ class Simon42DashboardStrategy extends HTMLElement {
       icon: string;
       /** Never render as subview — for views without a summary-card entry point */
       alwaysInNav?: boolean;
-      /** Restrict the nav tab to specific HA users (native `visible` list) */
-      visibleUsers?: string[];
       resolve: () => Promise<LovelaceViewConfig>;
     }
     const utilityViewDefs: UtilityViewDef[] = [
@@ -126,7 +125,6 @@ class Simon42DashboardStrategy extends HTMLElement {
         resolve: () => getStrategy('ll-strategy-simon42-view-climate').generate({ config }, hass) },
       { enabled: config.show_maintenance_summary === true,
         title: localize('views.maintenance'), path: 'maintenance', icon: 'mdi:wrench',
-        visibleUsers: config.maintenance_visible_users,
         resolve: () => getStrategy('ll-strategy-simon42-view-maintenance').generate({ config }, hass) },
       // alwaysInNav: no summary card deep-links here — as a subview the
       // camera view would be unreachable.
@@ -168,9 +166,6 @@ class Simon42DashboardStrategy extends HTMLElement {
         path: def.path,
         icon: def.icon,
         subview: def.alwaysInNav ? false : !showSummaryViews,
-        ...(def.visibleUsers && def.visibleUsers.length > 0
-          ? { visible: def.visibleUsers.map((user) => ({ user })) }
-          : {}),
         ...utilityConfigs[i],
       })),
       ...visibleAreas.map((area, i) => ({
@@ -207,7 +202,7 @@ class Simon42DashboardStrategy extends HTMLElement {
 
     return {
       title: localize('dashboard.title'),
-      views: generatedViews,
+      views: generatedViews.map((view) => applyViewVisibility(view, config)),
     };
   }
 
