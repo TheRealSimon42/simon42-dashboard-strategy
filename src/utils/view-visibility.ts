@@ -5,8 +5,9 @@ export function getViewVisibleUsers(
   config: Simon42StrategyConfig,
   path: string,
 ): string[] | undefined {
-  if (Object.prototype.hasOwnProperty.call(config.view_visible_users || {}, path)) {
-    return config.view_visible_users?.[path] || [];
+  const rules = config.view_visible_users || {};
+  if (Object.hasOwn(rules, path)) {
+    return (Reflect.get(rules, path) as string[] | undefined) || [];
   }
   if (path === 'maintenance' && (config.maintenance_visible_users?.length || 0) > 0) {
     return config.maintenance_visible_users;

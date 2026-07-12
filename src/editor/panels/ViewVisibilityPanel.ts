@@ -6,6 +6,9 @@ import { getViewVisibleUsers } from '../../utils/view-visibility';
 import type { Simon42StrategyConfig } from '../../types/strategy';
 import type { StrategyEditorHost } from '../editor-host';
 
+/* eslint-disable xss/no-mixed-html, @typescript-eslint/no-confusing-void-expression --
+   lit-html escapes interpolations; concise checkbox handlers are the editor convention. */
+
 interface ViewOption {
   path: string;
   title: string;
@@ -50,9 +53,9 @@ function getViewOptions(host: StrategyEditorHost): ViewOption[] {
   if (!host._hass) return [];
   const config = host._config;
   const views: ViewOption[] = [{ path: 'home', title: localize('views.overview') }];
-  const add = (enabled: boolean, path: string, titleKey: string) => {
+  function add(enabled: boolean, path: string, titleKey: string): void {
     if (enabled) views.push({ path, title: localize(titleKey) });
-  };
+  }
 
   add(config.show_light_summary !== false, 'lights', 'views.lights');
   add(config.show_covers_summary !== false, 'covers', 'views.covers');
@@ -65,8 +68,8 @@ function getViewOptions(host: StrategyEditorHost): ViewOption[] {
   const roomVisibility = config.room_visibility || {};
   const areas = getVisibleAreasFromHass(host._hass, config.areas_display, config.use_default_area_sort)
     .filter((area) => {
-      const rule = roomVisibility[area.area_id];
-      if (!rule?.entity) return true;
+      const rule = Reflect.get(roomVisibility, area.area_id) as { entity?: string; state?: string } | undefined;
+      if (!rule || !rule.entity) return true;
       return host._hass?.states[rule.entity]?.state === rule.state;
     });
   for (const area of areas) views.push({ path: area.area_id, title: area.name });
@@ -93,7 +96,7 @@ function renderViewUsers(host: StrategyEditorHost, view: ViewOption, users: User
         `view-${view.path}-user-${user.userId}`,
         user.name,
         selected.includes(user.userId),
-        (checked) => viewUserChanged(host, view.path, user.userId, users.map((option) => option.userId), checked),
+        (checked) => { viewUserChanged(host, view.path, user.userId, users.map((option) => option.userId), checked); },
       ))}
     </div>
   `;
@@ -107,7 +110,7 @@ export function viewUserChanged(
   checked: boolean,
 ): void {
   const currentMap = host._config.view_visible_users || {};
-  const hasRule = Object.prototype.hasOwnProperty.call(currentMap, path);
+  const hasRule = Object.hasOwn(currentMap, path);
   const configured = getViewVisibleUsers(host._config, path);
   const effective = new Set(hasRule || configured !== undefined ? (configured || []) : knownUserIds);
   if (checked) effective.add(userId);
@@ -117,9 +120,9 @@ export function viewUserChanged(
   const unknown = [...effective].filter((id) => !knownUserIds.includes(id));
   const nextMap = { ...currentMap };
   if (unknown.length === 0 && known.length === knownUserIds.length) {
-    delete nextMap[path];
+    Reflect.deleteProperty(nextMap, path);
   } else {
-    nextMap[path] = [...known, ...unknown];
+    Reflect.set(nextMap, path, [...known, ...unknown]);
   }
 
   const updated: Simon42StrategyConfig = { ...host._config };

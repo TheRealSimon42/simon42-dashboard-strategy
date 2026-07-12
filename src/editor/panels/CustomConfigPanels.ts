@@ -377,7 +377,9 @@ function addCustomView(host: StrategyEditorHost): void {
 
 export function removeCustomView(host: StrategyEditorHost, index: number): void {
   const customViews: CustomView[] = [...(host._config.custom_views || [])];
-  const removed = customViews.splice(index, 1)[0];
+  const removed = customViews.at(index);
+  if (!removed) return;
+  customViews.splice(index, 1);
 
   const newConfig: Simon42StrategyConfig = { ...host._config };
   if (customViews.length === 0) {
@@ -385,9 +387,9 @@ export function removeCustomView(host: StrategyEditorHost, index: number): void 
   } else {
     newConfig.custom_views = customViews;
   }
-  if (removed?.path && Object.prototype.hasOwnProperty.call(newConfig.view_visible_users || {}, removed.path)) {
+  if (removed.path && Object.hasOwn(newConfig.view_visible_users || {}, removed.path)) {
     const nextVisibility = { ...(newConfig.view_visible_users || {}) };
-    delete nextVisibility[removed.path];
+    Reflect.deleteProperty(nextVisibility, removed.path);
     if (Object.keys(nextVisibility).length === 0) delete newConfig.view_visible_users;
     else newConfig.view_visible_users = nextVisibility;
   }
@@ -405,11 +407,11 @@ export function updateCustomViewField(host: StrategyEditorHost, index: number, f
 
   const newConfig: Simon42StrategyConfig = { ...host._config, custom_views: customViews };
   if (field === 'path' && existing.path && existing.path !== value
-      && Object.prototype.hasOwnProperty.call(newConfig.view_visible_users || {}, existing.path)) {
+      && Object.hasOwn(newConfig.view_visible_users || {}, existing.path)) {
     const nextVisibility = { ...(newConfig.view_visible_users || {}) };
-    const users = nextVisibility[existing.path] || [];
-    delete nextVisibility[existing.path];
-    if (value) nextVisibility[value] = users;
+    const users = Reflect.get(nextVisibility, existing.path) as string[];
+    Reflect.deleteProperty(nextVisibility, existing.path);
+    if (value) Reflect.set(nextVisibility, value, users);
     if (Object.keys(nextVisibility).length === 0) delete newConfig.view_visible_users;
     else newConfig.view_visible_users = nextVisibility;
   }
