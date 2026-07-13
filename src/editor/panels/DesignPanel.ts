@@ -43,7 +43,7 @@ export function renderDesignSection(host: StrategyEditorHost): TemplateResult {
   const image = background.image;
   const opacity = typeof background.opacity === 'number' ? background.opacity : 100;
   const fixed = background.attachment === 'fixed';
-  const themeNames = Object.keys(host._hass?.themes?.themes || {}).sort((a, b) => a.localeCompare(b));
+  const themeNames = Object.keys(host._hass ? host._hass.themes.themes : {}).sort((a, b) => a.localeCompare(b));
   // ha-form ships with HA's dashboard edit dialog; fall back to a plain
   // path input in the unlikely case it isn't registered
   const hasHaForm = !!customElements.get('ha-form');
