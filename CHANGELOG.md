@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.16](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.15...v1.4.0-beta.16) (2026-07-13)
+
+
+### Features
+
+* reference views from other dashboards in custom views ([#372](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/372)) ([34cfa01](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/34cfa0163679ac6397244eaab95e1576c8214553))
+
 ## [1.4.0-beta.15](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.14...v1.4.0-beta.15) (2026-07-12)
 
 
