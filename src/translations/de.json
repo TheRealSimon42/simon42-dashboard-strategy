@@ -398,6 +398,7 @@
     "view_visibility_desc": "Lege pro View fest, welche Benutzer den Tab sehen. Ohne Einschränkung ist die View für alle sichtbar. Das ist reine Anzeigelogik und keine Zugriffssperre.",
     "view_visibility_no_users": "Keine Personen mit verknüpftem HA-Benutzer gefunden — Regeln können alternativ per YAML-Schlüssel view_visible_users gesetzt werden.",
     "view_visibility_warning": "Wichtig: Versteckt werden nur der Tab in der Kopfzeile und die Einstiegspunkte auf der Übersicht (Zusammenfassungs-Kacheln, Bereichskarten). Die View bleibt über ihre URL erreichbar — das ist kein echter Zugriffsschutz.",
+    "view_visibility_no_person_warning": "Benutzer-Accounts ohne verknüpfte Person können hier nicht ausgewählt werden. Sobald eine View oder Section eine Sichtbarkeits-Regel hat, sehen diese Accounts sie nicht mehr — ohne Regel sehen sie weiterhin alles. Abhilfe: dem Benutzer unter Einstellungen → Personen eine Person zuweisen.",
     "view_visibility_reload_hint": "Nach Änderungen an den Regeln die Browser-Seite bzw. den Tab neu laden, damit sie überall greifen.",
     "view_visibility_views_title": "Views",
     "view_visibility_sections_title": "Sections der Übersicht",
