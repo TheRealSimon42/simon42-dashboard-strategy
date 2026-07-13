@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.17](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.16...v1.4.0-beta.17) (2026-07-13)
+
+
+### Features
+
+* global theme and background image for all views ([#374](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/374)) ([f3de40c](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/f3de40c3cafbd317ed1881d67523caa041a83781))
+
 ## [1.4.0-beta.16](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.15...v1.4.0-beta.16) (2026-07-13)
 
 
