@@ -12,6 +12,7 @@
 // imports keep working. See src/sections/section-registry.ts.
 
 import type { SectionKey } from '../sections/section-registry';
+import type { LovelaceViewBackgroundConfig } from './lovelace';
 
 export type { SectionKey, SectionMeta } from '../sections/section-registry';
 export { DEFAULT_SECTIONS_ORDER } from '../sections/section-registry';
@@ -199,6 +200,18 @@ export interface Simon42StrategyConfig {
   show_window_alerts_on_areas?: boolean; // default: false
   energy_link_dashboard?: boolean; // default: true
   hide_unavailable_entities?: boolean; // default: false
+  /**
+   * Design (#188): theme name stamped on every view (native per-view
+   * `theme` key). Views that set their own theme (custom view YAML) win.
+   * Omit = HA default / user profile theme.
+   */
+  theme?: string;
+  /**
+   * Design (#188): background stamped on every view (native per-view
+   * `background` key, HA schema). Only applied when `image` is set;
+   * views with their own background (custom view YAML) win.
+   */
+  background?: LovelaceViewBackgroundConfig;
   /**
    * Per-section conditional visibility. Keyed by SectionKey. When set, the
    * section is only rendered when hass.states[entity].state === state.

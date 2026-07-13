@@ -471,7 +471,15 @@
     "ref_default_dashboard": "Панель по умолчанию",
     "ref_dashboard_missing": "Указанная панель больше не существует или недоступна для ссылки",
     "ref_valid": "Ссылка действительна",
-    "ref_incomplete": "Выберите панель и view, чтобы завершить ссылку"
+    "ref_incomplete": "Выберите панель и view, чтобы завершить ссылку",
+    "section_design": "Оформление",
+    "design_desc": "Тема и фоновое изображение для всех view панели. Custom views с собственной темой/фоном в YAML сохраняют свои настройки.",
+    "design_theme_label": "Тема",
+    "design_theme_default": "По умолчанию (тема профиля/устройства)",
+    "design_bg_image_label": "Фоновое изображение",
+    "design_bg_image_hint": "Путь или URL изображения, например /local/background.jpg (сначала загрузите файл через управление медиа или в папку www). Оставьте пустым, чтобы убрать фон. Размер/выравнивание настраиваются через YAML-ключ background.",
+    "design_bg_opacity_label": "Непрозрачность",
+    "design_bg_fixed_label": "Зафиксировать фон при прокрутке"
   },
   "custom_views": {
     "ref_error_title": "Не удалось загрузить связанную view",

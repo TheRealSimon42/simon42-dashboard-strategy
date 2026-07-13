@@ -59,6 +59,7 @@ export interface LovelaceViewConfig {
   path?: string;
   icon?: string;
   type?: string;
+  theme?: string;
   subview?: boolean;
   max_columns?: number;
   dense_section_placement?: boolean;

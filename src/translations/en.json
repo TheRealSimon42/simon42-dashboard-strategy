@@ -471,7 +471,15 @@
     "ref_default_dashboard": "Default dashboard",
     "ref_dashboard_missing": "The referenced dashboard no longer exists or is no longer referenceable",
     "ref_valid": "Reference valid",
-    "ref_incomplete": "Select a dashboard and view to complete the reference"
+    "ref_incomplete": "Select a dashboard and view to complete the reference",
+    "section_design": "Design",
+    "design_desc": "Theme and background image for all views of the dashboard. Custom views that set their own theme/background in YAML keep their setting.",
+    "design_theme_label": "Theme",
+    "design_theme_default": "Default (profile/device theme)",
+    "design_bg_image_label": "Background image",
+    "design_bg_image_hint": "Path or URL to the image, e.g. /local/background.jpg (upload the file via media management or into the www folder first). Leave empty for no background. Size/alignment remain adjustable via the background YAML key.",
+    "design_bg_opacity_label": "Opacity",
+    "design_bg_fixed_label": "Fix background while scrolling"
   },
   "custom_views": {
     "ref_error_title": "Referenced view could not be loaded",

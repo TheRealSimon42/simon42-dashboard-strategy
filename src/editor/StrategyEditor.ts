@@ -40,6 +40,7 @@ import {
   renderCustomSectionsSection,
 } from './panels/CustomConfigPanels';
 import { renderSectionOrderPanel } from './panels/SectionOrderPanel';
+import { renderDesignSection } from './panels/DesignPanel';
 import { renderSummariesSection } from './panels/SummariesPanel';
 import { renderAreasSection, areaOptionsFor } from './panels/AreasPanel';
 import {
@@ -76,6 +77,7 @@ const PANELS: Record<string, PanelMeta> = {
   custom_sections: { key: 'custom_sections', icon: 'mdi:view-grid-plus-outline', labelKey: 'editor.section_custom_sections' },
   custom_badges: { key: 'custom_badges', icon: 'mdi:label-outline', labelKey: 'editor.section_custom_badges', tutorialUrl: `${ASSETS}/Custom-Badges-hinzufugen.gif` },
   custom_views: { key: 'custom_views', icon: 'mdi:tab-plus', labelKey: 'editor.section_custom_views', tutorialUrl: `${ASSETS}/Custom-View-hinzufugen.gif` },
+  design: { key: 'design', icon: 'mdi:palette-swatch-outline', labelKey: 'editor.section_design' },
 };
 
 // ====================================================================
@@ -172,6 +174,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
         ${renderCollapsiblePanel(this, PANELS.custom_sections, () => renderCustomSectionsSection(this))}
         ${renderCollapsiblePanel(this, PANELS.custom_badges, () => renderCustomBadgesSection(this))}
         ${renderCollapsiblePanel(this, PANELS.custom_views, () => renderCustomViewsSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.design, () => renderDesignSection(this))}
       </div>
     `;
   }

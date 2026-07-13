@@ -471,7 +471,15 @@
     "ref_default_dashboard": "Standard-Dashboard",
     "ref_dashboard_missing": "Das referenzierte Dashboard existiert nicht mehr oder ist nicht mehr referenzierbar",
     "ref_valid": "Referenz gültig",
-    "ref_incomplete": "Dashboard und View auswählen, um die Referenz zu vervollständigen"
+    "ref_incomplete": "Dashboard und View auswählen, um die Referenz zu vervollständigen",
+    "section_design": "Design",
+    "design_desc": "Theme und Hintergrundbild für alle Views des Dashboards. Eigene Custom Views mit eigenem Theme/Hintergrund im YAML behalten ihre Einstellung.",
+    "design_theme_label": "Theme",
+    "design_theme_default": "Standard (Profil-/Geräte-Theme)",
+    "design_bg_image_label": "Hintergrundbild",
+    "design_bg_image_hint": "Pfad oder URL zum Bild, z.B. /local/hintergrund.jpg (Datei vorher über die Medienverwaltung oder in den www-Ordner hochladen). Leer lassen für keinen Hintergrund. Größe/Ausrichtung sind per YAML-Schlüssel background weiter anpassbar.",
+    "design_bg_opacity_label": "Deckkraft",
+    "design_bg_fixed_label": "Hintergrund beim Scrollen fixieren"
   },
   "custom_views": {
     "ref_error_title": "Referenzierte View konnte nicht geladen werden",

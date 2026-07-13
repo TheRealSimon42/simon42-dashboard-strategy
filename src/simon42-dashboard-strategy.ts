@@ -65,6 +65,7 @@ class Simon42DashboardStrategy extends HTMLElement {
     const { withUnavailableEntitiesHidden } = await import('./utils/availability-utils');
     const { applyViewVisibility } = await import('./utils/view-visibility');
     const { resolveCustomViews } = await import('./utils/custom-view-ref');
+    const { applyDesign } = await import('./utils/design');
     t('imports done');
 
     const getStrategy = (tag: string): any => customElements.get(tag);
@@ -197,7 +198,7 @@ class Simon42DashboardStrategy extends HTMLElement {
 
     return {
       title: localize('dashboard.title'),
-      views: generatedViews.map((view) => applyViewVisibility(view, config)),
+      views: generatedViews.map((view) => applyViewVisibility(applyDesign(view, config), config)),
     };
   }
 
