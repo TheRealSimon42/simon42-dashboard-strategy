@@ -477,7 +477,7 @@
     "design_theme_label": "Тема",
     "design_theme_default": "По умолчанию (тема профиля/устройства)",
     "design_bg_image_label": "Фоновое изображение",
-    "design_bg_image_hint": "Путь или URL изображения, например /local/background.jpg (сначала загрузите файл через управление медиа или в папку www). Оставьте пустым, чтобы убрать фон. Размер/выравнивание настраиваются через YAML-ключ background.",
+    "design_bg_image_hint": "Выберите изображение через медиа-диалог или загрузите напрямую. Альтернативно через YAML: background.image принимает путь/URL (например /local/background.jpg); размер/выравнивание — через другие ключи background.",
     "design_bg_opacity_label": "Непрозрачность",
     "design_bg_fixed_label": "Зафиксировать фон при прокрутке"
   },

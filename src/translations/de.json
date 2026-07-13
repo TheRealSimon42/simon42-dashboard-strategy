@@ -477,7 +477,7 @@
     "design_theme_label": "Theme",
     "design_theme_default": "Standard (Profil-/Geräte-Theme)",
     "design_bg_image_label": "Hintergrundbild",
-    "design_bg_image_hint": "Pfad oder URL zum Bild, z.B. /local/hintergrund.jpg (Datei vorher über die Medienverwaltung oder in den www-Ordner hochladen). Leer lassen für keinen Hintergrund. Größe/Ausrichtung sind per YAML-Schlüssel background weiter anpassbar.",
+    "design_bg_image_hint": "Bild über den Medien-Dialog wählen oder direkt hochladen. Alternativ per YAML: background.image auch als Pfad/URL (z.B. /local/hintergrund.jpg); Größe/Ausrichtung über weitere background-Schlüssel.",
     "design_bg_opacity_label": "Deckkraft",
     "design_bg_fixed_label": "Hintergrund beim Scrollen fixieren"
   },

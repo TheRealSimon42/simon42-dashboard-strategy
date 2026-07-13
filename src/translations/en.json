@@ -477,7 +477,7 @@
     "design_theme_label": "Theme",
     "design_theme_default": "Default (profile/device theme)",
     "design_bg_image_label": "Background image",
-    "design_bg_image_hint": "Path or URL to the image, e.g. /local/background.jpg (upload the file via media management or into the www folder first). Leave empty for no background. Size/alignment remain adjustable via the background YAML key.",
+    "design_bg_image_hint": "Pick an image via the media dialog or upload one directly. Alternatively via YAML: background.image also accepts a path/URL (e.g. /local/background.jpg); size/alignment via further background keys.",
     "design_bg_opacity_label": "Opacity",
     "design_bg_fixed_label": "Fix background while scrolling"
   },

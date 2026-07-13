@@ -16,16 +16,37 @@
 import { html, nothing, type TemplateResult } from 'lit';
 import { localize } from '../../utils/localize';
 import type { Simon42StrategyConfig } from '../../types/strategy';
-import type { LovelaceViewBackgroundConfig } from '../../types/lovelace';
+import type { LovelaceViewBackgroundConfig, MediaSelectorValue } from '../../types/lovelace';
 import type { StrategyEditorHost } from '../editor-host';
+
+/**
+ * Same media-selector schema HA's own view background editor uses
+ * (hui-view-background-editor): media browser + direct image upload.
+ */
+const BG_IMAGE_FORM_SCHEMA = [
+  {
+    name: 'image',
+    selector: {
+      media: {
+        accept: ['image/*'],
+        clearable: true,
+        image_upload: true,
+        hide_content_type: true,
+      },
+    },
+  },
+];
 
 export function renderDesignSection(host: StrategyEditorHost): TemplateResult {
   const theme = host._config.theme || '';
   const background = host._config.background || {};
-  const image = typeof background.image === 'string' ? background.image : '';
+  const image = background.image;
   const opacity = typeof background.opacity === 'number' ? background.opacity : 100;
   const fixed = background.attachment === 'fixed';
   const themeNames = Object.keys(host._hass?.themes?.themes || {}).sort((a, b) => a.localeCompare(b));
+  // ha-form ships with HA's dashboard edit dialog; fall back to a plain
+  // path input in the unlikely case it isn't registered
+  const hasHaForm = !!customElements.get('ha-form');
 
   return html`
       <div class="description" style="margin-left: 0;">${localize('editor.design_desc')}</div>
@@ -41,11 +62,24 @@ export function renderDesignSection(host: StrategyEditorHost): TemplateResult {
         </select>
       </div>
 
-      <div class="custom-item-row" style="margin-top: 12px; align-items: center;">
-        <label style="flex: 1;">${localize('editor.design_bg_image_label')}:</label>
-        <input type="text" style="flex: 2;" .value=${image}
-          placeholder="/local/hintergrund.jpg"
-          @change=${(e: Event) => backgroundImageChanged(host, (e.target as HTMLInputElement).value.trim())} />
+      <div style="margin-top: 12px;">
+        ${hasHaForm
+          ? html`
+            <ha-form
+              .hass=${host._hass}
+              .data=${{ image }}
+              .schema=${BG_IMAGE_FORM_SCHEMA}
+              .computeLabel=${() => localize('editor.design_bg_image_label')}
+              @value-changed=${(e: CustomEvent<{ value: { image?: string | MediaSelectorValue } }>) =>
+                backgroundImageChanged(host, e.detail.value.image)}
+            ></ha-form>`
+          : html`
+            <div class="custom-item-row" style="align-items: center;">
+              <label style="flex: 1;">${localize('editor.design_bg_image_label')}:</label>
+              <input type="text" style="flex: 2;" .value=${typeof image === 'string' ? image : ''}
+                placeholder="/local/hintergrund.jpg"
+                @change=${(e: Event) => backgroundImageChanged(host, (e.target as HTMLInputElement).value.trim())} />
+            </div>`}
       </div>
       <div class="description">${localize('editor.design_bg_image_hint')}</div>
 
@@ -75,9 +109,11 @@ function themeChanged(host: StrategyEditorHost, value: string): void {
   host._fireConfigChanged(newConfig);
 }
 
-function backgroundImageChanged(host: StrategyEditorHost, image: string): void {
+function backgroundImageChanged(host: StrategyEditorHost, image: string | MediaSelectorValue | undefined): void {
+  // Media selector emits undefined when cleared; treat '' the same
+  const hasImage = typeof image === 'string' ? image !== '' : !!image;
   const newConfig: Simon42StrategyConfig = { ...host._config };
-  if (image) {
+  if (hasImage) {
     newConfig.background = { ...(newConfig.background || {}), image };
   } else {
     // Without an image the background is meaningless — drop the whole key

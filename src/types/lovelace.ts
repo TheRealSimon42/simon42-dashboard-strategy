@@ -103,8 +103,15 @@ export interface LovelaceViewHeaderConfig {
   badges_wrap?: 'wrap' | 'nowrap';
 }
 
+/** Media-selector value as stored by HA's media picker (background image). */
+export interface MediaSelectorValue {
+  media_content_id?: string;
+  media_content_type?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface LovelaceViewBackgroundConfig {
-  image?: string;
+  image?: string | MediaSelectorValue;
   opacity?: number;
   size?: 'auto' | 'cover' | 'contain';
   alignment?: string;
