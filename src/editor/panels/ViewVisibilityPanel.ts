@@ -98,7 +98,8 @@ function getViewOptions(host: StrategyEditorHost): RuleOption[] {
   for (const area of areas) views.push({ key: area.area_id, title: area.name });
 
   for (const view of config.custom_views || []) {
-    if (view.parsed_config && view.title && view.path) {
+    const isComplete = view.parsed_config || (view.ref_dashboard && view.ref_view);
+    if (isComplete && view.title && view.path) {
       views.push({ key: view.path, title: view.title });
     }
   }

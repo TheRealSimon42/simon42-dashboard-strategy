@@ -452,6 +452,13 @@ sections:
   <img src="https://raw.githubusercontent.com/TheRealSimon42/simon42-dashboard-strategy/main/assets/Custom-View-hinzufugen.gif" alt="Custom View hinzufügen" width="800" />
 </p>
 
+**Views aus anderen Dashboards referenzieren** *(ab v1.4.0)* — Statt YAML zu kopieren, kann eine Custom View auch eine View aus einem anderen Dashboard **per Referenz** einbinden (Button „View aus Dashboard referenzieren"). Die View wird bei jedem Laden live aus dem Quell-Dashboard übernommen — Änderungen dort erscheinen automatisch auch im Simon42-Dashboard, ganz ohne Copy & Paste. Dashboard und View werden per Dropdown gewählt; Titel, Pfad und Icon werden automatisch vorbefüllt und bleiben anpassbar.
+
+Zu wissen:
+- Dashboards, die selbst von einer Strategy generiert werden (auch dieses), können nicht referenziert werden — sie haben keine gespeicherten Views.
+- Wird die referenzierte View oder das Quell-Dashboard gelöscht, zeigt die View eine verständliche Fehlerkarte statt eines Fehlers — die Referenz lässt sich dann im Editor korrigieren.
+- Die Sichtbarkeit der referenzierten View folgt dem Simon42-Dashboard: Wer dieses Dashboard sehen darf, sieht auch die referenzierte View — unabhängig von der Sichtbarkeit des Quell-Dashboards.
+
 ### Entity-Filterung
 
 Entitäten können auf mehreren Ebenen gefiltert werden:
@@ -603,7 +610,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `custom_cards_heading` | string | `"Eigene Karten"` | — | Überschrift der Custom Cards Section |
 | `custom_cards_icon` | string | `"mdi:cards"` | — | Icon der Custom Cards Section |
 | `custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke auf der Übersicht (Key + kompletter Section-Code als YAML — siehe oben) |
-| `custom_views` | object[] | `[]` | — | Eigene Views via YAML |
+| `custom_views` | object[] | `[]` | — | Eigene Views via YAML oder als Referenz auf eine View eines anderen Dashboards (`ref_dashboard` + `ref_view`, ab v1.4.0) |
 
 </details>
 

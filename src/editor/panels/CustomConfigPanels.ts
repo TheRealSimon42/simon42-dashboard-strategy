@@ -333,9 +333,11 @@ export function renderCustomViewsSection(host: StrategyEditorHost): TemplateResu
       <div class="custom-item-row" style="margin-top: 8px;">
         <button class="btn-primary" @click=${() => addCustomView(host)}>
           ${localize('editor.add_custom_view')}
+          <ha-icon icon="mdi:code-braces" style="--mdc-icon-size: 16px;"></ha-icon>
         </button>
         <button class="btn-primary" @click=${() => addCustomRefView(host)}>
           ${localize('editor.add_custom_view_ref')}
+          <ha-icon icon="mdi:link-variant" style="--mdc-icon-size: 16px;"></ha-icon>
         </button>
       </div>
       <div class="description">${localize('editor.custom_views_help')}</div>
@@ -458,7 +460,10 @@ async function loadRefDashboards(host: StrategyEditorHost): Promise<void> {
     });
     const candidates = [
       { url_path: 'lovelace', title: localize('editor.ref_default_dashboard') },
-      ...list.map((d) => ({ url_path: d.url_path, title: d.title })),
+      // Some HA versions include the default dashboard in the list — dedupe
+      ...list
+        .filter((d) => d.url_path && d.url_path !== 'lovelace')
+        .map((d) => ({ url_path: d.url_path, title: d.title })),
     ];
     await Promise.all(
       candidates.map(async (candidate) => {
