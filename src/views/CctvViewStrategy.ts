@@ -46,6 +46,13 @@ const REOLINK_STREAM_PREFERENCE = [
   'snapshots_main',
 ];
 
+// -- Camera stream preference (other integrations) ----------------------
+// Ring exposes two camera entities per doorbell/cam: the live stream
+// (translation_key 'live_view') and a 'last_recording' snapshot camera.
+// Without a preference the per-device dedup keeps whichever entity the
+// registry lists first — which can silently drop the live view (#378).
+const LIVE_STREAM_PREFERENCE = ['live_view'];
+
 // -- PTZ pad ------------------------------------------------------------
 // Reolink button translation_keys (homeassistant/components/reolink/button.py).
 // Only buttons that actually exist on the device are rendered.
@@ -251,7 +258,7 @@ function isVisibleWithState(entityId: string, hass: HomeAssistant): boolean {
 }
 
 function pickPrimaryCamera(cameraIds: string[]): string {
-  for (const preferredKey of REOLINK_STREAM_PREFERENCE) {
+  for (const preferredKey of [...REOLINK_STREAM_PREFERENCE, ...LIVE_STREAM_PREFERENCE]) {
     for (const id of cameraIds) {
       if (Registry.getEntity(id)?.translation_key === preferredKey) return id;
     }
