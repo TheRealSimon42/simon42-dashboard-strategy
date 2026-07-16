@@ -62,6 +62,7 @@ const STACK_META = new Map<StackKey, { icon: string; labelKey: string }>([
   ['media', { icon: 'mdi:speaker', labelKey: 'stacks.media' }],
   ['scenes', { icon: 'mdi:palette', labelKey: 'stacks.scenes' }],
   ['vacuums', { icon: 'mdi:robot-vacuum', labelKey: 'stacks.vacuums' }],
+  ['switches', { icon: 'mdi:toggle-switch', labelKey: 'stacks.switches' }],
   ['misc', { icon: 'mdi:dots-horizontal', labelKey: 'stacks.misc' }],
   ['automations', { icon: 'mdi:robot', labelKey: 'stacks.automations' }],
   ['scripts', { icon: 'mdi:script-text', labelKey: 'stacks.scripts' }],
@@ -88,6 +89,7 @@ function presentStackKeys(host: StrategyEditorHost,
   if (has('media_player')) present.add('media');
   if (has('scenes')) present.add('scenes');
   if (has('vacuum') && host._config.show_vacuums_section_in_rooms === true) present.add('vacuums');
+  if (has('switches') && host._config.show_switches_section_in_rooms === true) present.add('switches');
   if (has('vacuum') || has('switches') || has('humidifier') || has('valve') || has('water_heater')) present.add('misc');
   if (has('automations')) present.add('automations');
   if (has('scripts')) present.add('scripts');

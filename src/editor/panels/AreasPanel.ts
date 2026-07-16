@@ -52,6 +52,7 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const showWindowAlertsOnAreas = host._config.show_window_alerts_on_areas === true;
   const showLocksInRooms = host._config.show_locks_in_rooms === true;
   const showVacuumsSectionInRooms = host._config.show_vacuums_section_in_rooms === true;
+  const showSwitchesSectionInRooms = host._config.show_switches_section_in_rooms === true;
   const showAutomationsInRooms = host._config.show_automations_in_rooms === true;
   const showScriptsInRooms = host._config.show_scripts_in_rooms === true;
   const showUpsInRooms = host._config.show_ups_in_rooms === true;
@@ -94,6 +95,10 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
       ${host._renderCheckbox('show-vacuums-section-in-rooms', localize('editor.show_vacuums_section_in_rooms'), showVacuumsSectionInRooms,
         (checked) => host._toggleChanged('show_vacuums_section_in_rooms', checked, false))}
       <div class="description">${localize('editor.show_vacuums_section_in_rooms_desc')}</div>
+
+      ${host._renderCheckbox('show-switches-section-in-rooms', localize('editor.show_switches_section_in_rooms'), showSwitchesSectionInRooms,
+        (checked) => host._toggleChanged('show_switches_section_in_rooms', checked, false))}
+      <div class="description">${localize('editor.show_switches_section_in_rooms_desc')}</div>
 
       ${host._renderCheckbox('show-automations-in-rooms', localize('editor.show_automations_in_rooms'), showAutomationsInRooms,
         (checked) => host._toggleChanged('show_automations_in_rooms', checked, false))}
