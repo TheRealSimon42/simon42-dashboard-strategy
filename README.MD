@@ -614,7 +614,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `custom_cards_heading` | string | `"Eigene Karten"` | — | Überschrift der Custom Cards Section |
 | `custom_cards_icon` | string | `"mdi:cards"` | — | Icon der Custom Cards Section |
 | `custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke auf der Übersicht (Key + kompletter Section-Code als YAML — siehe oben) |
-| `custom_views` | object[] | `[]` | — | Eigene Views via YAML oder als Referenz auf eine View eines anderen Dashboards (`ref_dashboard` + `ref_view`, ab v1.4.0) |
+| `custom_views` | object[] | `[]` | — | Eigene Views via YAML oder als Referenz auf eine View eines anderen Dashboards (`ref_dashboard` + `ref_view`, ab v1.4.0). Mit `after_view` (ab v1.4.0) lässt sich die View hinter einer beliebigen generierten View einsortieren — z.B. zwischen zwei Räumen (Wert = View-Pfad, etwa die Bereichs-ID; Dropdown im Editor). Ohne `after_view` erscheint sie wie bisher am Ende |
 
 </details>
 

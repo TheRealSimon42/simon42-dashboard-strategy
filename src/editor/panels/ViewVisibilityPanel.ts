@@ -10,7 +10,7 @@ import type { StrategyEditorHost } from '../editor-host';
 /* eslint-disable xss/no-mixed-html, @typescript-eslint/no-confusing-void-expression --
    lit-html escapes interpolations; concise checkbox handlers are the editor convention. */
 
-interface RuleOption {
+export interface RuleOption {
   /** Rule key: view path (view_visible_users) or section key (section_visible_users) */
   key: string;
   title: string;
@@ -75,7 +75,12 @@ function getUserOptions(host: StrategyEditorHost): UserOption[] {
   return options.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function getViewOptions(host: StrategyEditorHost): RuleOption[] {
+/**
+ * All views the strategy currently generates (path + display title), in tab
+ * order. Also reused by the custom-views panel as anchor targets for
+ * `after_view` (#377) — the list mirrors exactly what generate() emits.
+ */
+export function getViewOptions(host: StrategyEditorHost): RuleOption[] {
   if (!host._hass) return [];
   const config = host._config;
   const views: RuleOption[] = [{ key: 'home', title: localize('views.overview') }];

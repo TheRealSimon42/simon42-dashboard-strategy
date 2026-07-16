@@ -405,6 +405,8 @@
     "view_visibility_sections_desc": "Lege pro Section der Übersicht fest, welche Benutzer sie sehen (z. B. Wetter, Energie oder eigene Sections).",
     "add_custom_view": "+ Neue View hinzufügen",
     "custom_views_help": "Erstelle eigene Views mit beliebigen Cards. Tipp: Erstelle die View zuerst in einem normalen Dashboard, kopiere den YAML-Code und füge ihn hier ein.",
+    "custom_view_position_end": "Position: am Ende der Tab-Leiste (Standard)",
+    "custom_view_position_after": "Position: nach",
     "no_favorites": "Keine Favoriten hinzugefügt",
     "no_room_pins": "Keine Raum-Pins hinzugefügt",
     "room_pins_first": "Pins ganz oben im Raum anzeigen (statt am Ende)",

@@ -136,3 +136,42 @@ export async function resolveCustomViews(
   }
   return resolved;
 }
+
+/**
+ * Insert the resolved custom views into the generated view list (#377).
+ * Each custom view with an `after_view` anchor is placed directly behind
+ * the view with that path; unset or unknown anchors append at the end
+ * (previous behavior). Same-anchor views keep their config order, and
+ * anchors may point at custom views inserted earlier in the list.
+ * Mutates and returns `views`.
+ */
+export function insertCustomViews(
+  views: LovelaceViewConfig[],
+  customViews: CustomView[],
+  resolvedViews: LovelaceViewConfig[]
+): LovelaceViewConfig[] {
+  const anchorByPath = new Map<string, string>();
+  for (const cv of customViews) {
+    if (cv.path && cv.after_view) anchorByPath.set(cv.path, cv.after_view);
+  }
+
+  const insertedPerAnchor = new Map<string, number>();
+  for (const view of resolvedViews) {
+    const anchor = view.path ? anchorByPath.get(view.path) : undefined;
+    const anchorIndex = anchor
+      ? views.findIndex(function byPath(v) {
+          return v.path === anchor;
+        })
+      : -1;
+    if (anchor !== undefined && anchorIndex >= 0) {
+      // Same-anchor views keep their config order: skip past the ones
+      // already inserted behind this anchor.
+      const offset = insertedPerAnchor.get(anchor) ?? 0;
+      views.splice(anchorIndex + 1 + offset, 0, view);
+      insertedPerAnchor.set(anchor, offset + 1);
+    } else {
+      views.push(view);
+    }
+  }
+  return views;
+}

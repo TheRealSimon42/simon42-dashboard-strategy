@@ -389,6 +389,12 @@ export interface CustomView {
   ref_dashboard?: string;
   /** Reference mode: view path in the source dashboard, or the stringified view index for views without a path */
   ref_view?: string;
+  /**
+   * Position anchor (#377): path of the view after which this custom view
+   * is inserted in the tab order (e.g. an area_id for "between two rooms").
+   * Unset or unknown path = appended at the end (previous behavior).
+   */
+  after_view?: string;
 }
 
 // -- Custom Badges ----------------------------------------------------

@@ -64,7 +64,7 @@ class Simon42DashboardStrategy extends HTMLElement {
     const { localize } = await import('./utils/localize');
     const { withUnavailableEntitiesHidden } = await import('./utils/availability-utils');
     const { applyViewVisibility } = await import('./utils/view-visibility');
-    const { resolveCustomViews } = await import('./utils/custom-view-ref');
+    const { resolveCustomViews, insertCustomViews } = await import('./utils/custom-view-ref');
     const { applyDesign } = await import('./utils/design');
     t('imports done');
 
@@ -191,7 +191,7 @@ class Simon42DashboardStrategy extends HTMLElement {
     // YAML views are appended as-is; reference views (#169) are resolved
     // against their source dashboard via WebSocket at generate time.
     const customViews = config.custom_views || [];
-    generatedViews.push(...(await resolveCustomViews(customViews, hass)));
+    insertCustomViews(generatedViews, customViews, await resolveCustomViews(customViews, hass));
     t('custom views resolved');
 
     t(`generate() done — ${generatedViews.length} views`);

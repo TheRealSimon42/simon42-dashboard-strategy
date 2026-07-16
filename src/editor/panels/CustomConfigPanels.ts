@@ -26,6 +26,7 @@ import type {
 import { DEFAULT_SECTIONS_ORDER } from '../../types/strategy';
 import { SECTION_META_BY_KEY } from '../../sections/section-registry';
 import { localize } from '../../utils/localize';
+import { getViewOptions } from './ViewVisibilityPanel';
 import type { StrategyEditorHost, RefDashboardOption } from '../editor-host';
 
 // -- Custom Cards ---------------------------------------------------------
@@ -364,12 +365,55 @@ function renderCustomViewItem(host: StrategyEditorHost, view: CustomView, index:
             style="flex: 1;"
             @change=${(e: Event) => updateCustomViewField(host, index, 'icon', (e.target as HTMLInputElement).value)} />
         </div>
+        ${renderCustomViewPositionRow(host, view, index)}
         ${isRefViewItem(view)
           ? renderCustomViewRefFields(host, view, index)
           : renderCustomViewYamlFields(host, view, index)}
       </div>
     </div>
   `;
+}
+
+/**
+ * Position anchor (#377): dropdown of all generated views (in tab order)
+ * after which this custom view is inserted. Default: end of the tab bar.
+ */
+function renderCustomViewPositionRow(host: StrategyEditorHost, view: CustomView, index: number): TemplateResult {
+  const options = getViewOptions(host).filter((option) => option.key !== view.path);
+  // Stored anchor no longer exists (renamed room/view): keep it
+  // selectable-but-marked instead of silently snapping to the end.
+  const orphaned = !!view.after_view && !options.some((option) => option.key === view.after_view);
+
+  return html`
+    <div class="custom-item-row">
+      <select style="flex: 1;"
+        @change=${(e: Event) => updateCustomViewAfterView(host, index, (e.target as HTMLSelectElement).value)}>
+        <option value="" ?selected=${!view.after_view}>${localize('editor.custom_view_position_end')}</option>
+        ${orphaned
+          ? html`<option value=${view.after_view || ''} selected>&#x26A0; ${localize('editor.custom_view_position_after')} ${view.after_view}</option>`
+          : nothing}
+        ${options.map((option) => html`
+          <option value=${option.key} ?selected=${view.after_view === option.key}>
+            ${localize('editor.custom_view_position_after')} ${option.title}
+          </option>`)}
+      </select>
+    </div>
+  `;
+}
+
+function updateCustomViewAfterView(host: StrategyEditorHost, index: number, value: string): void {
+  const customViews: CustomView[] = [...(host._config.custom_views || [])];
+  const existing = customViews.at(index);
+  if (!existing) return;
+
+  const next: CustomView = { ...existing };
+  if (value) next.after_view = value;
+  else delete next.after_view;
+  customViews.splice(index, 1, next);
+
+  const newConfig: Simon42StrategyConfig = { ...host._config, custom_views: customViews };
+  host._config = newConfig;
+  host._fireConfigChanged(newConfig);
 }
 
 function renderCustomViewYamlFields(host: StrategyEditorHost, view: CustomView, index: number): TemplateResult {

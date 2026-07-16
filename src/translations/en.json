@@ -405,6 +405,8 @@
     "view_visibility_sections_desc": "Choose per overview section which users can see it (e.g. weather, energy or your custom sections).",
     "add_custom_view": "+ Add new view",
     "custom_views_help": "Create custom views with any cards. Tip: Create the view in a regular dashboard first, copy the YAML code, and paste it here.",
+    "custom_view_position_end": "Position: at the end of the tab bar (default)",
+    "custom_view_position_after": "Position: after",
     "no_favorites": "No favorites added",
     "no_room_pins": "No room pins added",
     "room_pins_first": "Show pins at the top of the room (instead of at the end)",

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { isRefView, resolveCustomViews } from '../../src/utils/custom-view-ref';
+import { insertCustomViews, isRefView, resolveCustomViews } from '../../src/utils/custom-view-ref';
 import type { HomeAssistant } from '../../src/types/homeassistant';
+import type { LovelaceViewConfig } from '../../src/types/lovelace';
 import type { CustomView } from '../../src/types/strategy';
 
 /** hass stub whose callWS serves canned lovelace/config responses per url_path. */
@@ -136,5 +137,52 @@ describe('resolveCustomViews', () => {
     const views: CustomView[] = [{ title: 'x', path: 'x', ref_dashboard: 'dash-a', ref_view: '' }];
     expect(await resolveCustomViews(views, hass)).toEqual([]);
     expect(hass.callWS).not.toHaveBeenCalled();
+  });
+});
+
+describe('insertCustomViews', () => {
+  function view(path: string): LovelaceViewConfig {
+    return { title: path, path };
+  }
+
+  it('appends views without an anchor at the end (previous behavior)', () => {
+    const generated = [view('home'), view('wohnzimmer'), view('kueche')];
+    const custom: CustomView[] = [{ title: 'Extra', path: 'extra' }];
+    const result = insertCustomViews(generated, custom, [view('extra')]);
+    expect(result.map((v) => v.path)).toEqual(['home', 'wohnzimmer', 'kueche', 'extra']);
+  });
+
+  it('inserts an anchored view directly behind its anchor', () => {
+    const generated = [view('home'), view('wohnzimmer'), view('kueche')];
+    const custom: CustomView[] = [{ title: 'Extra', path: 'extra', after_view: 'wohnzimmer' }];
+    const result = insertCustomViews(generated, custom, [view('extra')]);
+    expect(result.map((v) => v.path)).toEqual(['home', 'wohnzimmer', 'extra', 'kueche']);
+  });
+
+  it('keeps config order for views anchored to the same path', () => {
+    const generated = [view('home'), view('wohnzimmer'), view('kueche')];
+    const custom: CustomView[] = [
+      { title: 'A', path: 'a', after_view: 'wohnzimmer' },
+      { title: 'B', path: 'b', after_view: 'wohnzimmer' },
+    ];
+    const result = insertCustomViews(generated, custom, [view('a'), view('b')]);
+    expect(result.map((v) => v.path)).toEqual(['home', 'wohnzimmer', 'a', 'b', 'kueche']);
+  });
+
+  it('falls back to appending when the anchor path no longer exists', () => {
+    const generated = [view('home'), view('kueche')];
+    const custom: CustomView[] = [{ title: 'Extra', path: 'extra', after_view: 'geloeschter-raum' }];
+    const result = insertCustomViews(generated, custom, [view('extra')]);
+    expect(result.map((v) => v.path)).toEqual(['home', 'kueche', 'extra']);
+  });
+
+  it('resolves anchors pointing at custom views inserted earlier', () => {
+    const generated = [view('home'), view('wohnzimmer')];
+    const custom: CustomView[] = [
+      { title: 'A', path: 'a', after_view: 'home' },
+      { title: 'B', path: 'b', after_view: 'a' },
+    ];
+    const result = insertCustomViews(generated, custom, [view('a'), view('b')]);
+    expect(result.map((v) => v.path)).toEqual(['home', 'a', 'b', 'wohnzimmer']);
   });
 });
