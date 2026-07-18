@@ -3,6 +3,19 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.18](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.17...v1.4.0-beta.18) (2026-07-18)
+
+
+### Features
+
+* opt-in combined switches & outlets section in room views ([#383](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/383)) ([d2c1d04](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/d2c1d045c4379fd1e88c45d7651ed24eca763286))
+* position custom views anywhere in the tab order via after_view ([#384](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/384)) ([9b284e0](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/9b284e03c0b9dedc9761600c72aecb28a6187ed3)), closes [#377](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/377)
+
+
+### Bug Fixes
+
+* prefer live view camera in per-device dedup (Ring doorbells) ([#382](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/382)) ([a57544d](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/a57544dc7582a293221518a982204960b2cfcccc)), closes [#378](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/378)
+
 ## [1.4.0-beta.17](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.16...v1.4.0-beta.17) (2026-07-13)
 
 
