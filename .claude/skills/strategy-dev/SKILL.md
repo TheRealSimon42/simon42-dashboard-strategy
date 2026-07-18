@@ -156,6 +156,18 @@ Module → Risiko → wie verifiziert.
 - **Fork-PRs und CI:** Der HACS-Validation-Job wird bei Fork-PRs übersprungen (er würde sonst
   das Fork-Repo validieren). Ein roter Check bei einem Community-PR ist also erst zu
   verstehen, dann zu kommentieren.
+- **Squash-Merge nimmt bei Single-Commit-PRs die Commit-Message, nicht den PR-Titel**
+  (so in #380 passiert): Ein nachträglich korrigierter PR-Titel geht verloren, der Commit
+  landet ohne Conventional-Commit-Präfix auf `main` — release-please sieht das Feature nicht
+  (kein Changelog-Eintrag, kein Release). Deshalb Community-PRs immer mit explizitem Titel
+  mergen: `gh pr merge <N> --squash --subject "feat: …"`. Vorher den Draft-Status prüfen
+  (`gh pr view <N> --json isDraft`) — ein Draft-Merge schlägt erst nach Update-Branch und
+  Check-Wartezeit fehl. Falls die Message doch falsch gelandet ist: Follow-up-PR mit
+  korrektem `feat:`-Titel und echtem Inhalt (z.B. fehlende Doku) trägt den
+  Changelog-Eintrag nach.
+- **Branch-Protection verlangt aktuelle Branches:** Nach jedem Merge ist der nächste offene
+  PR „BEHIND" und der Merge wird abgelehnt. Sequenz pro PR: `gh pr update-branch <N>` →
+  Checks abwarten → mergen. Bei Fork-PRs vorher `maintainerCanModify` prüfen.
 
 ## Hart erarbeitete Fallen
 
