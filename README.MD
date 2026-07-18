@@ -563,6 +563,8 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 
 **Bereiche & Räume**
 
+**Bereichsfotos** *(ab v1.4.0)* — Mit `area_display_type: picture` (Dropdown im Editor) zeigen die Bereichskarten der Übersicht das in Home Assistant hinterlegte Bereichsfoto (Einstellungen → Bereiche → Bereich bearbeiten → Bild). Bereiche ohne Foto bleiben automatisch kompakt, und pro Bereich lässt sich die globale Einstellung überschreiben (`areas_options.{id}.display_type`, Dropdown im aufgeklappten Bereich).
+
 | Option | Typ | Standard | Seit | Beschreibung |
 |--------|-----|----------|------|-------------|
 | `group_by_floors` | boolean | `false` | — | Bereiche nach Etagen gliedern |
