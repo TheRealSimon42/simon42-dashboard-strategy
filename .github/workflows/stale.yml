@@ -3,13 +3,18 @@ name: Close stale issues
 on:
   schedule:
     - cron: '0 6 * * *'
+  issue_comment:
+    types: [created]
 
 jobs:
   stale:
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       issues: write
     steps:
+      # Global: alles außer pinned/enhancement und Issues, die bereits über
+      # waiting-for-feedback eine eigene (schnellere) Uhr haben.
       - uses: actions/stale@v9
         with:
           days-before-stale: 35
@@ -22,4 +27,47 @@ jobs:
           close-issue-message: >
             Automatisch geschlossen nach 42 Tagen ohne Aktivität.
             Falls das Problem weiterhin besteht, gerne ein neues Issue öffnen.
-          exempt-issue-labels: pinned,enhancement
+          exempt-issue-labels: pinned,enhancement,waiting-for-feedback
+
+      # Rückfrage-Uhr: nur Issues mit waiting-for-feedback. 7 Tage ohne
+      # Reaktion → Erinnerung (+stale), 7 weitere Tage → zu. Bei einer
+      # Antwort entfernt actions/stale das stale-Label; waiting-for-feedback
+      # räumt der Job unten bzw. labels-to-remove-when-unstale ab.
+      - uses: actions/stale@v9
+        with:
+          only-labels: waiting-for-feedback
+          days-before-stale: 7
+          days-before-close: 7
+          stale-issue-label: stale
+          labels-to-remove-when-unstale: waiting-for-feedback
+          stale-issue-message: >
+            Hier fehlt noch eine Rückmeldung zu einer offenen Frage. Ohne
+            Antwort wird das Issue in 7 Tagen automatisch geschlossen —
+            ein kurzer Kommentar genügt, dann bleibt es offen.
+          close-issue-message: >
+            Automatisch geschlossen, weil die erbetene Rückmeldung
+            ausgeblieben ist. Falls das Thema noch aktuell ist, gerne mit
+            den fehlenden Infos ein neues Issue öffnen oder hier kommentieren.
+
+  # Antwortet jemand (außer dem Maintainer oder einem Bot), ist das Issue
+  # nicht mehr "waiting for feedback" — Label direkt entfernen, damit die
+  # Rückfrage-Uhr stoppt und Simon das Issue in der Triage wiedersieht.
+  remove-waiting-label:
+    if: >
+      github.event_name == 'issue_comment' &&
+      !github.event.issue.pull_request &&
+      github.event.comment.user.login != github.repository_owner &&
+      !endsWith(github.event.comment.user.login, '[bot]') &&
+      contains(github.event.issue.labels.*.name, 'waiting-for-feedback')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Remove waiting-for-feedback label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh issue edit "${{ github.event.issue.number }}"
+          --repo "${{ github.repository }}"
+          --remove-label waiting-for-feedback
+          --remove-label stale
