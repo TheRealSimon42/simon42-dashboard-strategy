@@ -43,6 +43,7 @@ interface AreaFixture {
   name: string;
   floor_id?: string | null;
   icon?: string | null;
+  picture?: string | null;
 }
 
 interface FloorFixture {

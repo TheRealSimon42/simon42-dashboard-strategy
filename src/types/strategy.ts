@@ -199,6 +199,7 @@ export interface Simon42StrategyConfig {
   show_window_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide window contact badges)
   show_door_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide door contact badges)
   show_switches_on_areas?: boolean; // default: false
+  area_display_type?: AreaDisplayType; // default: compact
   show_alerts_on_areas?: boolean; // default: false
   show_window_alerts_on_areas?: boolean; // default: false
   energy_link_dashboard?: boolean; // default: true
@@ -307,6 +308,8 @@ export interface Simon42StrategyConfig {
 
 // -- Area Management --------------------------------------------------
 
+export type AreaDisplayType = 'compact' | 'picture';
+
 export interface AreasDisplay {
   hidden?: string[];
   order?: string[];
@@ -314,6 +317,8 @@ export interface AreasDisplay {
 }
 
 export interface AreaOptions {
+  /** Overrides the global area_display_type for this overview card. */
+  display_type?: AreaDisplayType;
   groups_options?: Record<string, GroupOptions>;
   /** User-declared sections for this area's room view (top/bottom) */
   custom_sections?: AreaCustomSection[];

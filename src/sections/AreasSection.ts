@@ -9,6 +9,7 @@
 import type { HomeAssistant } from '../types/homeassistant';
 import type { LovelaceCardConfig, LovelaceCondition, LovelaceSectionConfig } from '../types/lovelace';
 import type { AreaRegistryEntry } from '../types/registries';
+import type { AreaDisplayType, AreaOptions } from '../types/strategy';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { getViewVisibleUsers, userVisibilityConditions, unionVisibleUsers } from '../utils/view-visibility';
@@ -123,6 +124,10 @@ function getAreaAlertClasses(
  */
 function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCardConfig {
   const controls = getAreaControls(area.area_id, hass);
+  const areaOptions = Reflect.get(Registry.config.areas_options ?? {}, area.area_id) as AreaOptions | undefined;
+  const requestedDisplayType: AreaDisplayType =
+    areaOptions?.display_type ?? Registry.config.area_display_type ?? 'compact';
+  const displayType: AreaDisplayType = requestedDisplayType === 'picture' && area.picture ? 'picture' : 'compact';
 
   // Only include sensor_classes that are configured on the area (like HA does)
   const sensorClasses: string[] = [];
@@ -149,7 +154,7 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
   return {
     type: 'area',
     area: area.area_id,
-    display_type: 'compact',
+    display_type: displayType,
     sensor_classes: sensorClasses.length > 0 ? sensorClasses : undefined,
     alert_classes: alertClasses && alertClasses.length > 0 ? alertClasses : undefined,
     features: controls.length > 0 ? [{ type: 'area-controls', controls }] : [],

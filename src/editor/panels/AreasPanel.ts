@@ -20,6 +20,7 @@ import type { HomeAssistant } from '../../types/homeassistant';
 import type {
   Simon42StrategyConfig,
   AreaCustomSection,
+  AreaDisplayType,
   AreaOptions,
   GroupOptions,
   RoomEntities,
@@ -30,6 +31,7 @@ import { isBadgeCandidate, isDefaultShowName, resolveShowName } from '../../util
 import { findUpsEntityGroups } from '../../views/RoomViewStrategy';
 import { stateFor } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
+import { setAreaDisplayTypeOverride, setGlobalAreaDisplayType } from '../area-display-options';
 import { renderStackOrderPanel } from './StackOrderPanel';
 
 /** Injection-safe areas_options lookup (see CLAUDE.md Codacy pitfalls). */
@@ -47,6 +49,7 @@ interface DomainGroup {
 
 export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const groupByFloors = host._config.group_by_floors === true;
+  const areaDisplayType = host._config.area_display_type ?? 'compact';
   const showSwitchesOnAreas = host._config.show_switches_on_areas === true;
   const showAlertsOnAreas = host._config.show_alerts_on_areas === true;
   const showWindowAlertsOnAreas = host._config.show_window_alerts_on_areas === true;
@@ -75,6 +78,17 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
       ${host._renderCheckbox('group-by-floors', localize('editor.group_by_floors'), groupByFloors,
         (checked) => host._toggleChanged('group_by_floors', checked, false))}
       <div class="description">${localize('editor.group_by_floors_desc')}</div>
+
+      <div class="form-row">
+        <label for="area-display-type">${localize('editor.area_display_type')}</label>
+        <select id="area-display-type"
+          .value=${areaDisplayType}
+          @change=${(e: Event) => globalAreaDisplayTypeChanged(host, (e.target as HTMLSelectElement).value as AreaDisplayType)}>
+          <option value="compact">${localize('editor.area_display_type_compact')}</option>
+          <option value="picture">${localize('editor.area_display_type_picture')}</option>
+        </select>
+      </div>
+      <div class="description">${localize('editor.area_display_type_desc')}</div>
 
       ${host._renderCheckbox('show-switches-on-areas', localize('editor.show_switches_on_areas'), showSwitchesOnAreas,
         (checked) => host._toggleChanged('show_switches_on_areas', checked, false))}
@@ -272,6 +286,7 @@ function renderAreaItems(host: StrategyEditorHost,
         ${isExpanded
           ? html`
             <div class="area-content" data-area-id=${area.area_id}>
+              ${renderAreaDisplayTypeOverride(host, area)}
               ${cachedData
                 ? html`
                   ${renderAreaEntities(host, area.area_id, cachedData)}
@@ -285,6 +300,43 @@ function renderAreaItems(host: StrategyEditorHost,
       </div>
     `;
   });
+}
+
+function globalAreaDisplayTypeChanged(host: StrategyEditorHost, displayType: AreaDisplayType): void {
+  const newConfig = setGlobalAreaDisplayType(host._config, displayType);
+  host._config = newConfig;
+  host._fireConfigChanged(newConfig);
+}
+
+function renderAreaDisplayTypeOverride(host: StrategyEditorHost, area: AreaRegistryEntry): TemplateResult {
+  const override = areaOptionsFor(host._config, area.area_id)?.display_type ?? '';
+  return html`
+    <div class="form-row">
+      <label for="area-display-type-${area.area_id}">${localize('editor.area_display_type_override')}</label>
+      <select id="area-display-type-${area.area_id}"
+        .value=${override}
+        @change=${(e: Event) => areaDisplayTypeOverrideChanged(
+          host,
+          area.area_id,
+          (e.target as HTMLSelectElement).value as AreaDisplayType | ''
+        )}>
+        <option value="">${localize('editor.area_display_type_inherit')}</option>
+        <option value="compact">${localize('editor.area_display_type_compact')}</option>
+        <option value="picture">${localize('editor.area_display_type_picture')}</option>
+      </select>
+    </div>
+    ${!area.picture ? html`<div class="description">${localize('editor.area_display_type_no_picture')}</div>` : nothing}
+  `;
+}
+
+function areaDisplayTypeOverrideChanged(
+  host: StrategyEditorHost,
+  areaId: string,
+  displayType: AreaDisplayType | ''
+): void {
+  const newConfig = setAreaDisplayTypeOverride(host._config, areaId, displayType || undefined);
+  host._config = newConfig;
+  host._fireConfigChanged(newConfig);
 }
 
 function renderAreaEntities(host: StrategyEditorHost, 
