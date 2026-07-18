@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.19](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.18...v1.4.0-beta.19) (2026-07-18)
+
+
+### Features
+
+* configurable area card pictures (compact/picture display type) ([#386](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/386)) ([0baca1e](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/0baca1eb8161209bf35fec8691190def6fcaff40))
+
 ## [1.4.0-beta.18](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.17...v1.4.0-beta.18) (2026-07-18)
 
 
