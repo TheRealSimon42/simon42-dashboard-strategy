@@ -107,6 +107,33 @@ describe('collectCameraBlocks', () => {
     expect(blocks[0].isReolink).toBe(true);
   });
 
+  it('prefers the live view over the last-recording camera (Ring, #378)', () => {
+    const hass = makeHass({
+      areas: [{ area_id: 'eingang', name: 'Eingang' }],
+      devices: [
+        {
+          id: 'dev_ring',
+          area_id: 'eingang',
+          manufacturer: 'Ring',
+          model: 'Video Doorbell',
+          name: 'Haustür Klingel',
+        },
+      ],
+      entities: [
+        // last_recording deliberately listed first — without the live-view
+        // preference the dedup would keep it and drop the live stream
+        { entity_id: 'camera.haustuer_last_recording', device_id: 'dev_ring', platform: 'ring', translation_key: 'last_recording', attributes: { friendly_name: 'Haustür Letzte Aufnahme' } },
+        { entity_id: 'camera.haustuer_live_view', device_id: 'dev_ring', platform: 'ring', translation_key: 'live_view', attributes: { friendly_name: 'Haustür Live' } },
+      ],
+    });
+    initRegistry(hass);
+
+    const blocks = collectCameraBlocks(hass, {});
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].cameraId).toBe('camera.haustuer_live_view');
+    expect(blocks[0].isReolink).toBe(false);
+  });
+
   it('keeps cameras without a device as standalone blocks', () => {
     const hass = makeHass({
       entities: [

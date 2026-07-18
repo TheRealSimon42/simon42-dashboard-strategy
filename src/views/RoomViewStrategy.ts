@@ -909,17 +909,33 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       });
     }
 
-    // Misc (vacuum/mower unless in own section, fan, switches, …)
-    const miscCards: LovelaceCardConfig[] = [];
-    if (!ownVacuumSection) miscCards.push(...vacuumCards);
+    // Switches & plugs — by default part of the Misc section below;
+    // opt-in own combined section via show_switches_section_in_rooms (#376).
+    const switchCards: LovelaceCardConfig[] = [];
     for (const e of roomEntities.switches)
-      miscCards.push({
+      switchCards.push({
         type: 'tile',
         entity: e,
         name: stripAreaName(e, area, hass),
         vertical: false,
         state_content: 'last_changed',
       });
+
+    const ownSwitchSection = dashboardConfig.show_switches_section_in_rooms === true;
+    if (ownSwitchSection && switchCards.length > 0) {
+      pushStack('switches', {
+        type: 'grid',
+        cards: [
+          { type: 'heading', heading: localize('room.switches'), heading_style: 'title', icon: 'mdi:toggle-switch' },
+          ...switchCards,
+        ],
+      });
+    }
+
+    // Misc (vacuum/mower and switches unless in own sections, …)
+    const miscCards: LovelaceCardConfig[] = [];
+    if (!ownVacuumSection) miscCards.push(...vacuumCards);
+    if (!ownSwitchSection) miscCards.push(...switchCards);
     for (const e of roomEntities.humidifier)
       miscCards.push({
         type: 'tile',
