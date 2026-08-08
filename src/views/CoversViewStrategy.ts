@@ -11,6 +11,7 @@ class Simon42ViewCoversStrategy extends HTMLElement {
     const strategyConfig = config.config || {};
     const showPartiallyOpen = strategyConfig.show_partially_open_covers === true;
     const groupByFloors = strategyConfig.group_covers_by_floors === true;
+    const groupByAreas = strategyConfig.group_covers_by_areas === true;
 
     // Separate awnings and windows from other covers — they have different semantics
     const allDeviceClasses = config.device_classes || ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'];
@@ -18,7 +19,7 @@ class Simon42ViewCoversStrategy extends HTMLElement {
     const hasAwnings = allDeviceClasses.includes('awning');
     const hasWindows = allDeviceClasses.includes('window');
 
-    const baseConfig = { entities: config.entities, config: config.config };
+    const baseConfig = { entities: config.entities, config: config.config, group_by_areas: groupByAreas };
 
     // Rollos & Vorhänge
     const cards: any[] = [

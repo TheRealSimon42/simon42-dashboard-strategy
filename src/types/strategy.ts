@@ -128,9 +128,17 @@ export interface Simon42StrategyConfig {
   show_covers_summary?: boolean; // default: true
   show_partially_open_covers?: boolean; // default: false
   group_covers_by_floors?: boolean; // default: false
+  group_covers_by_areas?: boolean; // default: false — group covers by area
+  // inside the covers group card (area headings nest under floor headings when
+  // group_covers_by_floors is also on). Gives bare cover names ("Window") their
+  // area context like the security view (#406)
   show_clock_card?: boolean; // default: true
   show_light_summary?: boolean; // default: true
   group_lights_by_floors?: boolean; // default: false
+  group_lights_by_areas?: boolean; // default: false — group lights by area
+  // inside the lights group card (area headings nest under floor headings when
+  // group_lights_by_floors is also on). Gives bare light names their area
+  // context like the security view (#406)
   nested_light_groups?: boolean; // default: false
   lights_sort_by?: 'last_changed' | 'name'; // default: 'last_changed' —
   // 'name' sorts lights alphabetically by friendly name (#168, from PR #250)
@@ -186,6 +194,10 @@ export interface Simon42StrategyConfig {
   battery_critical_threshold?: number; // default: 20
   battery_low_threshold?: number; // default: 50
   show_area_in_battery_view?: boolean; // default: false
+  group_batteries_by_areas?: boolean; // default: false — group batteries by
+  // area inside each status section (critical/low/good): area sub-headings with
+  // a trailing "no area" bucket. Takes precedence over show_area_in_battery_view
+  // (the name prefix is suppressed when grouping is on, #406)
   unavailable_batteries_bucket?: 'critical' | 'good'; // default: 'good' (follow-up to #248)
   show_locks_in_rooms?: boolean; // default: false
   show_vacuums_section_in_rooms?: boolean; // default: false (vacuums & mowers stay under Misc, like HA's areas strategy)
