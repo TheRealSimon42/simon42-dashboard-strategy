@@ -14,6 +14,7 @@
   },
   "sections": {
     "overview": "Overview",
+    "house_mode": "House mode",
     "summaries": "Summaries",
     "favorites": "Favorites",
     "custom_cards": "Custom Cards",
@@ -253,6 +254,9 @@
     "alarm_entity": "Alarm entity:",
     "alarm_none": "None (clock full width)",
     "alarm_desc": "Select an alarm control panel entity. When the clock card is active, the alarm panel is shown next to it. Without the clock card, the alarm panel takes the full width.",
+    "house_mode_entity": "House mode helper:",
+    "house_mode_none": "None (no house mode)",
+    "house_mode_desc": "Select an input_select or select helper. It is shown on the overview as a dropdown directly above the alarm panel. You define the modes (e.g. Smart Home, Guest, Babysitter) in the helper yourself.",
     "show_search_card": "Show search card",
     "show_search_card_desc": "Shows the custom:search-card directly below the clock on the overview.",
     "show_search_card_missing": "Requires <strong>custom:search-card</strong> and <strong>card-tools</strong>. Please install both components, or switch the variant below to <em>Native tip</em> (no extra components needed).",

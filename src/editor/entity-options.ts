@@ -73,6 +73,21 @@ export function getAlarmEntities(hass: HomeAssistant | null): AlarmEntityOption[
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** input_select/select helpers for the house-mode picker (#414). */
+export function getSelectEntities(hass: HomeAssistant | null): AlarmEntityOption[] {
+  if (!hass) return [];
+  return Object.keys(hass.states)
+    .filter((entityId) => entityId.startsWith('input_select.') || entityId.startsWith('select.'))
+    .map((entityId) => {
+      const stateObj = stateFor(hass, entityId);
+      return {
+        entity_id: entityId,
+        name: stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function getWeatherEntities(hass: HomeAssistant | null): AlarmEntityOption[] {
   if (!hass) return [];
   return Object.keys(hass.states)

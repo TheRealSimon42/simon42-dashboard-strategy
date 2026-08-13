@@ -35,6 +35,33 @@ export interface OverviewSectionParams {
  * Creates the overview section with summaries, clock, optional alarm,
  * optional search card, and favorites.
  */
+/**
+ * Pure builder for the optional house-mode block (#414): a localized
+ * heading plus a full-width tile with HA's native `select-options`
+ * dropdown for a user-defined input_select/select helper. The strategy
+ * never creates the helper — the user defines the modes themselves.
+ * Returns [] when no helper is configured (feature off by default).
+ */
+export function createHouseModeCards(config: Simon42StrategyConfig): LovelaceCardConfig[] {
+  const houseModeEntity = config.house_mode_entity;
+  if (!houseModeEntity) return [];
+  return [
+    {
+      type: 'heading',
+      heading: localize('sections.house_mode'),
+      heading_style: 'title',
+      icon: 'mdi:home-switch',
+    },
+    {
+      type: 'tile',
+      entity: houseModeEntity,
+      vertical: false,
+      features: [{ type: 'select-options' }],
+      grid_options: { columns: 'full' },
+    },
+  ];
+}
+
 export function createOverviewSection(data: OverviewSectionParams): LovelaceSectionConfig | null {
   const { showSearchCard, config, hass } = data;
   const showClockCard = config.show_clock_card !== false;
@@ -44,6 +71,10 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   const alarmEntity = config.alarm_entity;
 
   const cards: LovelaceCardConfig[] = [];
+
+  // House-mode selector (#414) — rendered as its own block directly
+  // above the clock/alarm row, also when no alarm entity is configured.
+  cards.push(...createHouseModeCards(config));
 
   // Only show "Übersicht" heading if clock or alarm is visible
   if ((showClockCard || alarmEntity) && !hidden.has('overview')) {

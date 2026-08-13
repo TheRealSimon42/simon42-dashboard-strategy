@@ -195,6 +195,16 @@ Die Hauptseite des Dashboards zeigt eine Übersicht mit folgenden Bereichen:
 
 **Uhr & Alarm** — Die Uhr wird standardmäßig angezeigt. Optional kann eine Alarmanlage daneben eingeblendet werden.
 
+**Haus-Modus** *(ab v1.4.0)* — Optional erscheint direkt über dem Uhr/Alarm-Block ein Dropdown (Tile-Karte mit nativem `select-options`-Feature), das einen selbst angelegten `input_select`- oder `select`-Helfer anzeigt und schaltet — auch dann, wenn keine Alarmanlage konfiguriert ist. Die Strategy legt den Helfer **nicht** selbst an; du definierst die Modi selbst (Einstellungen → Geräte & Dienste → Helfer → Auswahl). Beispiel-Helfer `input_select.hausmodus` mit den Optionen „Smart Home", „Gast" und „Babysitter":
+
+```yaml
+strategy:
+  type: custom:simon42-dashboard
+  house_mode_entity: input_select.hausmodus
+```
+
+Automations-Idee: Anwesenheits-Automationen zusätzlich auf den Modus bedingen — z.B. laufen Abwesenheits-Aktionen nur, wenn `input_select.hausmodus` auf „Smart Home" steht. Ist ein Babysitter im Haus (Modus „Babysitter"), bleiben sie aus, obwohl die Bewohner weg sind.
+
 **Zusammenfassungen** — Kacheln die den Status aller Lichter, Rollos, Sicherheits-Entitäten, Batterien und Klimageräte zusammenfassen. Jede Zusammenfassung kann einzeln ein- oder ausgeschaltet werden. Das Layout ist als 2-Spalten-Grid (Standard) oder 4-Spalten-Reihe konfigurierbar. Für Rollos kann optional eine **Teiloffen-Gruppe** aktiviert werden, die Rollos mit Position zwischen 1-99% separat anzeigt — inkl. Live-Übergängen während des Fahrens.
 
 <p align="center">
@@ -486,6 +496,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 |--------|-----|----------|------|-------------|
 | `show_clock_card` | boolean | `true` | — | Uhr auf der Übersicht |
 | `alarm_entity` | string | — | — | Alarm-Panel Entity neben der Uhr |
+| `house_mode_entity` | string | — | v1.4.0 | `input_select`/`select`-Helfer als Dropdown-Tile direkt über dem Uhr/Alarm-Block |
 | `show_search_card` | boolean | `false` | — | Such-Karte auf der Übersicht |
 | `search_card_variant` | `custom` \| `tip` | `custom` | v1.4.0 | `custom` benötigt custom:search-card aus HACS; `tip` ist ein HA-nativer Hinweis auf die globale Suche |
 | `show_light_summary` | boolean | `true` | — | Lichter-Zusammenfassung |

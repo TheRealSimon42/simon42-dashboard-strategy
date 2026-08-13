@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { Registry } from '../../src/Registry';
-import { createCustomCardsSection, createOverviewSection } from '../../src/sections/OverviewSection';
+import { createCustomCardsSection, createHouseModeCards, createOverviewSection } from '../../src/sections/OverviewSection';
 import { makeHass } from '../fixtures/hass';
 
 beforeEach(() => {
@@ -127,6 +127,66 @@ describe('createOverviewSection', () => {
     expect(summaryRow?.cards?.[0]).toMatchObject({
       type: 'custom:simon42-summary-card',
       hide_unavailable_entities: true,
+    });
+  });
+});
+
+describe('createHouseModeCards (#414)', () => {
+  it('returns no cards when house_mode_entity is not configured (feature off)', () => {
+    expect(createHouseModeCards({})).toEqual([]);
+  });
+
+  it('builds a heading plus a full-width select-options tile when configured', () => {
+    const cards = createHouseModeCards({ house_mode_entity: 'input_select.hausmodus' });
+    expect(cards).toEqual([
+      expect.objectContaining({
+        type: 'heading',
+        heading_style: 'title',
+        icon: 'mdi:home-switch',
+      }),
+      {
+        type: 'tile',
+        entity: 'input_select.hausmodus',
+        vertical: false,
+        features: [{ type: 'select-options' }],
+        grid_options: { columns: 'full' },
+      },
+    ]);
+  });
+
+  it('renders directly above the clock/alarm block in the overview section', () => {
+    const hass = makeHass({});
+    Registry.initialize(hass, {});
+    const section = createOverviewSection({
+      someSensorId: 'sensor.dummy',
+      showSearchCard: false,
+      config: { house_mode_entity: 'input_select.hausmodus', alarm_entity: 'alarm_control_panel.home' },
+      hass,
+    });
+    const cards = section?.cards ?? [];
+    expect(cards[0]).toMatchObject({ type: 'heading', icon: 'mdi:home-switch' });
+    expect(cards[1]).toMatchObject({ type: 'tile', entity: 'input_select.hausmodus' });
+    // the regular overview block (heading + clock + alarm) follows
+    expect(cards[2]).toMatchObject({ type: 'heading', icon: 'mdi:overscan' });
+    const alarmIndex = cards.findIndex((c) => c.entity === 'alarm_control_panel.home');
+    expect(alarmIndex).toBeGreaterThan(1);
+  });
+
+  it('still renders when no alarm entity is configured', () => {
+    const hass = makeHass({});
+    Registry.initialize(hass, {});
+    const section = createOverviewSection({
+      someSensorId: 'sensor.dummy',
+      showSearchCard: false,
+      config: { house_mode_entity: 'input_select.hausmodus', show_clock_card: false },
+      hass,
+    });
+    const cards = section?.cards ?? [];
+    expect(cards[0]).toMatchObject({ type: 'heading', icon: 'mdi:home-switch' });
+    expect(cards[1]).toMatchObject({
+      type: 'tile',
+      entity: 'input_select.hausmodus',
+      features: [{ type: 'select-options' }],
     });
   });
 });
