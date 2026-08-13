@@ -48,6 +48,25 @@ export function getColorForEntity(entityId: string, hass: HomeAssistant): string
   return 'grey';
 }
 
+// -- Energy block routing ---------------------------------------------
+
+/** Sensor device classes that belong to the per-room energy block (ordered — defines section sort order). */
+export const ROOM_ENERGY_SENSOR_CLASSES = ['power', 'energy', 'water', 'gas'] as const;
+
+const ROOM_ENERGY_SENSOR_CLASS_SET = new Set<string>(ROOM_ENERGY_SENSOR_CLASSES);
+
+/**
+ * Check if a sensor belongs to the room energy block (device_class
+ * power/energy/water/gas). The runtime routes these into the energy
+ * section BEFORE badge classification and has no badge branch for them,
+ * so they can never render as auto-detected badges — the editor must not
+ * offer them as badge candidates either (#396). Explicitly picking one
+ * via badges.additional remains possible as per-room override.
+ */
+export function isEnergyBlockSensor(domain: string, deviceClass: string | undefined): boolean {
+  return domain === 'sensor' && deviceClass !== undefined && ROOM_ENERGY_SENSOR_CLASS_SET.has(deviceClass);
+}
+
 // -- Badge candidate detection ----------------------------------------
 
 /**
@@ -80,10 +99,10 @@ export function isBadgeCandidate(
     // Light / humidity
     if (deviceClass === 'illuminance' || unit === 'lx') return true;
     if (unit === 'g/m³') return true; // absolute humidity
-    // Power: instantaneous load (W, kW). Energy meter totals (Wh, kWh)
-    // are intentionally omitted — they're cumulative counters that don't
-    // make sense as a single live badge value.
-    if (deviceClass === 'power' || unit === 'W' || unit === 'kW') return true;
+    // Power/energy/water/gas sensors are deliberately NOT candidates:
+    // the runtime routes them into the room energy block and has no
+    // badge branch for them, so offering them here would present badges
+    // that never render (#396). See isEnergyBlockSensor().
     return false;
   }
   if (domain === 'binary_sensor') {
