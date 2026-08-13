@@ -33,6 +33,7 @@ import {
   haVersionAtLeast,
 } from '../utils/maintenance-utils';
 import { matchVideoTips, readDismissedTips } from '../utils/video-tips';
+import { isUtilityViewEnabled } from '../utils/summary-view-utils';
 
 // -- Section builders (exported for unit tests) -------------------------
 
@@ -232,8 +233,7 @@ export function buildCriticalBatteriesSection(
     return valA - valB;
   });
 
-  const batteriesViewExists =
-    config.show_battery_summary !== false || config.show_battery_view === true;
+  const batteriesViewExists = isUtilityViewEnabled(config, 'batteries');
 
   const cards: LovelaceCardConfig[] = [
     {
