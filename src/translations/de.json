@@ -301,6 +301,8 @@
     "security_cameras_visibility_desc": "Abgewählte Kameras verschwinden aus der Sicherheits- und der Kamera-Ansicht — Raum-Ansichten bleiben unberührt.",
     "group_security_by_areas": "Sicherheits-Ansicht nach Bereichen gliedern (empfohlen)",
     "group_security_by_areas_desc": "Baut die Sicherheits-Ansicht wie das Home Assistant Security-Panel: alle Bereiche untereinander (nach Etagen gruppiert), Bereichs-Überschriften führen in die Raum-Ansicht, und der Aktivitäts-Verlauf hängt als Seitenleiste rechts daneben.",
+    "hide_hidden_areas_in_security": "Ausgeblendete Bereiche auch aus der Sicherheits-Ansicht ausblenden",
+    "hide_hidden_areas_in_security_desc": "Standardmäßig zeigt die Sicherheits-Ansicht alle Sicherheits-Entitäten und Kameras — auch aus Bereichen, die auf der Übersicht ausgeblendet sind. Mit Haken werden diese Bereiche auch hier gefiltert (beide Layouts sowie die Kamera-Karten der Sicherheits- und Kamera-Ansicht).",
     "show_security_activity": "Aktivitäts-Verlauf anzeigen (empfohlen)",
     "show_security_activity_desc": "Zeigt rechts neben der Sicherheits-Ansicht ein 24h-Logbuch über alle Sicherheits-Entitäten und Personen (wie im Home Assistant Security-Panel). Auf schmalen Bildschirmen als eigener Tab. Benötigt die Logbuch-Integration. Entitäten mit dem Label \"no_seclog\" bleiben in der Ansicht sichtbar, erscheinen aber nicht im Verlauf (z.B. innenliegende Türkontakte).",
     "security_activity_at_end": "Aktivitäts-Verlauf ans Ende stellen",

@@ -288,6 +288,88 @@ describe('hidden_cameras', () => {
   });
 });
 
+describe('hidden areas (#410)', () => {
+  // "garten" holds the camera + a window contact, "flur" the lock.
+  function hiddenGarten(extra: Simon42StrategyConfig = {}): Simon42StrategyConfig {
+    return { areas_display: { hidden: ['garten'] }, ...extra };
+  }
+
+  it('category mode keeps entities from hidden areas by default', () => {
+    const sections = build(makeHass(securitySpec()), hiddenGarten({ show_cameras_in_security: true }));
+    const cards = allCards(sections);
+    expect(cards.some((c) => c.entity === 'binary_sensor.garten_fenster')).toBe(true);
+    expect(cards.some((c) => c.entity === 'lock.haustuer')).toBe(true);
+    // Camera from the hidden area stays too
+    expect(cards.some((c) => c.type === 'picture-entity' && c.entity === 'camera.garten_sub')).toBe(true);
+  });
+
+  it('area mode renders hidden areas as normal area sections without a room link', () => {
+    const sections = build(
+      makeHass(securitySpec()),
+      hiddenGarten({ group_security_by_areas: true, show_cameras_in_security: true })
+    );
+    const subtitles = headings(sections).filter((h) => h.heading_style === 'subtitle');
+    const byName = new Map(subtitles.map((h) => [h.heading, h]));
+
+    // Hidden area appears like any other, but its room view does not
+    // exist — no tap_action on the heading
+    expect(byName.has('Garten')).toBe(true);
+    expect(byName.get('Garten')?.tap_action).toBeUndefined();
+    expect(byName.get('Flur')?.tap_action).toEqual({ action: 'navigate', navigation_path: 'flur' });
+
+    const cards = allCards(sections);
+    expect(cards.some((c) => c.entity === 'binary_sensor.garten_fenster')).toBe(true);
+    expect(cards.some((c) => c.type === 'picture-entity' && c.entity === 'camera.garten_sub')).toBe(true);
+  });
+
+  it('hide_hidden_areas_in_security filters hidden areas from the category mode', () => {
+    const sections = build(
+      makeHass(securitySpec()),
+      hiddenGarten({ hide_hidden_areas_in_security: true, show_cameras_in_security: true })
+    );
+    const cards = allCards(sections);
+    expect(cards.some((c) => c.entity === 'binary_sensor.garten_fenster')).toBe(false);
+    expect(cards.some((c) => c.type === 'picture-entity')).toBe(false);
+    // Entities in visible areas and without an area stay
+    expect(cards.some((c) => c.entity === 'lock.haustuer')).toBe(true);
+    expect(cards.some((c) => c.entity === 'binary_sensor.keller_rauch')).toBe(true);
+  });
+
+  it('hide_hidden_areas_in_security filters hidden areas from the area mode', () => {
+    const sections = build(
+      makeHass(securitySpec()),
+      hiddenGarten({
+        hide_hidden_areas_in_security: true,
+        group_security_by_areas: true,
+        show_cameras_in_security: true,
+      })
+    );
+    expect(headings(sections).some((h) => h.heading === 'Garten')).toBe(false);
+    const cards = allCards(sections);
+    expect(cards.some((c) => c.entity === 'binary_sensor.garten_fenster')).toBe(false);
+    expect(cards.some((c) => c.type === 'picture-entity')).toBe(false);
+    expect(cards.some((c) => c.entity === 'lock.haustuer')).toBe(true);
+    // Area-less entities keep their trailing bucket
+    expect(cards.some((c) => c.entity === 'binary_sensor.keller_rauch')).toBe(true);
+  });
+
+  it('activity log follows the toggle', () => {
+    const spec = securitySpec();
+    spec.components = ['logbook'];
+
+    // Default: hidden-area entities stay in the log
+    const sections = build(makeHass(spec), hiddenGarten());
+    const logbook = allCards(sections).find((c) => c.type === 'logbook');
+    expect(logbook?.target?.entity_id).toContain('binary_sensor.garten_fenster');
+
+    // Toggle on: they disappear from the log too
+    const filtered = build(makeHass(spec), hiddenGarten({ hide_hidden_areas_in_security: true }));
+    const filteredLog = allCards(filtered).find((c) => c.type === 'logbook');
+    expect(filteredLog?.target?.entity_id).not.toContain('binary_sensor.garten_fenster');
+    expect(filteredLog?.target?.entity_id).toContain('lock.haustuer');
+  });
+});
+
 describe('safety status sensors', () => {
   it('categorizes safety/tamper/CO sensors like HA does', () => {
     const spec = securitySpec();

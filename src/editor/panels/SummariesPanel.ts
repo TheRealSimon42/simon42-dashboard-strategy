@@ -126,6 +126,10 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
           (checked) => host._toggleChanged('group_security_by_areas', checked, false))}
         <div class="description">${localize('editor.group_security_by_areas_desc')}</div>
 
+        ${host._renderCheckbox('hide-hidden-areas-in-security', localize('editor.hide_hidden_areas_in_security'), host._config.hide_hidden_areas_in_security === true,
+          (checked) => host._toggleChanged('hide_hidden_areas_in_security', checked, false))}
+        <div class="description">${localize('editor.hide_hidden_areas_in_security_desc')}</div>
+
         ${host._renderCheckbox('show-security-activity', localize('editor.show_security_activity'), host._config.show_security_activity !== false,
           (checked) => host._toggleChanged('show_security_activity', checked, true))}
         <div class="description">${localize('editor.show_security_activity_desc')}</div>

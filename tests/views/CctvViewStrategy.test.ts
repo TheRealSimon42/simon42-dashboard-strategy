@@ -179,14 +179,28 @@ describe('collectCameraBlocks', () => {
     expect(blocks[0].isReolink).toBe(false);
   });
 
-  it('drops cameras from areas excluded from the dashboard, keeps area-less ones', () => {
+  it('keeps cameras from hidden areas by default (#410)', () => {
+    const spec = reolinkSpec();
+    spec.entities?.push({ entity_id: 'camera.einfahrt', platform: 'generic', attributes: { friendly_name: 'Einfahrt' } });
+    const hass = makeHass(spec);
+    initRegistry(hass);
+
+    const blocks = collectCameraBlocks(hass, { areas_display: { hidden: ['garten'] } });
+    expect(blocks.map((b) => b.cameraId)).toContain('camera.garten_sub');
+    expect(blocks.map((b) => b.cameraId)).toContain('camera.einfahrt');
+  });
+
+  it('drops cameras from hidden areas with hide_hidden_areas_in_security, keeps area-less ones', () => {
     const spec = reolinkSpec();
     // Area-less standalone camera must survive the filter
     spec.entities?.push({ entity_id: 'camera.einfahrt', platform: 'generic', attributes: { friendly_name: 'Einfahrt' } });
     const hass = makeHass(spec);
     initRegistry(hass);
 
-    const blocks = collectCameraBlocks(hass, { areas_display: { hidden: ['garten'] } });
+    const blocks = collectCameraBlocks(hass, {
+      areas_display: { hidden: ['garten'] },
+      hide_hidden_areas_in_security: true,
+    });
     expect(blocks.map((b) => b.cameraId)).toEqual(['camera.einfahrt']);
   });
 });
