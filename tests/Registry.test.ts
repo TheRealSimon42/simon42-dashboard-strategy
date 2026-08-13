@@ -92,3 +92,43 @@ describe('Registry.initialize', () => {
     expect(Registry.getVisibleEntitiesForArea('kitchen')).toHaveLength(0);
   });
 });
+
+describe('badges pseudo-group exclusion (#396)', () => {
+  it('does not hide a badge-deselected entity dashboard-wide', () => {
+    const hass = makeHass({
+      areas: [{ area_id: 'kitchen', name: 'Kitchen' }],
+      entities: [
+        { entity_id: 'sensor.kitchen_power', area_id: 'kitchen', attributes: { device_class: 'power', unit_of_measurement: 'W' } },
+      ],
+    });
+    const config = {
+      areas_options: {
+        kitchen: { groups_options: { badges: { hidden: ['sensor.kitchen_power'] } } },
+      },
+    };
+    Registry.initialize(hass, config);
+
+    // The entity stays visible in all other sections (e.g. the energy block)
+    expect(Registry.isHiddenByConfig('sensor.kitchen_power')).toBe(false);
+    expect(Registry.isEntityExcluded('sensor.kitchen_power')).toBe(false);
+    expect(
+      Registry.getVisibleEntitiesForArea('kitchen').map(function toId(e) { return e.entity_id; })
+    ).toEqual(['sensor.kitchen_power']);
+  });
+
+  it('keeps hiding entities deselected in regular domain groups', () => {
+    const hass = makeHass({
+      areas: [{ area_id: 'kitchen', name: 'Kitchen' }],
+      entities: [{ entity_id: 'light.kitchen', area_id: 'kitchen' }],
+    });
+    const config = {
+      areas_options: {
+        kitchen: { groups_options: { light: { hidden: ['light.kitchen'] } } },
+      },
+    };
+    Registry.initialize(hass, config);
+
+    expect(Registry.isHiddenByConfig('light.kitchen')).toBe(true);
+    expect(Registry.getVisibleEntitiesForArea('kitchen')).toHaveLength(0);
+  });
+});

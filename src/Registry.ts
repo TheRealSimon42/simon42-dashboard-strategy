@@ -83,7 +83,11 @@ class Registry {
   /** Entities with the "no_dboard" label — excluded from all dashboard views */
   private static _excludeSet: Set<string>;
 
-  /** Entities hidden via areas_options.*.groups_options.*.hidden in config */
+  /**
+   * Entities hidden via areas_options.*.groups_options.*.hidden in config.
+   * The 'badges' pseudo-group is excluded — deselecting a badge must not
+   * hide the entity dashboard-wide (#396).
+   */
   private static _hiddenFromConfig: Set<string>;
 
   /** Initialization flag */
@@ -307,6 +311,7 @@ class Registry {
    * Exclusion pipeline (matches the JS data-collectors logic):
    * 1. no_dboard label -> _excludeSet
    * 2. areas_options.*.groups_options.*.hidden -> _hiddenFromConfig
+   *    (except the 'badges' pseudo-group, which only affects room badges)
    */
   private static _buildExclusionSets(): void {
     // no_dboard label exclusion
@@ -323,7 +328,12 @@ class Registry {
     if (areasOptions) {
       for (const areaOpts of Object.values(areasOptions)) {
         if (areaOpts.groups_options) {
-          for (const groupOpts of Object.values(areaOpts.groups_options)) {
+          for (const [groupKey, groupOpts] of Object.entries(areaOpts.groups_options)) {
+            // The 'badges' pseudo-group only deselects auto-detected room
+            // badges — it must NOT hide the entity dashboard-wide (#396).
+            // RoomViewStrategy applies badges.hidden itself when building
+            // the badge list (see applyBadgeGroupOptions).
+            if (groupKey === 'badges') continue;
             if (groupOpts.hidden && Array.isArray(groupOpts.hidden)) {
               for (const id of groupOpts.hidden) {
                 Registry._hiddenFromConfig.add(id);

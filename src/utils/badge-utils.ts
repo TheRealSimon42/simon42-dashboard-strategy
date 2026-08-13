@@ -5,6 +5,7 @@
 // RoomViewStrategy (runtime) and the Editor (configuration UI).
 
 import type { HomeAssistant } from '../types/homeassistant';
+import type { GroupOptions } from '../types/strategy';
 
 // -- Badge color map (device_class → HA color name) -------------------
 
@@ -98,6 +99,52 @@ export function isBadgeCandidate(
     );
   }
   return false;
+}
+
+// -- Badge group options ----------------------------------------------
+
+/** Auto-detected badge candidate before it becomes a Lovelace badge config. */
+export interface BadgeCandidate {
+  entity: string;
+  color: string;
+  showName?: boolean;
+}
+
+/**
+ * Apply the per-area 'badges' group options to the auto-detected candidates:
+ * drop deselected badges (badges.hidden) and append manually added entities
+ * (badges.additional, only when they have a state).
+ *
+ * badges.hidden is deliberately NOT part of the Registry's global exclusion
+ * set (#396) — deselecting a badge must only remove the badge, not hide the
+ * entity in other dashboard sections. This function is the single place
+ * where badges.hidden takes effect.
+ */
+export function applyBadgeGroupOptions(
+  candidates: BadgeCandidate[],
+  badgeOpts: GroupOptions | undefined,
+  hass: HomeAssistant
+): BadgeCandidate[] {
+  if (!badgeOpts) return candidates;
+  let filtered = [...candidates];
+  if (badgeOpts.hidden?.length) {
+    const hiddenSet = new Set<string>(badgeOpts.hidden);
+    filtered = filtered.filter(function notDeselected(candidate) {
+      return !hiddenSet.has(candidate.entity);
+    });
+  }
+  if (badgeOpts.additional?.length) {
+    for (const entityId of badgeOpts.additional) {
+      const hasState = Reflect.get(hass.states, entityId) !== undefined;
+      const alreadyListed = filtered.some(function sameEntity(candidate) {
+        return candidate.entity === entityId;
+      });
+      if (hasState && !alreadyListed) {
+        filtered.push({ entity: entityId, color: getColorForEntity(entityId, hass) });
+      }
+    }
+  }
+  return filtered;
 }
 
 // -- Default show_name ------------------------------------------------
