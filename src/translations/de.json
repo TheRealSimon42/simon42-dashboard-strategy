@@ -73,7 +73,7 @@
     "all_off": "Alle aus",
     "all_on": "Alle ein",
     "floor_other": "Weitere",
-    "no_area": "Ohne Bereiche"
+    "no_area": "Ohne Bereich"
   },
   "covers": {
     "open": "Offene Rollos & Abdeckungen",
@@ -91,7 +91,7 @@
     "windows_partial": "Teiloffene Fenster",
     "windows_open_all": "Alle öffnen",
     "windows_close_all": "Alle schließen",
-    "no_area": "Ohne Bereiche"
+    "no_area": "Ohne Bereich"
   },
   "security": {
     "locks_unlocked": "Schlösser - Entriegelt",
@@ -124,7 +124,7 @@
     "good": "Gut",
     "battery_one": "Batterie",
     "battery_many": "Batterien",
-    "no_area": "Ohne Bereiche"
+    "no_area": "Ohne Bereich"
   },
   "ups": {
     "battery": "Akku"

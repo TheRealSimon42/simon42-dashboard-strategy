@@ -430,13 +430,6 @@ class Simon42LightsGroupCard extends LitElement {
     return floorKey !== null ? `${prefix}-${floorKey}__${areaKey}` : `${prefix}-${areaKey}`;
   }
 
-  /** Room detail views exist only with show_room_views — gate the area-heading
-   *  tap target so users without room views don't get a dead navigation link. */
-  private _roomViewsEnabled(): boolean {
-    const dashboardConfig = (this._config.config || {}) as { show_room_views?: boolean };
-    return dashboardConfig.show_room_views === true;
-  }
-
   private _buildHeadingConfig(
     lights: string[],
     opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; areaId?: string | null } = {},
@@ -454,7 +447,7 @@ class Simon42LightsGroupCard extends LitElement {
         heading_style: level === 'floor' ? 'title' : 'subtitle',
       };
       if (opts.icon) cfg.icon = opts.icon;
-      if (level === 'area' && opts.areaId && this._roomViewsEnabled()) {
+      if (level === 'area' && opts.areaId) {
         cfg.tap_action = { action: 'navigate', navigation_path: opts.areaId };
       }
       return cfg;
@@ -724,7 +717,7 @@ class Simon42LightsGroupCard extends LitElement {
       card = document.createElement('hui-heading-card') as LovelaceCardElement;
       cardMap.set(key, card);
     }
-    if (!card.parentNode) slot.appendChild(card);
+    if (card.parentNode !== slot) slot.appendChild(card);
     card.hass = hass;
     card.setConfig(headingConfig);
   }
