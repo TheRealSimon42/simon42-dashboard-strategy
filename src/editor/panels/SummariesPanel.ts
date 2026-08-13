@@ -59,6 +59,12 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
       ${host._renderCheckbox('show-light-summary', localize('editor.show_light_summary'), showLightSummary,
         (checked) => host._toggleChanged('show_light_summary', checked, true))}
 
+      <div style="margin-left: 26px; margin-bottom: 8px;">
+        ${host._renderCheckbox('show-light-view', localize('editor.show_light_view'), host._config.show_light_view === true,
+          (checked) => host._toggleChanged('show_light_view', checked, false))}
+        <div class="description">${localize('editor.show_light_view_desc')}</div>
+      </div>
+
       ${host._renderCheckbox('group-lights-by-floors', localize('editor.group_lights_by_floors'), groupLightsByFloors,
         (checked) => host._toggleChanged('group_lights_by_floors', checked, false))}
       <div class="description">${localize('editor.group_lights_by_floors_desc')}</div>
@@ -79,6 +85,10 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
         (checked) => host._toggleChanged('show_covers_summary', checked, true))}
 
       <div style="margin-left: 26px; margin-bottom: 8px;">
+        ${host._renderCheckbox('show-covers-view', localize('editor.show_covers_view'), host._config.show_covers_view === true,
+          (checked) => host._toggleChanged('show_covers_view', checked, false))}
+        <div class="description">${localize('editor.show_covers_view_desc')}</div>
+
         ${host._renderCheckbox('show-partially-open-covers', localize('editor.show_partially_open_covers'), showPartiallyOpenCovers,
           (checked) => host._toggleChanged('show_partially_open_covers', checked, false))}
         <div class="description">${localize('editor.show_partially_open_covers_desc')}</div>
@@ -96,6 +106,10 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
         (checked) => host._toggleChanged('show_security_summary', checked, true))}
 
       <div style="margin-left: 26px; margin-bottom: 8px;">
+        ${host._renderCheckbox('show-security-view', localize('editor.show_security_view'), host._config.show_security_view === true,
+          (checked) => host._toggleChanged('show_security_view', checked, false))}
+        <div class="description">${localize('editor.show_security_view_desc')}</div>
+
         ${host._renderCheckbox('show-cameras-in-security', localize('editor.show_cameras_in_security'), host._config.show_cameras_in_security === true,
           (checked) => host._toggleChanged('show_cameras_in_security', checked, false))}
         <div class="description">${localize('editor.show_cameras_in_security_desc')}</div>
@@ -123,6 +137,12 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
       ${host._renderCheckbox('show-climate-summary', localize('editor.show_climate_summary'), showClimateSummary,
         (checked) => host._toggleChanged('show_climate_summary', checked, false))}
       <div class="description">${localize('editor.show_climate_summary_desc')}</div>
+
+      <div style="margin-left: 26px; margin-bottom: 8px;">
+        ${host._renderCheckbox('show-climate-view', localize('editor.show_climate_view'), host._config.show_climate_view === true,
+          (checked) => host._toggleChanged('show_climate_view', checked, false))}
+        <div class="description">${localize('editor.show_climate_view_desc')}</div>
+      </div>
 
       ${host._renderCheckbox('show-camera-view', localize('editor.show_camera_view'), host._config.show_camera_view === true,
         (checked) => host._toggleChanged('show_camera_view', checked, false))}
