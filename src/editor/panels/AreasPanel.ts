@@ -64,6 +64,7 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const showWindowContactsInRooms = host._config.show_window_contacts_in_rooms !== false;
   const showDoorContactsInRooms = host._config.show_door_contacts_in_rooms !== false;
   const showCamerasInRooms = host._config.show_cameras_in_rooms !== false;
+  const showCoverControlsInRooms = host._config.show_cover_controls_in_rooms !== false;
   const useDefaultAreaSort = host._config.use_default_area_sort === true;
 
   const hassRef = host._hass;
@@ -105,6 +106,10 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
       ${host._renderCheckbox('show-locks-in-rooms', localize('editor.show_locks_in_rooms'), showLocksInRooms,
         (checked) => host._toggleChanged('show_locks_in_rooms', checked, false))}
       <div class="description">${localize('editor.show_locks_in_rooms_desc')}</div>
+
+      ${host._renderCheckbox('show-cover-controls-in-rooms', localize('editor.show_cover_controls_in_rooms'), showCoverControlsInRooms,
+        (checked) => host._toggleChanged('show_cover_controls_in_rooms', checked, true))}
+      <div class="description">${localize('editor.show_cover_controls_in_rooms_desc')}</div>
 
       ${host._renderCheckbox('show-vacuums-section-in-rooms', localize('editor.show_vacuums_section_in_rooms'), showVacuumsSectionInRooms,
         (checked) => host._toggleChanged('show_vacuums_section_in_rooms', checked, false))}

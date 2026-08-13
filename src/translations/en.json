@@ -355,6 +355,8 @@
     "show_window_alerts_on_areas_desc": "Shows an alert icon on the area card whenever a window, door, opening, or garage-door contact sensor in that area is open. Independent of the regular alert toggle above.",
     "show_locks_in_rooms": "Show locks in room views",
     "show_locks_in_rooms_desc": "Shows locks (e.g. Nuki) in the respective room views. Locks always appear in the security overview regardless.",
+    "show_cover_controls_in_rooms": "Show batch buttons on covers headings",
+    "show_cover_controls_in_rooms_desc": "Shows small open/stop/close buttons on the heading of the covers and curtains sections in room views to move all covers of the room at once. Windows, doors and garage doors deliberately get no batch buttons.",
     "show_vacuums_section_in_rooms": "Own section for vacuums & mowers",
     "show_vacuums_section_in_rooms_desc": "Shows vacuums and lawn mowers in room views under their own heading instead of “Miscellaneous”.",
     "show_switches_section_in_rooms": "Own section for switches & outlets",
