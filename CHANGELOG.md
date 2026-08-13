@@ -3,6 +3,20 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.21](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.20...v1.4.0-beta.21) (2026-08-13)
+
+
+### Features
+
+* batch open/stop/close buttons on the covers heading in room views ([#420](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/420)) ([3c2ffea](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/3c2ffea4ff969e71bb0c4b153a7f31a434dc4be4)), closes [#413](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/413)
+* house mode selector on the overview ([#421](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/421)) ([f78bd8b](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/f78bd8b6349d229a78c5c4c9226413d29696e1c2)), closes [#414](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/414)
+* make all summary views available without their summary tile ([#417](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/417)) ([5bb0962](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/5bb0962c1c9f7cb9247bd1b4c3fd76e30a91d1b1)), closes [#391](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/391)
+
+
+### Bug Fixes
+
+* badge candidates mirror the runtime, render all selected sensor badges ([#418](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/418)) ([6cf512a](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/6cf512a38bb51ebadabbf3492b3a3026a2aaf00b)), closes [#396](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/396)
+
 ## [1.4.0-beta.20](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.19...v1.4.0-beta.20) (2026-08-13)
 
 
