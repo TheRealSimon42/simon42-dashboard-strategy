@@ -654,6 +654,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     if (roomEntities.cameras.length > 0) {
       const cameraLiveToggle = dashboardConfig.camera_live_toggle === true;
       const cameraCards: LovelaceCardConfig[] = [];
+      // Companion glance entities (spotlight, motion, siren, battery,
+      // doorbell) are per DEVICE — dual-lens cameras render two cards on
+      // the same device (#412), only the first one carries the companions.
+      const devicesWithCompanions = new Set<string>();
       for (const cameraId of roomEntities.cameras) {
         if (!hass.states[cameraId]) continue;
         const camEntity = Registry.getEntity(cameraId);
@@ -672,6 +676,8 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         }
 
         if ((isReolink || isAqara) && deviceId) {
+          const firstOfDevice = !devicesWithCompanions.has(deviceId);
+          devicesWithCompanions.add(deviceId);
           const devEntities = Registry.getEntityIdsForDevice(deviceId);
           const spotlight = devEntities.find(
             (id) => id.startsWith('light.') && hass.states[id] && !Registry.isEntityExcluded(id)
@@ -709,7 +715,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
             if (doorbell) glanceEntities.push({ entity: doorbell });
           }
 
-          cameraCards.push(buildRoomCameraCard(cameraId, stripAreaName(cameraId, area, hass), cameraLiveToggle, glanceEntities, isAqara));
+          cameraCards.push(buildRoomCameraCard(cameraId, stripAreaName(cameraId, area, hass), cameraLiveToggle, firstOfDevice ? glanceEntities : [], isAqara));
         } else {
           cameraCards.push(buildRoomCameraCard(cameraId, stripAreaName(cameraId, area, hass), cameraLiveToggle));
         }
