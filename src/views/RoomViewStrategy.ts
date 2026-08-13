@@ -16,7 +16,7 @@ import { buildAreaCustomSections } from '../sections/CustomSections';
 import { Registry } from '../Registry';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
 import { localize } from '../utils/localize';
-import { BADGE_COLOR_MAP, getColorForEntity, isDefaultShowName, resolveShowName } from '../utils/badge-utils';
+import { BADGE_COLOR_MAP, applyBadgeGroupOptions, isDefaultShowName, resolveShowName, type BadgeCandidate } from '../utils/badge-utils';
 import { densePlacement } from '../utils/view-builder';
 
 // HA supported_features bitmask values
@@ -501,12 +501,6 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     const badgeOpts = groupsOptions.badges;
     const hasBadgeConfig = !!badgeOpts;
 
-    interface BadgeCandidate {
-      entity: string;
-      color: string;
-      showName?: boolean;
-    }
-
     const candidates: BadgeCandidate[] = [];
     const addCandidate = (entityId: string, colorKey: string, dcOverride?: string) => {
       const dc = dcOverride || (hass.states[entityId]?.attributes?.device_class as string | undefined);
@@ -544,20 +538,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       for (const id of sensorEntities.door) addCandidate(id, 'door', 'door');
     }
 
-    let filteredCandidates = candidates;
-    if (hasBadgeConfig) {
-      if (badgeOpts.hidden?.length) {
-        const hiddenSet = new Set<string>(badgeOpts.hidden);
-        filteredCandidates = filteredCandidates.filter((b) => !hiddenSet.has(b.entity));
-      }
-      if (badgeOpts.additional?.length) {
-        for (const entityId of badgeOpts.additional) {
-          if (hass.states[entityId] && !filteredCandidates.some((b) => b.entity === entityId)) {
-            filteredCandidates.push({ entity: entityId, color: getColorForEntity(entityId, hass) });
-          }
-        }
-      }
-    }
+    // badges.hidden / badges.additional apply ONLY here — the Registry
+    // deliberately keeps the 'badges' pseudo-group out of its global
+    // exclusion set (#396).
+    const filteredCandidates = applyBadgeGroupOptions(candidates, badgeOpts, hass);
 
     const namesVisible = hasBadgeConfig ? new Set<string>(badgeOpts.names_visible || []) : null;
     const namesHidden = hasBadgeConfig ? new Set<string>(badgeOpts.names_hidden || []) : null;
@@ -670,6 +654,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     if (roomEntities.cameras.length > 0) {
       const cameraLiveToggle = dashboardConfig.camera_live_toggle === true;
       const cameraCards: LovelaceCardConfig[] = [];
+      // Companion glance entities (spotlight, motion, siren, battery,
+      // doorbell) are per DEVICE — dual-lens cameras render two cards on
+      // the same device (#412), only the first one carries the companions.
+      const devicesWithCompanions = new Set<string>();
       for (const cameraId of roomEntities.cameras) {
         if (!hass.states[cameraId]) continue;
         const camEntity = Registry.getEntity(cameraId);
@@ -688,6 +676,8 @@ class Simon42ViewRoomStrategy extends HTMLElement {
         }
 
         if ((isReolink || isAqara) && deviceId) {
+          const firstOfDevice = !devicesWithCompanions.has(deviceId);
+          devicesWithCompanions.add(deviceId);
           const devEntities = Registry.getEntityIdsForDevice(deviceId);
           const spotlight = devEntities.find(
             (id) => id.startsWith('light.') && hass.states[id] && !Registry.isEntityExcluded(id)
@@ -725,7 +715,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
             if (doorbell) glanceEntities.push({ entity: doorbell });
           }
 
-          cameraCards.push(buildRoomCameraCard(cameraId, stripAreaName(cameraId, area, hass), cameraLiveToggle, glanceEntities, isAqara));
+          cameraCards.push(buildRoomCameraCard(cameraId, stripAreaName(cameraId, area, hass), cameraLiveToggle, firstOfDevice ? glanceEntities : [], isAqara));
         } else {
           cameraCards.push(buildRoomCameraCard(cameraId, stripAreaName(cameraId, area, hass), cameraLiveToggle));
         }
