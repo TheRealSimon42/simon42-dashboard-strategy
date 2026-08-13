@@ -48,6 +48,25 @@ export function getColorForEntity(entityId: string, hass: HomeAssistant): string
   return 'grey';
 }
 
+// -- Energy block routing ---------------------------------------------
+
+/** Sensor device classes that belong to the per-room energy block (ordered — defines section sort order). */
+export const ROOM_ENERGY_SENSOR_CLASSES = ['power', 'energy', 'water', 'gas'] as const;
+
+const ROOM_ENERGY_SENSOR_CLASS_SET = new Set<string>(ROOM_ENERGY_SENSOR_CLASSES);
+
+/**
+ * Check if a sensor belongs to the room energy block (device_class
+ * power/energy/water/gas). The runtime routes these into the energy
+ * section BEFORE badge classification and has no badge branch for them,
+ * so they can never render as auto-detected badges — the editor must not
+ * offer them as badge candidates either (#396). Explicitly picking one
+ * via badges.additional remains possible as per-room override.
+ */
+export function isEnergyBlockSensor(domain: string, deviceClass: string | undefined): boolean {
+  return domain === 'sensor' && deviceClass !== undefined && ROOM_ENERGY_SENSOR_CLASS_SET.has(deviceClass);
+}
+
 // -- Badge candidate detection ----------------------------------------
 
 /**
@@ -80,10 +99,10 @@ export function isBadgeCandidate(
     // Light / humidity
     if (deviceClass === 'illuminance' || unit === 'lx') return true;
     if (unit === 'g/m³') return true; // absolute humidity
-    // Power: instantaneous load (W, kW). Energy meter totals (Wh, kWh)
-    // are intentionally omitted — they're cumulative counters that don't
-    // make sense as a single live badge value.
-    if (deviceClass === 'power' || unit === 'W' || unit === 'kW') return true;
+    // Power/energy/water/gas sensors are deliberately NOT candidates:
+    // the runtime routes them into the room energy block and has no
+    // badge branch for them, so offering them here would present badges
+    // that never render (#396). See isEnergyBlockSensor().
     return false;
   }
   if (domain === 'binary_sensor') {
@@ -145,6 +164,33 @@ export function applyBadgeGroupOptions(
     }
   }
   return filtered;
+}
+
+// -- Single-type badge selection --------------------------------------
+
+/**
+ * Pick which auto-detected sensors of ONE badge type (e.g. illuminance)
+ * become badges.
+ *
+ * Default — the user never touched the type in the editor (badges.hidden
+ * contains none of its sensors): exactly the first detected sensor, so
+ * areas with many sensors don't get badge spam.
+ *
+ * Curated — badges.hidden contains at least one sensor of the type: the
+ * user's explicit editor selection wins, and EVERY still-selected sensor
+ * of the type renders (#396). This also keeps a badge alive when the
+ * user deselects the first-detected sensor but leaves another selected.
+ */
+export function selectBadgeEntitiesOfType(entities: string[], hiddenBadges: ReadonlySet<string>): string[] {
+  const first = entities.at(0);
+  if (first === undefined) return [];
+  const curated = entities.some(function isDeselected(entityId) {
+    return hiddenBadges.has(entityId);
+  });
+  if (!curated) return [first];
+  return entities.filter(function isSelected(entityId) {
+    return !hiddenBadges.has(entityId);
+  });
 }
 
 // -- Default show_name ------------------------------------------------
