@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.22...v1.4.0) (2026-08-13)
+
+
+### Miscellaneous Chores
+
+* cut stable v1.4.0 ([#424](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/424)) ([b51591b](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/b51591b2d99e25fce4f3db973a521893110aaabd))
+
 ## [1.4.0-beta.22](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.21...v1.4.0-beta.22) (2026-08-13)
 
 
