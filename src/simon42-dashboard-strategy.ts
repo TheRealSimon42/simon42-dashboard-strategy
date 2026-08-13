@@ -66,6 +66,7 @@ class Simon42DashboardStrategy extends HTMLElement {
     const { applyViewVisibility } = await import('./utils/view-visibility');
     const { resolveCustomViews, insertCustomViews } = await import('./utils/custom-view-ref');
     const { applyDesign } = await import('./utils/design');
+    const { isUtilityViewEnabled } = await import('./utils/summary-view-utils');
     t('imports done');
 
     const getStrategy = (tag: string): any => customElements.get(tag);
@@ -90,11 +91,6 @@ class Simon42DashboardStrategy extends HTMLElement {
     const showSummaryViews = config.show_summary_views === true;
     const showRoomViews = config.show_room_views === true;
     const navItems = new Set(config.areas_display?.nav_items || []);
-    const showLights = config.show_light_summary !== false;
-    const showCovers = config.show_covers_summary !== false;
-    const showSecurity = config.show_security_summary !== false;
-    const showBatteries = config.show_battery_summary !== false;
-    const showClimate = config.show_climate_summary === true;
 
     // Pre-resolve ALL views upfront (like HA's Home Panel does)
     const overviewConfig = await getStrategy('ll-strategy-simon42-view-overview').generate(
@@ -114,16 +110,16 @@ class Simon42DashboardStrategy extends HTMLElement {
       resolve: () => Promise<LovelaceViewConfig>;
     }
     const utilityViewDefs: UtilityViewDef[] = [
-      { enabled: showLights, title: localize('views.lights'), path: 'lights', icon: 'mdi:lamps',
+      { enabled: isUtilityViewEnabled(config, 'lights'), title: localize('views.lights'), path: 'lights', icon: 'mdi:lamps',
         resolve: () => getStrategy('ll-strategy-simon42-view-lights').generate({ config }, hass) },
-      { enabled: showCovers, title: localize('views.covers'), path: 'covers', icon: 'mdi:blinds-horizontal',
+      { enabled: isUtilityViewEnabled(config, 'covers'), title: localize('views.covers'), path: 'covers', icon: 'mdi:blinds-horizontal',
         resolve: () => getStrategy('ll-strategy-simon42-view-covers').generate(
           { device_classes: ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'], config }, hass) },
-      { enabled: showSecurity, title: localize('views.security'), path: 'security', icon: 'mdi:security',
+      { enabled: isUtilityViewEnabled(config, 'security'), title: localize('views.security'), path: 'security', icon: 'mdi:security',
         resolve: () => getStrategy('ll-strategy-simon42-view-security').generate({ config }, hass) },
-      { enabled: showBatteries || config.show_battery_view === true, title: localize('views.batteries'), path: 'batteries', icon: 'mdi:battery-alert',
+      { enabled: isUtilityViewEnabled(config, 'batteries'), title: localize('views.batteries'), path: 'batteries', icon: 'mdi:battery-alert',
         resolve: () => getStrategy('ll-strategy-simon42-view-batteries').generate({ config }, hass) },
-      { enabled: showClimate, title: localize('views.climate'), path: 'climate', icon: 'mdi:thermostat',
+      { enabled: isUtilityViewEnabled(config, 'climate'), title: localize('views.climate'), path: 'climate', icon: 'mdi:thermostat',
         resolve: () => getStrategy('ll-strategy-simon42-view-climate').generate({ config }, hass) },
       { enabled: config.show_maintenance_summary === true,
         title: localize('views.maintenance'), path: 'maintenance', icon: 'mdi:wrench',

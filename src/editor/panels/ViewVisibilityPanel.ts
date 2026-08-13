@@ -3,6 +3,7 @@ import { html, type TemplateResult } from 'lit';
 import { getVisibleAreasFromHass } from '../../utils/name-utils';
 import { localize } from '../../utils/localize';
 import { getViewVisibleUsers, getSectionVisibleUsers } from '../../utils/view-visibility';
+import { isUtilityViewEnabled } from '../../utils/summary-view-utils';
 import { SECTION_REGISTRY, isSectionHiddenByConfig } from '../../sections/section-registry';
 import type { Simon42StrategyConfig } from '../../types/strategy';
 import type { StrategyEditorHost } from '../editor-host';
@@ -88,11 +89,11 @@ export function getViewOptions(host: StrategyEditorHost): RuleOption[] {
     if (enabled) views.push({ key, title: localize(titleKey) });
   }
 
-  add(config.show_light_summary !== false, 'lights', 'views.lights');
-  add(config.show_covers_summary !== false, 'covers', 'views.covers');
-  add(config.show_security_summary !== false, 'security', 'views.security');
-  add(config.show_battery_summary !== false || config.show_battery_view === true, 'batteries', 'views.batteries');
-  add(config.show_climate_summary === true, 'climate', 'views.climate');
+  add(isUtilityViewEnabled(config, 'lights'), 'lights', 'views.lights');
+  add(isUtilityViewEnabled(config, 'covers'), 'covers', 'views.covers');
+  add(isUtilityViewEnabled(config, 'security'), 'security', 'views.security');
+  add(isUtilityViewEnabled(config, 'batteries'), 'batteries', 'views.batteries');
+  add(isUtilityViewEnabled(config, 'climate'), 'climate', 'views.climate');
   add(config.show_maintenance_summary === true, 'maintenance', 'views.maintenance');
   add(config.show_camera_view === true, 'cameras', 'views.cameras');
 
