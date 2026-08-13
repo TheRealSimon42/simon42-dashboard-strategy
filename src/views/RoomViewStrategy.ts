@@ -23,6 +23,7 @@ import {
   isDefaultShowName,
   isEnergyBlockSensor,
   resolveShowName,
+  selectBadgeEntitiesOfType,
   type BadgeCandidate,
 } from '../utils/badge-utils';
 import { densePlacement } from '../utils/view-builder';
@@ -533,8 +534,14 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       [sensorEntities.gas, 'gas'],
       [sensorEntities.heat, 'heat'],
     ];
+    // Default: one badge per sensor type. When the user explicitly
+    // curated a type in the editor (badges.hidden touches it), all
+    // still-selected sensors of that type render (#396).
+    const hiddenBadgeSet = new Set<string>(badgeOpts?.hidden ?? []);
     for (const [entities, colorKey] of singleTypes) {
-      if (entities[0]) addCandidate(entities[0], colorKey);
+      for (const entityId of selectBadgeEntitiesOfType(entities, hiddenBadgeSet)) {
+        addCandidate(entityId, colorKey);
+      }
     }
 
     if (dashboardConfig.show_window_contacts_in_rooms !== false) {

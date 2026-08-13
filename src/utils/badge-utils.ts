@@ -166,6 +166,33 @@ export function applyBadgeGroupOptions(
   return filtered;
 }
 
+// -- Single-type badge selection --------------------------------------
+
+/**
+ * Pick which auto-detected sensors of ONE badge type (e.g. illuminance)
+ * become badges.
+ *
+ * Default — the user never touched the type in the editor (badges.hidden
+ * contains none of its sensors): exactly the first detected sensor, so
+ * areas with many sensors don't get badge spam.
+ *
+ * Curated — badges.hidden contains at least one sensor of the type: the
+ * user's explicit editor selection wins, and EVERY still-selected sensor
+ * of the type renders (#396). This also keeps a badge alive when the
+ * user deselects the first-detected sensor but leaves another selected.
+ */
+export function selectBadgeEntitiesOfType(entities: string[], hiddenBadges: ReadonlySet<string>): string[] {
+  const first = entities.at(0);
+  if (first === undefined) return [];
+  const curated = entities.some(function isDeselected(entityId) {
+    return hiddenBadges.has(entityId);
+  });
+  if (!curated) return [first];
+  return entities.filter(function isSelected(entityId) {
+    return !hiddenBadges.has(entityId);
+  });
+}
+
 // -- Default show_name ------------------------------------------------
 
 /** Whether a badge with this device_class shows its entity name by default */

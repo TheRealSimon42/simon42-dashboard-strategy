@@ -13,6 +13,7 @@ import {
   applyBadgeGroupOptions,
   isBadgeCandidate,
   isEnergyBlockSensor,
+  selectBadgeEntitiesOfType,
   type BadgeCandidate,
 } from '../../src/utils/badge-utils';
 import { makeHass } from '../fixtures/hass';
@@ -110,5 +111,44 @@ describe('isBadgeCandidate — energy-block sensors excluded (#396)', () => {
     expect(isBadgeCandidate('sensor', 'illuminance', 'lx', 'sensor.kitchen_light_level')).toBe(true);
     expect(isBadgeCandidate('sensor', 'carbon_dioxide', 'ppm', 'sensor.kitchen_air')).toBe(true);
     expect(isBadgeCandidate('binary_sensor', 'gas', undefined, 'binary_sensor.kitchen_gas_alarm')).toBe(true);
+  });
+});
+
+// ============================================================================
+// Single-type badge selection — default stays one badge per type, but an
+// explicit editor selection renders every still-selected sensor (#396).
+// ============================================================================
+
+describe('selectBadgeEntitiesOfType', () => {
+  const lux = ['sensor.lux_1', 'sensor.lux_2', 'sensor.lux_3'];
+
+  it('renders exactly the first sensor by default (no badge spam)', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set())).toEqual(['sensor.lux_1']);
+  });
+
+  it('renders all still-selected sensors once the type was curated', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set(['sensor.lux_3']))).toEqual([
+      'sensor.lux_1',
+      'sensor.lux_2',
+    ]);
+  });
+
+  it('keeps a later sensor alive when the first-detected one is deselected', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set(['sensor.lux_1']))).toEqual([
+      'sensor.lux_2',
+      'sensor.lux_3',
+    ]);
+  });
+
+  it('renders nothing when every sensor of the type is deselected', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set(lux))).toEqual([]);
+  });
+
+  it('ignores hidden entries of other types', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set(['sensor.other_motion']))).toEqual(['sensor.lux_1']);
+  });
+
+  it('returns empty for an empty type', () => {
+    expect(selectBadgeEntitiesOfType([], new Set(['sensor.lux_1']))).toEqual([]);
   });
 });
