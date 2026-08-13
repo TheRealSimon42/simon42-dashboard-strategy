@@ -126,6 +126,8 @@ export interface Simon42StrategyConfig {
   show_room_views?: boolean; // default: false
   group_by_floors?: boolean; // default: false
   show_covers_summary?: boolean; // default: true
+  show_covers_view?: boolean; // default: false — keep the /covers view
+  // available even when show_covers_summary is off (#391, battery pattern)
   show_partially_open_covers?: boolean; // default: false
   group_covers_by_floors?: boolean; // default: false
   group_covers_by_areas?: boolean; // default: false — group covers by area
@@ -134,6 +136,8 @@ export interface Simon42StrategyConfig {
   // area context like the security view (#406)
   show_clock_card?: boolean; // default: true
   show_light_summary?: boolean; // default: true
+  show_light_view?: boolean; // default: false — keep the /lights view
+  // available even when show_light_summary is off (#391, battery pattern)
   group_lights_by_floors?: boolean; // default: false
   group_lights_by_areas?: boolean; // default: false — group lights by area
   // inside the lights group card (area headings nest under floor headings when
@@ -143,6 +147,8 @@ export interface Simon42StrategyConfig {
   lights_sort_by?: 'last_changed' | 'name'; // default: 'last_changed' —
   // 'name' sorts lights alphabetically by friendly name (#168, from PR #250)
   show_security_summary?: boolean; // default: true
+  show_security_view?: boolean; // default: false — keep the /security view
+  // available even when show_security_summary is off (#391, battery pattern)
   show_battery_summary?: boolean; // default: true
   show_battery_view?: boolean; // default: false — keep the /batteries view
   // available even when show_battery_summary is off (#315: badge deep-links)
@@ -163,6 +169,8 @@ export interface Simon42StrategyConfig {
   // long-form only, setup videos vanish once the integration is installed);
   // each tip dismissable per browser via localStorage
   show_climate_summary?: boolean; // default: false
+  show_climate_view?: boolean; // default: false — keep the /climate view
+  // available even when show_climate_summary is off (#391, battery pattern)
   show_camera_view?: boolean; // default: false — opt-in CCTV view (/cameras):
   // one block per camera device with spotlight tile, Reolink PTZ pad,
   // recordings deep-link and optional LLM Vision event timelines

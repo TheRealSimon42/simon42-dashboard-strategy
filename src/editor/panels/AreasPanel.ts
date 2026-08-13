@@ -27,7 +27,7 @@ import type {
 } from '../../types/strategy';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../../types/registries';
 import { localize } from '../../utils/localize';
-import { isBadgeCandidate, isDefaultShowName, resolveShowName } from '../../utils/badge-utils';
+import { isBadgeCandidate, isDefaultShowName, isEnergyBlockSensor, resolveShowName } from '../../utils/badge-utils';
 import { findUpsEntityGroups } from '../../views/RoomViewStrategy';
 import { stateFor } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
@@ -1335,7 +1335,7 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
       roomEntities.scripts.push(entity.entity_id);
     } else if (domain === 'camera') {
       roomEntities.cameras.push(entity.entity_id);
-    } else if (domain === 'sensor' && ['power', 'energy', 'water', 'gas'].includes(deviceClass || '')) {
+    } else if (isEnergyBlockSensor(domain, deviceClass)) {
       roomEntities.energy.push(entity.entity_id);
     }
   }
