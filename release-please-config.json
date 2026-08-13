@@ -4,9 +4,8 @@
     ".": {
       "release-type": "node",
       "include-component-in-tag": false,
-      "prerelease": true,
-      "versioning": "prerelease",
-      "prerelease-type": "beta",
+      "prerelease": false,
+      "versioning": "default",
       "extra-files": [
         "src/simon42-dashboard-strategy.ts"
       ]
