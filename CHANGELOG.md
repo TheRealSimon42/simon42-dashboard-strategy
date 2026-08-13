@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.22](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.21...v1.4.0-beta.22) (2026-08-13)
+
+
+### Bug Fixes
+
+* security view no longer silently drops entities from hidden areas ([#422](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/422)) ([8c457b8](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/8c457b89dfdcf6e96664e466a6840af17132fec5)), closes [#410](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/410)
+
 ## [1.4.0-beta.21](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.20...v1.4.0-beta.21) (2026-08-13)
 
 
