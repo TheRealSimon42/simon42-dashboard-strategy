@@ -1269,6 +1269,10 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
     if (excludeLabels.includes(entity.entity_id)) continue;
     if (!stateFor(hass, entity.entity_id)) continue;
     if (entity.hidden) continue;
+    // Config/diagnostic entities never render on the dashboard (same
+    // registry-based check as Registry._isEntityVisible) — don't offer
+    // them in the picker either (#397).
+    if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') continue;
 
     const entityRegistry = Reflect.get(hass.entities, entity.entity_id) as
       EntityRegistryEntry | undefined;
@@ -1353,6 +1357,9 @@ function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Sim
     if (entity.hidden) continue;
     if (entity.labels.includes('no_dboard')) continue;
     if (!stateFor(hass, entity.entity_id)) continue;
+    // Config/diagnostic entities never render as badges (same registry-based
+    // check as Registry._isEntityVisible) — don't offer them here (#397).
+    if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') continue;
 
     const domain = entity.entity_id.split('.')[0];
     const stateObj = stateFor(hass, entity.entity_id);

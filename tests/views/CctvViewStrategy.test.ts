@@ -107,6 +107,37 @@ describe('collectCameraBlocks', () => {
     expect(blocks[0].isReolink).toBe(true);
   });
 
+  it('keeps one block per lens for dual-lens cameras (#412)', () => {
+    const hass = makeHass({
+      areas: [{ area_id: 'einfahrt', name: 'Einfahrt' }],
+      devices: [
+        {
+          id: 'dev_omvi',
+          area_id: 'einfahrt',
+          manufacturer: 'Reolink',
+          model: 'Omvi 3i',
+          name: 'Einfahrt Kamera',
+        },
+      ],
+      entities: [
+        // One entity per lens with the SAME translation_key — both must
+        // survive; the main-stream variants are still deduped away.
+        { entity_id: 'camera.einfahrt_weit', device_id: 'dev_omvi', platform: 'reolink', translation_key: 'sub', attributes: { friendly_name: 'Einfahrt Weitwinkel' } },
+        { entity_id: 'camera.einfahrt_weit_klar', device_id: 'dev_omvi', platform: 'reolink', translation_key: 'main', attributes: { friendly_name: 'Einfahrt Weitwinkel Klar' } },
+        { entity_id: 'camera.einfahrt_zoom', device_id: 'dev_omvi', platform: 'reolink', translation_key: 'sub', attributes: { friendly_name: 'Einfahrt Zoom' } },
+        { entity_id: 'camera.einfahrt_zoom_klar', device_id: 'dev_omvi', platform: 'reolink', translation_key: 'main', attributes: { friendly_name: 'Einfahrt Zoom Klar' } },
+      ],
+    });
+    initRegistry(hass);
+
+    const blocks = collectCameraBlocks(hass, {});
+    expect(blocks.map((b) => b.cameraId).sort()).toEqual([
+      'camera.einfahrt_weit',
+      'camera.einfahrt_zoom',
+    ]);
+    expect(blocks.every((b) => b.deviceId === 'dev_omvi')).toBe(true);
+  });
+
   it('prefers the live view over the last-recording camera (Ring, #378)', () => {
     const hass = makeHass({
       areas: [{ area_id: 'eingang', name: 'Eingang' }],
@@ -353,6 +384,43 @@ describe('buildCctvSections', () => {
     expect(recordings?.tap_action?.navigation_path).toBe(
       `${ROOT_PATH}/${encodeURIComponent('playlist,media-source://reolink/CAM|entry_a|0')}`
     );
+  });
+
+  it('renders PTZ pad and recordings link only once per dual-lens device (#412)', async () => {
+    const spec = reolinkSpec();
+    // Second lens on the same device with the same translation_key
+    spec.entities?.push({
+      entity_id: 'camera.garten_zoom',
+      device_id: 'dev_garten',
+      platform: 'reolink',
+      translation_key: 'sub',
+      attributes: { friendly_name: 'Garten Kamera Zoom' },
+    });
+    const hass = makeHass(spec);
+    initRegistry(hass);
+    withCallWS(hass, function browse() {
+      return Promise.resolve({ children: [camChild('entry_a', '0', 'Garten Kamera')] });
+    });
+
+    const sections = await buildCctvSections(hass, {});
+    // Two camera sections for the same device
+    expect(sections).toHaveLength(2);
+
+    const ptzShortcuts = sections.map(function countPtz(section) {
+      return findCards(section.cards, 'shortcut').filter(function isPtz(card) {
+        return card.tap_action?.action === 'perform-action';
+      }).length;
+    });
+    const recordingLinks = sections.map(function countRecordings(section) {
+      return findCards(section.cards, 'shortcut').filter(function isNavigate(card) {
+        return card.tap_action?.action === 'navigate';
+      }).length;
+    });
+
+    // First block of the device carries PTZ + recordings, the second none
+    expect(ptzShortcuts.filter(function nonZero(n) { return n > 0; })).toHaveLength(1);
+    expect(recordingLinks).toEqual(expect.arrayContaining([1, 0]));
+    expect(recordingLinks.reduce(function sum(a, b) { return a + b; }, 0)).toBe(1);
   });
 
   it('hides cameras listed in hidden_cameras (shared with the security view)', async () => {

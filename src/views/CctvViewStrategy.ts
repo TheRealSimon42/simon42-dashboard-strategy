@@ -1,7 +1,8 @@
 // ====================================================================
 // VIEW STRATEGY — CCTV (Camera Overview)
 // ====================================================================
-// Opt-in view (show_camera_view): one block per camera DEVICE with
+// Opt-in view (show_camera_view): one block per camera DEVICE (dual-lens
+// cameras: one block per lens, see pickPrimaryCameras) with
 //  - the camera picture (picture-glance with status entities when the
 //    device provides them, picture-entity otherwise)
 //  - a spotlight tile when the device has a light entity
@@ -257,13 +258,23 @@ function isVisibleWithState(entityId: string, hass: HomeAssistant): boolean {
   return !!stateFor(hass, entityId) && !Registry.isEntityExcluded(entityId);
 }
 
-function pickPrimaryCamera(cameraIds: string[]): string {
+/**
+ * Pick the camera entities to render for one device: all entities that
+ * carry the best available translation_key. Dual-lens cameras (e.g.
+ * Reolink Omvi 3i) expose one entity PER LENS with the SAME
+ * translation_key — every lens must keep its own block (#412), while
+ * secondary streams of the same lens (main/snapshot variants) are still
+ * deduped away. Detection stays translation_key-based — never entity_id
+ * patterns (localized, unstable).
+ */
+function pickPrimaryCameras(cameraIds: string[]): string[] {
   for (const preferredKey of [...REOLINK_STREAM_PREFERENCE, ...LIVE_STREAM_PREFERENCE]) {
-    for (const id of cameraIds) {
-      if (Registry.getEntity(id)?.translation_key === preferredKey) return id;
-    }
+    const matches = cameraIds.filter(function hasPreferredKey(id) {
+      return Registry.getEntity(id)?.translation_key === preferredKey;
+    });
+    if (matches.length > 0) return matches;
   }
-  return cameraIds[0];
+  return [cameraIds[0]];
 }
 
 function cameraDisplayName(cameraId: string, hass: HomeAssistant): string {
@@ -279,7 +290,8 @@ export function cameraBlockAreaId(block: CameraBlock): string | null {
 }
 
 /**
- * Group visible cameras into one block per device (entities without a
+ * Group visible cameras into one block per device lens (normally one per
+ * device; dual-lens cameras yield one block per lens, entities without a
  * device get their own block). Cameras in areas excluded from the
  * dashboard (areas_display.hidden) are dropped — their room views don't
  * exist, so neither the security view's area links nor the exclusion
@@ -309,12 +321,14 @@ export function collectCameraBlocks(
 
   const blocks: CameraBlock[] = [];
   for (const [deviceId, ids] of byDevice) {
-    const cameraId = ids.length === 1 ? ids[0] : pickPrimaryCamera(ids);
-    blocks.push({
-      cameraId,
-      deviceId,
-      isReolink: Registry.getEntity(cameraId)?.platform === 'reolink',
-    });
+    const primaryIds = ids.length === 1 ? [ids[0]] : pickPrimaryCameras(ids);
+    for (const cameraId of primaryIds) {
+      blocks.push({
+        cameraId,
+        deviceId,
+        isReolink: Registry.getEntity(cameraId)?.platform === 'reolink',
+      });
+    }
   }
   for (const cameraId of standalone) {
     blocks.push({
@@ -478,12 +492,15 @@ export function leanCameraCard(block: CameraBlock): LovelaceCardConfig {
 
 /**
  * Build the section for one camera block. `recordingsPath` is the media
- * browser deep link (null = no recordings link). Exported for tests.
+ * browser deep link (null = no recordings link). `renderPtz` guards the
+ * per-DEVICE PTZ pad: dual-lens cameras produce two blocks on the same
+ * device, but the pad must only render once (#412). Exported for tests.
  */
 export function buildCameraSection(
   block: CameraBlock,
   hass: HomeAssistant,
-  recordingsPath: string | null
+  recordingsPath: string | null,
+  renderPtz: boolean = true
 ): LovelaceSectionConfig {
   const name = cameraDisplayName(block.cameraId, hass);
   const companions = findCompanions(block.deviceId, hass);
@@ -523,7 +540,9 @@ export function buildCameraSection(
     cards.push(buildSpotlightTile(companions.spotlight, hass));
   }
 
-  cards.push(...buildPtzCards(companions.ptz));
+  if (renderPtz) {
+    cards.push(...buildPtzCards(companions.ptz));
+  }
 
   if (recordingsPath) {
     cards.push({
@@ -636,10 +655,16 @@ export async function buildCctvSections(
   }
 
   const sections: LovelaceSectionConfig[] = [];
+  // PTZ pad and recordings link are per DEVICE — with dual-lens cameras
+  // (two blocks on one device, #412) only the first block renders them.
+  const devicesWithControls = new Set<string>();
   for (const block of blocks) {
+    const firstOfDevice = !block.deviceId || !devicesWithControls.has(block.deviceId);
+    if (block.deviceId) devicesWithControls.add(block.deviceId);
     const device = block.deviceId ? Registry.getDevice(block.deviceId) : undefined;
-    const recordingsPath = block.isReolink ? resolveRecordingsPath(device, camItems) : null;
-    sections.push(buildCameraSection(block, hass, recordingsPath));
+    const recordingsPath =
+      block.isReolink && firstOfDevice ? resolveRecordingsPath(device, camItems) : null;
+    sections.push(buildCameraSection(block, hass, recordingsPath, firstOfDevice));
   }
 
   // Opt-in even when LLM Vision is present: the llmvision-card re-fetches
