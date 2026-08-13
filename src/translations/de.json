@@ -72,7 +72,8 @@
     "off": "Ausgeschaltete Lichter",
     "all_off": "Alle aus",
     "all_on": "Alle ein",
-    "floor_other": "Weitere"
+    "floor_other": "Weitere",
+    "no_area": "Ohne Bereich"
   },
   "covers": {
     "open": "Offene Rollos & Abdeckungen",
@@ -89,7 +90,8 @@
     "windows_closed": "Geschlossene Fenster",
     "windows_partial": "Teiloffene Fenster",
     "windows_open_all": "Alle öffnen",
-    "windows_close_all": "Alle schließen"
+    "windows_close_all": "Alle schließen",
+    "no_area": "Ohne Bereich"
   },
   "security": {
     "locks_unlocked": "Schlösser - Entriegelt",
@@ -121,7 +123,8 @@
     "low": "Niedrig",
     "good": "Gut",
     "battery_one": "Batterie",
-    "battery_many": "Batterien"
+    "battery_many": "Batterien",
+    "no_area": "Ohne Bereich"
   },
   "ups": {
     "battery": "Akku"
@@ -269,6 +272,8 @@
     "show_light_summary": "Licht-Zusammenfassung anzeigen",
     "group_lights_by_floors": "Lichter nach Etagen gruppieren",
     "group_lights_by_floors_desc": "Gruppiert die Lichter in der Lichter-Ansicht nach Etagen. Jede Etage erhält einen eigenen Bereich mit Ein-/Ausschalt-Button.",
+    "group_lights_by_areas": "Lichter nach Bereichen gruppieren",
+    "group_lights_by_areas_desc": "Gruppiert die Lichter in der Lichter-Ansicht nach Bereichen. Jeder Bereich erhält eine eigene Überschrift (unter der Etage, wenn „Lichter nach Etagen gruppieren“ ebenfalls aktiv ist), sodass nackte Lichtnamen ihren Raumbezug erhalten. Behält die Ein-/Aus-Unterteilung und die Batch-Buttons bei.",
     "lights_sort_by_name": "Lichter alphabetisch sortieren",
     "lights_sort_by_name_desc": "Sortiert Lichter nach Namen statt nach letzter Änderung — in der Lichter-Ansicht, in Raum-Ansichten und in verschachtelten Gruppen.",
     "nested_light_groups": "Verschachtelte Lichtgruppen anzeigen",
@@ -278,6 +283,8 @@
     "show_partially_open_covers_desc": "Zeigt teiloffene Rollos (weder ganz offen noch geschlossen) in einer eigenen Gruppe an.",
     "group_covers_by_floors": "Rollos nach Etagen gruppieren",
     "group_covers_by_floors_desc": "Gruppiert die Rollos in der Rollos-Ansicht nach Etagen. Jede Etage erhält einen eigenen Unterabschnitt mit dem Etagennamen als Überschrift. Betrifft die Hauptgruppe; Markisen und Fenster bleiben ungeteilt.",
+    "group_covers_by_areas": "Rollos nach Bereichen gruppieren",
+    "group_covers_by_areas_desc": "Gruppiert die Rollos in der Rollos-Ansicht nach Bereichen. Jeder Bereich erhält eine eigene Überschrift (unter der Etage, wenn „Rollos nach Etagen gruppieren“ ebenfalls aktiv ist), sodass nackte Rollonamen wie „Fenster“ ihren Raumbezug erhalten. Behält die Offen/Geschlossen-Unterteilung und die Batch-Buttons; gilt für die Hauptgruppe sowie Markisen und Fenster.",
     "show_security_summary": "Sicherheits-Zusammenfassung anzeigen",
     "show_cameras_in_security": "Kameras in der Sicherheits-Ansicht anzeigen",
     "show_cameras_in_security_desc": "Zeigt die Kameras als kompakte Standbild-Karten in der Sicherheits-Ansicht (wie im Home Assistant Security-Panel). Ist die Kamera-Ansicht aktiviert, führt die Kameras-Überschrift direkt dorthin.",
@@ -303,6 +310,8 @@
     "show_battery_view_desc": "Erzeugt die Batterie-Unterseite (/batteries) auch dann, wenn die Batterie-Zusammenfassung ausgeblendet ist — z.B. für Badges oder Links, die direkt auf die Seite zeigen.",
     "show_area_in_battery_view": "Bereichsname auf Batterie-Kacheln anzeigen",
     "show_area_in_battery_view_desc": "Stellt den Bereichsnamen vor jeder Batterie-Kachel in der Batterien-Ansicht voran (z.B. „Wohnzimmer • Fenster-Batterie“). Hilfreich, wenn mehrere gleichnamige Kontaktsensoren nur über den Raum unterscheidbar sind.",
+    "group_batteries_by_areas": "Batterien nach Bereichen gruppieren",
+    "group_batteries_by_areas_desc": "Gruppiert die Batterien innerhalb jedes Status-Abschnitts (Kritisch/Niedrig/Gut) nach Bereichen, jeder Bereich mit eigener Unterüberschrift und einem abschließenden „Ohne Bereich“-Bucket. Setzt „Bereichsname auf Batterie-Kacheln anzeigen“ außer Kraft, wenn aktiv – der Bereich ist dann eine Überschrift, kein Namenspräfix.",
     "hide_battery_notes_entities": "Battery-Notes-Hilfsentitäten ausblenden",
     "hide_battery_notes_entities_desc": "Blendet die von der HACS-Integration „Battery Notes“ erzeugten Hilfsentitäten (battery_type, battery_quantity, battery_low) in der Batterie-Übersicht und -Zusammenfassung aus. In anderen Dashboards bleiben sie nutzbar — hier sind sie aber kein echter Ladestand.",
     "battery_thresholds": "Batterie-Schwellwerte",

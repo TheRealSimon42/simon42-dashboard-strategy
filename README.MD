@@ -559,6 +559,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `battery_critical_threshold` | number | `20` | — | Schwellwert für kritische Batterien (%) |
 | `battery_low_threshold` | number | `50` | — | Schwellwert für niedrige Batterien (%) |
 | `show_area_in_battery_view` | boolean | `false` | v1.4.0 | Bereichsnamen in der Batterie-View anzeigen |
+| `group_batteries_by_areas` | boolean | `false` | v1.4.0 | Batterien innerhalb jedes Status-Abschnitts (Kritisch/Niedrig/Gut) nach Bereichen gruppieren |
 | `unavailable_batteries_bucket` | `critical` \| `good` | `good` | v1.4.0 | Einordnung nicht erreichbarer Batterie-Sensoren |
 
 **Bereiche & Räume**
@@ -605,9 +606,11 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_summary_views` | boolean | `false` | — | Summary-Views in Navigation |
 | `show_room_views` | boolean | `false` | — | Raum-Views in Navigation |
 | `group_lights_by_floors` | boolean | `false` | — | Lichter nach Etagen gruppieren |
+| `group_lights_by_areas` | boolean | `false` | v1.4.0 | Lichter nach Bereichen gruppieren |
 | `nested_light_groups` | boolean | `false` | v1.3.5 | Verschachtelte Lichtgruppen aufklappbar rendern |
 | `lights_sort_by` | `last_changed` \| `name` | `last_changed` | v1.4.0 | Lichter alphabetisch statt nach letzter Änderung sortieren |
 | `group_covers_by_floors` | boolean | `false` | v1.4.0 | Rollos nach Etagen gruppieren |
+| `group_covers_by_areas` | boolean | `false` | v1.4.0 | Rollos nach Bereichen gruppieren |
 | `view_visible_users` | object | `{}` | v1.4.0 | Views (Tab + Übersichts-Einstiege) nur für bestimmte HA-Benutzer anzeigen (siehe oben) |
 | `section_visible_users` | object | `{}` | v1.4.0 | Übersichts-Sections nur für bestimmte HA-Benutzer anzeigen (siehe oben) |
 

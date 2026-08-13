@@ -63,6 +63,10 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
         (checked) => host._toggleChanged('group_lights_by_floors', checked, false))}
       <div class="description">${localize('editor.group_lights_by_floors_desc')}</div>
 
+      ${host._renderCheckbox('group-lights-by-areas', localize('editor.group_lights_by_areas'), host._config.group_lights_by_areas === true,
+        (checked) => host._toggleChanged('group_lights_by_areas', checked, false))}
+      <div class="description">${localize('editor.group_lights_by_areas_desc')}</div>
+
       ${host._renderCheckbox('lights-sort-by-name', localize('editor.lights_sort_by_name'), host._config.lights_sort_by === 'name',
         (checked) => lightsSortByChanged(host, checked))}
       <div class="description">${localize('editor.lights_sort_by_name_desc')}</div>
@@ -82,6 +86,10 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
         ${host._renderCheckbox('group-covers-by-floors', localize('editor.group_covers_by_floors'), groupCoversByFloors,
           (checked) => host._toggleChanged('group_covers_by_floors', checked, false))}
         <div class="description">${localize('editor.group_covers_by_floors_desc')}</div>
+
+        ${host._renderCheckbox('group-covers-by-areas', localize('editor.group_covers_by_areas'), host._config.group_covers_by_areas === true,
+          (checked) => host._toggleChanged('group_covers_by_areas', checked, false))}
+        <div class="description">${localize('editor.group_covers_by_areas_desc')}</div>
       </div>
 
       ${host._renderCheckbox('show-security-summary', localize('editor.show_security_summary'), showSecuritySummary,
@@ -145,6 +153,10 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
         ${host._renderCheckbox('show-area-in-battery-view', localize('editor.show_area_in_battery_view'), showAreaInBatteryView,
           (checked) => host._toggleChanged('show_area_in_battery_view', checked, false))}
         <div class="description">${localize('editor.show_area_in_battery_view_desc')}</div>
+
+        ${host._renderCheckbox('group-batteries-by-areas', localize('editor.group_batteries_by_areas'), host._config.group_batteries_by_areas === true,
+          (checked) => host._toggleChanged('group_batteries_by_areas', checked, false))}
+        <div class="description">${localize('editor.group_batteries_by_areas_desc')}</div>
         ${host._renderCheckbox('hide-battery-notes-entities', localize('editor.hide_battery_notes_entities'), hideBatteryNotesEntities,
           (checked) => host._toggleChanged('hide_battery_notes_entities', checked, false))}
         <div class="description">${localize('editor.hide_battery_notes_entities_desc')}</div>
