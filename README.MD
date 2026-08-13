@@ -500,15 +500,19 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_search_card` | boolean | `false` | — | Such-Karte auf der Übersicht |
 | `search_card_variant` | `custom` \| `tip` | `custom` | v1.4.0 | `custom` benötigt custom:search-card aus HACS; `tip` ist ein HA-nativer Hinweis auf die globale Suche |
 | `show_light_summary` | boolean | `true` | — | Lichter-Zusammenfassung |
+| `show_light_view` | boolean | `false` | v1.4.0 | Licht-Unterseite (/lights) auch ohne Licht-Zusammenfassung bereitstellen |
 | `show_covers_summary` | boolean | `true` | — | Rollo-Zusammenfassung |
+| `show_covers_view` | boolean | `false` | v1.4.0 | Rollo-Unterseite (/covers) auch ohne Rollo-Zusammenfassung bereitstellen |
 | `show_partially_open_covers` | boolean | `false` | — | Teiloffene Rollos separat anzeigen |
 | `show_security_summary` | boolean | `true` | — | Sicherheits-Zusammenfassung |
+| `show_security_view` | boolean | `false` | v1.4.0 | Sicherheits-Unterseite (/security) auch ohne Sicherheits-Zusammenfassung bereitstellen |
 | `show_cameras_in_security` | boolean | `false` | v1.4.0 | Kameras als kompakte Karten in der Sicherheits-Ansicht (Überschrift verlinkt zur Kamera-Ansicht, falls aktiviert) |
 | `group_security_by_areas` | boolean | `false` | v1.4.0 | HA-Style-Layout: alle Bereiche untereinander (nach Etagen), Aktivität als Seitenleiste |
 | `show_security_activity` | boolean | `true` | v1.4.0 | Aktivitäts-Verlauf (24h-Logbuch) in der Sicherheits-Ansicht; entfällt automatisch ohne Logbuch-Integration |
 | `security_activity_position` | `start` \| `end` | `start` | v1.4.0 | Aktivitäts-Section an erster (Standard) oder letzter Stelle (nur Kategorien-Modus) |
 | `hidden_cameras` | string[] | `[]` | v1.4.0 | Kameras aus Sicherheits- UND Kamera-Ansicht ausblenden (Checkboxen im Editor; Raum-Ansichten unberührt) |
 | `show_climate_summary` | boolean | `false` | — | Klima-Zusammenfassung |
+| `show_climate_view` | boolean | `false` | v1.4.0 | Klima-Unterseite (/climate) auch ohne Klima-Zusammenfassung bereitstellen |
 | `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
 | `show_battery_view` | boolean | `false` | v1.4.0 | Batterie-Unterseite (/batteries) auch ohne Batterie-Zusammenfassung bereitstellen |
 | `show_camera_view` | boolean | `false` | v1.4.0 | **Experimentell:** Kamera-Ansicht (/cameras) mit Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (siehe unten) |
@@ -599,6 +603,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `room_pins_show_state` | boolean | `false` | — | Zustand auf Raum-Pin-Kacheln anzeigen |
 | `room_pins_hide_last_changed` | boolean | `false` | — | „Zuletzt geändert" auf Raum-Pins ausblenden |
 | `show_locks_in_rooms` | boolean | `false` | — | Schlösser in Raum-Views |
+| `show_cover_controls_in_rooms` | boolean | `true` | v1.4.0 | Hoch/Stopp/Runter-Sammel-Buttons an den Rollo- und Vorhang-Überschriften in Raum-Views (Fenster/Türen/Garagentore ausgenommen) |
 | `show_switches_section_in_rooms` | boolean | `false` | v1.4.0 | Schalter & smarte Steckdosen als eigener Abschnitt „Schalter & Steckdosen“ statt unter „Sonstiges“ |
 | `show_automations_in_rooms` | boolean | `false` | — | Automationen in Raum-Views |
 | `show_scripts_in_rooms` | boolean | `false` | — | Skripte in Raum-Views |

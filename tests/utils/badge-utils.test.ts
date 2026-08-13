@@ -9,7 +9,13 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { applyBadgeGroupOptions, type BadgeCandidate } from '../../src/utils/badge-utils';
+import {
+  applyBadgeGroupOptions,
+  isBadgeCandidate,
+  isEnergyBlockSensor,
+  selectBadgeEntitiesOfType,
+  type BadgeCandidate,
+} from '../../src/utils/badge-utils';
 import { makeHass } from '../fixtures/hass';
 
 function candidatesFixture(): BadgeCandidate[] {
@@ -65,5 +71,84 @@ describe('applyBadgeGroupOptions', () => {
     const candidates = candidatesFixture();
     applyBadgeGroupOptions(candidates, { hidden: ['sensor.kitchen_power'], additional: ['sensor.kitchen_co2'] }, hass);
     expect(candidates).toEqual(candidatesFixture());
+  });
+});
+
+// ============================================================================
+// Energy block routing — the editor's candidate list must mirror the runtime:
+// power/energy/water/gas sensors are routed into the room energy block and
+// never render as auto-detected badges, so they must not be candidates (#396).
+// ============================================================================
+
+describe('isEnergyBlockSensor', () => {
+  it('matches sensor entities with an energy-block device_class', () => {
+    for (const dc of ['power', 'energy', 'water', 'gas']) {
+      expect(isEnergyBlockSensor('sensor', dc)).toBe(true);
+    }
+  });
+
+  it('ignores other domains and device classes', () => {
+    expect(isEnergyBlockSensor('binary_sensor', 'gas')).toBe(false); // gas detector, not a meter
+    expect(isEnergyBlockSensor('sensor', 'illuminance')).toBe(false);
+    expect(isEnergyBlockSensor('sensor', undefined)).toBe(false);
+  });
+});
+
+describe('isBadgeCandidate — energy-block sensors excluded (#396)', () => {
+  it('rejects power sensors (device_class and W/kW unit heuristics)', () => {
+    expect(isBadgeCandidate('sensor', 'power', 'W', 'sensor.kitchen_plug_load')).toBe(false);
+    expect(isBadgeCandidate('sensor', undefined, 'W', 'sensor.kitchen_plug_load')).toBe(false);
+    expect(isBadgeCandidate('sensor', undefined, 'kW', 'sensor.kitchen_plug_load')).toBe(false);
+  });
+
+  it('rejects energy/water/gas meter sensors', () => {
+    expect(isBadgeCandidate('sensor', 'energy', 'kWh', 'sensor.kitchen_consumption')).toBe(false);
+    expect(isBadgeCandidate('sensor', 'water', 'L', 'sensor.kitchen_water_meter')).toBe(false);
+    expect(isBadgeCandidate('sensor', 'gas', 'm³', 'sensor.kitchen_gas_meter')).toBe(false);
+  });
+
+  it('still accepts non-energy sensor badges', () => {
+    expect(isBadgeCandidate('sensor', 'illuminance', 'lx', 'sensor.kitchen_light_level')).toBe(true);
+    expect(isBadgeCandidate('sensor', 'carbon_dioxide', 'ppm', 'sensor.kitchen_air')).toBe(true);
+    expect(isBadgeCandidate('binary_sensor', 'gas', undefined, 'binary_sensor.kitchen_gas_alarm')).toBe(true);
+  });
+});
+
+// ============================================================================
+// Single-type badge selection — default stays one badge per type, but an
+// explicit editor selection renders every still-selected sensor (#396).
+// ============================================================================
+
+describe('selectBadgeEntitiesOfType', () => {
+  const lux = ['sensor.lux_1', 'sensor.lux_2', 'sensor.lux_3'];
+
+  it('renders exactly the first sensor by default (no badge spam)', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set())).toEqual(['sensor.lux_1']);
+  });
+
+  it('renders all still-selected sensors once the type was curated', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set(['sensor.lux_3']))).toEqual([
+      'sensor.lux_1',
+      'sensor.lux_2',
+    ]);
+  });
+
+  it('keeps a later sensor alive when the first-detected one is deselected', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set(['sensor.lux_1']))).toEqual([
+      'sensor.lux_2',
+      'sensor.lux_3',
+    ]);
+  });
+
+  it('renders nothing when every sensor of the type is deselected', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set(lux))).toEqual([]);
+  });
+
+  it('ignores hidden entries of other types', () => {
+    expect(selectBadgeEntitiesOfType(lux, new Set(['sensor.other_motion']))).toEqual(['sensor.lux_1']);
+  });
+
+  it('returns empty for an empty type', () => {
+    expect(selectBadgeEntitiesOfType([], new Set(['sensor.lux_1']))).toEqual([]);
   });
 });
