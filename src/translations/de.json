@@ -363,6 +363,8 @@
     "show_window_alerts_on_areas_desc": "Zeigt ein Alert-Icon auf der Bereichskarte, sobald ein Fenster-, Tür-, Öffnungs- oder Garagentor-Kontaktsensor im Bereich offen ist. Unabhängig vom regulären Alert-Toggle oben.",
     "show_locks_in_rooms": "Schlösser in Raum-Ansichten anzeigen",
     "show_locks_in_rooms_desc": "Zeigt Schlösser (z.B. Nuki) in den jeweiligen Raum-Ansichten an. Schlösser erscheinen unabhängig davon immer in der Sicherheits-Übersicht.",
+    "show_cover_controls_in_rooms": "Sammel-Buttons an Rollo-Überschriften anzeigen",
+    "show_cover_controls_in_rooms_desc": "Zeigt kleine Hoch/Stopp/Runter-Buttons an der Überschrift der Rollo- und Vorhang-Abschnitte in den Raum-Ansichten, um alle Rollos des Raums gemeinsam zu fahren. Fenster, Türen und Garagentore bekommen bewusst keine Sammel-Buttons.",
     "show_vacuums_section_in_rooms": "Saug- & Mähroboter als eigenen Abschnitt",
     "show_vacuums_section_in_rooms_desc": "Zeigt Saug- und Mähroboter in den Raum-Ansichten unter einer eigenen Überschrift statt unter „Sonstiges“.",
     "show_switches_section_in_rooms": "Schalter & Steckdosen als eigenen Abschnitt",

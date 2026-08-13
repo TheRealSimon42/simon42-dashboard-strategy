@@ -592,6 +592,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `room_pins_show_state` | boolean | `false` | — | Zustand auf Raum-Pin-Kacheln anzeigen |
 | `room_pins_hide_last_changed` | boolean | `false` | — | „Zuletzt geändert" auf Raum-Pins ausblenden |
 | `show_locks_in_rooms` | boolean | `false` | — | Schlösser in Raum-Views |
+| `show_cover_controls_in_rooms` | boolean | `true` | v1.4.0 | Hoch/Stopp/Runter-Sammel-Buttons an den Rollo- und Vorhang-Überschriften in Raum-Views (Fenster/Türen/Garagentore ausgenommen) |
 | `show_switches_section_in_rooms` | boolean | `false` | v1.4.0 | Schalter & smarte Steckdosen als eigener Abschnitt „Schalter & Steckdosen“ statt unter „Sonstiges“ |
 | `show_automations_in_rooms` | boolean | `false` | — | Automationen in Raum-Views |
 | `show_scripts_in_rooms` | boolean | `false` | — | Skripte in Raum-Views |

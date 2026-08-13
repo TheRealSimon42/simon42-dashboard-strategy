@@ -26,6 +26,7 @@ import {
   selectBadgeEntitiesOfType,
   type BadgeCandidate,
 } from '../utils/badge-utils';
+import { buildCoverControlBadges } from '../utils/cover-controls';
 import { densePlacement } from '../utils/view-builder';
 
 // HA supported_features bitmask values
@@ -835,35 +836,38 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       pushStack('climate', { type: 'grid', cards: climateCards });
     }
 
-    domainSection('covers', roomEntities.covers, localize('room.covers'), 'mdi:window-shutter', (e) => ({
-      type: 'tile',
-      entity: e,
-      name: stripAreaName(e, area, hass),
-      features: [{ type: 'cover-open-close' }],
-      vertical: false,
-      features_position: 'inline',
-      state_content: ['current_position', 'last_changed'],
-    }));
+    // Batch open/stop/close badges on the shading headings (#413). Only the
+    // covers + curtains sections get them — covers_window (window/door/gate/
+    // garage) deliberately stays plain: collectively opening doors or garage
+    // doors is unwanted. Default on, opt-out via show_cover_controls_in_rooms.
+    const showCoverControls = dashboardConfig.show_cover_controls_in_rooms !== false;
 
-    domainSection('covers_curtain', roomEntities.covers_curtain, localize('room.curtains'), 'mdi:curtains', (e) => ({
-      type: 'tile',
-      entity: e,
-      name: stripAreaName(e, area, hass),
-      features: [{ type: 'cover-open-close' }],
-      vertical: false,
-      features_position: 'inline',
-      state_content: ['current_position', 'last_changed'],
-    }));
+    function coverTileConfig(e: string): LovelaceCardConfig {
+      return {
+        type: 'tile',
+        entity: e,
+        name: stripAreaName(e, area, hass),
+        features: [{ type: 'cover-open-close' }],
+        vertical: false,
+        features_position: 'inline',
+        state_content: ['current_position', 'last_changed'],
+      };
+    }
 
-    domainSection('covers_window', roomEntities.covers_window, localize('room.windows'), 'mdi:window-open-variant', (e) => ({
-      type: 'tile',
-      entity: e,
-      name: stripAreaName(e, area, hass),
-      features: [{ type: 'cover-open-close' }],
-      vertical: false,
-      features_position: 'inline',
-      state_content: ['current_position', 'last_changed'],
-    }));
+    function coverSection(key: StackKey, entities: string[], heading: string, icon: string): void {
+      if (entities.length === 0) return;
+      const headingCard: LovelaceCardConfig = { type: 'heading', heading, heading_style: 'title', icon };
+      if (showCoverControls) {
+        const badges = buildCoverControlBadges(entities, hass);
+        if (badges.length > 0) headingCard.badges = badges;
+      }
+      pushStack(key, { type: 'grid', cards: [headingCard, ...entities.map(coverTileConfig)] });
+    }
+
+    coverSection('covers', roomEntities.covers, localize('room.covers'), 'mdi:window-shutter');
+    coverSection('covers_curtain', roomEntities.covers_curtain, localize('room.curtains'), 'mdi:curtains');
+
+    domainSection('covers_window', roomEntities.covers_window, localize('room.windows'), 'mdi:window-open-variant', coverTileConfig);
 
     domainSection('media', roomEntities.media_player, localize('room.media'), 'mdi:speaker', (e) => {
       const state = hass.states[e];
