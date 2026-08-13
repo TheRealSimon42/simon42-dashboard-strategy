@@ -136,25 +136,22 @@ describe('createHouseModeCards (#414)', () => {
     expect(createHouseModeCards({})).toEqual([]);
   });
 
-  it('builds a heading plus a full-width select-options tile when configured', () => {
+  it('builds a full-width inline select-options tile without an own heading', () => {
     const cards = createHouseModeCards({ house_mode_entity: 'input_select.hausmodus' });
     expect(cards).toEqual([
-      expect.objectContaining({
-        type: 'heading',
-        heading_style: 'title',
-        icon: 'mdi:home-switch',
-      }),
       {
         type: 'tile',
         entity: 'input_select.hausmodus',
+        hide_state: true,
         vertical: false,
         features: [{ type: 'select-options' }],
+        features_position: 'inline',
         grid_options: { columns: 'full' },
       },
     ]);
   });
 
-  it('renders directly above the clock/alarm block in the overview section', () => {
+  it('renders directly below the clock/alarm block in the overview section', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     const section = createOverviewSection({
@@ -164,15 +161,15 @@ describe('createHouseModeCards (#414)', () => {
       hass,
     });
     const cards = section?.cards ?? [];
-    expect(cards[0]).toMatchObject({ type: 'heading', icon: 'mdi:home-switch' });
-    expect(cards[1]).toMatchObject({ type: 'tile', entity: 'input_select.hausmodus' });
-    // the regular overview block (heading + clock + alarm) follows
-    expect(cards[2]).toMatchObject({ type: 'heading', icon: 'mdi:overscan' });
+    // overview heading first, then clock + alarm, then the house mode tile
+    expect(cards[0]).toMatchObject({ type: 'heading', icon: 'mdi:overscan' });
     const alarmIndex = cards.findIndex((c) => c.entity === 'alarm_control_panel.home');
-    expect(alarmIndex).toBeGreaterThan(1);
+    const houseModeIndex = cards.findIndex((c) => c.entity === 'input_select.hausmodus');
+    expect(alarmIndex).toBeGreaterThan(0);
+    expect(houseModeIndex).toBe(alarmIndex + 1);
   });
 
-  it('still renders when no alarm entity is configured', () => {
+  it('still renders (with overview heading) when clock and alarm are off', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     const section = createOverviewSection({
@@ -182,11 +179,13 @@ describe('createHouseModeCards (#414)', () => {
       hass,
     });
     const cards = section?.cards ?? [];
-    expect(cards[0]).toMatchObject({ type: 'heading', icon: 'mdi:home-switch' });
+    expect(cards[0]).toMatchObject({ type: 'heading', icon: 'mdi:overscan' });
     expect(cards[1]).toMatchObject({
       type: 'tile',
       entity: 'input_select.hausmodus',
+      hide_state: true,
       features: [{ type: 'select-options' }],
+      features_position: 'inline',
     });
   });
 });

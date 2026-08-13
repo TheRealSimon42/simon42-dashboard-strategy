@@ -47,16 +47,12 @@ export function createHouseModeCards(config: Simon42StrategyConfig): LovelaceCar
   if (!houseModeEntity) return [];
   return [
     {
-      type: 'heading',
-      heading: localize('sections.house_mode'),
-      heading_style: 'title',
-      icon: 'mdi:home-switch',
-    },
-    {
       type: 'tile',
       entity: houseModeEntity,
+      hide_state: true,
       vertical: false,
       features: [{ type: 'select-options' }],
+      features_position: 'inline',
       grid_options: { columns: 'full' },
     },
   ];
@@ -72,12 +68,8 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
 
   const cards: LovelaceCardConfig[] = [];
 
-  // House-mode selector (#414) — rendered as its own block directly
-  // above the clock/alarm row, also when no alarm entity is configured.
-  cards.push(...createHouseModeCards(config));
-
-  // Only show "Übersicht" heading if clock or alarm is visible
-  if ((showClockCard || alarmEntity) && !hidden.has('overview')) {
+  // Only show "Übersicht" heading if clock, alarm or house mode is visible
+  if ((showClockCard || alarmEntity || config.house_mode_entity) && !hidden.has('overview')) {
     cards.push({
       type: 'heading',
       heading: localize('sections.overview'),
@@ -121,6 +113,10 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       },
     });
   }
+
+  // House-mode selector (#414) — inline dropdown tile directly below the
+  // clock/alarm row, also when neither clock nor alarm is shown.
+  cards.push(...createHouseModeCards(config));
 
   // Add search card if enabled. Two variants: the HACS-installed
   // custom:search-card (default, inline input) or a native markdown hint

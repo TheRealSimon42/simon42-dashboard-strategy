@@ -14,7 +14,6 @@
   },
   "sections": {
     "overview": "Übersicht",
-    "house_mode": "Haus-Modus",
     "summaries": "Zusammenfassungen",
     "favorites": "Favoriten",
     "custom_cards": "Eigene Karten",
@@ -256,7 +255,7 @@
     "alarm_desc": "Wähle eine Alarm-Control-Panel-Entität aus. Wenn die Uhrzeit-Karte aktiv ist, wird das Alarm-Panel daneben angezeigt. Ohne Uhrzeit-Karte erscheint das Alarm-Panel in voller Breite.",
     "house_mode_entity": "Haus-Modus-Helfer:",
     "house_mode_none": "Keiner (kein Haus-Modus)",
-    "house_mode_desc": "Wähle einen input_select- oder select-Helfer aus. Er wird auf der Übersicht als Dropdown direkt über dem Alarm-Panel angezeigt. Die Modi (z. B. Smart Home, Gast, Babysitter) definierst du selbst im Helfer.",
+    "house_mode_desc": "Wähle einen input_select- oder select-Helfer aus. Er wird auf der Übersicht als Dropdown unterhalb der Uhr angezeigt. Die Modi (z. B. Smart Home, Gast, Babysitter) definierst du selbst im Helfer.",
     "show_search_card": "Such-Karte anzeigen",
     "show_search_card_desc": "Zeigt die custom:search-card direkt unter der Uhr in der Übersicht an.",
     "show_search_card_missing": "Benötigt <strong>custom:search-card</strong> und <strong>card-tools</strong>. Bitte installieren Sie beide Komponenten — oder wechseln Sie unten zur Variante <em>Nativer Hinweis</em> (ohne zusätzliche Komponenten).",
