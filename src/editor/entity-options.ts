@@ -73,6 +73,29 @@ export function getAlarmEntities(hass: HomeAssistant | null): AlarmEntityOption[
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** input_select/select helpers for the house-mode picker (#414). */
+export function getSelectEntities(hass: HomeAssistant | null): AlarmEntityOption[] {
+  if (!hass) return [];
+  return Object.keys(hass.states)
+    .filter((entityId) => entityId.startsWith('input_select.') || entityId.startsWith('select.'))
+    .filter((entityId) => {
+      // Device selects are mostly config/diagnostic (camera settings, WLED
+      // presets, …) — a house mode is a user-facing control, so hide
+      // categorized entities from the picker (same check as #397).
+      const registryEntry = Reflect.get(hass.entities, entityId) as
+        { entity_category?: string | null } | undefined;
+      return registryEntry?.entity_category !== 'config' && registryEntry?.entity_category !== 'diagnostic';
+    })
+    .map((entityId) => {
+      const stateObj = stateFor(hass, entityId);
+      return {
+        entity_id: entityId,
+        name: stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function getWeatherEntities(hass: HomeAssistant | null): AlarmEntityOption[] {
   if (!hass) return [];
   return Object.keys(hass.states)

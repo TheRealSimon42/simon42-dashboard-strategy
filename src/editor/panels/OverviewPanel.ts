@@ -14,7 +14,7 @@ import { html, nothing, type TemplateResult } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { Simon42StrategyConfig } from '../../types/strategy';
 import { localize } from '../../utils/localize';
-import { getAlarmEntities } from '../entity-options';
+import { getAlarmEntities, getSelectEntities } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
 
 export function renderOverviewSection(host: StrategyEditorHost): TemplateResult {
@@ -26,6 +26,8 @@ export function renderOverviewSection(host: StrategyEditorHost): TemplateResult 
   const hasSearchCardDeps = checkSearchCardDependencies();
   const alarmEntity = host._config.alarm_entity || '';
   const alarmEntities = getAlarmEntities(host._hass);
+  const houseModeEntity = host._config.house_mode_entity || '';
+  const selectEntities = getSelectEntities(host._hass);
 
   return html`
 
@@ -63,6 +65,21 @@ export function renderOverviewSection(host: StrategyEditorHost): TemplateResult 
         </select>
       </div>
       <div class="description">${localize('editor.alarm_desc')}</div>
+
+      <div class="form-row">
+        <label for="house-mode-entity" style="margin-right: 8px; min-width: 120px;">${localize('editor.house_mode_entity')}</label>
+        <select id="house-mode-entity"
+          style="flex: 1;"
+          @change=${(e: Event) => houseModeEntityChanged(host, e)}>
+          <option value="" ?selected=${!houseModeEntity}>${localize('editor.house_mode_none')}</option>
+          ${selectEntities.map((entity) => html`
+            <option value=${entity.entity_id} ?selected=${entity.entity_id === houseModeEntity}>
+              ${entity.name}
+            </option>
+          `)}
+        </select>
+      </div>
+      <div class="description">${localize('editor.house_mode_desc')}</div>
 
       ${host._renderCheckbox('show-search-card', localize('editor.show_search_card'), showSearchCard,
         (checked) => { host._toggleChanged('show_search_card', checked, false); })}
@@ -130,6 +147,23 @@ function personBadgeLayoutChanged(
     updated.person_badge_layout = layout;
   }
   host._fireConfigChanged(updated);
+}
+
+function houseModeEntityChanged(host: StrategyEditorHost, e: Event): void {
+  if (!host._hass) return;
+
+  const entityId = (e.target as HTMLSelectElement).value;
+  const newConfig: Simon42StrategyConfig = {
+    ...host._config,
+    house_mode_entity: entityId,
+  };
+
+  if (!entityId || entityId === '') {
+    delete newConfig.house_mode_entity;
+  }
+
+  host._config = newConfig;
+  host._fireConfigChanged(newConfig);
 }
 
 function alarmEntityChanged(host: StrategyEditorHost, e: Event): void {

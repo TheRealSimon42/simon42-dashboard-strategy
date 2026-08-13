@@ -297,6 +297,10 @@ export interface Simon42StrategyConfig {
 
   // Special entities
   alarm_entity?: string;
+  house_mode_entity?: string; // input_select/select helper rendered as a
+  // select-options dropdown tile directly above the alarm panel on the
+  // overview (#414). The strategy never creates the helper — the user
+  // defines the modes themselves. Default: unset = feature off.
   weather_entity?: string; // explicit weather entity for the weather section;
   // defaults to the first visible weather.* entity when omitted. Falls back
   // to auto-discovery if the configured entity is unavailable at render time.
