@@ -293,10 +293,12 @@ export function cameraBlockAreaId(block: CameraBlock): string | null {
  * Group visible cameras into one block per device lens (normally one per
  * device; dual-lens cameras yield one block per lens, entities without a
  * device get their own block). Cameras in areas excluded from the
- * dashboard (areas_display.hidden) are dropped — their room views don't
- * exist, so neither the security view's area links nor the exclusion
- * picker should offer them. Cameras without any area stay included.
- * Exported for tests.
+ * dashboard (areas_display.hidden) stay included by default (#410 —
+ * hiding an area card must not silently drop its cameras from the
+ * security/CCTV views); only the opt-in hide_hidden_areas_in_security
+ * drops them here. The editor's hidden_cameras picker builds on this
+ * collection, so it always mirrors exactly what the views render.
+ * Cameras without any area are always included. Exported for tests.
  */
 export function collectCameraBlocks(
   hass: HomeAssistant,
@@ -338,8 +340,12 @@ export function collectCameraBlocks(
     });
   }
 
-  // Drop cameras from areas that are excluded from the dashboard
-  const hiddenAreas = new Set(dashboardConfig.areas_display?.hidden || []);
+  // Opt-in only: drop cameras from areas excluded from the dashboard
+  const hiddenAreas = new Set(
+    dashboardConfig.hide_hidden_areas_in_security === true
+      ? dashboardConfig.areas_display?.hidden || []
+      : []
+  );
   const includedBlocks = blocks.filter(function inDashboard(block) {
     const areaId = cameraBlockAreaId(block);
     return !areaId || !hiddenAreas.has(areaId);

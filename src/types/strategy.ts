@@ -185,6 +185,13 @@ export interface Simon42StrategyConfig {
   // style: one stacked section per floor with per-area subtitle headings
   // (tap → room view) and the activity log pinned as right-hand sidebar.
   // Off = classic category layout with the activity log as a section
+  hide_hidden_areas_in_security?: boolean; // default: false — by default the
+  // security view shows ALL security entities and cameras, including those in
+  // areas hidden via areas_display.hidden (#410: hiding an area card must not
+  // silently drop its locks/contacts from the security view). true = filter
+  // hidden areas out of BOTH security layouts AND the camera blocks
+  // (security + CCTV view). Room views and the overview stay unaffected
+  // either way
   show_security_activity?: boolean; // default: true — activity log in the
   // security view (24h logbook over security entities + persons, like
   // HA's security panel); auto-hides when logbook is not loaded
