@@ -3,6 +3,19 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.0-beta.20](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.19...v1.4.0-beta.20) (2026-08-13)
+
+
+### Features
+
+* optional grouping of lights, covers and batteries by areas ([#408](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/408)) ([777f7eb](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/777f7ebbdaaaa771b2333a65b79f5cdd98ca91e0))
+
+
+### Bug Fixes
+
+* **deps:** bump js-yaml from 4.2.0 to 4.3.1 ([#411](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/411)) ([f8162f4](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/f8162f4073229d43c284b73a9293a723b114fcbc))
+* editor picker filtering, badge-only hiding, dual-lens cameras ([#416](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/416)) ([d93be3c](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/d93be3c68b30487ced4de83d1743e09ed0dd2491))
+
 ## [1.4.0-beta.19](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.18...v1.4.0-beta.19) (2026-07-18)
 
 
