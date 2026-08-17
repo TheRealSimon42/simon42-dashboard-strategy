@@ -200,9 +200,11 @@ class Simon42LightsGroupCard extends LitElement {
 
   private _getSourceLightEntities(): string[] {
     if (Array.isArray(this._config.entities) && this._config.entities.length > 0) {
-      return this._config.entities.filter((id) => id.startsWith('light.') && this._getState(id) !== undefined);
+      return this._config.entities.filter(
+        (id) => id.startsWith('light.') && !Registry.isEntityInHiddenArea(id) && this._getState(id) !== undefined
+      );
     }
-    return Registry.getVisibleEntityIdsForDomain('light').filter((id) => this._getState(id) !== undefined);
+    return Registry.getVisibleEntityIdsForDomain('light', true).filter((id) => this._getState(id) !== undefined);
   }
 
   private _getRelevantLights(lightIds?: Iterable<string>): string[] {
@@ -364,10 +366,7 @@ class Simon42LightsGroupCard extends LitElement {
     // Object.keys() insertion order — no separate sort_order field needed.
     const floors = this.hass.floors;
     const floorOrder = Object.keys(floors);
-    const sortedKeys = [
-      ...floorOrder.filter((id) => floorMap.has(id)),
-      ...(floorMap.has(null) ? [null] : []),
-    ];
+    const sortedKeys = [...floorOrder.filter((id) => floorMap.has(id)), ...(floorMap.has(null) ? [null] : [])];
 
     return sortedKeys.map((floorId) => {
       const floor = floorId ? floors[floorId] : null;
@@ -389,8 +388,15 @@ class Simon42LightsGroupCard extends LitElement {
    */
   private _groupByAreas(lights: string[]): LightsAreaGroup[] {
     if (!this.hass) return [];
-    const dashboardConfig = (this._config.config || {}) as { areas_display?: AreasDisplay; use_default_area_sort?: boolean };
-    const visibleAreas = getVisibleAreasFromHass(this.hass, dashboardConfig.areas_display, dashboardConfig.use_default_area_sort);
+    const dashboardConfig = (this._config.config || {}) as {
+      areas_display?: AreasDisplay;
+      use_default_area_sort?: boolean;
+    };
+    const visibleAreas = getVisibleAreasFromHass(
+      this.hass,
+      dashboardConfig.areas_display,
+      dashboardConfig.use_default_area_sort
+    );
 
     const byArea = new Map<string, string[]>();
     const noArea: string[] = [];
@@ -432,7 +438,7 @@ class Simon42LightsGroupCard extends LitElement {
 
   private _buildHeadingConfig(
     lights: string[],
-    opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; areaId?: string | null } = {},
+    opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; areaId?: string | null } = {}
   ): Record<string, unknown> {
     const level = opts.level ?? 'main';
 
@@ -458,7 +464,7 @@ class Simon42LightsGroupCard extends LitElement {
     const label = opts.label;
     const heading = label
       ? `${label} (${lights.length})`
-      : `${isAll ? (this._config.heading_label || localize('room.lighting')) : (isOn ? localize('lights.on') : localize('lights.off'))} (${lights.length})`;
+      : `${isAll ? this._config.heading_label || localize('room.lighting') : isOn ? localize('lights.on') : localize('lights.off')} (${lights.length})`;
 
     const badges =
       lights.length === 0
@@ -473,7 +479,9 @@ class Simon42LightsGroupCard extends LitElement {
                 perform_action: 'light.turn_on',
                 target: { entity_id: lights },
               },
-              visibility: [{ condition: 'or', conditions: lights.map((entity) => ({ condition: 'state', entity, state: 'off' })) }],
+              visibility: [
+                { condition: 'or', conditions: lights.map((entity) => ({ condition: 'state', entity, state: 'off' })) },
+              ],
             },
             {
               type: 'button',
@@ -484,7 +492,9 @@ class Simon42LightsGroupCard extends LitElement {
                 perform_action: 'light.turn_off',
                 target: { entity_id: lights },
               },
-              visibility: [{ condition: 'or', conditions: lights.map((entity) => ({ condition: 'state', entity, state: 'on' })) }],
+              visibility: [
+                { condition: 'or', conditions: lights.map((entity) => ({ condition: 'state', entity, state: 'on' })) },
+              ],
             },
           ];
 
@@ -526,7 +536,7 @@ class Simon42LightsGroupCard extends LitElement {
   }
 
   private _isExpanded(entityId: string): boolean {
-    return this._groupExpansion.get(entityId) ?? (this._config.default_expanded === true);
+    return this._groupExpansion.get(entityId) ?? this._config.default_expanded === true;
   }
 
   private _getOrCreateGroupContainer(entityId: string): HTMLElement {
@@ -577,7 +587,11 @@ class Simon42LightsGroupCard extends LitElement {
     return this._getOrCreateTileCard(entityId) as unknown as HTMLElement;
   }
 
-  private _placeHierarchyNode(parentElement: HTMLElement, childElement: HTMLElement, referenceNode: ChildNode | null): void {
+  private _placeHierarchyNode(
+    parentElement: HTMLElement,
+    childElement: HTMLElement,
+    referenceNode: ChildNode | null
+  ): void {
     if (childElement !== referenceNode) {
       parentElement.insertBefore(childElement, referenceNode);
     }
@@ -706,7 +720,7 @@ class Simon42LightsGroupCard extends LitElement {
     slotId: string,
     cardMap: Map<string, LovelaceCardElement>,
     key: string,
-    headingConfig: Record<string, unknown>,
+    headingConfig: Record<string, unknown>
   ): void {
     const hass = this.hass;
     if (!hass) return;
@@ -793,7 +807,7 @@ class Simon42LightsGroupCard extends LitElement {
           `floor-heading-${floorKey}`,
           this._floorHeadingCards,
           floorKey,
-          this._buildHeadingConfig(group.lights, { label: group.floorName, icon: group.floorIcon, level: 'floor' }),
+          this._buildHeadingConfig(group.lights, { label: group.floorName, icon: group.floorIcon, level: 'floor' })
         );
 
         if (groupByAreas) {
@@ -807,7 +821,7 @@ class Simon42LightsGroupCard extends LitElement {
               this._getAreaSlotId('area-heading', floorKey, areaKey),
               this._areaHeadingCards,
               compositeKey,
-              this._buildHeadingConfig(area.lights, { label: area.areaName, level: 'area', areaId: area.areaId }),
+              this._buildHeadingConfig(area.lights, { label: area.areaName, level: 'area', areaId: area.areaId })
             );
             this._reconcileLightsGrid(this._getAreaSlotId('area-grid', floorKey, areaKey), area.lights);
           }
@@ -833,7 +847,7 @@ class Simon42LightsGroupCard extends LitElement {
           this._getAreaSlotId('area-heading', null, areaKey),
           this._areaHeadingCards,
           areaKey,
-          this._buildHeadingConfig(area.lights, { label: area.areaName, level: 'area', areaId: area.areaId }),
+          this._buildHeadingConfig(area.lights, { label: area.areaName, level: 'area', areaId: area.areaId })
         );
         this._reconcileLightsGrid(this._getAreaSlotId('area-grid', null, areaKey), area.lights);
       }
@@ -854,3 +868,4 @@ class Simon42LightsGroupCard extends LitElement {
 }
 
 customElements.define('simon42-lights-group-card', Simon42LightsGroupCard);
+

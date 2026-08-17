@@ -49,9 +49,9 @@ describe('Registry.initialize', () => {
     });
     Registry.initialize(updated, {});
 
-    const ids = Registry.getVisibleEntitiesForArea('kitchen').map(
-      function toId(e) { return e.entity_id; }
-    );
+    const ids = Registry.getVisibleEntitiesForArea('kitchen').map(function toId(e) {
+      return e.entity_id;
+    });
     expect(ids).toEqual(['light.kitchen', 'light.kitchen_2']);
   });
 
@@ -61,14 +61,22 @@ describe('Registry.initialize', () => {
       entities: [{ entity_id: 'light.kitchen', area_id: 'kitchen' }],
     });
     Registry.initialize(hass, {});
-    expect(Registry.areas.map(function toName(a) { return a.name; })).toEqual(['Kitchen']);
+    expect(
+      Registry.areas.map(function toName(a) {
+        return a.name;
+      })
+    ).toEqual(['Kitchen']);
 
     const updated = makeHass({
       areas: [{ area_id: 'kitchen', name: 'Küche' }],
       entities: [{ entity_id: 'light.kitchen', area_id: 'kitchen' }],
     });
     Registry.initialize(updated, {});
-    expect(Registry.areas.map(function toName(a) { return a.name; })).toEqual(['Küche']);
+    expect(
+      Registry.areas.map(function toName(a) {
+        return a.name;
+      })
+    ).toEqual(['Küche']);
   });
 
   it('picks up the current config on a registry-triggered rebuild', () => {
@@ -98,7 +106,11 @@ describe('badges pseudo-group exclusion (#396)', () => {
     const hass = makeHass({
       areas: [{ area_id: 'kitchen', name: 'Kitchen' }],
       entities: [
-        { entity_id: 'sensor.kitchen_power', area_id: 'kitchen', attributes: { device_class: 'power', unit_of_measurement: 'W' } },
+        {
+          entity_id: 'sensor.kitchen_power',
+          area_id: 'kitchen',
+          attributes: { device_class: 'power', unit_of_measurement: 'W' },
+        },
       ],
     });
     const config = {
@@ -112,7 +124,9 @@ describe('badges pseudo-group exclusion (#396)', () => {
     expect(Registry.isHiddenByConfig('sensor.kitchen_power')).toBe(false);
     expect(Registry.isEntityExcluded('sensor.kitchen_power')).toBe(false);
     expect(
-      Registry.getVisibleEntitiesForArea('kitchen').map(function toId(e) { return e.entity_id; })
+      Registry.getVisibleEntitiesForArea('kitchen').map(function toId(e) {
+        return e.entity_id;
+      })
     ).toEqual(['sensor.kitchen_power']);
   });
 
@@ -132,3 +146,46 @@ describe('badges pseudo-group exclusion (#396)', () => {
     expect(Registry.getVisibleEntitiesForArea('kitchen')).toHaveLength(0);
   });
 });
+
+describe('areas_display.hidden filtering for utility entities (#428)', () => {
+  it('filters hidden-area lights and covers while preserving default visibility', () => {
+    const hass = makeHass({
+      areas: [
+        { area_id: 'hidden-area', name: 'Hidden area' },
+        { area_id: 'visible-area', name: 'Visible area' },
+      ],
+      entities: [
+        { entity_id: 'light.hidden', area_id: 'hidden-area' },
+        { entity_id: 'light.visible', area_id: 'visible-area' },
+        { entity_id: 'cover.hidden', area_id: 'hidden-area' },
+        { entity_id: 'cover.visible', area_id: 'visible-area' },
+        { entity_id: 'light.unassigned' },
+      ],
+    });
+
+    Registry.initialize(hass, { areas_display: { hidden: ['hidden-area'] } });
+
+    expect(Registry.getVisibleEntityIdsForDomain('light')).toEqual([
+      'light.hidden',
+      'light.visible',
+      'light.unassigned',
+    ]);
+    expect(Registry.getVisibleEntityIdsForDomain('light', true)).toEqual(['light.visible', 'light.unassigned']);
+    expect(Registry.getVisibleEntityIdsForDomain('cover', true)).toEqual(['cover.visible']);
+  });
+
+  it('resolves an entity area through its device assignment', () => {
+    const hass = makeHass({
+      areas: [{ area_id: 'hidden-area', name: 'Hidden area' }],
+      devices: [{ id: 'device-1', area_id: 'hidden-area' }],
+      entities: [{ entity_id: 'light.device_area', device_id: 'device-1' }],
+    });
+
+    Registry.initialize(hass, { areas_display: { hidden: ['hidden-area'] } });
+
+    expect(Registry.getAreaIdForEntity('light.device_area')).toBe('hidden-area');
+    expect(Registry.isEntityInHiddenArea('light.device_area')).toBe(true);
+    expect(Registry.getVisibleEntityIdsForDomain('light', true)).toEqual([]);
+  });
+});
+
