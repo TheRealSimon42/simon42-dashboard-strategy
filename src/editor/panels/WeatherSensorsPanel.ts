@@ -3,7 +3,7 @@
 // ====================================================================
 // Per-row structured editor for the `weather_sensors` config array.
 // Each row binds to a WeatherSensorConfig and exposes inline inputs for
-// icon / unit / round. Adding a row uses the same entity-search picker
+// icon / unit / round / live visibility. Adding a row uses the same entity-search picker
 // pattern as favorites; removal is a single-click button.
 //
 // The picker filters to numeric-ish sensors by default but does not hard-
@@ -34,68 +34,121 @@ export function renderWeatherSensorsSection(host: StrategyEditorHost): TemplateR
   const filteredEntities = getFilteredEntities(host._hass, host._weatherSensorSearch);
 
   return html`
-      <div class="description" style="margin-left: 0; margin-bottom: 12px;">
-        ${localize('editor.weather_sensors_desc')}
-      </div>
+    <div class="description" style="margin-left: 0; margin-bottom: 12px;">
+      ${localize('editor.weather_sensors_desc')}
+    </div>
 
-      <div id="weather-sensors-list" style="margin-bottom: 12px;">
-        ${sensors.length === 0
-          ? html`<div class="empty-state">${localize('editor.no_weather_sensors')}</div>`
-          : sensors.map((sensor, index) => {
-              const name = entityMap.get(sensor.entity) || sensor.entity;
-              return html`
-                <div class="custom-item" data-sensor-index=${index}>
-                  <div class="custom-item-header">
-                    <strong>
-                      ${name}
-                      <span class="item-entity-id" style="font-weight: normal; margin-left: 8px;">
-                        ${sensor.entity}
-                      </span>
-                    </strong>
-                    <button class="btn-remove" @click=${() => removeWeatherSensor(host, index)}>&#x2715;</button>
+    <div id="weather-sensors-list" style="margin-bottom: 12px;">
+      ${sensors.length === 0
+        ? html`<div class="empty-state">${localize('editor.no_weather_sensors')}</div>`
+        : sensors.map((sensor, index) => {
+            const name = entityMap.get(sensor.entity) || sensor.entity;
+            return html`
+              <div class="custom-item" data-sensor-index=${index}>
+                <div class="custom-item-header">
+                  <strong>
+                    ${name}
+                    <span class="item-entity-id" style="font-weight: normal; margin-left: 8px;">
+                      ${sensor.entity}
+                    </span>
+                  </strong>
+                  <button class="btn-remove" @click=${() => removeWeatherSensor(host, index)}>&#x2715;</button>
+                </div>
+                <div class="custom-item-fields">
+                  <div class="custom-item-row">
+                    <input
+                      type="text"
+                      style="flex: 2;"
+                      placeholder=${localize('editor.weather_sensors_icon')}
+                      .value=${sensor.icon || ''}
+                      @change=${(e: Event) =>
+                        updateWeatherSensor(host, index, 'icon', (e.target as HTMLInputElement).value)}
+                    />
+                    <input
+                      type="text"
+                      style="flex: 1;"
+                      placeholder=${localize('editor.weather_sensors_unit')}
+                      .value=${sensor.unit || ''}
+                      @change=${(e: Event) =>
+                        updateWeatherSensor(host, index, 'unit', (e.target as HTMLInputElement).value)}
+                    />
+                    <input
+                      type="number"
+                      style="flex: 1;"
+                      min="0"
+                      max="6"
+                      step="1"
+                      placeholder=${localize('editor.weather_sensors_round')}
+                      .value=${sensor.round !== undefined ? String(sensor.round) : ''}
+                      @change=${(e: Event) =>
+                        updateWeatherSensor(host, index, 'round', (e.target as HTMLInputElement).value)}
+                    />
                   </div>
-                  <div class="custom-item-fields">
-                    <div class="custom-item-row">
-                      <input type="text" style="flex: 2;"
-                        placeholder=${localize('editor.weather_sensors_icon')}
-                        .value=${sensor.icon || ''}
-                        @change=${(e: Event) => updateWeatherSensor(host, index, 'icon', (e.target as HTMLInputElement).value)} />
-                      <input type="text" style="flex: 1;"
-                        placeholder=${localize('editor.weather_sensors_unit')}
-                        .value=${sensor.unit || ''}
-                        @change=${(e: Event) => updateWeatherSensor(host, index, 'unit', (e.target as HTMLInputElement).value)} />
-                      <input type="number" style="flex: 1;" min="0" max="6" step="1"
-                        placeholder=${localize('editor.weather_sensors_round')}
-                        .value=${sensor.round !== undefined ? String(sensor.round) : ''}
-                        @change=${(e: Event) => updateWeatherSensor(host, index, 'round', (e.target as HTMLInputElement).value)} />
-                    </div>
+                  <label class="form-row" style="margin-top: 8px;">
+                    <input
+                      type="checkbox"
+                      ?checked=${sensor.hide_when === 'zero_or_off'}
+                      @change=${(e: Event) =>
+                        updateWeatherSensor(
+                          host,
+                          index,
+                          'hide_when',
+                          (e.target as HTMLInputElement).checked ? 'zero_or_off' : ''
+                        )}
+                    />
+                    <span>${localize('editor.weather_sensors_hide_zero_off')}</span>
+                  </label>
+                  <div class="description" style="margin-left: 26px;">
+                    ${localize('editor.weather_sensors_hide_zero_off_desc')}
                   </div>
                 </div>
-              `;
-            })}
-      </div>
+              </div>
+            `;
+          })}
+    </div>
 
-      <div class="entity-search-picker">
-        <input type="text" class="entity-search-input"
-          placeholder=${localize('editor.weather_sensors_add')}
-          .value=${host._weatherSensorSearch}
-          @input=${(e: Event) => { host._weatherSensorSearch = (e.target as HTMLInputElement).value; host.requestUpdate(); }}
-          @blur=${() => { setTimeout(() => { host._weatherSensorSearch = ''; host.requestUpdate(); }, 200); }}
-        />
-        ${host._weatherSensorSearch.length >= 2 ? html`
-          <div class="entity-search-results">
-            ${filteredEntities.length > 0
-              ? filteredEntities.map((entity) => html`
-                <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); addWeatherSensor(host, entity.entity_id); host._weatherSensorSearch = ''; host.requestUpdate(); }}>
-                  <span class="entity-search-name">${entity.name}</span>
-                  <span class="entity-search-id">${entity.entity_id}</span>
-                </div>
-              `)
-              : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
-            }
-          </div>
-        ` : nothing}
-      </div>
+    <div class="entity-search-picker">
+      <input
+        type="text"
+        class="entity-search-input"
+        placeholder=${localize('editor.weather_sensors_add')}
+        .value=${host._weatherSensorSearch}
+        @input=${(e: Event) => {
+          host._weatherSensorSearch = (e.target as HTMLInputElement).value;
+          host.requestUpdate();
+        }}
+        @blur=${() => {
+          setTimeout(() => {
+            host._weatherSensorSearch = '';
+            host.requestUpdate();
+          }, 200);
+        }}
+      />
+      ${host._weatherSensorSearch.length >= 2
+        ? html`
+            <div class="entity-search-results">
+              ${filteredEntities.length > 0
+                ? filteredEntities.map(
+                    (entity) => html`
+                      <div
+                        class="entity-search-result"
+                        @mousedown=${(e: Event) => {
+                          e.preventDefault();
+                          addWeatherSensor(host, entity.entity_id);
+                          host._weatherSensorSearch = '';
+                          host.requestUpdate();
+                        }}
+                      >
+                        <span class="entity-search-name">${entity.name}</span>
+                        <span class="entity-search-id">${entity.entity_id}</span>
+                      </div>
+                    `
+                  )
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`}
+            </div>
+          `
+        : nothing}
+    </div>
   `;
 }
 
@@ -155,7 +208,7 @@ const ICON_RE = /^[a-z]+:[a-z0-9-]+$/;
  */
 function inferWeatherSensorDefaults(
   host: StrategyEditorHost,
-  entityId: string,
+  entityId: string
 ): { icon?: string; unit?: string; round?: number } {
   const state = host._hass ? stateFor(host._hass, entityId) : undefined;
   const attrs = (state?.attributes || {}) as Record<string, unknown>;
@@ -220,7 +273,7 @@ function updateWeatherSensor(
   host: StrategyEditorHost,
   index: number,
   field: keyof WeatherSensorConfig,
-  rawValue: string,
+  rawValue: string
 ): void {
   const current = host._config.weather_sensors || [];
   if (index < 0 || index >= current.length) return;
@@ -241,6 +294,9 @@ function updateWeatherSensor(
   } else if (field === 'unit') {
     if (trimmed === '') delete target.unit;
     else target.unit = trimmed;
+  } else if (field === 'hide_when') {
+    if (trimmed === 'zero_or_off') target.hide_when = 'zero_or_off';
+    else delete target.hide_when;
   } else {
     // remaining field is 'entity' — read-only via this method; ignore
     return;

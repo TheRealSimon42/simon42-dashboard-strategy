@@ -379,12 +379,7 @@ export interface GroupOptions {
  * - `tile`                 — HA core `tile` card bound to the weather entity
  * - `none`                 — omit built-in card; section keeps heading + slot
  */
-export type WeatherPresentation =
-  | 'forecast_daily'
-  | 'forecast_hourly'
-  | 'forecast_twice_daily'
-  | 'tile'
-  | 'none';
+export type WeatherPresentation = 'forecast_daily' | 'forecast_hourly' | 'forecast_twice_daily' | 'tile' | 'none';
 
 // -- Weather Sensors --------------------------------------------------
 
@@ -402,6 +397,8 @@ export interface WeatherSensorConfig {
   unit?: string;
   /** Round the numeric value to N decimals. Omit to show raw state. */
   round?: number;
+  /** Hide the sensor when its live state is numeric zero or `off`. */
+  hide_when?: 'zero_or_off';
 }
 
 // -- Custom Views -----------------------------------------------------
