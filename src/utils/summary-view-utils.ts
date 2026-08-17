@@ -14,6 +14,11 @@ import type { Simon42StrategyConfig } from '../types/strategy';
 
 export type UtilityViewKey = 'lights' | 'covers' | 'security' | 'batteries' | 'climate';
 
+/** Maintenance is an empty-state tile only while there is work to report. */
+export function shouldHideEmptyMaintenanceSummary(summaryType: string, count: number): boolean {
+  return summaryType === 'maintenance' && count === 0;
+}
+
 /**
  * True when the given utility view is part of the generated dashboard.
  * Defaults match the summary tiles: lights/covers/security/batteries

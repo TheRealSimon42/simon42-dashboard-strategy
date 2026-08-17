@@ -10,6 +10,7 @@ import { localize } from '../utils/localize';
 import { getBatteryEntities, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 import { buildMaintenanceScan, countMaintenanceItems, type MaintenanceScan } from '../utils/maintenance-utils';
+import { shouldHideEmptyMaintenanceSummary } from '../utils/summary-view-utils';
 
 type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate' | 'maintenance';
 
@@ -31,7 +32,16 @@ interface DisplayConfig {
 const COVER_DEVICE_CLASSES = new Set(['awning', 'blind', 'curtain', 'shade', 'shutter', 'window']);
 
 const SECURITY_COVER_CLASSES = new Set(['door', 'garage', 'gate', 'window']);
-const SECURITY_BINARY_SENSOR_CLASSES = new Set(['door', 'window', 'garage_door', 'opening', 'smoke', 'gas', 'heat', 'moisture']);
+const SECURITY_BINARY_SENSOR_CLASSES = new Set([
+  'door',
+  'window',
+  'garage_door',
+  'opening',
+  'smoke',
+  'gas',
+  'heat',
+  'moisture',
+]);
 
 const COLOR_MAP: Record<string, string> = {
   orange: 'var(--orange-color, #ff9800)',
@@ -59,6 +69,9 @@ class Simon42SummaryCard extends LitElement {
     :host {
       display: block;
       cursor: pointer;
+    }
+    :host([hidden]) {
+      display: none;
     }
     ha-card {
       padding: 12px;
@@ -112,6 +125,7 @@ class Simon42SummaryCard extends LitElement {
     if (this._count !== newCount) {
       this._count = newCount;
     }
+    this.hidden = shouldHideEmptyMaintenanceSummary(this._config.summary_type, newCount);
   }
 
   private _isEntityRelevant(id: string, _state: HassEntity): boolean {
@@ -301,13 +315,17 @@ class Simon42SummaryCard extends LitElement {
     const configs: Record<SummaryType, DisplayConfig> = {
       lights: {
         icon: 'mdi:lamps',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.lights_on_one') : localize('summary.lights_on_many')}` : localize('summary.lights_off'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.lights_on_one') : localize('summary.lights_on_many')}`
+          : localize('summary.lights_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'lights',
       },
       covers: {
         icon: 'mdi:blinds-horizontal',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.covers_open_one') : localize('summary.covers_open_many')}` : localize('summary.covers_closed'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.covers_open_one') : localize('summary.covers_open_many')}`
+          : localize('summary.covers_closed'),
         color: hasItems ? 'purple' : 'grey',
         path: 'covers',
       },
@@ -319,19 +337,25 @@ class Simon42SummaryCard extends LitElement {
       },
       batteries: {
         icon: hasItems ? 'mdi:battery-alert' : 'mdi:battery-charging',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.batteries_critical_one') : localize('summary.batteries_critical_many')}` : localize('summary.batteries_ok'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.batteries_critical_one') : localize('summary.batteries_critical_many')}`
+          : localize('summary.batteries_ok'),
         color: hasItems ? 'red' : 'grey',
         path: 'batteries',
       },
       climate: {
         icon: 'mdi:thermostat',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}` : localize('summary.climate_off'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}`
+          : localize('summary.climate_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'climate',
       },
       maintenance: {
         icon: 'mdi:wrench',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}` : localize('summary.maintenance_ok'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}`
+          : localize('summary.maintenance_ok'),
         color: hasItems ? 'orange' : 'grey',
         path: 'maintenance',
       },
@@ -361,7 +385,6 @@ class Simon42SummaryCard extends LitElement {
   }
 
   protected render() {
-
     const display = this._getDisplayConfig();
     const colorCss = COLOR_MAP[display.color] || COLOR_MAP.grey;
 
