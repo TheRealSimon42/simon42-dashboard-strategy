@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { isUtilityViewEnabled } from '../../src/utils/summary-view-utils';
+import { isUtilityViewEnabled, shouldHideEmptyMaintenanceSummary } from '../../src/utils/summary-view-utils';
 import type { Simon42StrategyConfig } from '../../src/types/strategy';
 
 describe('isUtilityViewEnabled', () => {
@@ -45,5 +45,17 @@ describe('isUtilityViewEnabled', () => {
     expect(isUtilityViewEnabled({ show_light_view: false }, 'lights')).toBe(true);
     expect(isUtilityViewEnabled({ show_light_summary: false, show_light_view: false }, 'lights')).toBe(false);
     expect(isUtilityViewEnabled({ show_climate_summary: true, show_climate_view: false }, 'climate')).toBe(true);
+  });
+});
+
+describe('shouldHideEmptyMaintenanceSummary', () => {
+  it('hides maintenance at zero and shows it again when work appears', () => {
+    expect(shouldHideEmptyMaintenanceSummary('maintenance', 0)).toBe(true);
+    expect(shouldHideEmptyMaintenanceSummary('maintenance', 1)).toBe(false);
+  });
+
+  it('does not hide other summary types at zero', () => {
+    expect(shouldHideEmptyMaintenanceSummary('lights', 0)).toBe(false);
+    expect(shouldHideEmptyMaintenanceSummary('covers', 0)).toBe(false);
   });
 });
