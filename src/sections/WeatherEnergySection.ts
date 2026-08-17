@@ -27,12 +27,18 @@ const ICON_RE = /^[a-z]+:[a-z0-9-]+$/;
 function escapeHtml(input: string): string {
   return input.replace(/[&<>"']/g, (c) => {
     switch (c) {
-      case '&': return '&amp;';
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '"': return '&quot;';
-      case "'": return '&#39;';
-      default: return c;
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return c;
     }
   });
 }
@@ -62,24 +68,21 @@ function escapeHtml(input: string): string {
 function buildWeatherSensorRow(sensors: WeatherSensorConfig[]): LovelaceCardConfig | null {
   if (sensors.length === 0) return null;
 
-  const parts: string[] = [];
+  const parts: Array<{ entity: string; rendered: string; hideWhen: boolean }> = [];
+  const hasConditionalSensors = sensors.some((sensor) => sensor.hide_when === 'zero_or_off');
   for (const s of sensors) {
     if (typeof s.entity !== 'string' || !ENTITY_ID_RE.test(s.entity)) continue;
 
     const icon = typeof s.icon === 'string' && ICON_RE.test(s.icon) ? s.icon : 'mdi:gauge';
-    const round =
-      typeof s.round === 'number' && Number.isInteger(s.round) && s.round >= 0
-        ? s.round
-        : undefined;
+    const round = typeof s.round === 'number' && Number.isInteger(s.round) && s.round >= 0 ? s.round : undefined;
 
     const valueExpr =
-      round !== undefined
-        ? `{{ states("${s.entity}") | float(0) | round(${round}) }}`
-        : `{{ states("${s.entity}") }}`;
+      round !== undefined ? `{{ states("${s.entity}") | float(0) | round(${round}) }}` : `{{ states("${s.entity}") }}`;
 
     const unit = typeof s.unit === 'string' && s.unit.length > 0 ? ` ${escapeHtml(s.unit)}` : '';
 
-    parts.push(`<ha-icon icon="${icon}"></ha-icon> ${valueExpr}${unit}`);
+    const rendered = `<ha-icon icon="${icon}"></ha-icon> ${valueExpr}${unit}`;
+    parts.push({ entity: s.entity, rendered, hideWhen: s.hide_when === 'zero_or_off' });
   }
 
   if (parts.length === 0) return null;
@@ -87,7 +90,17 @@ function buildWeatherSensorRow(sensors: WeatherSensorConfig[]): LovelaceCardConf
   return {
     type: 'markdown',
     text_only: true,
-    content: parts.join(' &nbsp;&nbsp;&nbsp; '),
+    content: hasConditionalSensors
+      ? `{% set ns = namespace(first=true) %}${parts
+          .map((part) => {
+            const separator = '{% if not ns.first %} &nbsp;&nbsp;&nbsp; {% endif %}';
+            const visiblePart = `${separator}${part.rendered}{% set ns.first = false %}`;
+            return part.hideWhen
+              ? `{% set value = states("${part.entity}") %}{% if value | lower != "off" and (not is_number(value) or value | float(0) != 0) %}${visiblePart}{% endif %}`
+              : visiblePart;
+          })
+          .join('')}`
+      : parts.map((part) => part.rendered).join(' &nbsp;&nbsp;&nbsp; '),
   };
 }
 
@@ -172,10 +185,7 @@ ${localize('pollen.none')}{% endif %}`;
  * Returns null for `none` — caller emits no built-in card and the section
  * relies entirely on appended custom_cards.
  */
-function buildPresentationCard(
-  weatherEntity: string,
-  presentation: WeatherPresentation
-): LovelaceCardConfig | null {
+function buildPresentationCard(weatherEntity: string, presentation: WeatherPresentation): LovelaceCardConfig | null {
   switch (presentation) {
     case 'forecast_daily':
       return { type: 'weather-forecast', entity: weatherEntity, forecast_type: 'daily' };
@@ -218,8 +228,7 @@ export function createWeatherSection(
 ): LovelaceSectionConfig | null {
   if (!weatherEntity || !showWeather) return null;
 
-  const resolvedPresentation: WeatherPresentation =
-    presentation ?? (showForecastCard ? 'forecast_daily' : 'none');
+  const resolvedPresentation: WeatherPresentation = presentation ?? (showForecastCard ? 'forecast_daily' : 'none');
 
   const cards: LovelaceCardConfig[] = [];
   if (!hideHeading) {

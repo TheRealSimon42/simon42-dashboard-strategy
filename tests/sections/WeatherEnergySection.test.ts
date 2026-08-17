@@ -38,6 +38,39 @@ describe('createWeatherSection', () => {
     const forecast = section?.cards?.find((c) => c.type === 'weather-forecast');
     expect(forecast).toMatchObject({ forecast_type: 'daily' });
   });
+
+  it('renders configured weather sensor values with their formatting', () => {
+    const section = createWeatherSection('weather.home', true, true, [
+      { entity: 'sensor.temperature', icon: 'mdi:thermometer', unit: '°C', round: 1 },
+      { entity: 'sensor.condition', icon: 'mdi:weather-sunny' },
+    ]);
+    const sensorCard = section?.cards?.find((card) => card.type === 'markdown');
+
+    expect(sensorCard?.content).toContain('<ha-icon icon="mdi:thermometer"></ha-icon>');
+    expect(sensorCard?.content).toContain('{{ states("sensor.temperature") | float(0) | round(1) }} °C');
+    expect(sensorCard?.content).toContain('{{ states("sensor.condition") }}');
+  });
+
+  it('wraps zero-or-off weather sensors in a live visibility condition', () => {
+    const section = createWeatherSection('weather.home', true, true, [
+      { entity: 'sensor.temperature', hide_when: 'zero_or_off' },
+      { entity: 'sensor.humidity', round: 0 },
+    ]);
+    const sensorCard = section?.cards?.find((card) => card.type === 'markdown');
+    const content = String(sensorCard?.content);
+
+    expect(content).toContain('states("sensor.temperature")');
+    expect(content).toContain('value | lower != "off"');
+    expect(content).toContain('is_number(value)');
+    expect(content).toContain('states("sensor.humidity") | float(0) | round(0)');
+  });
+
+  it('keeps the default sensor rendering unchanged when no hide option is set', () => {
+    const section = createWeatherSection('weather.home', true, true, [{ entity: 'sensor.temperature' }]);
+    const sensorCard = section?.cards?.find((card) => card.type === 'markdown');
+
+    expect(sensorCard?.content).toBe('<ha-icon icon="mdi:gauge"></ha-icon> {{ states("sensor.temperature") }}');
+  });
 });
 
 describe('createEnergySection', () => {
@@ -50,10 +83,7 @@ describe('createEnergySection', () => {
     expect(section).not.toBeNull();
     expect(section).toMatchObject({
       type: 'grid',
-      cards: [
-        expect.objectContaining({ type: 'heading' }),
-        expect.objectContaining({ type: 'energy-distribution' }),
-      ],
+      cards: [expect.objectContaining({ type: 'heading' }), expect.objectContaining({ type: 'energy-distribution' })],
     });
   });
 
@@ -91,10 +121,20 @@ describe('buildPollenCard (DWD Pollenflug)', () => {
   it('builds a markdown template from discovered danger-index sensors', () => {
     const hass = makeHass({
       entities: [
-        pollenEntity('sensor.pollenflug_gefahrenindex_pollenflug_graeser_124', 'Pollenflug Gefahrenindex Pollenflug Gräser 124'),
-        pollenEntity('sensor.pollenflug_gefahrenindex_pollenflug_birke_124', 'Pollenflug Gefahrenindex Pollenflug Birke 124'),
+        pollenEntity(
+          'sensor.pollenflug_gefahrenindex_pollenflug_graeser_124',
+          'Pollenflug Gefahrenindex Pollenflug Gräser 124'
+        ),
+        pollenEntity(
+          'sensor.pollenflug_gefahrenindex_pollenflug_birke_124',
+          'Pollenflug Gefahrenindex Pollenflug Birke 124'
+        ),
         // Not a danger-index sensor (no state_today_desc) — must be ignored
-        { entity_id: 'sensor.pollenflug_region_124', platform: 'dwd_pollenflug', attributes: { friendly_name: 'Region' } },
+        {
+          entity_id: 'sensor.pollenflug_region_124',
+          platform: 'dwd_pollenflug',
+          attributes: { friendly_name: 'Region' },
+        },
       ],
     });
     const card = buildPollenCard(hass);
@@ -108,8 +148,14 @@ describe('buildPollenCard (DWD Pollenflug)', () => {
   it('dedupes allergens across multiple DWD regions (first wins)', () => {
     const hass = makeHass({
       entities: [
-        pollenEntity('sensor.pollenflug_gefahrenindex_pollenflug_birke_124', 'Pollenflug Gefahrenindex Pollenflug Birke 124'),
-        pollenEntity('sensor.pollenflug_gefahrenindex_pollenflug_birke_50', 'Pollenflug Gefahrenindex Pollenflug Birke 50'),
+        pollenEntity(
+          'sensor.pollenflug_gefahrenindex_pollenflug_birke_124',
+          'Pollenflug Gefahrenindex Pollenflug Birke 124'
+        ),
+        pollenEntity(
+          'sensor.pollenflug_gefahrenindex_pollenflug_birke_50',
+          'Pollenflug Gefahrenindex Pollenflug Birke 50'
+        ),
       ],
     });
     const card = buildPollenCard(hass);

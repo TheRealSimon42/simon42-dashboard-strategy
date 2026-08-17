@@ -210,6 +210,8 @@
     "weather_sensors_icon": "Иконка",
     "weather_sensors_unit": "Ед. изм.",
     "weather_sensors_round": "Знаков после запятой",
+    "weather_sensors_hide_zero_off": "Скрывать при 0 или off",
+    "weather_sensors_hide_zero_off_desc": "Скрывает датчик в реальном времени, если его состояние равно числу 0 или `off`.",
     "weather_sensors_add": "+ Добавить датчик",
     "no_weather_sensors": "Датчики не настроены. Добавьте их с помощью списка ниже.",
     "weather_entity": "Погодная сущность:",

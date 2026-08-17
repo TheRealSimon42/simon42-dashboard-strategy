@@ -210,6 +210,8 @@
     "weather_sensors_icon": "Icon",
     "weather_sensors_unit": "Unit",
     "weather_sensors_round": "Decimals",
+    "weather_sensors_hide_zero_off": "Hide when 0 or off",
+    "weather_sensors_hide_zero_off_desc": "Hides the sensor live when its state is numeric 0 or `off`.",
     "weather_sensors_add": "+ Add sensor",
     "no_weather_sensors": "No sensors configured. Use the picker below to add one.",
     "weather_entity": "Weather entity:",
