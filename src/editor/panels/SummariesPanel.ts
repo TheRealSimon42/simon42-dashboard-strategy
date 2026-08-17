@@ -19,6 +19,7 @@ import type { Simon42StrategyConfig } from '../../types/strategy';
 import { localize } from '../../utils/localize';
 import { Registry } from '../../Registry';
 import { collectCameraBlocks } from '../../views/CctvViewStrategy';
+import { countIgnoredMaintenanceItems } from '../../utils/maintenance-utils';
 import { getAllEntitiesForSelect, getFilteredEntities, stateFor } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
 
@@ -41,215 +42,458 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
   const unavailableBatteriesBucket = host._config.unavailable_batteries_bucket === 'critical' ? 'critical' : 'good';
 
   return html`
+    <div class="form-row">
+      <input
+        type="radio"
+        id="summaries-2-columns"
+        name="summaries-columns"
+        value="2"
+        ?checked=${summariesColumns === 2}
+        @change=${() => summariesColumnsChanged(host, 2)}
+      />
+      <label for="summaries-2-columns">${localize('editor.columns_2')}</label>
+    </div>
+    <div class="form-row">
+      <input
+        type="radio"
+        id="summaries-4-columns"
+        name="summaries-columns"
+        value="4"
+        ?checked=${summariesColumns === 4}
+        @change=${() => summariesColumnsChanged(host, 4)}
+      />
+      <label for="summaries-4-columns">${localize('editor.columns_4')}</label>
+    </div>
+    <div class="description">${localize('editor.columns_desc')}</div>
 
-      <div class="form-row">
-        <input type="radio" id="summaries-2-columns" name="summaries-columns" value="2"
-          ?checked=${summariesColumns === 2}
-          @change=${() => summariesColumnsChanged(host, 2)} />
-        <label for="summaries-2-columns">${localize('editor.columns_2')}</label>
-      </div>
-      <div class="form-row">
-        <input type="radio" id="summaries-4-columns" name="summaries-columns" value="4"
-          ?checked=${summariesColumns === 4}
-          @change=${() => summariesColumnsChanged(host, 4)} />
-        <label for="summaries-4-columns">${localize('editor.columns_4')}</label>
-      </div>
-      <div class="description">${localize('editor.columns_desc')}</div>
-
-      ${host._renderCheckbox('show-light-summary', localize('editor.show_light_summary'), showLightSummary,
-        (checked) => host._toggleChanged('show_light_summary', checked, true))}
-
-      ${!showLightSummary ? html`
-        <div style="margin-left: 26px; margin-bottom: 8px;">
-          ${host._renderCheckbox('show-light-view', localize('editor.show_light_view'), host._config.show_light_view === true,
-            (checked) => host._toggleChanged('show_light_view', checked, false))}
-          <div class="description">${localize('editor.show_light_view_desc')}</div>
-        </div>
-      ` : nothing}
-
-      ${host._renderCheckbox('group-lights-by-floors', localize('editor.group_lights_by_floors'), groupLightsByFloors,
-        (checked) => host._toggleChanged('group_lights_by_floors', checked, false))}
-      <div class="description">${localize('editor.group_lights_by_floors_desc')}</div>
-
-      ${host._renderCheckbox('group-lights-by-areas', localize('editor.group_lights_by_areas'), host._config.group_lights_by_areas === true,
-        (checked) => host._toggleChanged('group_lights_by_areas', checked, false))}
-      <div class="description">${localize('editor.group_lights_by_areas_desc')}</div>
-
-      ${host._renderCheckbox('lights-sort-by-name', localize('editor.lights_sort_by_name'), host._config.lights_sort_by === 'name',
-        (checked) => lightsSortByChanged(host, checked))}
-      <div class="description">${localize('editor.lights_sort_by_name_desc')}</div>
-
-      ${host._renderCheckbox('nested-light-groups', localize('editor.nested_light_groups'), nestedLightGroups,
-        (checked) => host._toggleChanged('nested_light_groups', checked, false))}
-      <div class="description">${localize('editor.nested_light_groups_desc')}</div>
-
-      ${host._renderCheckbox('show-covers-summary', localize('editor.show_covers_summary'), showCoversSummary,
-        (checked) => host._toggleChanged('show_covers_summary', checked, true))}
-
-      <div style="margin-left: 26px; margin-bottom: 8px;">
-        ${!showCoversSummary ? html`
-          ${host._renderCheckbox('show-covers-view', localize('editor.show_covers_view'), host._config.show_covers_view === true,
-            (checked) => host._toggleChanged('show_covers_view', checked, false))}
-          <div class="description">${localize('editor.show_covers_view_desc')}</div>
-        ` : nothing}
-
-        ${host._renderCheckbox('show-partially-open-covers', localize('editor.show_partially_open_covers'), showPartiallyOpenCovers,
-          (checked) => host._toggleChanged('show_partially_open_covers', checked, false))}
-        <div class="description">${localize('editor.show_partially_open_covers_desc')}</div>
-
-        ${host._renderCheckbox('group-covers-by-floors', localize('editor.group_covers_by_floors'), groupCoversByFloors,
-          (checked) => host._toggleChanged('group_covers_by_floors', checked, false))}
-        <div class="description">${localize('editor.group_covers_by_floors_desc')}</div>
-
-        ${host._renderCheckbox('group-covers-by-areas', localize('editor.group_covers_by_areas'), host._config.group_covers_by_areas === true,
-          (checked) => host._toggleChanged('group_covers_by_areas', checked, false))}
-        <div class="description">${localize('editor.group_covers_by_areas_desc')}</div>
-      </div>
-
-      ${host._renderCheckbox('show-security-summary', localize('editor.show_security_summary'), showSecuritySummary,
-        (checked) => host._toggleChanged('show_security_summary', checked, true))}
-
-      <div style="margin-left: 26px; margin-bottom: 8px;">
-        ${!showSecuritySummary ? html`
-          ${host._renderCheckbox('show-security-view', localize('editor.show_security_view'), host._config.show_security_view === true,
-            (checked) => host._toggleChanged('show_security_view', checked, false))}
-          <div class="description">${localize('editor.show_security_view_desc')}</div>
-        ` : nothing}
-
-        ${host._renderCheckbox('show-cameras-in-security', localize('editor.show_cameras_in_security'), host._config.show_cameras_in_security === true,
-          (checked) => host._toggleChanged('show_cameras_in_security', checked, false))}
-        <div class="description">${localize('editor.show_cameras_in_security_desc')}</div>
-
-        ${host._config.show_cameras_in_security === true ? renderHiddenCamerasPicker(host) : nothing}
-
-        ${host._renderCheckbox('group-security-by-areas', localize('editor.group_security_by_areas'), host._config.group_security_by_areas === true,
-          (checked) => host._toggleChanged('group_security_by_areas', checked, false))}
-        <div class="description">${localize('editor.group_security_by_areas_desc')}</div>
-
-        ${host._renderCheckbox('hide-hidden-areas-in-security', localize('editor.hide_hidden_areas_in_security'), host._config.hide_hidden_areas_in_security === true,
-          (checked) => host._toggleChanged('hide_hidden_areas_in_security', checked, false))}
-        <div class="description">${localize('editor.hide_hidden_areas_in_security_desc')}</div>
-
-        ${host._renderCheckbox('show-security-activity', localize('editor.show_security_activity'), host._config.show_security_activity !== false,
-          (checked) => host._toggleChanged('show_security_activity', checked, true))}
-        <div class="description">${localize('editor.show_security_activity_desc')}</div>
-
-        ${host._config.show_security_activity !== false && host._config.group_security_by_areas !== true ? html`
-          <div style="margin-left: 26px;">
-            ${host._renderCheckbox('security-activity-at-end', localize('editor.security_activity_at_end'), host._config.security_activity_position === 'end',
-              (checked) => securityActivityPositionChanged(host, checked))}
+    ${host._renderCheckbox('show-light-summary', localize('editor.show_light_summary'), showLightSummary, (checked) =>
+      host._toggleChanged('show_light_summary', checked, true)
+    )}
+    ${!showLightSummary
+      ? html`
+          <div style="margin-left: 26px; margin-bottom: 8px;">
+            ${host._renderCheckbox(
+              'show-light-view',
+              localize('editor.show_light_view'),
+              host._config.show_light_view === true,
+              (checked) => host._toggleChanged('show_light_view', checked, false)
+            )}
+            <div class="description">${localize('editor.show_light_view_desc')}</div>
           </div>
-        ` : nothing}
+        `
+      : nothing}
+    ${host._renderCheckbox(
+      'group-lights-by-floors',
+      localize('editor.group_lights_by_floors'),
+      groupLightsByFloors,
+      (checked) => host._toggleChanged('group_lights_by_floors', checked, false)
+    )}
+    <div class="description">${localize('editor.group_lights_by_floors_desc')}</div>
 
-        ${renderSecurityExtraEntitiesPicker(host)}
+    ${host._renderCheckbox(
+      'group-lights-by-areas',
+      localize('editor.group_lights_by_areas'),
+      host._config.group_lights_by_areas === true,
+      (checked) => host._toggleChanged('group_lights_by_areas', checked, false)
+    )}
+    <div class="description">${localize('editor.group_lights_by_areas_desc')}</div>
+
+    ${host._renderCheckbox(
+      'lights-sort-by-name',
+      localize('editor.lights_sort_by_name'),
+      host._config.lights_sort_by === 'name',
+      (checked) => lightsSortByChanged(host, checked)
+    )}
+    <div class="description">${localize('editor.lights_sort_by_name_desc')}</div>
+
+    ${host._renderCheckbox(
+      'nested-light-groups',
+      localize('editor.nested_light_groups'),
+      nestedLightGroups,
+      (checked) => host._toggleChanged('nested_light_groups', checked, false)
+    )}
+    <div class="description">${localize('editor.nested_light_groups_desc')}</div>
+
+    ${host._renderCheckbox(
+      'show-covers-summary',
+      localize('editor.show_covers_summary'),
+      showCoversSummary,
+      (checked) => host._toggleChanged('show_covers_summary', checked, true)
+    )}
+
+    <div style="margin-left: 26px; margin-bottom: 8px;">
+      ${!showCoversSummary
+        ? html`
+            ${host._renderCheckbox(
+              'show-covers-view',
+              localize('editor.show_covers_view'),
+              host._config.show_covers_view === true,
+              (checked) => host._toggleChanged('show_covers_view', checked, false)
+            )}
+            <div class="description">${localize('editor.show_covers_view_desc')}</div>
+          `
+        : nothing}
+      ${host._renderCheckbox(
+        'show-partially-open-covers',
+        localize('editor.show_partially_open_covers'),
+        showPartiallyOpenCovers,
+        (checked) => host._toggleChanged('show_partially_open_covers', checked, false)
+      )}
+      <div class="description">${localize('editor.show_partially_open_covers_desc')}</div>
+
+      ${host._renderCheckbox(
+        'group-covers-by-floors',
+        localize('editor.group_covers_by_floors'),
+        groupCoversByFloors,
+        (checked) => host._toggleChanged('group_covers_by_floors', checked, false)
+      )}
+      <div class="description">${localize('editor.group_covers_by_floors_desc')}</div>
+
+      ${host._renderCheckbox(
+        'group-covers-by-areas',
+        localize('editor.group_covers_by_areas'),
+        host._config.group_covers_by_areas === true,
+        (checked) => host._toggleChanged('group_covers_by_areas', checked, false)
+      )}
+      <div class="description">${localize('editor.group_covers_by_areas_desc')}</div>
+    </div>
+
+    ${host._renderCheckbox(
+      'show-security-summary',
+      localize('editor.show_security_summary'),
+      showSecuritySummary,
+      (checked) => host._toggleChanged('show_security_summary', checked, true)
+    )}
+
+    <div style="margin-left: 26px; margin-bottom: 8px;">
+      ${!showSecuritySummary
+        ? html`
+            ${host._renderCheckbox(
+              'show-security-view',
+              localize('editor.show_security_view'),
+              host._config.show_security_view === true,
+              (checked) => host._toggleChanged('show_security_view', checked, false)
+            )}
+            <div class="description">${localize('editor.show_security_view_desc')}</div>
+          `
+        : nothing}
+      ${host._renderCheckbox(
+        'show-cameras-in-security',
+        localize('editor.show_cameras_in_security'),
+        host._config.show_cameras_in_security === true,
+        (checked) => host._toggleChanged('show_cameras_in_security', checked, false)
+      )}
+      <div class="description">${localize('editor.show_cameras_in_security_desc')}</div>
+
+      ${host._config.show_cameras_in_security === true ? renderHiddenCamerasPicker(host) : nothing}
+      ${host._renderCheckbox(
+        'group-security-by-areas',
+        localize('editor.group_security_by_areas'),
+        host._config.group_security_by_areas === true,
+        (checked) => host._toggleChanged('group_security_by_areas', checked, false)
+      )}
+      <div class="description">${localize('editor.group_security_by_areas_desc')}</div>
+
+      ${host._renderCheckbox(
+        'hide-hidden-areas-in-security',
+        localize('editor.hide_hidden_areas_in_security'),
+        host._config.hide_hidden_areas_in_security === true,
+        (checked) => host._toggleChanged('hide_hidden_areas_in_security', checked, false)
+      )}
+      <div class="description">${localize('editor.hide_hidden_areas_in_security_desc')}</div>
+
+      ${host._renderCheckbox(
+        'show-security-activity',
+        localize('editor.show_security_activity'),
+        host._config.show_security_activity !== false,
+        (checked) => host._toggleChanged('show_security_activity', checked, true)
+      )}
+      <div class="description">${localize('editor.show_security_activity_desc')}</div>
+
+      ${host._config.show_security_activity !== false && host._config.group_security_by_areas !== true
+        ? html`
+            <div style="margin-left: 26px;">
+              ${host._renderCheckbox(
+                'security-activity-at-end',
+                localize('editor.security_activity_at_end'),
+                host._config.security_activity_position === 'end',
+                (checked) => securityActivityPositionChanged(host, checked)
+              )}
+            </div>
+          `
+        : nothing}
+      ${renderSecurityExtraEntitiesPicker(host)}
+    </div>
+
+    ${host._renderCheckbox(
+      'show-climate-summary',
+      localize('editor.show_climate_summary'),
+      showClimateSummary,
+      (checked) => host._toggleChanged('show_climate_summary', checked, false)
+    )}
+    <div class="description">${localize('editor.show_climate_summary_desc')}</div>
+
+    ${!showClimateSummary
+      ? html`
+          <div style="margin-left: 26px; margin-bottom: 8px;">
+            ${host._renderCheckbox(
+              'show-climate-view',
+              localize('editor.show_climate_view'),
+              host._config.show_climate_view === true,
+              (checked) => host._toggleChanged('show_climate_view', checked, false)
+            )}
+            <div class="description">${localize('editor.show_climate_view_desc')}</div>
+          </div>
+        `
+      : nothing}
+    ${host._renderCheckbox(
+      'show-camera-view',
+      localize('editor.show_camera_view'),
+      host._config.show_camera_view === true,
+      (checked) => host._toggleChanged('show_camera_view', checked, false)
+    )}
+    <div class="description">${localize('editor.show_camera_view_desc')}</div>
+
+    <div style="margin-left: 26px; margin-bottom: 8px;">
+      ${host._renderCheckbox(
+        'show-camera-events',
+        localize('editor.show_camera_events'),
+        host._config.show_camera_events === true,
+        (checked) => host._toggleChanged('show_camera_events', checked, false)
+      )}
+      <div class="description">${localize('editor.show_camera_events_desc')}</div>
+
+      ${host._config.show_camera_view === true && host._config.show_cameras_in_security !== true
+        ? renderHiddenCamerasPicker(host)
+        : nothing}
+    </div>
+
+    ${host._renderCheckbox(
+      'show-battery-summary',
+      localize('editor.show_battery_summary'),
+      showBatterySummary,
+      (checked) => host._toggleChanged('show_battery_summary', checked, true)
+    )}
+
+    <div style="margin-left: 26px; margin-bottom: 8px;">
+      ${host._renderCheckbox(
+        'hide-mobile-app-batteries',
+        localize('editor.hide_mobile_app_batteries'),
+        hideMobileAppBatteries,
+        (checked) => host._toggleChanged('hide_mobile_app_batteries', checked, false)
+      )}
+      <div class="description">${localize('editor.hide_mobile_app_batteries_desc')}</div>
+
+      ${!showBatterySummary
+        ? html`
+            ${host._renderCheckbox(
+              'show-battery-view',
+              localize('editor.show_battery_view'),
+              host._config.show_battery_view === true,
+              (checked) => host._toggleChanged('show_battery_view', checked, false)
+            )}
+            <div class="description">${localize('editor.show_battery_view_desc')}</div>
+          `
+        : nothing}
+      ${host._renderCheckbox(
+        'show-area-in-battery-view',
+        localize('editor.show_area_in_battery_view'),
+        showAreaInBatteryView,
+        (checked) => host._toggleChanged('show_area_in_battery_view', checked, false)
+      )}
+      <div class="description">${localize('editor.show_area_in_battery_view_desc')}</div>
+
+      ${host._renderCheckbox(
+        'group-batteries-by-areas',
+        localize('editor.group_batteries_by_areas'),
+        host._config.group_batteries_by_areas === true,
+        (checked) => host._toggleChanged('group_batteries_by_areas', checked, false)
+      )}
+      <div class="description">${localize('editor.group_batteries_by_areas_desc')}</div>
+      ${host._renderCheckbox(
+        'hide-battery-notes-entities',
+        localize('editor.hide_battery_notes_entities'),
+        hideBatteryNotesEntities,
+        (checked) => host._toggleChanged('hide_battery_notes_entities', checked, false)
+      )}
+      <div class="description">${localize('editor.hide_battery_notes_entities_desc')}</div>
+
+      <div
+        style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;"
+      >
+        ${localize('editor.battery_thresholds')}
       </div>
-
-      ${host._renderCheckbox('show-climate-summary', localize('editor.show_climate_summary'), showClimateSummary,
-        (checked) => host._toggleChanged('show_climate_summary', checked, false))}
-      <div class="description">${localize('editor.show_climate_summary_desc')}</div>
-
-      ${!showClimateSummary ? html`
-        <div style="margin-left: 26px; margin-bottom: 8px;">
-          ${host._renderCheckbox('show-climate-view', localize('editor.show_climate_view'), host._config.show_climate_view === true,
-            (checked) => host._toggleChanged('show_climate_view', checked, false))}
-          <div class="description">${localize('editor.show_climate_view_desc')}</div>
-        </div>
-      ` : nothing}
-
-      ${host._renderCheckbox('show-camera-view', localize('editor.show_camera_view'), host._config.show_camera_view === true,
-        (checked) => host._toggleChanged('show_camera_view', checked, false))}
-      <div class="description">${localize('editor.show_camera_view_desc')}</div>
-
-      <div style="margin-left: 26px; margin-bottom: 8px;">
-        ${host._renderCheckbox('show-camera-events', localize('editor.show_camera_events'), host._config.show_camera_events === true,
-          (checked) => host._toggleChanged('show_camera_events', checked, false))}
-        <div class="description">${localize('editor.show_camera_events_desc')}</div>
-
-        ${host._config.show_camera_view === true && host._config.show_cameras_in_security !== true
-          ? renderHiddenCamerasPicker(host)
-          : nothing}
+      <div class="form-row">
+        <label for="battery-critical-threshold" style="min-width: 140px;"
+          >${localize('editor.battery_critical_below')}</label
+        >
+        <input
+          type="number"
+          id="battery-critical-threshold"
+          min="1"
+          max="99"
+          .value=${String(batteryCriticalThreshold)}
+          style="width: 70px;"
+          @change=${(e: Event) => batteryCriticalChanged(host, e)}
+        />
+        %
       </div>
-
-      ${host._renderCheckbox('show-battery-summary', localize('editor.show_battery_summary'), showBatterySummary,
-        (checked) => host._toggleChanged('show_battery_summary', checked, true))}
-
-      <div style="margin-left: 26px; margin-bottom: 8px;">
-        ${host._renderCheckbox('hide-mobile-app-batteries', localize('editor.hide_mobile_app_batteries'), hideMobileAppBatteries,
-          (checked) => host._toggleChanged('hide_mobile_app_batteries', checked, false))}
-        <div class="description">${localize('editor.hide_mobile_app_batteries_desc')}</div>
-
-        ${!showBatterySummary ? html`
-          ${host._renderCheckbox('show-battery-view', localize('editor.show_battery_view'), host._config.show_battery_view === true,
-            (checked) => host._toggleChanged('show_battery_view', checked, false))}
-          <div class="description">${localize('editor.show_battery_view_desc')}</div>
-        ` : nothing}
-
-        ${host._renderCheckbox('show-area-in-battery-view', localize('editor.show_area_in_battery_view'), showAreaInBatteryView,
-          (checked) => host._toggleChanged('show_area_in_battery_view', checked, false))}
-        <div class="description">${localize('editor.show_area_in_battery_view_desc')}</div>
-
-        ${host._renderCheckbox('group-batteries-by-areas', localize('editor.group_batteries_by_areas'), host._config.group_batteries_by_areas === true,
-          (checked) => host._toggleChanged('group_batteries_by_areas', checked, false))}
-        <div class="description">${localize('editor.group_batteries_by_areas_desc')}</div>
-        ${host._renderCheckbox('hide-battery-notes-entities', localize('editor.hide_battery_notes_entities'), hideBatteryNotesEntities,
-          (checked) => host._toggleChanged('hide_battery_notes_entities', checked, false))}
-        <div class="description">${localize('editor.hide_battery_notes_entities_desc')}</div>
-
-        <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
-          ${localize('editor.battery_thresholds')}
-        </div>
-        <div class="form-row">
-          <label for="battery-critical-threshold" style="min-width: 140px;">${localize('editor.battery_critical_below')}</label>
-          <input type="number" id="battery-critical-threshold" min="1" max="99"
-            .value=${String(batteryCriticalThreshold)}
-            style="width: 70px;"
-            @change=${(e: Event) => batteryCriticalChanged(host, e)} /> %
-        </div>
-        <div class="form-row">
-          <label for="battery-low-threshold" style="min-width: 140px;">${localize('editor.battery_low_below')}</label>
-          <input type="number" id="battery-low-threshold" min="1" max="99"
-            .value=${String(batteryLowThreshold)}
-            style="width: 70px;"
-            @change=${(e: Event) => batteryLowChanged(host, e)} /> %
-        </div>
-        <div class="description">${localize('editor.battery_thresholds_desc')}</div>
-
-        <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
-          ${localize('editor.unavailable_batteries_bucket')}
-        </div>
-        <div class="form-row">
-          <input type="radio" id="unavailable-batteries-critical" name="unavailable-batteries-bucket" value="critical"
-            ?checked=${unavailableBatteriesBucket === 'critical'}
-            @change=${() => unavailableBatteriesBucketChanged(host, 'critical')} />
-          <label for="unavailable-batteries-critical">${localize('editor.unavailable_batteries_critical')}</label>
-        </div>
-        <div class="form-row">
-          <input type="radio" id="unavailable-batteries-good" name="unavailable-batteries-bucket" value="good"
-            ?checked=${unavailableBatteriesBucket === 'good'}
-            @change=${() => unavailableBatteriesBucketChanged(host, 'good')} />
-          <label for="unavailable-batteries-good">${localize('editor.unavailable_batteries_good')}</label>
-        </div>
-        <div class="description">${localize('editor.unavailable_batteries_bucket_desc')}</div>
+      <div class="form-row">
+        <label for="battery-low-threshold" style="min-width: 140px;">${localize('editor.battery_low_below')}</label>
+        <input
+          type="number"
+          id="battery-low-threshold"
+          min="1"
+          max="99"
+          .value=${String(batteryLowThreshold)}
+          style="width: 70px;"
+          @change=${(e: Event) => batteryLowChanged(host, e)}
+        />
+        %
       </div>
+      <div class="description">${localize('editor.battery_thresholds_desc')}</div>
 
-      ${host._renderCheckbox('show-maintenance-summary', localize('editor.show_maintenance_summary'), host._config.show_maintenance_summary === true,
-        (checked) => host._toggleChanged('show_maintenance_summary', checked, false))}
-      <div class="description">${localize('editor.show_maintenance_summary_desc')}</div>
+      <div
+        style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;"
+      >
+        ${localize('editor.unavailable_batteries_bucket')}
+      </div>
+      <div class="form-row">
+        <input
+          type="radio"
+          id="unavailable-batteries-critical"
+          name="unavailable-batteries-bucket"
+          value="critical"
+          ?checked=${unavailableBatteriesBucket === 'critical'}
+          @change=${() => unavailableBatteriesBucketChanged(host, 'critical')}
+        />
+        <label for="unavailable-batteries-critical">${localize('editor.unavailable_batteries_critical')}</label>
+      </div>
+      <div class="form-row">
+        <input
+          type="radio"
+          id="unavailable-batteries-good"
+          name="unavailable-batteries-bucket"
+          value="good"
+          ?checked=${unavailableBatteriesBucket === 'good'}
+          @change=${() => unavailableBatteriesBucketChanged(host, 'good')}
+        />
+        <label for="unavailable-batteries-good">${localize('editor.unavailable_batteries_good')}</label>
+      </div>
+      <div class="description">${localize('editor.unavailable_batteries_bucket_desc')}</div>
+    </div>
 
-      ${host._config.show_maintenance_summary === true ? html`
-        <div style="margin-left: 26px; margin-bottom: 8px;">
-          ${host._renderCheckbox('show-maintenance-activity', localize('editor.show_maintenance_activity'), host._config.show_maintenance_activity !== false,
-            (checked) => host._toggleChanged('show_maintenance_activity', checked, true))}
-          <div class="description">${localize('editor.show_maintenance_activity_desc')}</div>
+    ${host._renderCheckbox(
+      'show-maintenance-summary',
+      localize('editor.show_maintenance_summary'),
+      host._config.show_maintenance_summary === true,
+      (checked) => host._toggleChanged('show_maintenance_summary', checked, false)
+    )}
+    <div class="description">${localize('editor.show_maintenance_summary_desc')}</div>
 
-          ${host._renderCheckbox('show-video-tips', localize('editor.show_video_tips'), host._config.show_video_tips !== false,
-            (checked) => host._toggleChanged('show_video_tips', checked, true))}
-          <div class="description">${localize('editor.show_video_tips_desc')}</div>
+    ${host._config.show_maintenance_summary === true
+      ? html`
+          <div style="margin-left: 26px; margin-bottom: 8px;">
+            ${host._renderCheckbox(
+              'show-maintenance-activity',
+              localize('editor.show_maintenance_activity'),
+              host._config.show_maintenance_activity !== false,
+              (checked) => host._toggleChanged('show_maintenance_activity', checked, true)
+            )}
+            <div class="description">${localize('editor.show_maintenance_activity_desc')}</div>
 
-          ${renderMaintenanceUsersPicker(host)}
-        </div>
-      ` : nothing}
+            ${host._renderCheckbox(
+              'show-video-tips',
+              localize('editor.show_video_tips'),
+              host._config.show_video_tips !== false,
+              (checked) => host._toggleChanged('show_video_tips', checked, true)
+            )}
+            <div class="description">${localize('editor.show_video_tips_desc')}</div>
+
+            ${renderMaintenanceUsersPicker(host)} ${renderMaintenanceIgnoredPicker(host)}
+          </div>
+        `
+      : nothing}
   `;
+}
+
+function renderMaintenanceIgnoredPicker(host: StrategyEditorHost): TemplateResult {
+  if (!host._hass) return html``;
+
+  Registry.initialize(host._hass, host._config);
+  const entities = getAllEntitiesForSelect(host._hass);
+  const devices = Object.values(host._hass.devices)
+    .filter((device) => Object.values(host._hass?.entities || {}).some((entity) => entity.device_id === device.id))
+    .sort((a, b) => (a.name_by_user || a.name || a.id).localeCompare(b.name_by_user || b.name || b.id));
+  const ignoredEntities = host._config.maintenance_ignored_entities || [];
+  const ignoredDevices = host._config.maintenance_ignored_devices || [];
+  const filteredCount = countIgnoredMaintenanceItems(host._hass, host._config);
+
+  return html`
+    <div
+      style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;"
+    >
+      ${localize('editor.maintenance_ignored_entities')}
+    </div>
+    <div class="description" style="margin-left: 0;">${localize('editor.maintenance_ignored_entities_desc')}</div>
+    <select
+      multiple
+      size="6"
+      style="width: 100%; margin-bottom: 8px;"
+      @change=${(e: Event) => maintenanceIgnoredEntitiesChanged(host, e)}
+    >
+      ${entities.map(
+        (entity) => html`
+          <option value=${entity.entity_id} ?selected=${ignoredEntities.includes(entity.entity_id)}>
+            ${entity.name} (${entity.entity_id})
+          </option>
+        `
+      )}
+    </select>
+
+    <div
+      style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 8px; margin-bottom: 4px;"
+    >
+      ${localize('editor.maintenance_ignored_devices')}
+    </div>
+    <div class="description" style="margin-left: 0;">${localize('editor.maintenance_ignored_devices_desc')}</div>
+    <select
+      multiple
+      size="6"
+      style="width: 100%; margin-bottom: 8px;"
+      @change=${(e: Event) => maintenanceIgnoredDevicesChanged(host, e)}
+    >
+      ${devices.map((device) => {
+        const name = device.name_by_user || device.name || device.id;
+        return html`<option value=${device.id} ?selected=${ignoredDevices.includes(device.id)}>
+          ${name} (${device.id})
+        </option>`;
+      })}
+    </select>
+    <div class="description" style="margin-left: 0;">
+      ${localize('editor.maintenance_ignored_filtered_count')}: ${filteredCount}
+    </div>
+  `;
+}
+
+function selectedValues(event: Event): string[] {
+  return [...(event.target as HTMLSelectElement).selectedOptions].map((option) => option.value);
+}
+
+function maintenanceIgnoredEntitiesChanged(host: StrategyEditorHost, event: Event): void {
+  const updated: Simon42StrategyConfig = { ...host._config };
+  const selected = selectedValues(event);
+  if (selected.length === 0) delete updated.maintenance_ignored_entities;
+  else updated.maintenance_ignored_entities = selected;
+  host._fireConfigChanged(updated);
+}
+
+function maintenanceIgnoredDevicesChanged(host: StrategyEditorHost, event: Event): void {
+  const updated: Simon42StrategyConfig = { ...host._config };
+  const selected = selectedValues(event);
+  if (selected.length === 0) delete updated.maintenance_ignored_devices;
+  else updated.maintenance_ignored_devices = selected;
+  host._fireConfigChanged(updated);
 }
 
 /**
@@ -274,24 +518,39 @@ function renderMaintenanceUsersPicker(host: StrategyEditorHost): TemplateResult 
   const allVisible = selected.length === 0;
 
   return html`
-    <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
+    <div
+      style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;"
+    >
       ${localize('editor.maintenance_visible_users')}
     </div>
-    <div class="description" style="margin-left: 0;">
-      ${localize('editor.maintenance_visible_users_desc')}
-    </div>
+    <div class="description" style="margin-left: 0;">${localize('editor.maintenance_visible_users_desc')}</div>
     ${options.length === 0
-      ? html`<div class="description" style="margin-left: 0;">${localize('editor.maintenance_visible_users_none')}</div>`
-      : options.map((opt) => host._renderCheckbox(
-          `maintenance-user-${opt.userId}`,
-          opt.name,
-          allVisible || selected.includes(opt.userId),
-          (checked) => maintenanceUserChanged(host, opt.userId, options.map((o) => o.userId), checked)
-        ))}
+      ? html`<div class="description" style="margin-left: 0;">
+          ${localize('editor.maintenance_visible_users_none')}
+        </div>`
+      : options.map((opt) =>
+          host._renderCheckbox(
+            `maintenance-user-${opt.userId}`,
+            opt.name,
+            allVisible || selected.includes(opt.userId),
+            (checked) =>
+              maintenanceUserChanged(
+                host,
+                opt.userId,
+                options.map((o) => o.userId),
+                checked
+              )
+          )
+        )}
   `;
 }
 
-function maintenanceUserChanged(host: StrategyEditorHost, userId: string, allUserIds: string[], checked: boolean): void {
+function maintenanceUserChanged(
+  host: StrategyEditorHost,
+  userId: string,
+  allUserIds: string[],
+  checked: boolean
+): void {
   const current = host._config.maintenance_visible_users || [];
   // No restriction stored = everyone checked; start from the full set
   const effective = new Set(current.length > 0 ? current : allUserIds);
@@ -359,21 +618,19 @@ function renderHiddenCamerasPicker(host: StrategyEditorHost): TemplateResult {
   const hidden = new Set(host._config.hidden_cameras || []);
   return html`
     <div style="margin-left: 26px; margin-bottom: 8px;">
-      <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
+      <div
+        style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;"
+      >
         ${localize('editor.security_cameras_visibility')}
       </div>
-      <div class="description" style="margin-left: 0;">
-        ${localize('editor.security_cameras_visibility_desc')}
-      </div>
+      <div class="description" style="margin-left: 0;">${localize('editor.security_cameras_visibility_desc')}</div>
       ${blocks.map((block) => {
         const name =
-          (host._hass ? stateFor(host._hass, block.cameraId)?.attributes.friendly_name as string | undefined : undefined) ||
-          block.cameraId;
-        return host._renderCheckbox(
-          `security-camera-${block.cameraId}`,
-          name,
-          !hidden.has(block.cameraId),
-          (checked) => cameraHiddenChanged(host, block.cameraId, checked)
+          (host._hass
+            ? (stateFor(host._hass, block.cameraId)?.attributes.friendly_name as string | undefined)
+            : undefined) || block.cameraId;
+        return host._renderCheckbox(`security-camera-${block.cameraId}`, name, !hidden.has(block.cameraId), (checked) =>
+          cameraHiddenChanged(host, block.cameraId, checked)
         );
       })}
     </div>
@@ -386,48 +643,73 @@ function renderSecurityExtraEntitiesPicker(host: StrategyEditorHost): TemplateRe
   const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
   const filtered = getFilteredEntities(host._hass, host._securityExtraSearch);
   return html`
-    <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;">
+    <div
+      style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 4px; margin-bottom: 4px;"
+    >
       ${localize('editor.security_extra_entities')}
     </div>
     <div class="description" style="margin-left: 0; margin-bottom: 8px;">
       ${localize('editor.security_extra_entities_desc')}
     </div>
-    ${extras.length > 0 ? html`
-      <div class="entity-list-container" style="margin-bottom: 8px;">
-        ${extras.map((entityId) => {
-          const name = entityMap.get(entityId) || entityId;
-          return html`
-            <div class="entity-list-item" data-entity-id=${entityId}>
-              <span class="item-info">
-                <span class="item-name">${name}</span>
-                <span class="item-entity-id">${entityId}</span>
-              </span>
-              <button class="btn-remove" @click=${() => removeSecurityExtraEntity(host, entityId)}>&#x2715;</button>
-            </div>
-          `;
-        })}
-      </div>
-    ` : nothing}
+    ${extras.length > 0
+      ? html`
+          <div class="entity-list-container" style="margin-bottom: 8px;">
+            ${extras.map((entityId) => {
+              const name = entityMap.get(entityId) || entityId;
+              return html`
+                <div class="entity-list-item" data-entity-id=${entityId}>
+                  <span class="item-info">
+                    <span class="item-name">${name}</span>
+                    <span class="item-entity-id">${entityId}</span>
+                  </span>
+                  <button class="btn-remove" @click=${() => removeSecurityExtraEntity(host, entityId)}>&#x2715;</button>
+                </div>
+              `;
+            })}
+          </div>
+        `
+      : nothing}
     <div class="entity-search-picker">
-      <input type="text" class="entity-search-input"
+      <input
+        type="text"
+        class="entity-search-input"
         placeholder=${localize('editor.select_entity') + '...'}
         .value=${host._securityExtraSearch}
-        @input=${(e: Event) => { host._securityExtraSearch = (e.target as HTMLInputElement).value; host.requestUpdate(); }}
-        @blur=${() => { setTimeout(() => { host._securityExtraSearch = ''; host.requestUpdate(); }, 200); }}
+        @input=${(e: Event) => {
+          host._securityExtraSearch = (e.target as HTMLInputElement).value;
+          host.requestUpdate();
+        }}
+        @blur=${() => {
+          setTimeout(() => {
+            host._securityExtraSearch = '';
+            host.requestUpdate();
+          }, 200);
+        }}
       />
-      ${host._securityExtraSearch.length >= 2 ? html`
-        <div class="entity-search-results">
-          ${filtered.length > 0
-            ? filtered.map((entity) => html`
-              <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); addSecurityExtraEntity(host, entity.entity_id); host._securityExtraSearch = ''; host.requestUpdate(); }}>
-                <span class="entity-search-name">${entity.name}</span>
-                <span class="entity-search-id">${entity.entity_id}</span>
-              </div>
-            `)
-            : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
-          }
-        </div>
-      ` : nothing}
+      ${host._securityExtraSearch.length >= 2
+        ? html`
+            <div class="entity-search-results">
+              ${filtered.length > 0
+                ? filtered.map(
+                    (entity) => html`
+                      <div
+                        class="entity-search-result"
+                        @mousedown=${(e: Event) => {
+                          e.preventDefault();
+                          addSecurityExtraEntity(host, entity.entity_id);
+                          host._securityExtraSearch = '';
+                          host.requestUpdate();
+                        }}
+                      >
+                        <span class="entity-search-name">${entity.name}</span>
+                        <span class="entity-search-id">${entity.entity_id}</span>
+                      </div>
+                    `
+                  )
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`}
+            </div>
+          `
+        : nothing}
     </div>
   `;
 }
