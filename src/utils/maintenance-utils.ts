@@ -58,12 +58,15 @@ export function collectUpdateIds(): string[] {
 export function buildMaintenanceScan(hass: HomeAssistant, config: Simon42StrategyConfig): MaintenanceScan {
   const updateIds = collectUpdateIds();
 
+  const ignoredEntities = new Set(config.maintenance_ignored_entities || []);
+  const ignoredDevices = new Set(config.maintenance_ignored_devices || []);
   const byDevice = new Map<string, string[]>();
   const orphanIds: string[] = [];
   for (const entityId of Object.keys(hass.entities)) {
     if (Registry.isEntityExcluded(entityId)) continue;
     const entry = Registry.getEntity(entityId);
     const deviceId = entry?.device_id;
+    if (ignoredEntities.has(entityId) || (deviceId && ignoredDevices.has(deviceId))) continue;
     if (deviceId) {
       const group = byDevice.get(deviceId);
       if (group) group.push(entityId);
@@ -79,6 +82,17 @@ export function buildMaintenanceScan(hass: HomeAssistant, config: Simon42Strateg
     orphanIds,
     batteryIds: getBatteryEntities(hass, config),
   };
+}
+
+/** Number of currently unavailable maintenance items removed by the filters. */
+export function countIgnoredMaintenanceItems(hass: HomeAssistant, config: Simon42StrategyConfig): number {
+  const unfilteredConfig: Simon42StrategyConfig = { ...config };
+  delete unfilteredConfig.maintenance_ignored_entities;
+  delete unfilteredConfig.maintenance_ignored_devices;
+
+  const before = countUnavailable(hass, buildMaintenanceScan(hass, unfilteredConfig));
+  const after = countUnavailable(hass, buildMaintenanceScan(hass, config));
+  return Math.max(0, before - after);
 }
 
 /** Pending updates = visible update.* entities currently 'on'. */
@@ -117,11 +131,7 @@ export function countUnavailable(hass: HomeAssistant, scan: MaintenanceScan): nu
 }
 
 /** Critical batteries: numeric %-sensors below threshold, or binary battery sensors 'on'. */
-export function criticalBatteryIds(
-  hass: HomeAssistant,
-  scan: MaintenanceScan,
-  criticalThreshold: number
-): string[] {
+export function criticalBatteryIds(hass: HomeAssistant, scan: MaintenanceScan, criticalThreshold: number): string[] {
   return scan.batteryIds.filter(function isCritical(id) {
     const state = stateFor(hass, id);
     if (!state) return false;
@@ -134,11 +144,7 @@ export function criticalBatteryIds(
 }
 
 /** Total maintenance count: pending updates + unavailable + critical batteries. */
-export function countMaintenanceItems(
-  hass: HomeAssistant,
-  scan: MaintenanceScan,
-  criticalThreshold: number
-): number {
+export function countMaintenanceItems(hass: HomeAssistant, scan: MaintenanceScan, criticalThreshold: number): number {
   return (
     pendingUpdateIds(hass, scan).length +
     countUnavailable(hass, scan) +
@@ -175,7 +181,7 @@ export function listUnavailableBlocks(hass: HomeAssistant, scan: MaintenanceScan
     blocks.push({
       representativeId,
       name: String(name),
-      areaName: areaId ? (Reflect.get(hass.areas, areaId) as { name?: string } | undefined)?.name ?? null : null,
+      areaName: areaId ? ((Reflect.get(hass.areas, areaId) as { name?: string } | undefined)?.name ?? null) : null,
     });
   }
 
@@ -187,7 +193,7 @@ export function listUnavailableBlocks(hass: HomeAssistant, scan: MaintenanceScan
     blocks.push({
       representativeId: id,
       name: String(state.attributes?.friendly_name || id),
-      areaName: areaId ? (Reflect.get(hass.areas, areaId) as { name?: string } | undefined)?.name ?? null : null,
+      areaName: areaId ? ((Reflect.get(hass.areas, areaId) as { name?: string } | undefined)?.name ?? null) : null,
     });
   }
 

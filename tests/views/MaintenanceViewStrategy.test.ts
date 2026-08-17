@@ -23,11 +23,7 @@ import {
   buildCriticalBatteriesSection,
   buildVideoTipsSection,
 } from '../../src/views/MaintenanceViewStrategy';
-import {
-  buildMaintenanceScan,
-  countMaintenanceItems,
-  haVersionAtLeast,
-} from '../../src/utils/maintenance-utils';
+import { buildMaintenanceScan, countMaintenanceItems, haVersionAtLeast } from '../../src/utils/maintenance-utils';
 import { matchVideoTips } from '../../src/utils/video-tips';
 import { Registry } from '../../src/Registry';
 import { makeHass, type HassFixtureSpec } from '../fixtures/hass';
@@ -57,8 +53,16 @@ function maintenanceSpec(): HassFixtureSpec {
       { entity_id: 'update.core', state: 'on', entity_category: 'config' },
       { entity_id: 'update.frontend', state: 'off' },
       // Critical + healthy battery
-      { entity_id: 'sensor.tuer_batterie', state: '7', attributes: { device_class: 'battery', unit_of_measurement: '%' } },
-      { entity_id: 'sensor.fenster_batterie', state: '90', attributes: { device_class: 'battery', unit_of_measurement: '%' } },
+      {
+        entity_id: 'sensor.tuer_batterie',
+        state: '7',
+        attributes: { device_class: 'battery', unit_of_measurement: '%' },
+      },
+      {
+        entity_id: 'sensor.fenster_batterie',
+        state: '90',
+        attributes: { device_class: 'battery', unit_of_measurement: '%' },
+      },
     ],
   };
 }
@@ -86,8 +90,14 @@ describe('buildUpdatesFallbackSection', () => {
   it('lists pending updates even when they carry a config entity_category', () => {
     const hass = initHass();
     const cards = cardsOf(buildUpdatesFallbackSection(hass, {}));
-    const tiles = cards.filter(function isTile(c) { return c.type === 'tile'; });
-    expect(tiles.map(function toEntity(c) { return c.entity; })).toEqual(['update.core']);
+    const tiles = cards.filter(function isTile(c) {
+      return c.type === 'tile';
+    });
+    expect(
+      tiles.map(function toEntity(c) {
+        return c.entity;
+      })
+    ).toEqual(['update.core']);
   });
 
   it('returns null when nothing is pending', () => {
@@ -102,7 +112,9 @@ describe('buildUnavailableSection', () => {
   it('lists a fully unavailable device exactly once, with area-prefixed device name', () => {
     const hass = initHass();
     const cards = cardsOf(buildUnavailableSection(hass, {}));
-    const tiles = cards.filter(function isTile(c) { return c.type === 'tile'; });
+    const tiles = cards.filter(function isTile(c) {
+      return c.type === 'tile';
+    });
 
     const deadTiles = tiles.filter(function fromDeadDevice(c) {
       return c.entity === 'sensor.dead_temp' || c.entity === 'sensor.dead_humidity';
@@ -123,9 +135,52 @@ describe('buildUnavailableSection', () => {
   it('lists unavailable orphan entities individually', () => {
     const hass = initHass();
     const cards = cardsOf(buildUnavailableSection(hass, {}));
-    const orphan = cards.find(function isOrphan(c) { return c.entity === 'sensor.template_kaputt'; });
+    const orphan = cards.find(function isOrphan(c) {
+      return c.entity === 'sensor.template_kaputt';
+    });
     expect(orphan).toBeDefined();
     expect(orphan?.name).toBe('Template kaputt');
+  });
+
+  it('ignores selected devices and orphan entities without hiding updates or batteries', () => {
+    const hass = initHass({ ...maintenanceSpec(), components: ['logbook'] });
+    const config = {
+      maintenance_ignored_devices: ['dev_dead'],
+      maintenance_ignored_entities: ['sensor.template_kaputt'],
+    };
+    const scan = buildMaintenanceScan(hass, config);
+
+    expect(countMaintenanceItems(hass, scan, 20)).toBe(2);
+    expect(buildUnavailableSection(hass, config)).toBeNull();
+
+    const activity = cardsOf(buildMaintenanceActivitySection(hass, config)).find((card) => card.type === 'logbook');
+    const ids: string[] = activity?.target?.entity_id ?? [];
+    expect(ids).toContain('update.core');
+    expect(ids).toContain('sensor.tuer_batterie');
+    expect(ids).not.toContain('sensor.dead_temp');
+    expect(ids).not.toContain('sensor.template_kaputt');
+  });
+
+  it('keeps partially ignored devices consistent with the remaining entities', () => {
+    const hass = initHass();
+    const ignoredDeviceEntity = buildUnavailableSection(hass, {
+      maintenance_ignored_entities: ['sensor.dead_temp'],
+    });
+    const remainingDead = cardsOf(ignoredDeviceEntity).find((card) => card.entity === 'sensor.dead_humidity');
+    expect(remainingDead).toBeDefined();
+
+    const halfHass = initHass({
+      areas: [{ area_id: 'wohnzimmer', name: 'Wohnzimmer' }],
+      devices: [{ id: 'dev_half', area_id: 'wohnzimmer', name: 'Halbtotes Gerät' }],
+      entities: [
+        { entity_id: 'sensor.half_temp', device_id: 'dev_half', state: 'unavailable' },
+        { entity_id: 'sensor.half_humidity', device_id: 'dev_half', state: '55' },
+      ],
+    });
+    const ignoredHalfEntity = buildUnavailableSection(halfHass, {
+      maintenance_ignored_entities: ['sensor.half_temp'],
+    });
+    expect(ignoredHalfEntity).toBeNull();
   });
 
   it('returns null when everything is available', () => {
@@ -140,8 +195,14 @@ describe('buildCriticalBatteriesSection', () => {
   it('lists only batteries below the critical threshold', () => {
     const hass = initHass();
     const cards = cardsOf(buildCriticalBatteriesSection(hass, {}));
-    const tiles = cards.filter(function isTile(c) { return c.type === 'tile'; });
-    expect(tiles.map(function toEntity(c) { return c.entity; })).toEqual(['sensor.tuer_batterie']);
+    const tiles = cards.filter(function isTile(c) {
+      return c.type === 'tile';
+    });
+    expect(
+      tiles.map(function toEntity(c) {
+        return c.entity;
+      })
+    ).toEqual(['sensor.tuer_batterie']);
   });
 
   it('deep-links the heading to the batteries view only when that view exists', () => {
@@ -149,9 +210,7 @@ describe('buildCriticalBatteriesSection', () => {
     const withView = cardsOf(buildCriticalBatteriesSection(hass, {}))[0];
     expect(withView.tap_action?.navigation_path).toBe('batteries');
 
-    const withoutView = cardsOf(
-      buildCriticalBatteriesSection(hass, { show_battery_summary: false })
-    )[0];
+    const withoutView = cardsOf(buildCriticalBatteriesSection(hass, { show_battery_summary: false }))[0];
     expect(withoutView.tap_action).toBeUndefined();
   });
 });
@@ -168,14 +227,16 @@ describe('admin cards + sidebar (HA version gate)', () => {
     setHaVersion(hass, '2026.7.1');
     const sidebar = buildMaintenanceSidebar(hass, {});
     const cards = sidebar?.sections?.[0]?.cards || [];
-    expect(cards.map(function toType(c) { return c.type; })).toEqual([
-      'repairs',
-      'updates',
-      'discovered-devices',
-    ]);
-    expect(cards.every(function isFullWidth(c) {
-      return c.hide_empty === true && c.grid_options?.columns === 'full';
-    })).toBe(true);
+    expect(
+      cards.map(function toType(c) {
+        return c.type;
+      })
+    ).toEqual(['repairs', 'updates', 'discovered-devices']);
+    expect(
+      cards.every(function isFullWidth(c) {
+        return c.hide_empty === true && c.grid_options?.columns === 'full';
+      })
+    ).toBe(true);
   });
 
   it('appends the HACS quick link to the sidebar when hacs is loaded', () => {
@@ -205,7 +266,9 @@ describe('buildMaintenanceActivitySection', () => {
   it('scopes the logbook to exactly the reported entities', () => {
     const hass = initHass({ ...maintenanceSpec(), components: ['logbook'] });
     const cards = cardsOf(buildMaintenanceActivitySection(hass, {}));
-    const logbook = cards.find(function isLogbook(c) { return c.type === 'logbook'; });
+    const logbook = cards.find(function isLogbook(c) {
+      return c.type === 'logbook';
+    });
     expect(logbook).toBeDefined();
     const ids: string[] = logbook?.target?.entity_id ?? [];
     // pending update + dead-device representative + orphan + critical battery …
@@ -256,9 +319,11 @@ describe('buildVideoTipsSection (default on, opt-out)', () => {
       return c.type === 'custom:simon42-video-tip-card';
     });
     expect(tipCards.length).toBeGreaterThan(0);
-    expect(tipCards.every(function hasFields(c) {
-      return typeof c.tip_id === 'string' && typeof c.url === 'string' && c.grid_options?.columns === 'full';
-    })).toBe(true);
+    expect(
+      tipCards.every(function hasFields(c) {
+        return typeof c.tip_id === 'string' && typeof c.url === 'string' && c.grid_options?.columns === 'full';
+      })
+    ).toBe(true);
   });
 });
 
@@ -266,22 +331,38 @@ describe('matchVideoTips', () => {
   it('matches on loaded components and skips dismissed tips', () => {
     const hass = initHass({ ...maintenanceSpec(), components: ['hacs'] });
     const tips = matchVideoTips(hass, new Set());
-    const ids = tips.map(function toId(t) { return t.id; });
+    const ids = tips.map(function toId(t) {
+      return t.id;
+    });
     expect(ids).toContain('haghs-check');
 
     const withoutDismissed = matchVideoTips(hass, new Set(['haghs-check']));
-    expect(withoutDismissed.map(function toId(t) { return t.id; })).not.toContain('haghs-check');
+    expect(
+      withoutDismissed.map(function toId(t) {
+        return t.id;
+      })
+    ).not.toContain('haghs-check');
   });
 
   it('hides setup videos once the taught integration is installed (notComponentsAny)', () => {
     const withoutHaghs = initHass({ ...maintenanceSpec(), components: ['hacs'] });
-    expect(matchVideoTips(withoutHaghs, new Set()).map(function toId(t) { return t.id; })).toContain('haghs-check');
+    expect(
+      matchVideoTips(withoutHaghs, new Set()).map(function toId(t) {
+        return t.id;
+      })
+    ).toContain('haghs-check');
 
     const withHaghs = initHass({ ...maintenanceSpec(), components: ['hacs', 'haghs'] });
-    expect(matchVideoTips(withHaghs, new Set()).map(function toId(t) { return t.id; })).not.toContain('haghs-check');
+    expect(
+      matchVideoTips(withHaghs, new Set()).map(function toId(t) {
+        return t.id;
+      })
+    ).not.toContain('haghs-check');
 
     const withMcp = initHass({ ...maintenanceSpec(), components: ['mcp'] });
-    const mcpIds = matchVideoTips(withMcp, new Set()).map(function toId(t) { return t.id; });
+    const mcpIds = matchVideoTips(withMcp, new Set()).map(function toId(t) {
+      return t.id;
+    });
     expect(mcpIds).not.toContain('ha-mcp-setup');
     expect(mcpIds).toContain('claude-bilanz');
   });
@@ -291,24 +372,29 @@ describe('matchVideoTips', () => {
       devices: [{ id: 'dev_3em', name: 'Stromzähler', model: 'Shelly Pro 3EM' }],
       entities: [{ entity_id: 'sensor.pro3em_power', state: '5', device_id: 'dev_3em', platform: 'shelly' }],
     });
-    expect(matchVideoTips(withPro3em, new Set()).map(function toId(t) { return t.id; })).toContain('shelly-3em');
+    expect(
+      matchVideoTips(withPro3em, new Set()).map(function toId(t) {
+        return t.id;
+      })
+    ).toContain('shelly-3em');
 
     // A Shelly plug is NOT a Pro 3EM — the video must not match
     const withOtherShelly = initHass({
       devices: [{ id: 'dev_plug', name: 'Steckdose', model: 'Shelly Plus Plug S' }],
       entities: [{ entity_id: 'switch.plug', state: 'on', device_id: 'dev_plug', platform: 'shelly' }],
     });
-    expect(matchVideoTips(withOtherShelly, new Set()).map(function toId(t) { return t.id; })).not.toContain('shelly-3em');
+    expect(
+      matchVideoTips(withOtherShelly, new Set()).map(function toId(t) {
+        return t.id;
+      })
+    ).not.toContain('shelly-3em');
   });
 
   it('caps the result at three tips', () => {
     const hass = initHass({
       ...maintenanceSpec(),
       components: ['hacs', 'ollama', 'mcp'],
-      entities: [
-        ...maintenanceSpec().entities!,
-        { entity_id: 'sensor.shelly_power', state: '5', platform: 'shelly' },
-      ],
+      entities: [...maintenanceSpec().entities!, { entity_id: 'sensor.shelly_power', state: '5', platform: 'shelly' }],
     });
     expect(matchVideoTips(hass, new Set()).length).toBeLessThanOrEqual(3);
   });
@@ -332,12 +418,16 @@ describe('buildMaintenanceView', () => {
     setHaVersion(hass, '2026.7.1');
     const view = buildMaintenanceView(hass, {});
     expect(view.sidebar).toBeDefined();
-    const icons = (view.sections || []).map(function headingIcon(s) { return s.cards?.[0]?.icon; });
+    const icons = (view.sections || []).map(function headingIcon(s) {
+      return s.cards?.[0]?.icon;
+    });
     expect(icons).not.toContain('mdi:update');
     expect(icons).not.toContain('mdi:school-outline');
     expect(icons[icons.length - 1]).toBe('mdi:lan-disconnect');
     // tips = second sidebar section, after the admin cards
-    const sidebarIcons = (view.sidebar?.sections || []).map(function headingIcon(s) { return s.cards?.[0]?.icon ?? s.cards?.[0]?.type; });
+    const sidebarIcons = (view.sidebar?.sections || []).map(function headingIcon(s) {
+      return s.cards?.[0]?.icon ?? s.cards?.[0]?.type;
+    });
     expect(sidebarIcons).toEqual(['repairs', 'mdi:school-outline']);
   });
 

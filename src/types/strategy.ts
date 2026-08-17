@@ -159,6 +159,8 @@ export interface Simon42StrategyConfig {
   // that see the maintenance tile + nav tab (native Lovelace user condition).
   // Display logic only — NOT a security boundary; the view stays reachable
   // by URL for everyone
+  maintenance_ignored_entities?: string[]; // unavailable entities omitted from maintenance
+  maintenance_ignored_devices?: string[]; // unavailable devices omitted from maintenance
   show_maintenance_activity?: boolean; // default: true — logbook (24h) in
   // the maintenance view sidebar, scoped to exactly the entities the view
   // surfaces (pending updates, unavailable devices, critical batteries);
@@ -379,12 +381,7 @@ export interface GroupOptions {
  * - `tile`                 — HA core `tile` card bound to the weather entity
  * - `none`                 — omit built-in card; section keeps heading + slot
  */
-export type WeatherPresentation =
-  | 'forecast_daily'
-  | 'forecast_hourly'
-  | 'forecast_twice_daily'
-  | 'tile'
-  | 'none';
+export type WeatherPresentation = 'forecast_daily' | 'forecast_hourly' | 'forecast_twice_daily' | 'tile' | 'none';
 
 // -- Weather Sensors --------------------------------------------------
 
