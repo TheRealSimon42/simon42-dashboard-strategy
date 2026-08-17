@@ -399,9 +399,36 @@ class Registry {
   /**
    * Get visible entity IDs for a domain. O(1).
    * Pre-filtered: no hidden, no_dboard, config/diagnostic, config-hidden.
+   *
+   * When requested, also excludes entities assigned to an area listed in
+   * areas_display.hidden. This is opt-in because security views intentionally
+   * keep showing hidden-area entities unless their dedicated configuration is
+   * enabled.
    */
-  static getVisibleEntityIdsForDomain(domain: string): string[] {
-    return Registry._visibleEntitiesByDomain.get(domain) || [];
+  static getVisibleEntityIdsForDomain(domain: string, excludeHiddenAreas = false): string[] {
+    const ids = Registry._visibleEntitiesByDomain.get(domain) || [];
+    if (!excludeHiddenAreas) return ids;
+
+    return ids.filter((entityId) => !Registry.isEntityInHiddenArea(entityId));
+  }
+
+  /** Resolve an entity's explicit or device-inherited area. */
+  static getAreaIdForEntity(entityId: string): string | null {
+    const entity = Registry._entityById.get(entityId);
+    if (!entity) return null;
+    if (entity.area_id) return entity.area_id;
+    return entity.device_id ? (Registry._deviceById.get(entity.device_id)?.area_id ?? null) : null;
+  }
+
+  /** Whether an area is hidden by the dashboard's areas_display config. */
+  static isAreaHidden(areaId: string): boolean {
+    return Registry._config.areas_display?.hidden?.includes(areaId) === true;
+  }
+
+  /** Whether an entity belongs to an area hidden from utility views. */
+  static isEntityInHiddenArea(entityId: string): boolean {
+    const areaId = Registry.getAreaIdForEntity(entityId);
+    return areaId ? Registry.isAreaHidden(areaId) : false;
   }
 
   /**
@@ -544,3 +571,4 @@ class Registry {
 }
 
 export { Registry };
+

@@ -160,7 +160,7 @@ class Simon42CoversGroupCard extends LitElement {
   }
 
   private _getFilteredCoverEntities(hass: HomeAssistant): string[] {
-    return Registry.getVisibleEntityIdsForDomain('cover').filter((id) => {
+    return Registry.getVisibleEntityIdsForDomain('cover', true).filter((id) => {
       const state = hass.states[id];
       if (!state) return false;
       const deviceClass = (state.attributes as any)?.device_class as string | undefined;
@@ -284,8 +284,15 @@ class Simon42CoversGroupCard extends LitElement {
    */
   private _groupByAreas(covers: string[]): CoversAreaGroup[] {
     if (!this.hass) return [];
-    const dashboardConfig = (this._config.config || {}) as { areas_display?: AreasDisplay; use_default_area_sort?: boolean };
-    const visibleAreas = getVisibleAreasFromHass(this.hass, dashboardConfig.areas_display, dashboardConfig.use_default_area_sort);
+    const dashboardConfig = (this._config.config || {}) as {
+      areas_display?: AreasDisplay;
+      use_default_area_sort?: boolean;
+    };
+    const visibleAreas = getVisibleAreasFromHass(
+      this.hass,
+      dashboardConfig.areas_display,
+      dashboardConfig.use_default_area_sort
+    );
 
     const byArea = new Map<string, string[]>();
     const noArea: string[] = [];
@@ -341,7 +348,7 @@ class Simon42CoversGroupCard extends LitElement {
 
   private _buildHeadingConfig(
     covers: string[],
-    opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; areaId?: string | null } = {},
+    opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; areaId?: string | null } = {}
   ): Record<string, unknown> {
     const level = opts.level ?? 'main';
 
@@ -400,12 +407,14 @@ class Simon42CoversGroupCard extends LitElement {
     }
 
     const isOpen = groupType === 'open';
-    const headingLabel = floorLabel || (isOpen
-      ? (this._config.heading_open || localize('covers.open'))
-      : (this._config.heading_closed || localize('covers.closed')));
+    const headingLabel =
+      floorLabel ||
+      (isOpen
+        ? this._config.heading_open || localize('covers.open')
+        : this._config.heading_closed || localize('covers.closed'));
     const defaultIcon = isOpen ? 'mdi:blinds-horizontal' : 'mdi:blinds';
-    const headingIcon = floorIcon
-      || (isOpen ? (this._config.icon_open || defaultIcon) : (this._config.icon_closed || defaultIcon));
+    const headingIcon =
+      floorIcon || (isOpen ? this._config.icon_open || defaultIcon : this._config.icon_closed || defaultIcon);
     return {
       type: 'heading',
       heading: `${headingLabel} (${covers.length})`,
@@ -549,7 +558,7 @@ class Simon42CoversGroupCard extends LitElement {
     slotId: string,
     cardMap: Map<string, LovelaceCardElement>,
     key: string,
-    headingConfig: Record<string, unknown>,
+    headingConfig: Record<string, unknown>
   ): void {
     const hass = this.hass;
     if (!hass) return;
@@ -644,7 +653,7 @@ class Simon42CoversGroupCard extends LitElement {
           `floor-heading-${floorKey}`,
           this._floorHeadingCards,
           floorKey,
-          this._buildHeadingConfig(group.covers, { label: group.floorName, icon: group.floorIcon, level: 'floor' }),
+          this._buildHeadingConfig(group.covers, { label: group.floorName, icon: group.floorIcon, level: 'floor' })
         );
 
         if (groupByAreas) {
@@ -658,7 +667,7 @@ class Simon42CoversGroupCard extends LitElement {
               this._getAreaSlotId('area-heading', floorKey, areaKey),
               this._areaHeadingCards,
               compositeKey,
-              this._buildHeadingConfig(area.covers, { label: area.areaName, level: 'area', areaId: area.areaId }),
+              this._buildHeadingConfig(area.covers, { label: area.areaName, level: 'area', areaId: area.areaId })
             );
             this._reconcileGrid(this._getAreaSlotId('area-grid', floorKey, areaKey), area.covers);
           }
@@ -684,7 +693,7 @@ class Simon42CoversGroupCard extends LitElement {
           this._getAreaSlotId('area-heading', null, areaKey),
           this._areaHeadingCards,
           areaKey,
-          this._buildHeadingConfig(area.covers, { label: area.areaName, level: 'area', areaId: area.areaId }),
+          this._buildHeadingConfig(area.covers, { label: area.areaName, level: 'area', areaId: area.areaId })
         );
         this._reconcileGrid(this._getAreaSlotId('area-grid', null, areaKey), area.covers);
       }
@@ -705,3 +714,4 @@ class Simon42CoversGroupCard extends LitElement {
 }
 
 customElements.define('simon42-covers-group-card', Simon42CoversGroupCard);
+

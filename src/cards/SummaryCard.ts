@@ -31,7 +31,16 @@ interface DisplayConfig {
 const COVER_DEVICE_CLASSES = new Set(['awning', 'blind', 'curtain', 'shade', 'shutter', 'window']);
 
 const SECURITY_COVER_CLASSES = new Set(['door', 'garage', 'gate', 'window']);
-const SECURITY_BINARY_SENSOR_CLASSES = new Set(['door', 'window', 'garage_door', 'opening', 'smoke', 'gas', 'heat', 'moisture']);
+const SECURITY_BINARY_SENSOR_CLASSES = new Set([
+  'door',
+  'window',
+  'garage_door',
+  'opening',
+  'smoke',
+  'gas',
+  'heat',
+  'moisture',
+]);
 
 const COLOR_MAP: Record<string, string> = {
   orange: 'var(--orange-color, #ff9800)',
@@ -129,13 +138,13 @@ class Simon42SummaryCard extends LitElement {
 
     switch (this._config.summary_type) {
       case 'lights':
-        result = Registry.getVisibleEntityIdsForDomain('light').filter(
+        result = Registry.getVisibleEntityIdsForDomain('light', true).filter(
           (id) => hass.states[id] && this._isEntityRelevant(id, hass.states[id])
         );
         break;
 
       case 'covers':
-        result = Registry.getVisibleEntityIdsForDomain('cover').filter((id) => {
+        result = Registry.getVisibleEntityIdsForDomain('cover', true).filter((id) => {
           const state = hass.states[id];
           if (!state) return false;
           if (!this._isEntityRelevant(id, state)) return false;
@@ -301,13 +310,17 @@ class Simon42SummaryCard extends LitElement {
     const configs: Record<SummaryType, DisplayConfig> = {
       lights: {
         icon: 'mdi:lamps',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.lights_on_one') : localize('summary.lights_on_many')}` : localize('summary.lights_off'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.lights_on_one') : localize('summary.lights_on_many')}`
+          : localize('summary.lights_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'lights',
       },
       covers: {
         icon: 'mdi:blinds-horizontal',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.covers_open_one') : localize('summary.covers_open_many')}` : localize('summary.covers_closed'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.covers_open_one') : localize('summary.covers_open_many')}`
+          : localize('summary.covers_closed'),
         color: hasItems ? 'purple' : 'grey',
         path: 'covers',
       },
@@ -319,19 +332,25 @@ class Simon42SummaryCard extends LitElement {
       },
       batteries: {
         icon: hasItems ? 'mdi:battery-alert' : 'mdi:battery-charging',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.batteries_critical_one') : localize('summary.batteries_critical_many')}` : localize('summary.batteries_ok'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.batteries_critical_one') : localize('summary.batteries_critical_many')}`
+          : localize('summary.batteries_ok'),
         color: hasItems ? 'red' : 'grey',
         path: 'batteries',
       },
       climate: {
         icon: 'mdi:thermostat',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}` : localize('summary.climate_off'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}`
+          : localize('summary.climate_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'climate',
       },
       maintenance: {
         icon: 'mdi:wrench',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}` : localize('summary.maintenance_ok'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}`
+          : localize('summary.maintenance_ok'),
         color: hasItems ? 'orange' : 'grey',
         path: 'maintenance',
       },
@@ -361,7 +380,6 @@ class Simon42SummaryCard extends LitElement {
   }
 
   protected render() {
-
     const display = this._getDisplayConfig();
     const colorCss = COLOR_MAP[display.color] || COLOR_MAP.grey;
 
@@ -383,3 +401,4 @@ customElements.define('simon42-summary-card', Simon42SummaryCard);
 // Deliberately NOT registered in window.customCards: the card only works
 // inside the strategy (Registry + localize lifecycle, see #147). Listing it
 // in the card picker would invite standalone use that breaks.
+
