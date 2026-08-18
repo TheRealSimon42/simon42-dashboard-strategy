@@ -32,7 +32,9 @@ export function createTodosSection(
 ): LovelaceSectionConfig | null {
   if (!enabled) return null;
 
-  const visible = Registry.getVisibleEntityIdsForDomain('todo').filter((id) => hass.states[id] !== undefined);
+  const visible = Registry.getVisibleEntityIdsForDomain('todo').filter(
+    (id) => Reflect.get(hass.states as Record<string, unknown>, id) !== undefined
+  );
 
   let selected: string[];
   if (Array.isArray(todoEntities) && todoEntities.length > 0) {

@@ -188,7 +188,9 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     // exists in this hass instance, otherwise fall back to auto-discovery.
     const configuredWeather = dashboardConfig.weather_entity;
     const weatherEntity =
-      configuredWeather && hass.states[configuredWeather] ? configuredWeather : findWeatherEntity(hass);
+      configuredWeather && Reflect.get(hass.states as Record<string, unknown>, configuredWeather)
+        ? configuredWeather
+        : findWeatherEntity(hass);
     const someSensorId = findDummySensor(hass);
 
     // Person badges (default-on; suppress via show_person_badges=false to swap in
