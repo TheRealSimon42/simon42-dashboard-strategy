@@ -22,6 +22,7 @@ import {
   applyBadgeGroupOptions,
   isDefaultShowName,
   isEnergyBlockSensor,
+  isWindowContactDeviceClass,
   resolveShowName,
   selectBadgeEntitiesOfType,
   type BadgeCandidate,
@@ -439,7 +440,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
           sensorEntities.occupancy.push(entityId);
           continue;
         }
-        if (deviceClass === 'window') {
+        if (isWindowContactDeviceClass(deviceClass)) {
           sensorEntities.window.push(entityId);
           continue;
         }

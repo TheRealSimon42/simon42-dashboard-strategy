@@ -27,7 +27,13 @@ import type {
 } from '../../types/strategy';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../../types/registries';
 import { localize } from '../../utils/localize';
-import { isBadgeCandidate, isDefaultShowName, isEnergyBlockSensor, resolveShowName } from '../../utils/badge-utils';
+import {
+  isBadgeCandidate,
+  isDefaultShowName,
+  isEnergyBlockSensor,
+  isWindowContactDeviceClass,
+  resolveShowName,
+} from '../../utils/badge-utils';
 import { findUpsEntityGroups } from '../../views/RoomViewStrategy';
 import { stateFor } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
@@ -60,7 +66,7 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const showScriptsInRooms = host._config.show_scripts_in_rooms === true;
   const showUpsInRooms = host._config.show_ups_in_rooms === true;
   const showEnergyInRooms = host._config.show_energy_in_rooms === true;
-  // Window / door contact badges default to visible — read as opt-out (!== false).
+  // Window / opening / door contact badges default to visible — read as opt-out (!== false).
   const showWindowContactsInRooms = host._config.show_window_contacts_in_rooms !== false;
   const showDoorContactsInRooms = host._config.show_door_contacts_in_rooms !== false;
   const showCamerasInRooms = host._config.show_cameras_in_rooms !== false;
@@ -1376,7 +1382,7 @@ function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Sim
     // Globally disabled contact types don't render as badges — don't offer
     // them as candidates either (they stay pickable as additional badges,
     // which is the deliberate per-room override).
-    if (domain === 'binary_sensor' && dc === 'window' && config.show_window_contacts_in_rooms === false) continue;
+    if (domain === 'binary_sensor' && isWindowContactDeviceClass(dc) && config.show_window_contacts_in_rooms === false) continue;
     if (domain === 'binary_sensor' && dc === 'door' && config.show_door_contacts_in_rooms === false) continue;
 
     if (domain === 'sensor' && (dc === 'battery' || entity.entity_id.includes('battery'))) {

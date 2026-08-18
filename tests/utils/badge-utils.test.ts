@@ -11,8 +11,11 @@ import { describe, it, expect } from 'vitest';
 
 import {
   applyBadgeGroupOptions,
+  getColorForEntity,
   isBadgeCandidate,
+  isDefaultShowName,
   isEnergyBlockSensor,
+  isWindowContactDeviceClass,
   selectBadgeEntitiesOfType,
   type BadgeCandidate,
 } from '../../src/utils/badge-utils';
@@ -111,6 +114,25 @@ describe('isBadgeCandidate — energy-block sensors excluded (#396)', () => {
     expect(isBadgeCandidate('sensor', 'illuminance', 'lx', 'sensor.kitchen_light_level')).toBe(true);
     expect(isBadgeCandidate('sensor', 'carbon_dioxide', 'ppm', 'sensor.kitchen_air')).toBe(true);
     expect(isBadgeCandidate('binary_sensor', 'gas', undefined, 'binary_sensor.kitchen_gas_alarm')).toBe(true);
+  });
+});
+
+describe('window contact device classes (#437)', () => {
+  it('treats generic opening sensors as window contact badges', () => {
+    expect(isWindowContactDeviceClass('window')).toBe(true);
+    expect(isWindowContactDeviceClass('opening')).toBe(true);
+    expect(isWindowContactDeviceClass('door')).toBe(false);
+    expect(isBadgeCandidate('binary_sensor', 'opening', undefined, 'binary_sensor.kitchen_window')).toBe(true);
+    expect(isDefaultShowName('opening')).toBe(true);
+  });
+
+  it('uses the window contact badge color for opening sensors', () => {
+    const hass = makeHass({
+      entities: [
+        { entity_id: 'binary_sensor.kitchen_window', attributes: { device_class: 'opening' } },
+      ],
+    });
+    expect(getColorForEntity('binary_sensor.kitchen_window', hass)).toBe('teal');
   });
 });
 
