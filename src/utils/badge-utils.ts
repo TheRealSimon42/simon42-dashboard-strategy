@@ -24,6 +24,7 @@ export const BADGE_COLOR_MAP: Record<string, string> = {
   presence: 'cyan',
   moisture: 'blue',
   window: 'teal',
+  opening: 'teal',
   door: 'teal',
   smoke: 'red',
   gas: 'red',
@@ -33,6 +34,11 @@ export const BADGE_COLOR_MAP: Record<string, string> = {
   power: 'orange',
   energy: 'orange',
 };
+
+/** Whether a binary sensor represents a window-style open/closed contact. */
+export function isWindowContactDeviceClass(deviceClass: string | undefined): boolean {
+  return deviceClass === 'window' || deviceClass === 'opening';
+}
 
 // -- Badge color for a specific entity --------------------------------
 
@@ -110,7 +116,7 @@ export function isBadgeCandidate(
       deviceClass === 'motion' ||
       deviceClass === 'occupancy' ||
       deviceClass === 'presence' ||
-      deviceClass === 'window' ||
+      isWindowContactDeviceClass(deviceClass) ||
       deviceClass === 'door' ||
       deviceClass === 'smoke' ||
       deviceClass === 'gas' ||
@@ -197,7 +203,7 @@ export function selectBadgeEntitiesOfType(entities: string[], hiddenBadges: Read
 
 /** Whether a badge with this device_class shows its entity name by default */
 export function isDefaultShowName(deviceClass: string | undefined): boolean {
-  return deviceClass === 'window' || deviceClass === 'door';
+  return isWindowContactDeviceClass(deviceClass) || deviceClass === 'door';
 }
 
 // -- Show name resolution ---------------------------------------------
