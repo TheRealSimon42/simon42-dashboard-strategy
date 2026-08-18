@@ -2,7 +2,8 @@
 // Todos Section Builder
 // ====================================================================
 // Renders one HA-native `todo-list` card per selected todo.* entity.
-// Auto-hides when no todo entities exist or none are selected.
+// Auto-hides when no todo entities exist or none are selected, unless custom
+// cards target the section and therefore need a section to attach to.
 // ====================================================================
 
 import type { HomeAssistant } from '../types/homeassistant';
@@ -20,17 +21,19 @@ import { localize } from '../utils/localize';
  * @param todoEntities optional explicit list (config). When empty/undefined,
  *                     all visible todo.* entities are included.
  * @param hideHeading suppress the section heading
+ * @param hasAssignedCards keep a heading-only section for custom cards
  */
 export function createTodosSection(
   hass: HomeAssistant,
   enabled: boolean,
   todoEntities: string[] | undefined,
-  hideHeading: boolean = false
+  hideHeading: boolean = false,
+  hasAssignedCards: boolean = false
 ): LovelaceSectionConfig | null {
   if (!enabled) return null;
 
   const visible = Registry.getVisibleEntityIdsForDomain('todo').filter(
-    (id) => hass.states[id] !== undefined
+    (id) => Reflect.get(hass.states as Record<string, unknown>, id) !== undefined
   );
 
   let selected: string[];
@@ -40,7 +43,7 @@ export function createTodosSection(
     selected = visible;
   }
 
-  if (selected.length === 0) return null;
+  if (selected.length === 0 && !hasAssignedCards) return null;
 
   const cards: LovelaceCardConfig[] = [];
   if (!hideHeading) {
@@ -63,3 +66,4 @@ export function createTodosSection(
 
   return { type: 'grid', cards };
 }
+
