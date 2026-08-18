@@ -11,6 +11,7 @@ import { localize } from '../utils/localize';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 import { getVisibleAreasFromHass } from '../utils/name-utils';
 import type { AreasDisplay } from '../types/strategy';
+import { isCoverRelevantForGroup } from '../utils/cover-state-utils';
 
 interface LovelaceCardElement extends HTMLElement {
   hass?: HomeAssistant;
@@ -182,36 +183,7 @@ class Simon42CoversGroupCard extends LitElement {
       if (!state) continue;
 
       const position = (state.attributes as any)?.current_position;
-      const hasPosition = typeof position === 'number';
-      const isMoving = state.state === 'opening' || state.state === 'closing';
-
-      if (groupType === 'partially_open') {
-        // Partially open: position between 0 and 100 (open or currently moving)
-        if (state.state === 'open' || isMoving) {
-          if (hasPosition && position > 0 && position < 100) {
-            relevant.push(id);
-          }
-        }
-      } else if (groupType === 'open') {
-        if (state.state === 'open' || state.state === 'opening') {
-          if (showPartiallyOpen) {
-            // Only fully open (100%) or covers without position attribute
-            if (!hasPosition || position >= 100) {
-              relevant.push(id);
-            }
-          } else {
-            relevant.push(id);
-          }
-        }
-      } else {
-        if (state.state === 'closed') {
-          relevant.push(id);
-        } else if (state.state === 'closing') {
-          // When partially_open is active, closing covers with position > 0 belong to partially_open
-          if (showPartiallyOpen && hasPosition && position > 0) continue;
-          relevant.push(id);
-        }
-      }
+      if (isCoverRelevantForGroup(state.state, position, groupType, showPartiallyOpen)) relevant.push(id);
     }
 
     relevant.sort((a, b) => {
@@ -284,8 +256,15 @@ class Simon42CoversGroupCard extends LitElement {
    */
   private _groupByAreas(covers: string[]): CoversAreaGroup[] {
     if (!this.hass) return [];
-    const dashboardConfig = (this._config.config || {}) as { areas_display?: AreasDisplay; use_default_area_sort?: boolean };
-    const visibleAreas = getVisibleAreasFromHass(this.hass, dashboardConfig.areas_display, dashboardConfig.use_default_area_sort);
+    const dashboardConfig = (this._config.config || {}) as {
+      areas_display?: AreasDisplay;
+      use_default_area_sort?: boolean;
+    };
+    const visibleAreas = getVisibleAreasFromHass(
+      this.hass,
+      dashboardConfig.areas_display,
+      dashboardConfig.use_default_area_sort
+    );
 
     const byArea = new Map<string, string[]>();
     const noArea: string[] = [];
@@ -341,7 +320,7 @@ class Simon42CoversGroupCard extends LitElement {
 
   private _buildHeadingConfig(
     covers: string[],
-    opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; areaId?: string | null } = {},
+    opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; areaId?: string | null } = {}
   ): Record<string, unknown> {
     const level = opts.level ?? 'main';
 
@@ -400,12 +379,14 @@ class Simon42CoversGroupCard extends LitElement {
     }
 
     const isOpen = groupType === 'open';
-    const headingLabel = floorLabel || (isOpen
-      ? (this._config.heading_open || localize('covers.open'))
-      : (this._config.heading_closed || localize('covers.closed')));
+    const headingLabel =
+      floorLabel ||
+      (isOpen
+        ? this._config.heading_open || localize('covers.open')
+        : this._config.heading_closed || localize('covers.closed'));
     const defaultIcon = isOpen ? 'mdi:blinds-horizontal' : 'mdi:blinds';
-    const headingIcon = floorIcon
-      || (isOpen ? (this._config.icon_open || defaultIcon) : (this._config.icon_closed || defaultIcon));
+    const headingIcon =
+      floorIcon || (isOpen ? this._config.icon_open || defaultIcon : this._config.icon_closed || defaultIcon);
     return {
       type: 'heading',
       heading: `${headingLabel} (${covers.length})`,
@@ -549,7 +530,7 @@ class Simon42CoversGroupCard extends LitElement {
     slotId: string,
     cardMap: Map<string, LovelaceCardElement>,
     key: string,
-    headingConfig: Record<string, unknown>,
+    headingConfig: Record<string, unknown>
   ): void {
     const hass = this.hass;
     if (!hass) return;
@@ -644,7 +625,7 @@ class Simon42CoversGroupCard extends LitElement {
           `floor-heading-${floorKey}`,
           this._floorHeadingCards,
           floorKey,
-          this._buildHeadingConfig(group.covers, { label: group.floorName, icon: group.floorIcon, level: 'floor' }),
+          this._buildHeadingConfig(group.covers, { label: group.floorName, icon: group.floorIcon, level: 'floor' })
         );
 
         if (groupByAreas) {
@@ -658,7 +639,7 @@ class Simon42CoversGroupCard extends LitElement {
               this._getAreaSlotId('area-heading', floorKey, areaKey),
               this._areaHeadingCards,
               compositeKey,
-              this._buildHeadingConfig(area.covers, { label: area.areaName, level: 'area', areaId: area.areaId }),
+              this._buildHeadingConfig(area.covers, { label: area.areaName, level: 'area', areaId: area.areaId })
             );
             this._reconcileGrid(this._getAreaSlotId('area-grid', floorKey, areaKey), area.covers);
           }
@@ -684,7 +665,7 @@ class Simon42CoversGroupCard extends LitElement {
           this._getAreaSlotId('area-heading', null, areaKey),
           this._areaHeadingCards,
           areaKey,
-          this._buildHeadingConfig(area.covers, { label: area.areaName, level: 'area', areaId: area.areaId }),
+          this._buildHeadingConfig(area.covers, { label: area.areaName, level: 'area', areaId: area.areaId })
         );
         this._reconcileGrid(this._getAreaSlotId('area-grid', null, areaKey), area.covers);
       }
@@ -705,3 +686,4 @@ class Simon42CoversGroupCard extends LitElement {
 }
 
 customElements.define('simon42-covers-group-card', Simon42CoversGroupCard);
+
