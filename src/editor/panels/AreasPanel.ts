@@ -20,6 +20,7 @@ import type { HomeAssistant } from '../../types/homeassistant';
 import type {
   Simon42StrategyConfig,
   AreaCustomSection,
+  AreaSortMode,
   AreaDisplayType,
   AreaOptions,
   GroupOptions,
@@ -27,6 +28,7 @@ import type {
 } from '../../types/strategy';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../../types/registries';
 import { localize } from '../../utils/localize';
+import { resolveAreaSortMode } from '../../utils/name-utils';
 import { isBadgeCandidate, isDefaultShowName, isEnergyBlockSensor, resolveShowName } from '../../utils/badge-utils';
 import { findUpsEntityGroups } from '../../views/RoomViewStrategy';
 import { stateFor } from '../entity-options';
@@ -65,7 +67,7 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const showDoorContactsInRooms = host._config.show_door_contacts_in_rooms !== false;
   const showCamerasInRooms = host._config.show_cameras_in_rooms !== false;
   const showCoverControlsInRooms = host._config.show_cover_controls_in_rooms !== false;
-  const useDefaultAreaSort = host._config.use_default_area_sort === true;
+  const areaSortMode = resolveAreaSortMode(host._config);
 
   const hassRef = host._hass;
   if (!hassRef) return html``;
@@ -165,9 +167,16 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
         (checked) => host._toggleChanged('hide_unavailable_in_rooms', checked, true))}
       <div class="description">${localize('editor.hide_unavailable_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('use-default-area-sort', localize('editor.use_default_area_sort'), useDefaultAreaSort,
-        (checked) => host._toggleChanged('use_default_area_sort', checked, false))}
-      <div class="description">${localize('editor.use_default_area_sort_desc')}</div>
+      <div class="form-row">
+        <label for="area-sort-mode">${localize('editor.area_sort_mode')}</label>
+        <select id="area-sort-mode" .value=${areaSortMode}
+          @change=${(e: Event) => areaSortModeChanged(host, (e.target as HTMLSelectElement).value as AreaSortMode)}>
+          <option value="manual">${localize('editor.area_sort_mode_manual')}</option>
+          <option value="ha_default">${localize('editor.area_sort_mode_ha_default')}</option>
+          <option value="occupancy_first">${localize('editor.area_sort_mode_occupancy_first')}</option>
+        </select>
+      </div>
+      <div class="description">${localize('editor.area_sort_mode_desc')}</div>
 
       <div class="description" style="margin-left: 0; margin-top: 16px; margin-bottom: 12px;">
         ${localize('editor.areas_manage_desc')}
@@ -1214,6 +1223,19 @@ function updateAreaOrder(host: StrategyEditorHost, newOrder: string[]): void {
       order: newOrder,
     },
   };
+
+  host._config = newConfig;
+  host._fireConfigChanged(newConfig);
+}
+
+function areaSortModeChanged(host: StrategyEditorHost, mode: AreaSortMode): void {
+  const newConfig: Simon42StrategyConfig = { ...host._config };
+
+  // Keep generated editor output compact while accepting both the new enum
+  // and the legacy boolean in hand-written YAML.
+  delete newConfig.use_default_area_sort;
+  if (mode === 'manual') delete newConfig.areas_sort_mode;
+  else newConfig.areas_sort_mode = mode;
 
   host._config = newConfig;
   host._fireConfigChanged(newConfig);

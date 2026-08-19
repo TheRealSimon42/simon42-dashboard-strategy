@@ -14,7 +14,7 @@ import type { LovelaceViewConfig, LovelaceSectionConfig, LovelaceBadgeConfig, Lo
 import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { collectPersons, findWeatherEntity, findDummySensor } from '../utils/entity-filter';
-import { getVisibleAreas } from '../utils/name-utils';
+import { getVisibleAreas, resolveAreaSortMode, sortAreasByOccupancy } from '../utils/name-utils';
 import { createPersonBadges } from '../utils/badge-builder';
 import { createOverviewSection, createCustomCardsSection } from '../sections/OverviewSection';
 import { createAreasSection } from '../sections/AreasSection';
@@ -162,8 +162,18 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     // Initialize Registry (idempotent — skips if already done by another view)
     Registry.initialize(hass, dashboardConfig);
 
-    // Visible areas (filtered + sorted by config)
-    const visibleAreas = getVisibleAreas(Registry.areas, dashboardConfig.areas_display, dashboardConfig.use_default_area_sort);
+    // Visible areas (filtered + sorted by config). Occupancy-first is an
+    // opt-in overview-only reorder; room views and navigation keep their
+    // existing order from the dashboard entry point.
+    const areaSortMode = resolveAreaSortMode(dashboardConfig);
+    const baseAreas = getVisibleAreas(
+      Registry.areas,
+      dashboardConfig.areas_display,
+      areaSortMode === 'ha_default'
+    );
+    const visibleAreas = areaSortMode === 'occupancy_first'
+      ? sortAreasByOccupancy(baseAreas, hass)
+      : baseAreas;
 
     // Collect data for overview
     const persons = collectPersons(hass, dashboardConfig);
