@@ -24,6 +24,9 @@ export { DEFAULT_SECTIONS_ORDER } from '../sections/section-registry';
  */
 export type SectionOrderKey = SectionKey | (string & {});
 
+/** Ordering mode for overview area cards. */
+export type AreaSortMode = 'manual' | 'ha_default' | 'occupancy_first';
+
 /** Keys for section headings that can be hidden via hidden_section_headings */
 export type HeadingKey =
   | 'overview'
@@ -317,6 +320,11 @@ export interface Simon42StrategyConfig {
   light_favorite_entities?: string[]; // light.* glance row on overview (#176)
 
   // Area management
+  /**
+   * Overview area-card ordering. When omitted, the legacy
+   * use_default_area_sort boolean determines manual vs HA order.
+   */
+  areas_sort_mode?: AreaSortMode;
   use_default_area_sort?: boolean; // default: false
   areas_display?: AreasDisplay;
   areas_options?: Record<string, AreaOptions>;
