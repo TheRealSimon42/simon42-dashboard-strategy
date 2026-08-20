@@ -14,7 +14,7 @@ import { html, nothing, type TemplateResult } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { Simon42StrategyConfig } from '../../types/strategy';
 import { localize } from '../../utils/localize';
-import { getAlarmEntities, getSelectEntities } from '../entity-options';
+import { getAlarmEntities, getPresenceSimulationEntities, getSelectEntities } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
 
 export function renderOverviewSection(host: StrategyEditorHost): TemplateResult {
@@ -26,6 +26,8 @@ export function renderOverviewSection(host: StrategyEditorHost): TemplateResult 
   const hasSearchCardDeps = checkSearchCardDependencies();
   const alarmEntity = host._config.alarm_entity || '';
   const alarmEntities = getAlarmEntities(host._hass);
+  const presenceSimulationEntity = host._config.presence_simulation_entity || '';
+  const presenceSimulationEntities = getPresenceSimulationEntities(host._hass, presenceSimulationEntity);
   const houseModeEntity = host._config.house_mode_entity || '';
   const selectEntities = getSelectEntities(host._hass);
 
@@ -65,6 +67,21 @@ export function renderOverviewSection(host: StrategyEditorHost): TemplateResult 
         </select>
       </div>
       <div class="description">${localize('editor.alarm_desc')}</div>
+
+      <div class="form-row">
+        <label for="presence-simulation-entity" style="margin-right: 8px; min-width: 120px;">${localize('editor.presence_simulation_entity')}</label>
+        <select id="presence-simulation-entity"
+          style="flex: 1;"
+          @change=${(e: Event) => presenceSimulationEntityChanged(host, e)}>
+          <option value="" ?selected=${!presenceSimulationEntity}>${localize('editor.presence_simulation_none')}</option>
+          ${presenceSimulationEntities.map((entity) => html`
+            <option value=${entity.entity_id} ?selected=${entity.entity_id === presenceSimulationEntity}>
+              ${entity.name}
+            </option>
+          `)}
+        </select>
+      </div>
+      <div class="description">${localize('editor.presence_simulation_desc')}</div>
 
       <div class="form-row">
         <label for="house-mode-entity" style="margin-right: 8px; min-width: 120px;">${localize('editor.house_mode_entity')}</label>
@@ -177,6 +194,23 @@ function alarmEntityChanged(host: StrategyEditorHost, e: Event): void {
 
   if (!entityId || entityId === '') {
     delete newConfig.alarm_entity;
+  }
+
+  host._config = newConfig;
+  host._fireConfigChanged(newConfig);
+}
+
+function presenceSimulationEntityChanged(host: StrategyEditorHost, e: Event): void {
+  if (!host._hass) return;
+
+  const entityId = (e.target as HTMLSelectElement).value;
+  const newConfig: Simon42StrategyConfig = {
+    ...host._config,
+    presence_simulation_entity: entityId,
+  };
+
+  if (!entityId) {
+    delete newConfig.presence_simulation_entity;
   }
 
   host._config = newConfig;

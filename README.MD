@@ -195,6 +195,8 @@ Die Hauptseite des Dashboards zeigt eine Übersicht mit folgenden Bereichen:
 
 **Uhr & Alarm** — Die Uhr wird standardmäßig angezeigt. Optional kann eine Alarmanlage daneben eingeblendet werden.
 
+**Anwesenheitssimulation** *(ab v1.5.0)* — Ist die HACS-Integration [Presence Simulation](https://github.com/slashback100/presence_simulation) installiert, kann im Dashboard-Editor einer ihrer Switches ausgewählt werden. Die Tile zeigt den Live-Status direkt rechts neben Alarm und Uhr an. Tippen schaltet die Simulation ein oder aus, langes Drücken öffnet die Entitätsdetails. Wenn mehrere Simulationen eingerichtet sind, wählst du gezielt den gewünschten Switch aus. Ohne Auswahl bleibt die Funktion deaktiviert.
+
 **Haus-Modus** *(ab v1.4.0)* — Optional erscheint direkt über dem Uhr/Alarm-Block ein Dropdown (Tile-Karte mit nativem `select-options`-Feature), das einen selbst angelegten `input_select`- oder `select`-Helfer anzeigt und schaltet — auch dann, wenn keine Alarmanlage konfiguriert ist. Die Strategy legt den Helfer **nicht** selbst an; du definierst die Modi selbst (Einstellungen → Geräte & Dienste → Helfer → Auswahl). Beispiel-Helfer `input_select.hausmodus` mit den Optionen „Smart Home", „Gast" und „Babysitter":
 
 ```yaml
@@ -498,6 +500,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 |--------|-----|----------|------|-------------|
 | `show_clock_card` | boolean | `true` | — | Uhr auf der Übersicht |
 | `alarm_entity` | string | — | — | Alarm-Panel Entity neben der Uhr |
+| `presence_simulation_entity` | string | — | v1.5.0 | Switch der Presence-Simulation-Integration neben Alarm bzw. Uhr; Tippen schaltet die Simulation um |
 | `house_mode_entity` | string | — | v1.4.0 | `input_select`/`select`-Helfer als Dropdown-Tile direkt über dem Uhr/Alarm-Block |
 | `show_search_card` | boolean | `false` | — | Such-Karte auf der Übersicht |
 | `search_card_variant` | `custom` \| `tip` | `custom` | v1.4.0 | `custom` benötigt custom:search-card aus HACS; `tip` ist ein HA-nativer Hinweis auf die globale Suche |

@@ -11,11 +11,23 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { Registry } from '../../src/Registry';
 import { createCustomCardsSection, createHouseModeCards, createOverviewSection } from '../../src/sections/OverviewSection';
+import type { Simon42StrategyConfig } from '../../src/types/strategy';
 import { makeHass } from '../fixtures/hass';
 
 beforeEach(() => {
   Registry.resetForTesting();
 });
+
+function createOverviewForControls(config: Simon42StrategyConfig) {
+  const hass = makeHass({});
+  Registry.initialize(hass, config);
+  return createOverviewSection({
+    someSensorId: 'sensor.dummy',
+    showSearchCard: false,
+    config,
+    hass,
+  });
+}
 
 describe('createCustomCardsSection', () => {
   it('returns null when no parsed cards are provided', () => {
@@ -186,6 +198,72 @@ describe('createHouseModeCards (#414)', () => {
       hide_state: true,
       features: [{ type: 'select-options' }],
       features_position: 'inline',
+    });
+  });
+});
+
+describe('presence simulation control', () => {
+  it.each([
+    {
+      label: 'beside clock and alarm',
+      config: {
+        alarm_entity: 'alarm_control_panel.home',
+        presence_simulation_entity: 'switch.presence_simulation',
+      },
+      order: ['clock', 'alarm_control_panel.home', 'switch.presence_simulation'],
+      columns: 4,
+    },
+    {
+      label: 'beside clock without alarm',
+      config: { presence_simulation_entity: 'switch.presence_simulation' },
+      order: ['clock', 'switch.presence_simulation'],
+      columns: 6,
+    },
+    {
+      label: 'beside alarm without clock',
+      config: {
+        show_clock_card: false,
+        alarm_entity: 'alarm_control_panel.home',
+        presence_simulation_entity: 'switch.presence_simulation',
+      },
+      order: ['alarm_control_panel.home', 'switch.presence_simulation'],
+      columns: 6,
+    },
+    {
+      label: 'full width on its own',
+      config: {
+        show_clock_card: false,
+        presence_simulation_entity: 'switch.presence_simulation',
+      },
+      order: ['switch.presence_simulation'],
+      columns: 'full',
+    },
+  ] as const)('renders $label', ({ config, order, columns }) => {
+    const cards = createOverviewForControls(config)?.cards ?? [];
+    const primaryCards = cards.slice(1, order.length + 1);
+
+    expect(primaryCards.map((card) => card.entity ?? card.type)).toEqual(order);
+    expect(primaryCards.every((card) => card.grid_options?.columns === columns)).toBe(true);
+    if (primaryCards.length === 3) {
+      expect(primaryCards.every((card) => card.grid_options?.rows === 2)).toBe(true);
+      expect(primaryCards.filter((card) => card.type === 'tile').every((card) => card.vertical === true)).toBe(true);
+    }
+  });
+
+  it('uses the native switch state and toggle actions', () => {
+    const cards = createOverviewForControls({
+      show_clock_card: false,
+      presence_simulation_entity: 'switch.presence_simulation',
+    })?.cards ?? [];
+    const presenceCard = cards.find((card) => card.entity === 'switch.presence_simulation');
+
+    expect(cards.at(0)).toMatchObject({ type: 'heading', icon: 'mdi:overscan' });
+    expect(presenceCard).toMatchObject({
+      type: 'tile',
+      vertical: false,
+      tap_action: { action: 'toggle' },
+      hold_action: { action: 'more-info' },
+      grid_options: { columns: 'full' },
     });
   });
 });

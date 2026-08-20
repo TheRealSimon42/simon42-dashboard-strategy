@@ -136,7 +136,7 @@ Many entity properties exist ONLY in the Entity Registry, NOT in state attribute
 - **Layout**: summaries_columns (2 | 4)
 - **Area-level**: areas_display.hidden, areas_display.order
 - **Entity-level**: areas_options.{areaId}.groups_options.{domain}.hidden
-- **Special**: room_pin_entities, alarm_entity, favorite_entities, custom_views
+- **Special**: room_pin_entities, alarm_entity, presence_simulation_entity, favorite_entities, custom_views
 
 ### Adding a New Overview Section
 

@@ -65,11 +65,12 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
 
   // Check if alarm entity is configured
   const alarmEntity = config.alarm_entity;
+  const presenceSimulationEntity = config.presence_simulation_entity;
 
   const cards: LovelaceCardConfig[] = [];
 
-  // Only show "Übersicht" heading if clock, alarm or house mode is visible
-  if ((showClockCard || alarmEntity || config.house_mode_entity) && !hidden.has('overview')) {
+  // Only show "Übersicht" heading if a primary control or house mode is visible
+  if ((showClockCard || alarmEntity || presenceSimulationEntity || config.house_mode_entity) && !hidden.has('overview')) {
     cards.push({
       type: 'heading',
       heading: localize('sections.overview'),
@@ -78,7 +79,40 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
     });
   }
 
-  if (showClockCard) {
+  if (presenceSimulationEntity) {
+    const primaryCards: LovelaceCardConfig[] = [];
+    if (showClockCard) {
+      primaryCards.push({
+        type: 'clock',
+        clock_size: 'small',
+        show_seconds: false,
+      });
+    }
+    if (alarmEntity) {
+      primaryCards.push({
+        type: 'tile',
+        entity: alarmEntity,
+        vertical: false,
+      });
+    }
+    primaryCards.push({
+      type: 'tile',
+      entity: presenceSimulationEntity,
+      vertical: false,
+      tap_action: { action: 'toggle' },
+      hold_action: { action: 'more-info' },
+    });
+
+    const threeControls = primaryCards.length === 3;
+    const columns = primaryCards.length === 1 ? 'full' : primaryCards.length === 2 ? 6 : 4;
+    for (const card of primaryCards) {
+      cards.push({
+        ...card,
+        ...(threeControls && card.type === 'tile' ? { vertical: true } : {}),
+        grid_options: { columns, ...(threeControls ? { rows: 2 } : {}) },
+      });
+    }
+  } else if (showClockCard) {
     if (alarmEntity) {
       // Clock and alarm panel side-by-side
       cards.push({
@@ -291,7 +325,9 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   }
 
   // Favorites section
-  const favoriteEntities = (config.favorite_entities || []).filter((entityId) => hass.states[entityId] !== undefined);
+  const favoriteEntities = (config.favorite_entities || []).filter(
+    (entityId) => Reflect.get(hass.states as Record<string, unknown>, entityId) !== undefined
+  );
 
   if (favoriteEntities.length > 0) {
     if (!hidden.has('favorites')) {
