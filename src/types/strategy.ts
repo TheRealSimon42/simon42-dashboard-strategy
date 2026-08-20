@@ -304,6 +304,8 @@ export interface Simon42StrategyConfig {
 
   // Special entities
   alarm_entity?: string;
+  presence_simulation_entity?: string; // presence_simulation switch rendered
+  // beside the clock/alarm row. Default: unset = feature off.
   house_mode_entity?: string; // input_select/select helper rendered as a
   // select-options dropdown tile directly above the alarm panel on the
   // overview (#414). The strategy never creates the helper — the user

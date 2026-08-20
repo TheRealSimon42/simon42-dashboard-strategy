@@ -73,6 +73,31 @@ export function getAlarmEntities(hass: HomeAssistant | null): AlarmEntityOption[
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** Switches created by the Presence Simulation custom integration. */
+export function getPresenceSimulationEntities(
+  hass: HomeAssistant | null,
+  configuredEntityId?: string
+): AlarmEntityOption[] {
+  if (!hass) return [];
+  const options = Object.keys(hass.states)
+    .filter((entityId) => {
+      if (!entityId.startsWith('switch.')) return false;
+      const registryEntry = Reflect.get(hass.entities, entityId) as { platform?: string } | undefined;
+      return registryEntry?.platform === 'presence_simulation';
+    })
+    .map((entityId) => {
+      const stateObj = stateFor(hass, entityId);
+      return {
+        entity_id: entityId,
+        name: stateObj?.attributes.friendly_name || entityId.split('.').at(1)?.replace(/_/g, ' ') || entityId,
+      };
+    });
+  if (configuredEntityId && !options.some((entity) => entity.entity_id === configuredEntityId)) {
+    options.push({ entity_id: configuredEntityId, name: configuredEntityId });
+  }
+  return options.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** input_select/select helpers for the house-mode picker (#414). */
 export function getSelectEntities(hass: HomeAssistant | null): AlarmEntityOption[] {
   if (!hass) return [];
