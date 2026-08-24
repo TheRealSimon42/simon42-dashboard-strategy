@@ -29,6 +29,7 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
   const nestedLightGroups = host._config.nested_light_groups === true;
   const showCoversSummary = host._config.show_covers_summary !== false;
   const showPartiallyOpenCovers = host._config.show_partially_open_covers === true;
+  const groupCoversByState = host._config.group_covers_by_state !== false;
   const groupCoversByFloors = host._config.group_covers_by_floors === true;
   const showSecuritySummary = host._config.show_security_summary !== false;
   const showClimateSummary = host._config.show_climate_summary === true;
@@ -92,6 +93,10 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
             (checked) => host._toggleChanged('show_covers_view', checked, false))}
           <div class="description">${localize('editor.show_covers_view_desc')}</div>
         ` : nothing}
+
+        ${host._renderCheckbox('group-covers-by-state', localize('editor.group_covers_by_state'), groupCoversByState,
+          (checked) => host._toggleChanged('group_covers_by_state', checked, true))}
+        <div class="description">${localize('editor.group_covers_by_state_desc')}</div>
 
         ${host._renderCheckbox('show-partially-open-covers', localize('editor.show_partially_open_covers'), showPartiallyOpenCovers,
           (checked) => host._toggleChanged('show_partially_open_covers', checked, false))}

@@ -129,6 +129,7 @@ export interface Simon42StrategyConfig {
   show_covers_view?: boolean; // default: false — keep the /covers view
   // available even when show_covers_summary is off (#391, battery pattern)
   show_partially_open_covers?: boolean; // default: false
+  group_covers_by_state?: boolean; // default: true — keep separate open/closed groups
   group_covers_by_floors?: boolean; // default: false
   group_covers_by_areas?: boolean; // default: false — group covers by area
   // inside the covers group card (area headings nest under floor headings when
