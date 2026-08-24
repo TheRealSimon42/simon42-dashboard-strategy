@@ -143,7 +143,13 @@ const SECTION_BUILDER_IMPL: Record<SectionKey, SectionBuilder> = {
   agenda: ({ hass, config }) =>
     createAgendaSection(hass, config.show_agenda_section === true, config.agenda_calendar_entities),
   todos: ({ hass, config }) =>
-    createTodosSection(hass, config.show_todos_section === true, config.todos_entities),
+    createTodosSection(
+      hass,
+      config.show_todos_section === true,
+      config.todos_entities,
+      false,
+      config.hide_completed_todos === true,
+    ),
   persons: ({ hass, config }) => createPersonsSection(hass, config.show_persons_section === true),
   vacuums: ({ hass, config }) => createVacuumsSection(hass, config.show_vacuums_section === true),
   maintenance: ({ hass, config }) => createMaintenanceSection(hass, config.show_maintenance_section === true),
