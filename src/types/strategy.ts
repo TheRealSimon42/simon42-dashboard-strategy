@@ -285,6 +285,8 @@ export interface Simon42StrategyConfig {
   agenda_calendar_entities?: string[]; // default: [] → all visible calendars
   show_todos_section?: boolean; // default: false (auto-hides when no todos)
   todos_entities?: string[]; // default: [] → all visible todo.* entities
+  hide_completed_todos?: boolean; // default: false — hide completed items in
+  // the generated native todo-list cards
   show_persons_section?: boolean; // default: false (auto-hides when no persons)
   show_vacuums_section?: boolean; // default: false (auto-hides without vacuum/mower)
   show_maintenance_section?: boolean; // default: false (auto-hides when nothing pending)

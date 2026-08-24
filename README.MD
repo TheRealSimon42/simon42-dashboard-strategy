@@ -551,6 +551,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `agenda_calendar_entities` | string[] | alle | v1.4.0 | Kalender für die Agenda einschränken |
 | `show_todos_section` | boolean | `false` | v1.4.0 | To-do-Section |
 | `todos_entities` | string[] | alle | v1.4.0 | To-do-Listen einschränken |
+| `hide_completed_todos` | boolean | `false` | v1.4.0 | Erledigte Einträge in den generierten To-do-Karten ausblenden |
 | `show_persons_section` | boolean | `false` | v1.4.0 | Personen-Section |
 | `show_vacuums_section` | boolean | `false` | v1.4.0 | Staubsauger-/Mähroboter-Section |
 | `show_maintenance_section` | boolean | `false` | v1.4.0 | Wartungs-Section (Updates + niedrige Batterien) |

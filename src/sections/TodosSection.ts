@@ -25,7 +25,8 @@ export function createTodosSection(
   hass: HomeAssistant,
   enabled: boolean,
   todoEntities: string[] | undefined,
-  hideHeading: boolean = false
+  hideHeading: boolean = false,
+  hideCompleted: boolean = false
 ): LovelaceSectionConfig | null {
   if (!enabled) return null;
 
@@ -55,10 +56,12 @@ export function createTodosSection(
   // One todo-list card per selected entity. HA's built-in todo-list card
   // shows pending items inline with checkboxes and an add-item field.
   for (const entityId of selected) {
-    cards.push({
+    const card: LovelaceCardConfig = {
       type: 'todo-list',
       entity: entityId,
-    });
+    };
+    if (hideCompleted) card.hide_completed = true;
+    cards.push(card);
   }
 
   return { type: 'grid', cards };
