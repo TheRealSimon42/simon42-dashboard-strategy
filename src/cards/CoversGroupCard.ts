@@ -10,6 +10,8 @@ import { trackHassUpdate } from '../utils/debug';
 import { localize } from '../utils/localize';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 import { getVisibleAreasFromHass } from '../utils/name-utils';
+import { getRelevantCoverIds, type CoverGroupType } from '../utils/cover-state-utils';
+import { buildCombinedCoverHeadingConfig } from '../utils/cover-heading-utils';
 import type { AreasDisplay } from '../types/strategy';
 
 interface LovelaceCardElement extends HTMLElement {
@@ -25,17 +27,19 @@ declare global {
 
 interface CoversGroupConfig {
   config?: any;
-  group_type: 'open' | 'closed' | 'partially_open';
+  group_type: CoverGroupType;
   show_partially_open?: boolean;
   device_classes?: string[];
   heading_open?: string;
   heading_closed?: string;
   heading_partial?: string;
+  heading_all?: string;
   batch_open_text?: string;
   batch_close_text?: string;
   icon_open?: string;
   icon_closed?: string;
   icon_partial?: string;
+  icon_all?: string;
   group_by_floors?: boolean;
   group_by_areas?: boolean;
 }
@@ -175,53 +179,13 @@ class Simon42CoversGroupCard extends LitElement {
     const groupType = this._config.group_type;
     const showPartiallyOpen = this._config.show_partially_open === true;
 
-    const relevant: string[] = [];
-    for (const id of this._cachedFilteredIds) {
-      if (!isEntityCurrentlyAvailable(this.hass, id, this._config.config)) continue;
-      const state = this.hass.states[id];
-      if (!state) continue;
-
-      const position = (state.attributes as any)?.current_position;
-      const hasPosition = typeof position === 'number';
-      const isMoving = state.state === 'opening' || state.state === 'closing';
-
-      if (groupType === 'partially_open') {
-        // Partially open: position between 0 and 100 (open or currently moving)
-        if (state.state === 'open' || isMoving) {
-          if (hasPosition && position > 0 && position < 100) {
-            relevant.push(id);
-          }
-        }
-      } else if (groupType === 'open') {
-        if (state.state === 'open' || state.state === 'opening') {
-          if (showPartiallyOpen) {
-            // Only fully open (100%) or covers without position attribute
-            if (!hasPosition || position >= 100) {
-              relevant.push(id);
-            }
-          } else {
-            relevant.push(id);
-          }
-        }
-      } else {
-        if (state.state === 'closed') {
-          relevant.push(id);
-        } else if (state.state === 'closing') {
-          // When partially_open is active, closing covers with position > 0 belong to partially_open
-          if (showPartiallyOpen && hasPosition && position > 0) continue;
-          relevant.push(id);
-        }
-      }
-    }
-
-    relevant.sort((a, b) => {
-      const stateA = this.hass?.states[a];
-      const stateB = this.hass?.states[b];
-      if (!stateA || !stateB) return 0;
-      return new Date(stateB.last_changed).getTime() - new Date(stateA.last_changed).getTime();
-    });
-
-    return relevant;
+    return getRelevantCoverIds(
+      this._cachedFilteredIds,
+      this.hass.states,
+      groupType,
+      showPartiallyOpen,
+      (entityId) => isEntityCurrentlyAvailable(this.hass!, entityId, this._config.config),
+    );
   }
 
   private _getAreaForEntity(entityId: string): string | null {
@@ -397,6 +361,17 @@ class Simon42CoversGroupCard extends LitElement {
           },
         ],
       };
+    }
+
+    if (groupType === 'all') {
+      const headingLabel = floorLabel || this._config.heading_all || localize('covers.all');
+      return buildCombinedCoverHeadingConfig(
+        covers,
+        headingLabel,
+        floorIcon || this._config.icon_all || 'mdi:blinds-horizontal',
+        openText,
+        closeText,
+      );
     }
 
     const isOpen = groupType === 'open';

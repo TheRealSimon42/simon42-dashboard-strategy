@@ -506,6 +506,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_covers_summary` | boolean | `true` | — | Rollo-Zusammenfassung |
 | `show_covers_view` | boolean | `false` | v1.4.0 | Rollo-Unterseite (/covers) auch ohne Rollo-Zusammenfassung bereitstellen |
 | `show_partially_open_covers` | boolean | `false` | — | Teiloffene Rollos separat anzeigen |
+| `group_covers_by_state` | boolean | `true` | v1.4.0 | Rollos nach Offen/Teiloffen/Geschlossen gruppieren; deaktiviert alle relevanten Zustände in einer gemeinsamen reaktiven Gruppe je Kategorie (Etagen- und Bereichsgruppierung bleiben aktiv) |
 | `show_security_summary` | boolean | `true` | — | Sicherheits-Zusammenfassung |
 | `show_security_view` | boolean | `false` | v1.4.0 | Sicherheits-Unterseite (/security) auch ohne Sicherheits-Zusammenfassung bereitstellen |
 | `show_cameras_in_security` | boolean | `false` | v1.4.0 | Kameras als kompakte Karten in der Sicherheits-Ansicht (Überschrift verlinkt zur Kamera-Ansicht, falls aktiviert) |
