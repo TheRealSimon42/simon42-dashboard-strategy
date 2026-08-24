@@ -292,6 +292,8 @@
     "group_covers_by_floors_desc": "Gruppiert die Rollos in der Rollos-Ansicht nach Etagen. Jede Etage erhält einen eigenen Unterabschnitt mit dem Etagennamen als Überschrift. Betrifft die Hauptgruppe; Markisen und Fenster bleiben ungeteilt.",
     "group_covers_by_areas": "Rollos nach Bereichen gruppieren",
     "group_covers_by_areas_desc": "Gruppiert die Rollos in der Rollos-Ansicht nach Bereichen. Jeder Bereich erhält eine eigene Überschrift (unter der Etage, wenn „Rollos nach Etagen gruppieren“ ebenfalls aktiv ist), sodass nackte Rollonamen wie „Fenster“ ihren Raumbezug erhalten. Behält die Offen/Geschlossen-Unterteilung und die Batch-Buttons; gilt für die Hauptgruppe sowie Markisen und Fenster.",
+    "hide_completed_todos": "Erledigte To-do-Einträge ausblenden",
+    "hide_completed_todos_desc": "Blendet den Abschnitt mit erledigten Einträgen in den generierten To-do-Karten aus.",
     "show_security_summary": "Sicherheits-Zusammenfassung anzeigen",
     "show_security_view": "Sicherheits-Ansicht immer bereitstellen",
     "show_security_view_desc": "Erzeugt die Sicherheits-Unterseite (/security) auch dann, wenn die Sicherheits-Zusammenfassung ausgeblendet ist — z.B. für Badges oder Links, die direkt auf die Seite zeigen.",
