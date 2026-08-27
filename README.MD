@@ -680,9 +680,10 @@ Die Strategy erkennt automatisch die Sprache aus deinen Home Assistant Einstellu
 |---------|--------|
 | 🇩🇪 Deutsch | Vollständig |
 | 🇬🇧 English | Vollständig |
+| 🇭🇺 Magyar | Vollständig |
 | 🇷🇺 Русский | Vollständig *(ab v1.3.5)* |
 
-**Weitere Sprachen hinzufügen:** Erstelle eine neue Datei `src/translations/<code>.json` (z.B. `fr.json`) nach dem Muster der bestehenden Dateien und öffne einen Pull Request. Der Aufwand ist gering — es müssen nur die Strings übersetzt werden, kein Code.
+**Weitere Sprachen hinzufügen:** Erstelle eine neue Datei `src/translations/<code>.json` (z.B. `fr.json`) nach dem Muster von `en.json`, registriere sie in `src/utils/localize.ts` und `scripts/lint-translations.mjs` und öffne einen Pull Request. Führe anschließend `node scripts/lint-translations.mjs`, Tests und Build aus.
 
 ## Contributing
 
