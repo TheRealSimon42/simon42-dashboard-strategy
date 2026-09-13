@@ -19,8 +19,24 @@ export function createBannerCard(
       ({ entity, alertType }) =>
         `{% if states('${entity}') | trim != '' %}<ha-alert alert-type="${alertType}">{{ states('${entity}') }}</ha-alert>{% endif %}`
     )
-    .join('\n');
-  return { type: 'markdown', content };
+    .join('');
+  return {
+    type: 'markdown',
+    content,
+    card_mod: {
+      style: `
+        ha-card {
+          background: transparent !important;
+          box-shadow: none !important;
+          border: none !important;
+          border-radius: 0 !important;
+        }
+        ha-card ha-markdown {
+          padding: 0 !important;
+        }
+      `,
+    },
+  };
 }
 
 /**
