@@ -108,6 +108,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   _weatherSensorSearch = '';
   _securityExtraSearch = '';
   _lightFavSearch = '';
+  _bannerSearch = '';
 
   // Cache for loaded area entities (avoid re-fetching on every render)
   _areaEntitiesCache = new Map<string, AreaEntitiesCacheEntry>();

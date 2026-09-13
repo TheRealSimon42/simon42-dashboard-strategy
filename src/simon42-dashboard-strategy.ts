@@ -202,11 +202,13 @@ class Simon42DashboardStrategy extends HTMLElement {
       }
     }
     if (bannerConfigs.length > 0) {
-      const { createBannerSection } = await import('./utils/view-builder');
-      const bannerSections = bannerConfigs.map((b) => createBannerSection(b.entity, b.alertType));
+      const { createBannerCard } = await import('./utils/view-builder');
+      const bannerCard = createBannerCard(bannerConfigs);
       for (const view of generatedViews) {
-        if (view.sections) {
-          view.sections = [...bannerSections, ...view.sections];
+        if (!view.header) {
+          view.header = { card: bannerCard };
+        } else {
+          view.header = { ...view.header, card: bannerCard };
         }
       }
     }

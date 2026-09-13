@@ -2,38 +2,25 @@
 // View Builder - Creates View Definitions
 // ====================================================================
 
-import type { LovelaceViewConfig, LovelaceBadgeConfig, LovelaceSectionConfig } from '../types/lovelace';
+import type { LovelaceViewConfig, LovelaceBadgeConfig, LovelaceSectionConfig, LovelaceCardConfig } from '../types/lovelace';
 import { localize } from './localize';
 
 /**
- * Creates a full-width banner section shown at the top of every view.
- * Uses a card-level conditional so visibility works reliably in HA 2026.x
- * (section-level template visibility is not evaluated consistently).
+ * Creates a single markdown card combining all banner configs.
+ * Each banner uses a Jinja2 {% if %} guard so it renders nothing when
+ * the entity state is empty — no "Konfigurationsfehler", no phantom space.
+ * Inject this card into view.header.card so it appears above the badges row.
  */
-export function createBannerSection(
-  bannerEntity: string,
-  alertType: 'info' | 'warning' | 'error' | 'success' = 'info'
-): LovelaceSectionConfig {
-  return {
-    type: 'grid',
-    column_span: 4,
-    cards: [
-      {
-        type: 'conditional',
-        conditions: [
-          {
-            condition: 'template',
-            value_template: `{{ states('${bannerEntity}') | trim != '' }}`,
-          },
-        ],
-        card: {
-          type: 'markdown',
-          content: `<ha-alert alert-type="${alertType}">{{ states('${bannerEntity}') }}</ha-alert>`,
-          grid_options: { columns: 'full', rows: 'auto' },
-        },
-      },
-    ],
-  };
+export function createBannerCard(
+  bannerConfigs: Array<{ entity: string; alertType: 'info' | 'warning' | 'error' | 'success' }>
+): LovelaceCardConfig {
+  const content = bannerConfigs
+    .map(
+      ({ entity, alertType }) =>
+        `{% if states('${entity}') | trim != '' %}<ha-alert alert-type="${alertType}">{{ states('${entity}') }}</ha-alert>{% endif %}`
+    )
+    .join('\n');
+  return { type: 'markdown', content };
 }
 
 /**

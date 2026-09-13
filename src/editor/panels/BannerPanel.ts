@@ -45,15 +45,40 @@ export function renderBannerSection(host: StrategyEditorHost): TemplateResult {
     `)}
 
     <div class="form-row" style="margin-top: 8px;">
-      <select id="banner-add-entity" style="flex: 1;"
-        @change=${(e: Event) => addBannerEntity(host, e)}>
-        <option value="">${localize('editor.banner_add')}</option>
-        ${allEntities
-          .filter((opt) => !bannerEntities.some((b) => b.entity === opt.entity_id))
-          .map((opt) => html`
-            <option value=${opt.entity_id}>${opt.name} (${opt.entity_id})</option>
-          `)}
-      </select>
+      <div class="entity-search-picker" style="flex: 1;">
+        <input type="text" class="entity-search-input"
+          placeholder=${localize('editor.banner_add')}
+          .value=${host._bannerSearch}
+          @input=${(e: Event) => { host._bannerSearch = (e.target as HTMLInputElement).value; host.requestUpdate(); }}
+          @blur=${() => { setTimeout(() => { host._bannerSearch = ''; host.requestUpdate(); }, 200); }}
+        />
+        ${host._bannerSearch.length >= 2 ? html`
+          <div class="entity-search-results">
+            ${(() => {
+              const results = allEntities
+                .filter((opt) => !bannerEntities.some((b) => b.entity === opt.entity_id))
+                .filter((opt) =>
+                  opt.name.toLowerCase().includes(host._bannerSearch.toLowerCase()) ||
+                  opt.entity_id.toLowerCase().includes(host._bannerSearch.toLowerCase())
+                )
+                .slice(0, 10);
+              return results.length > 0
+                ? results.map((entity) => html`
+                  <div class="entity-search-result" @mousedown=${(e: Event) => {
+                    e.preventDefault();
+                    addBannerEntityById(host, entity.entity_id);
+                    host._bannerSearch = '';
+                    host.requestUpdate();
+                  }}>
+                    <span class="entity-search-name">${entity.name}</span>
+                    <span class="entity-search-id">${entity.entity_id}</span>
+                  </div>
+                `)
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`;
+            })()}
+          </div>
+        ` : nothing}
+      </div>
     </div>
 
     ${bannerEntities.length === 0 ? html`
@@ -85,11 +110,8 @@ function saveBannerEntities(host: StrategyEditorHost, entities: BannerEntityConf
   host._fireConfigChanged(newConfig);
 }
 
-function addBannerEntity(host: StrategyEditorHost, e: Event): void {
-  const select = e.target as HTMLSelectElement;
-  const entityId = select.value;
+function addBannerEntityById(host: StrategyEditorHost, entityId: string): void {
   if (!entityId) return;
-  select.value = '';
   const current = getBannerEntities(host._config);
   if (current.some((b) => b.entity === entityId)) return;
   saveBannerEntities(host, [...current, { entity: entityId, alert_type: 'info' }]);
