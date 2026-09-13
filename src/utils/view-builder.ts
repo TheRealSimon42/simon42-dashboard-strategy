@@ -6,6 +6,33 @@ import type { LovelaceViewConfig, LovelaceBadgeConfig, LovelaceSectionConfig } f
 import { localize } from './localize';
 
 /**
+ * Creates a full-width banner section shown at the top of every view.
+ * The section is hidden via visibility template when the entity state is empty.
+ */
+export function createBannerSection(
+  bannerEntity: string,
+  alertType: 'info' | 'warning' | 'error' | 'success' = 'info'
+): LovelaceSectionConfig {
+  return {
+    type: 'grid',
+    column_span: 4,
+    visibility: [
+      {
+        condition: 'template',
+        value_template: `{{ states('${bannerEntity}') | trim != '' }}`,
+      },
+    ],
+    cards: [
+      {
+        type: 'markdown',
+        content: `<ha-alert alert-type="${alertType}">{{ states('${bannerEntity}') }}</ha-alert>`,
+        grid_options: { columns: 'full', rows: 'auto' },
+      },
+    ],
+  };
+}
+
+/**
  * Opt-in dense placement for sections views: HA fills gaps in the grid
  * (masonry-like) instead of strictly following the section order.
  * Applied uniformly to all generated sections views.
