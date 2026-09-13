@@ -40,11 +40,7 @@ export function renderBannerSection(host: StrategyEditorHost): TemplateResult {
             <option value=${t} ?selected=${(b.alert_type ?? 'info') === t}>${t}</option>
           `)}
         </select>
-        <button type="button" class="icon-button"
-          title="${localize('editor.banner_remove')}"
-          @click=${() => removeBannerEntity(host, i)}>
-          <ha-icon icon="mdi:close"></ha-icon>
-        </button>
+        <button class="btn-remove" @click=${() => removeBannerEntity(host, i)}>&#x2715;</button>
       </div>
     `)}
 

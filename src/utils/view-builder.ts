@@ -7,7 +7,8 @@ import { localize } from './localize';
 
 /**
  * Creates a full-width banner section shown at the top of every view.
- * The section is hidden via visibility template when the entity state is empty.
+ * Uses a card-level conditional so visibility works reliably in HA 2026.x
+ * (section-level template visibility is not evaluated consistently).
  */
 export function createBannerSection(
   bannerEntity: string,
@@ -16,17 +17,20 @@ export function createBannerSection(
   return {
     type: 'grid',
     column_span: 4,
-    visibility: [
-      {
-        condition: 'template',
-        value_template: `{{ states('${bannerEntity}') | trim != '' }}`,
-      },
-    ],
     cards: [
       {
-        type: 'markdown',
-        content: `<ha-alert alert-type="${alertType}">{{ states('${bannerEntity}') }}</ha-alert>`,
-        grid_options: { columns: 'full', rows: 'auto' },
+        type: 'conditional',
+        conditions: [
+          {
+            condition: 'template',
+            value_template: `{{ states('${bannerEntity}') | trim != '' }}`,
+          },
+        ],
+        card: {
+          type: 'markdown',
+          content: `<ha-alert alert-type="${alertType}">{{ states('${bannerEntity}') }}</ha-alert>`,
+          grid_options: { columns: 'full', rows: 'auto' },
+        },
       },
     ],
   };
