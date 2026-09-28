@@ -4,7 +4,12 @@
 
 import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import type { Simon42StrategyConfig } from '../types/strategy';
-import type { LovelaceViewConfig, LovelaceCardConfig, LovelaceSectionConfig, LovelaceViewSidebarConfig } from '../types/lovelace';
+import type {
+  LovelaceViewConfig,
+  LovelaceCardConfig,
+  LovelaceSectionConfig,
+  LovelaceViewSidebarConfig,
+} from '../types/lovelace';
 import type { FloorRegistryEntry } from '../types/registries';
 import type { CameraBlock } from './CctvViewStrategy';
 import { Registry } from '../Registry';
@@ -62,10 +67,7 @@ function securityHiddenAreas(dashboardConfig: Simon42StrategyConfig): Set<string
   return new Set(dashboardConfig.areas_display?.hidden || []);
 }
 
-function collectSecurityEntities(
-  hass: HomeAssistant,
-  dashboardConfig: Simon42StrategyConfig
-): SecurityEntities {
+function collectSecurityEntities(hass: HomeAssistant, dashboardConfig: Simon42StrategyConfig): SecurityEntities {
   const hiddenAreas = securityHiddenAreas(dashboardConfig);
   const result: SecurityEntities = {
     locks: [],
@@ -111,7 +113,8 @@ function collectSecurityEntities(
         if (siblings.some((sid) => sid.startsWith('switch.'))) continue;
       }
       if (deviceClass && ['door', 'window', 'garage_door', 'opening'].includes(deviceClass)) result.windows.push(id);
-      else if (deviceClass && ['smoke', 'gas', 'heat', 'carbon_monoxide'].includes(deviceClass)) result.smokeGas.push(id);
+      else if (deviceClass && ['smoke', 'gas', 'heat', 'carbon_monoxide'].includes(deviceClass))
+        result.smokeGas.push(id);
       else if (deviceClass === 'moisture') result.waterLeak.push(id);
       else if (deviceClass && ['safety', 'tamper', 'lock'].includes(deviceClass)) result.safety.push(id);
     }
@@ -169,10 +172,7 @@ function buildExtraEntitiesSection(
  * Cameras section for the category layout — lean HA-style cards. The
  * heading deep-links to the CCTV view when that view is enabled.
  */
-function buildCamerasSection(
-  blocks: CameraBlock[],
-  cameraViewEnabled: boolean
-): LovelaceSectionConfig | null {
+function buildCamerasSection(blocks: CameraBlock[], cameraViewEnabled: boolean): LovelaceSectionConfig | null {
   if (blocks.length === 0) return null;
   return {
     type: 'grid',
@@ -182,9 +182,7 @@ function buildCamerasSection(
         heading: localize('security.cameras'),
         heading_style: 'subtitle',
         icon: 'mdi:cctv',
-        ...(cameraViewEnabled
-          ? { tap_action: { action: 'navigate', navigation_path: 'cameras' } }
-          : {}),
+        ...(cameraViewEnabled ? { tap_action: { action: 'navigate', navigation_path: 'cameras' } } : {}),
       },
       ...blocks.map(leanCameraCard),
     ],
@@ -282,9 +280,7 @@ function buildAreaGroupedSections(
     const cards: LovelaceCardConfig[] = [
       {
         type: 'heading',
-        heading: multipleBuckets
-          ? floor?.name || localize('security.other_areas')
-          : localize('security.areas'),
+        heading: multipleBuckets ? floor?.name || localize('security.other_areas') : localize('security.areas'),
         heading_style: 'title',
         ...(floor?.icon ? { icon: floor.icon } : {}),
       },
@@ -330,10 +326,7 @@ function buildAreaGroupedSections(
  * hidden_cameras exclusion list (shared with the CCTV view — only room
  * views keep showing those cameras).
  */
-function securityCameraBlocks(
-  hass: HomeAssistant,
-  dashboardConfig: Simon42StrategyConfig
-): CameraBlock[] {
+function securityCameraBlocks(hass: HomeAssistant, dashboardConfig: Simon42StrategyConfig): CameraBlock[] {
   if (dashboardConfig.show_cameras_in_security !== true) return [];
   const hidden = new Set(dashboardConfig.hidden_cameras || []);
   return collectCameraBlocks(hass, dashboardConfig).filter(function notHidden(block) {
@@ -441,14 +434,11 @@ export function buildSecuritySections(
   }
 
   if (dashboardConfig.group_security_by_areas === true) {
-    return appendTrailingSections(
-      buildAreaGroupedSections(hass, dashboardConfig, entities, cameraBlocks)
-    );
+    return appendTrailingSections(buildAreaGroupedSections(hass, dashboardConfig, entities, cameraBlocks));
   }
 
   const { locks, doors, motorizedWindows, garages, windows, smokeGas, waterLeak, safety } = entities;
   const sections: LovelaceSectionConfig[] = [];
-
 
   // Locks
   if (locks.length > 0) {
@@ -483,7 +473,12 @@ export function buildSecuritySections(
       );
     }
     if (locked.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.locks_locked'), heading_style: 'subtitle', icon: 'mdi:lock' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.locks_locked'),
+        heading_style: 'subtitle',
+        icon: 'mdi:lock',
+      });
       cards.push(
         ...locked.map((e) => ({
           type: 'tile',
@@ -534,7 +529,12 @@ export function buildSecuritySections(
       );
     }
     if (closed.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.doors_closed'), heading_style: 'subtitle', icon: 'mdi:door-closed' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.doors_closed'),
+        heading_style: 'subtitle',
+        icon: 'mdi:door-closed',
+      });
       cards.push(
         ...closed.map((e) => ({
           type: 'tile',
@@ -586,7 +586,12 @@ export function buildSecuritySections(
       );
     }
     if (closed.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.motorized_windows_closed'), heading_style: 'subtitle', icon: 'mdi:window-closed-variant' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.motorized_windows_closed'),
+        heading_style: 'subtitle',
+        icon: 'mdi:window-closed-variant',
+      });
       cards.push(
         ...closed.map((e) => ({
           type: 'tile',
@@ -638,7 +643,12 @@ export function buildSecuritySections(
       );
     }
     if (closed.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.garages_closed'), heading_style: 'subtitle', icon: 'mdi:garage' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.garages_closed'),
+        heading_style: 'subtitle',
+        icon: 'mdi:garage',
+      });
       cards.push(
         ...closed.map((e) => ({
           type: 'tile',
@@ -659,11 +669,21 @@ export function buildSecuritySections(
     const cards: LovelaceCardConfig[] = [];
 
     if (open.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.windows_open'), heading_style: 'subtitle', icon: 'mdi:window-open' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.windows_open'),
+        heading_style: 'subtitle',
+        icon: 'mdi:window-open',
+      });
       cards.push(...open.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
     }
     if (closed.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.windows_closed'), heading_style: 'subtitle', icon: 'mdi:window-closed' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.windows_closed'),
+        heading_style: 'subtitle',
+        icon: 'mdi:window-closed',
+      });
       cards.push(...closed.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
     }
     if (cards.length > 0) sections.push({ type: 'grid', cards });
@@ -676,11 +696,21 @@ export function buildSecuritySections(
     const cards: LovelaceCardConfig[] = [];
 
     if (active.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.smoke_gas_active'), heading_style: 'subtitle', icon: 'mdi:smoke-detector-alert' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.smoke_gas_active'),
+        heading_style: 'subtitle',
+        icon: 'mdi:smoke-detector-alert',
+      });
       cards.push(...active.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
     }
     if (inactive.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.smoke_gas_inactive'), heading_style: 'subtitle', icon: 'mdi:smoke-detector' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.smoke_gas_inactive'),
+        heading_style: 'subtitle',
+        icon: 'mdi:smoke-detector',
+      });
       cards.push(...inactive.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
     }
     if (cards.length > 0) sections.push({ type: 'grid', cards });
@@ -693,11 +723,21 @@ export function buildSecuritySections(
     const cards: LovelaceCardConfig[] = [];
 
     if (active.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.water_leak_active'), heading_style: 'subtitle', icon: 'mdi:water-alert' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.water_leak_active'),
+        heading_style: 'subtitle',
+        icon: 'mdi:water-alert',
+      });
       cards.push(...active.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
     }
     if (inactive.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.water_leak_inactive'), heading_style: 'subtitle', icon: 'mdi:water-check' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.water_leak_inactive'),
+        heading_style: 'subtitle',
+        icon: 'mdi:water-check',
+      });
       cards.push(...inactive.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
     }
     if (cards.length > 0) sections.push({ type: 'grid', cards });
@@ -711,11 +751,21 @@ export function buildSecuritySections(
     const cards: LovelaceCardConfig[] = [];
 
     if (active.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.safety_active'), heading_style: 'subtitle', icon: 'mdi:shield-alert' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.safety_active'),
+        heading_style: 'subtitle',
+        icon: 'mdi:shield-alert',
+      });
       cards.push(...active.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
     }
     if (inactive.length > 0) {
-      cards.push({ type: 'heading', heading: localize('security.safety_inactive'), heading_style: 'subtitle', icon: 'mdi:shield-check' });
+      cards.push({
+        type: 'heading',
+        heading: localize('security.safety_inactive'),
+        heading_style: 'subtitle',
+        icon: 'mdi:shield-check',
+      });
       cards.push(...inactive.map((e) => ({ type: 'tile', entity: e, state_content: 'last_changed' })));
     }
     if (cards.length > 0) sections.push({ type: 'grid', cards });

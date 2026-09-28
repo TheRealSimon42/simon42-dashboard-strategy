@@ -16,13 +16,12 @@ import type { StrategyEditorHost } from '../editor-host';
 
 export type EntityListKind = 'favorites' | 'room_pins';
 
-export function handleEntityDragStart(
-  host: StrategyEditorHost,
-  ev: DragEvent,
-  _listType: EntityListKind,
-): void {
+export function handleEntityDragStart(host: StrategyEditorHost, ev: DragEvent, _listType: EntityListKind): void {
   const item = (ev.target as HTMLElement).closest('.entity-list-item') as HTMLElement | null;
-  if (!item) { ev.preventDefault(); return; }
+  if (!item) {
+    ev.preventDefault();
+    return;
+  }
 
   item.classList.add('dragging');
   host._entityDraggedId = item.dataset.entityId || null;
@@ -41,7 +40,7 @@ export function handleEntityDragEnd(host: StrategyEditorHost, ev: DragEvent): vo
 export function handleEntityDragOver(host: StrategyEditorHost, ev: DragEvent): void {
   ev.preventDefault();
   if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
-  const item = (ev.currentTarget as HTMLElement);
+  const item = ev.currentTarget as HTMLElement;
   if (item.dataset.entityId !== host._entityDraggedId) {
     item.classList.add('drag-over');
   }
@@ -51,11 +50,7 @@ export function handleEntityDragLeave(_host: StrategyEditorHost, ev: DragEvent):
   (ev.currentTarget as HTMLElement).classList.remove('drag-over');
 }
 
-export function handleEntityDrop(
-  host: StrategyEditorHost,
-  ev: DragEvent,
-  listType: EntityListKind,
-): void {
+export function handleEntityDrop(host: StrategyEditorHost, ev: DragEvent, listType: EntityListKind): void {
   ev.stopPropagation();
   ev.preventDefault();
 
@@ -66,9 +61,10 @@ export function handleEntityDrop(
   const dropId = dropTarget.dataset.entityId;
   if (!draggedId || !dropId || draggedId === dropId) return;
 
-  const currentList = listType === 'favorites'
-    ? [...(host._config.favorite_entities || [])]
-    : [...(host._config.room_pin_entities || [])];
+  const currentList =
+    listType === 'favorites'
+      ? [...(host._config.favorite_entities || [])]
+      : [...(host._config.room_pin_entities || [])];
 
   const draggedIndex = currentList.indexOf(draggedId);
   const dropIndex = currentList.indexOf(dropId);

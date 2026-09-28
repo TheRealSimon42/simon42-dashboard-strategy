@@ -47,4 +47,3 @@ export function isCoverRelevantForGroup(
   if (showPartiallyOpen && hasPosition && position > 0) return false;
   return true;
 }
-

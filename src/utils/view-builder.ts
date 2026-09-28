@@ -10,9 +10,7 @@ import { localize } from './localize';
  * (masonry-like) instead of strictly following the section order.
  * Applied uniformly to all generated sections views.
  */
-export function densePlacement(
-  config?: { dense_section_placement?: boolean }
-): Partial<LovelaceViewConfig> {
+export function densePlacement(config?: { dense_section_placement?: boolean }): Partial<LovelaceViewConfig> {
   return config?.dense_section_placement === true ? { dense_section_placement: true } : {};
 }
 

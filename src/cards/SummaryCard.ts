@@ -40,7 +40,16 @@ interface DisplayConfig {
 const COVER_DEVICE_CLASSES = new Set(['awning', 'blind', 'curtain', 'shade', 'shutter', 'window']);
 
 const SECURITY_COVER_CLASSES = new Set(['door', 'garage', 'gate', 'window']);
-const SECURITY_BINARY_SENSOR_CLASSES = new Set(['door', 'window', 'garage_door', 'opening', 'smoke', 'gas', 'heat', 'moisture']);
+const SECURITY_BINARY_SENSOR_CLASSES = new Set([
+  'door',
+  'window',
+  'garage_door',
+  'opening',
+  'smoke',
+  'gas',
+  'heat',
+  'moisture',
+]);
 
 const COLOR_MAP: Record<string, string> = {
   orange: 'var(--orange-color, #ff9800)',
@@ -308,13 +317,17 @@ class Simon42SummaryCard extends LitElement {
     const configs: Record<SummaryType, DisplayConfig> = {
       lights: {
         icon: 'mdi:lamps',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.lights_on_one') : localize('summary.lights_on_many')}` : localize('summary.lights_off'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.lights_on_one') : localize('summary.lights_on_many')}`
+          : localize('summary.lights_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'lights',
       },
       covers: {
         icon: 'mdi:blinds-horizontal',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.covers_open_one') : localize('summary.covers_open_many')}` : localize('summary.covers_closed'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.covers_open_one') : localize('summary.covers_open_many')}`
+          : localize('summary.covers_closed'),
         color: hasItems ? 'purple' : 'grey',
         path: 'covers',
       },
@@ -326,19 +339,25 @@ class Simon42SummaryCard extends LitElement {
       },
       batteries: {
         icon: hasItems ? 'mdi:battery-alert' : 'mdi:battery-charging',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.batteries_critical_one') : localize('summary.batteries_critical_many')}` : localize('summary.batteries_ok'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.batteries_critical_one') : localize('summary.batteries_critical_many')}`
+          : localize('summary.batteries_ok'),
         color: hasItems ? 'red' : 'grey',
         path: 'batteries',
       },
       climate: {
         icon: 'mdi:thermostat',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}` : localize('summary.climate_off'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}`
+          : localize('summary.climate_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'climate',
       },
       maintenance: {
         icon: 'mdi:wrench',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}` : localize('summary.maintenance_ok'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}`
+          : localize('summary.maintenance_ok'),
         color: hasItems ? 'orange' : 'grey',
         path: 'maintenance',
       },

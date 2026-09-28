@@ -127,8 +127,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       cards.push({
         type: 'markdown',
         content:
-          '### 🔍 ' + localize('editor.search_card_tip_title') + '\n\n' +
-          localize('editor.search_card_tip_body'),
+          '### 🔍 ' + localize('editor.search_card_tip_title') + '\n\n' + localize('editor.search_card_tip_body'),
         grid_options: { columns: 'full' },
       });
     } else {
@@ -164,9 +163,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       type: 'custom:simon42-summary-card',
       summary_type: 'lights',
       areas_options: config.areas_options || {},
-      ...(config.hide_unavailable_entities === true
-        ? { hide_unavailable_entities: true }
-        : {}),
+      ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
     });
   }
 
@@ -175,9 +172,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       type: 'custom:simon42-summary-card',
       summary_type: 'covers',
       areas_options: config.areas_options || {},
-      ...(config.hide_unavailable_entities === true
-        ? { hide_unavailable_entities: true }
-        : {}),
+      ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
     });
   }
 
@@ -186,9 +181,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       type: 'custom:simon42-summary-card',
       summary_type: 'security',
       areas_options: config.areas_options || {},
-      ...(config.hide_unavailable_entities === true
-        ? { hide_unavailable_entities: true }
-        : {}),
+      ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
     });
   }
 
@@ -200,9 +193,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       hide_mobile_app_batteries: config.hide_mobile_app_batteries,
       hide_battery_notes_entities: config.hide_battery_notes_entities,
       battery_critical_threshold: config.battery_critical_threshold,
-      ...(config.hide_unavailable_entities === true
-        ? { hide_unavailable_entities: true }
-        : {}),
+      ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
     });
   }
 
@@ -211,9 +202,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       type: 'custom:simon42-summary-card',
       summary_type: 'climate',
       areas_options: config.areas_options || {},
-      ...(config.hide_unavailable_entities === true
-        ? { hide_unavailable_entities: true }
-        : {}),
+      ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
     });
   }
 
