@@ -12,7 +12,12 @@ import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
 import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/section-registry';
 import { localize } from '../utils/localize';
 import { validateCustomSections, buildCustomSection } from '../sections/CustomSections';
-import type { LovelaceViewConfig, LovelaceSectionConfig, LovelaceBadgeConfig, LovelaceCardConfig } from '../types/lovelace';
+import type {
+  LovelaceViewConfig,
+  LovelaceSectionConfig,
+  LovelaceBadgeConfig,
+  LovelaceCardConfig,
+} from '../types/lovelace';
 import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { collectPersons, findWeatherEntity, findDummySensor } from '../utils/entity-filter';
@@ -30,6 +35,7 @@ import { createMaintenanceSection } from '../sections/MaintenanceSection';
 import { createOverviewView } from '../utils/view-builder';
 import { getSectionVisibleUsers, userVisibilityConditions } from '../utils/view-visibility';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
+import { hasState } from '../utils/state-utils';
 
 /**
  * Normalizes a sections_order array: removes invalid/duplicate keys,
@@ -144,8 +150,7 @@ const SECTION_BUILDER_IMPL: Record<SectionKey, SectionBuilder> = {
   plants: ({ hass, config }) => createPlantsSection(hass, config.show_plants_section === true),
   agenda: ({ hass, config }) =>
     createAgendaSection(hass, config.show_agenda_section === true, config.agenda_calendar_entities),
-  todos: ({ hass, config }) =>
-    createTodosSection(hass, config.show_todos_section === true, config.todos_entities),
+  todos: ({ hass, config }) => createTodosSection(hass, config.show_todos_section === true, config.todos_entities),
   persons: ({ hass, config }) => createPersonsSection(hass, config.show_persons_section === true),
   vacuums: ({ hass, config }) => createVacuumsSection(hass, config.show_vacuums_section === true),
   maintenance: ({ hass, config }) => createMaintenanceSection(hass, config.show_maintenance_section === true),
@@ -187,7 +192,11 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
     Registry.initialize(hass, dashboardConfig);
 
     // Visible areas (filtered + sorted by config)
-    const visibleAreas = getVisibleAreas(Registry.areas, dashboardConfig.areas_display, dashboardConfig.use_default_area_sort);
+    const visibleAreas = getVisibleAreas(
+      Registry.areas,
+      dashboardConfig.areas_display,
+      dashboardConfig.use_default_area_sort
+    );
 
     // Collect data for overview
     const persons = collectPersons(hass, dashboardConfig);
@@ -195,9 +204,7 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
     // exists in this hass instance, otherwise fall back to auto-discovery.
     const configuredWeather = dashboardConfig.weather_entity;
     const weatherEntity =
-      configuredWeather && hass.states[configuredWeather]
-        ? configuredWeather
-        : findWeatherEntity(hass);
+      configuredWeather && hasState(hass, configuredWeather) ? configuredWeather : findWeatherEntity(hass);
     const someSensorId = findDummySensor(hass);
 
     // Person badges (default-on; suppress via show_person_badges=false to swap in
@@ -246,7 +253,9 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
     for (const key of sectionsOrder) {
       const rule = Reflect.get(sectionVisibility, key) as { entity?: string; state?: string } | undefined;
       if (rule?.entity) {
-        const entState = Reflect.get(hass.states as Record<string, unknown>, rule.entity) as { state?: string } | undefined;
+        const entState = Reflect.get(hass.states as Record<string, unknown>, rule.entity) as
+          | { state?: string }
+          | undefined;
         if (!entState || entState.state !== rule.state) continue;
       }
       // Built-in sections come from the builder map; unknown keys are
@@ -404,15 +413,19 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
       }
     }
 
-    return createOverviewView(overviewSections, [
-      ...personBadges,
-      ...powerBadges,
-      ...alertBadges,
-      ...nowPlayingBadges,
-      ...sunBadges,
-      ...updatesBadges,
-      ...customBadges,
-    ], dashboardConfig);
+    return createOverviewView(
+      overviewSections,
+      [
+        ...personBadges,
+        ...powerBadges,
+        ...alertBadges,
+        ...nowPlayingBadges,
+        ...sunBadges,
+        ...updatesBadges,
+        ...customBadges,
+      ],
+      dashboardConfig
+    );
   }
 }
 
