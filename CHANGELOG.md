@@ -3,6 +3,20 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.4.1](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0...v1.4.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **covers:** keep moving covers visible ([a42224f](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/a42224f4377b8b4ef34af29a31ad02b6a1a72120))
+* **deps:** bump js-yaml from 4.3.1 to 4.3.2 ([bb604e6](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/bb604e6d9f0518ecc301757145fee1354bff422a))
+* **editor:** label the motorized-window stack "Fenster (motorisiert)" ([1021a43](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/1021a438a49da96929b003114116d5b7389cb1da)), closes [#437](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/437)
+* keep auto-hidden sections as an anchor for their assigned custom cards ([d85173d](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/d85173d22a300598bf04efa00806e00bdbb86429)), closes [#429](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/429)
+* resolve the area of entities on child devices via the parent device (HA 2026.9) ([9b7cdfb](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/9b7cdfba52a52794ef04af4ed2dad898512e41dc))
+* show covers with indeterminate (unknown) state in the covers view ([0c06b45](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/0c06b459ab2b5f73f7f9c0360c25671bfabcc031)), closes [#439](https://github.com/TheRealSimon42/simon42-dashboard-strategy/issues/439)
+* **summary:** count covers with unknown state as open, matching the covers view ([3d12412](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/3d124123dc66014f705967461301dbd970826750))
+* **summary:** do not count idle thermostats as active ([2a84d31](https://github.com/TheRealSimon42/simon42-dashboard-strategy/commit/2a84d317f6001993a4e24c2cd262bc8b81aa3ab6))
+
 ## [1.4.0](https://github.com/TheRealSimon42/simon42-dashboard-strategy/compare/v1.4.0-beta.22...v1.4.0) (2026-08-13)
 
 

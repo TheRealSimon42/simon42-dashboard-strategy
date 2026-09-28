@@ -39,11 +39,12 @@ export function renderWeatherSensorsSection(host: StrategyEditorHost): TemplateR
       </div>
 
       <div id="weather-sensors-list" style="margin-bottom: 12px;">
-        ${sensors.length === 0
-          ? html`<div class="empty-state">${localize('editor.no_weather_sensors')}</div>`
-          : sensors.map((sensor, index) => {
-              const name = entityMap.get(sensor.entity) || sensor.entity;
-              return html`
+        ${
+          sensors.length === 0
+            ? html`<div class="empty-state">${localize('editor.no_weather_sensors')}</div>`
+            : sensors.map((sensor, index) => {
+                const name = entityMap.get(sensor.entity) || sensor.entity;
+                return html`
                 <div class="custom-item" data-sensor-index=${index}>
                   <div class="custom-item-header">
                     <strong>
@@ -72,29 +73,50 @@ export function renderWeatherSensorsSection(host: StrategyEditorHost): TemplateR
                   </div>
                 </div>
               `;
-            })}
+              })
+        }
       </div>
 
       <div class="entity-search-picker">
         <input type="text" class="entity-search-input"
           placeholder=${localize('editor.weather_sensors_add')}
           .value=${host._weatherSensorSearch}
-          @input=${(e: Event) => { host._weatherSensorSearch = (e.target as HTMLInputElement).value; host.requestUpdate(); }}
-          @blur=${() => { setTimeout(() => { host._weatherSensorSearch = ''; host.requestUpdate(); }, 200); }}
+          @input=${(e: Event) => {
+            host._weatherSensorSearch = (e.target as HTMLInputElement).value;
+            host.requestUpdate();
+          }}
+          @blur=${() => {
+            setTimeout(() => {
+              host._weatherSensorSearch = '';
+              host.requestUpdate();
+            }, 200);
+          }}
         />
-        ${host._weatherSensorSearch.length >= 2 ? html`
+        ${
+          host._weatherSensorSearch.length >= 2
+            ? html`
           <div class="entity-search-results">
-            ${filteredEntities.length > 0
-              ? filteredEntities.map((entity) => html`
-                <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); addWeatherSensor(host, entity.entity_id); host._weatherSensorSearch = ''; host.requestUpdate(); }}>
+            ${
+              filteredEntities.length > 0
+                ? filteredEntities.map(
+                    (entity) => html`
+                <div class="entity-search-result" @mousedown=${(e: Event) => {
+                  e.preventDefault();
+                  addWeatherSensor(host, entity.entity_id);
+                  host._weatherSensorSearch = '';
+                  host.requestUpdate();
+                }}>
                   <span class="entity-search-name">${entity.name}</span>
                   <span class="entity-search-id">${entity.entity_id}</span>
                 </div>
-              `)
-              : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
+              `
+                  )
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
             }
           </div>
-        ` : nothing}
+        `
+            : nothing
+        }
       </div>
   `;
 }
@@ -155,7 +177,7 @@ const ICON_RE = /^[a-z]+:[a-z0-9-]+$/;
  */
 function inferWeatherSensorDefaults(
   host: StrategyEditorHost,
-  entityId: string,
+  entityId: string
 ): { icon?: string; unit?: string; round?: number } {
   const state = host._hass ? stateFor(host._hass, entityId) : undefined;
   const attrs = (state?.attributes || {}) as Record<string, unknown>;
@@ -220,7 +242,7 @@ function updateWeatherSensor(
   host: StrategyEditorHost,
   index: number,
   field: keyof WeatherSensorConfig,
-  rawValue: string,
+  rawValue: string
 ): void {
   const current = host._config.weather_sensors || [];
   if (index < 0 || index >= current.length) return;

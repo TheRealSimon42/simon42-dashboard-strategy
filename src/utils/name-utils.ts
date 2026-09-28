@@ -199,8 +199,12 @@ export function sortByLastChanged(a: string, b: string, hass: HomeAssistant): nu
  * entity_id). Locale-aware compare so umlauts sort naturally.
  */
 export function sortByFriendlyName(a: string, b: string, hass: HomeAssistant): number {
-  const stateA = Reflect.get(hass.states as Record<string, unknown>, a) as { attributes?: { friendly_name?: string } } | undefined;
-  const stateB = Reflect.get(hass.states as Record<string, unknown>, b) as { attributes?: { friendly_name?: string } } | undefined;
+  const stateA = Reflect.get(hass.states as Record<string, unknown>, a) as
+    | { attributes?: { friendly_name?: string } }
+    | undefined;
+  const stateB = Reflect.get(hass.states as Record<string, unknown>, b) as
+    | { attributes?: { friendly_name?: string } }
+    | undefined;
   const nameA = stateA?.attributes?.friendly_name || a;
   const nameB = stateB?.attributes?.friendly_name || b;
   return nameA.localeCompare(nameB);

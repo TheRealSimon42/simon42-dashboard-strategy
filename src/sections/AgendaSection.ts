@@ -9,6 +9,7 @@ import type { HomeAssistant } from '../types/homeassistant';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { hasState } from '../utils/state-utils';
 
 /**
  * Creates the agenda section.
@@ -30,9 +31,7 @@ export function createAgendaSection(
   if (!enabled) return null;
 
   // All calendar.* entities visible in this hass instance (no_dboard / hidden filtered)
-  const visible = Registry.getVisibleEntityIdsForDomain('calendar').filter(
-    (id) => hass.states[id] !== undefined
-  );
+  const visible = Registry.getVisibleEntityIdsForDomain('calendar').filter((id) => hasState(hass, id));
 
   // Pick configured list (filtered to existing) OR fall back to all visible
   let selected: string[];

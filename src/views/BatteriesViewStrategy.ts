@@ -19,7 +19,7 @@ function buildBatteryTile(
   entityId: string,
   hass: HomeAssistant,
   color: string,
-  prefixArea: boolean,
+  prefixArea: boolean
 ): { type: string; [key: string]: unknown } {
   const tile: { type: string; [key: string]: unknown } = {
     type: 'tile',
@@ -48,7 +48,7 @@ export function createBatterySection(
   hass: HomeAssistant,
   showArea: boolean,
   groupByAreas: boolean,
-  visibleAreas: AreaRegistryEntry[],
+  visibleAreas: AreaRegistryEntry[]
 ): LovelaceSectionConfig | null {
   if (entities.length === 0) return null;
 
@@ -60,9 +60,9 @@ export function createBatterySection(
   const cards: { type: string; [key: string]: unknown }[] = [
     {
       type: 'heading',
-      heading: `${emoji} ${localize('batteries.' + status)} (${rangeText}) - ${entities.length} ${
-        localize(entities.length === 1 ? 'batteries.battery_one' : 'batteries.battery_many')
-      }`,
+      heading: `${emoji} ${localize('batteries.' + status)} (${rangeText}) - ${entities.length} ${localize(
+        entities.length === 1 ? 'batteries.battery_one' : 'batteries.battery_many'
+      )}`,
       heading_style: 'title',
     },
   ];
@@ -176,13 +176,37 @@ export class Simon42ViewBatteriesStrategy extends HTMLElement {
 
     const sections: LovelaceSectionConfig[] = [];
 
-    const criticalSection = createBatterySection(critical, 'critical', `< ${criticalThreshold}%`, hass, showArea, groupByAreas, visibleAreas);
+    const criticalSection = createBatterySection(
+      critical,
+      'critical',
+      `< ${criticalThreshold}%`,
+      hass,
+      showArea,
+      groupByAreas,
+      visibleAreas
+    );
     if (criticalSection) sections.push(criticalSection);
 
-    const lowSection = createBatterySection(low, 'low', `${criticalThreshold}% - ${lowThreshold}%`, hass, showArea, groupByAreas, visibleAreas);
+    const lowSection = createBatterySection(
+      low,
+      'low',
+      `${criticalThreshold}% - ${lowThreshold}%`,
+      hass,
+      showArea,
+      groupByAreas,
+      visibleAreas
+    );
     if (lowSection) sections.push(lowSection);
 
-    const goodSection = createBatterySection(good, 'good', `> ${lowThreshold}%`, hass, showArea, groupByAreas, visibleAreas);
+    const goodSection = createBatterySection(
+      good,
+      'good',
+      `> ${lowThreshold}%`,
+      hass,
+      showArea,
+      groupByAreas,
+      visibleAreas
+    );
     if (goodSection) sections.push(goodSection);
 
     return { type: 'sections', ...densePlacement(strategyConfig), sections };

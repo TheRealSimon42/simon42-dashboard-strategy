@@ -9,6 +9,7 @@ import type { HomeAssistant } from '../types/homeassistant';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { hasState } from '../utils/state-utils';
 
 /**
  * Creates the plants section.
@@ -22,9 +23,7 @@ export function createPlantsSection(
 ): LovelaceSectionConfig | null {
   if (!enabled) return null;
 
-  const plantIds = Registry.getVisibleEntityIdsForDomain('plant').filter(
-    (id) => hass.states[id] !== undefined
-  );
+  const plantIds = Registry.getVisibleEntityIdsForDomain('plant').filter((id) => hasState(hass, id));
   if (plantIds.length === 0) return null;
 
   const cards: LovelaceCardConfig[] = [];

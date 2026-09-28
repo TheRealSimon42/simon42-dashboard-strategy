@@ -10,8 +10,17 @@ import { localize } from '../utils/localize';
 import { getBatteryEntities, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 import { buildMaintenanceScan, countMaintenanceItems, type MaintenanceScan } from '../utils/maintenance-utils';
+import { countActiveClimateEntities } from '../utils/summary-view-utils';
 
 type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate' | 'maintenance';
+
+// Cover states the covers view can bucket on directly; anything else that is
+// not "unavailable" (chiefly "unknown") is indeterminate and shown as open.
+const KNOWN_COVER_STATES = new Set(['open', 'opening', 'closing', 'closed']);
+
+function isIndeterminateCoverState(state: string | undefined): boolean {
+  return state !== undefined && state !== 'unavailable' && !KNOWN_COVER_STATES.has(state);
+}
 
 interface SummaryCardConfig {
   summary_type: SummaryType;
@@ -31,7 +40,16 @@ interface DisplayConfig {
 const COVER_DEVICE_CLASSES = new Set(['awning', 'blind', 'curtain', 'shade', 'shutter', 'window']);
 
 const SECURITY_COVER_CLASSES = new Set(['door', 'garage', 'gate', 'window']);
-const SECURITY_BINARY_SENSOR_CLASSES = new Set(['door', 'window', 'garage_door', 'opening', 'smoke', 'gas', 'heat', 'moisture']);
+const SECURITY_BINARY_SENSOR_CLASSES = new Set([
+  'door',
+  'window',
+  'garage_door',
+  'opening',
+  'smoke',
+  'gas',
+  'heat',
+  'moisture',
+]);
 
 const COLOR_MAP: Record<string, string> = {
   orange: 'var(--orange-color, #ff9800)',
@@ -241,7 +259,10 @@ class Simon42SummaryCard extends LitElement {
         for (const id of this._relevantEntityIds) {
           if (!isEntityCurrentlyAvailable(hass, id, this._config)) continue;
           const s = hass.states[id]?.state;
-          if (s === 'open' || s === 'opening') count++;
+          // Feedback-less covers (state "unknown", e.g. Somfy io remotes without
+          // position sensors) are listed under "open" in the covers view
+          // (#439 / #454) — count them the same way so the tile matches the view.
+          if (s === 'open' || s === 'opening' || isIndeterminateCoverState(s)) count++;
         }
         return count;
 
@@ -282,12 +303,7 @@ class Simon42SummaryCard extends LitElement {
       }
 
       case 'climate':
-        for (const id of this._relevantEntityIds) {
-          if (!isEntityCurrentlyAvailable(hass, id, this._config)) continue;
-          const s = hass.states[id]?.state;
-          if (s && s !== 'off' && s !== 'unavailable' && s !== 'unknown') count++;
-        }
-        return count;
+        return countActiveClimateEntities(hass, this._relevantEntityIds, this._config);
 
       default:
         return 0;
@@ -301,13 +317,17 @@ class Simon42SummaryCard extends LitElement {
     const configs: Record<SummaryType, DisplayConfig> = {
       lights: {
         icon: 'mdi:lamps',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.lights_on_one') : localize('summary.lights_on_many')}` : localize('summary.lights_off'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.lights_on_one') : localize('summary.lights_on_many')}`
+          : localize('summary.lights_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'lights',
       },
       covers: {
         icon: 'mdi:blinds-horizontal',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.covers_open_one') : localize('summary.covers_open_many')}` : localize('summary.covers_closed'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.covers_open_one') : localize('summary.covers_open_many')}`
+          : localize('summary.covers_closed'),
         color: hasItems ? 'purple' : 'grey',
         path: 'covers',
       },
@@ -319,19 +339,25 @@ class Simon42SummaryCard extends LitElement {
       },
       batteries: {
         icon: hasItems ? 'mdi:battery-alert' : 'mdi:battery-charging',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.batteries_critical_one') : localize('summary.batteries_critical_many')}` : localize('summary.batteries_ok'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.batteries_critical_one') : localize('summary.batteries_critical_many')}`
+          : localize('summary.batteries_ok'),
         color: hasItems ? 'red' : 'grey',
         path: 'batteries',
       },
       climate: {
         icon: 'mdi:thermostat',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}` : localize('summary.climate_off'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.climate_active_one') : localize('summary.climate_active_many')}`
+          : localize('summary.climate_off'),
         color: hasItems ? 'orange' : 'grey',
         path: 'climate',
       },
       maintenance: {
         icon: 'mdi:wrench',
-        name: hasItems ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}` : localize('summary.maintenance_ok'),
+        name: hasItems
+          ? `${count} ${count === 1 ? localize('summary.maintenance_pending_one') : localize('summary.maintenance_pending_many')}`
+          : localize('summary.maintenance_ok'),
         color: hasItems ? 'orange' : 'grey',
         path: 'maintenance',
       },
@@ -361,7 +387,6 @@ class Simon42SummaryCard extends LitElement {
   }
 
   protected render() {
-
     const display = this._getDisplayConfig();
     const colorCss = COLOR_MAP[display.color] || COLOR_MAP.grey;
 

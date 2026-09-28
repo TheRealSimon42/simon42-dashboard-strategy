@@ -22,11 +22,7 @@
 import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import type { Simon42StrategyConfig } from '../types/strategy';
 import type { DeviceRegistryEntry, AreaRegistryEntry } from '../types/registries';
-import type {
-  LovelaceViewConfig,
-  LovelaceSectionConfig,
-  LovelaceCardConfig,
-} from '../types/lovelace';
+import type { LovelaceViewConfig, LovelaceSectionConfig, LovelaceCardConfig } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
 import { debugLog } from '../utils/debug';
@@ -38,14 +34,7 @@ import { densePlacement } from '../utils/view-builder';
 // snapshot variants, telephoto lenses). Exactly one card per device:
 // prefer the fluent/standard resolution — it is the only stream enabled
 // by default and the cheapest to render.
-const REOLINK_STREAM_PREFERENCE = [
-  'sub',
-  'telephoto_sub',
-  'main',
-  'telephoto_main',
-  'snapshots_sub',
-  'snapshots_main',
-];
+const REOLINK_STREAM_PREFERENCE = ['sub', 'telephoto_sub', 'main', 'telephoto_main', 'snapshots_sub', 'snapshots_main'];
 
 // -- Camera stream preference (other integrations) ----------------------
 // Ring exposes two camera entities per doorbell/cam: the live stream
@@ -214,23 +203,16 @@ function reolinkCamPath(item: ReolinkCamItem): string {
  * Resolve the media browser path for a camera device's recordings.
  * Exported for tests.
  */
-export function resolveRecordingsPath(
-  device: DeviceRegistryEntry | undefined,
-  items: ReolinkCamItem[]
-): string {
+export function resolveRecordingsPath(device: DeviceRegistryEntry | undefined, items: ReolinkCamItem[]): string {
   if (device) {
     const entryMatches = items.filter(
-      (item) =>
-        item.entryId === device.primary_config_entry ||
-        device.config_entries.includes(item.entryId)
+      (item) => item.entryId === device.primary_config_entry || device.config_entries.includes(item.entryId)
     );
     if (entryMatches.length === 1) return reolinkCamPath(entryMatches[0]);
     if (entryMatches.length > 1) {
       // NVR: several channels share one config entry — match by name.
       const deviceName = (device.name_by_user || device.name || '').toLowerCase().trim();
-      const titleMatches = entryMatches.filter(
-        (item) => item.title.toLowerCase().trim() === deviceName
-      );
+      const titleMatches = entryMatches.filter((item) => item.title.toLowerCase().trim() === deviceName);
       if (titleMatches.length === 1) return reolinkCamPath(titleMatches[0]);
     }
   }
@@ -286,7 +268,7 @@ function cameraDisplayName(cameraId: string, hass: HomeAssistant): string {
 export function cameraBlockAreaId(block: CameraBlock): string | null {
   const entity = Registry.getEntity(block.cameraId);
   if (entity?.area_id) return entity.area_id;
-  return block.deviceId ? Registry.getDevice(block.deviceId)?.area_id || null : null;
+  return block.deviceId ? Registry.getDeviceAreaId(block.deviceId) : null;
 }
 
 /**
@@ -300,13 +282,8 @@ export function cameraBlockAreaId(block: CameraBlock): string | null {
  * collection, so it always mirrors exactly what the views render.
  * Cameras without any area are always included. Exported for tests.
  */
-export function collectCameraBlocks(
-  hass: HomeAssistant,
-  dashboardConfig: Simon42StrategyConfig
-): CameraBlock[] {
-  const cameraIds = Registry.getVisibleEntityIdsForDomain('camera').filter(
-    (id) => stateFor(hass, id) !== undefined
-  );
+export function collectCameraBlocks(hass: HomeAssistant, dashboardConfig: Simon42StrategyConfig): CameraBlock[] {
+  const cameraIds = Registry.getVisibleEntityIdsForDomain('camera').filter((id) => stateFor(hass, id) !== undefined);
 
   const byDevice = new Map<string, string[]>();
   const standalone: string[] = [];
@@ -342,9 +319,7 @@ export function collectCameraBlocks(
 
   // Opt-in only: drop cameras from areas excluded from the dashboard
   const hiddenAreas = new Set(
-    dashboardConfig.hide_hidden_areas_in_security === true
-      ? dashboardConfig.areas_display?.hidden || []
-      : []
+    dashboardConfig.hide_hidden_areas_in_security === true ? dashboardConfig.areas_display?.hidden || [] : []
   );
   const includedBlocks = blocks.filter(function inDashboard(block) {
     const areaId = cameraBlockAreaId(block);
@@ -360,8 +335,7 @@ export function collectCameraBlocks(
 
 function cameraSortKey(block: CameraBlock, hass: HomeAssistant): string {
   const entity = Registry.getEntity(block.cameraId);
-  const areaId =
-    entity?.area_id || (block.deviceId ? Registry.getDevice(block.deviceId)?.area_id : null);
+  const areaId = entity?.area_id || (block.deviceId ? Registry.getDeviceAreaId(block.deviceId) : null);
   const area = areaId ? (Reflect.get(hass.areas, areaId) as AreaRegistryEntry | undefined) : undefined;
   const areaName = area?.name || '';
   return `${areaName}|${cameraDisplayName(block.cameraId, hass)}`;
@@ -411,12 +385,7 @@ function findCompanions(deviceId: string | null, hass: HomeAssistant): CameraCom
       // above would drop them, so buttons get their own check (state,
       // no_dboard label, config-hidden, hidden_by).
       const entry = Registry.getEntity(id);
-      if (
-        !stateFor(hass, id) ||
-        entry?.hidden ||
-        Registry.isExcludedByLabel(id) ||
-        Registry.isHiddenByConfig(id)
-      ) {
+      if (!stateFor(hass, id) || entry?.hidden || Registry.isExcludedByLabel(id) || Registry.isHiddenByConfig(id)) {
         continue;
       }
       const translationKey = entry?.translation_key;
@@ -465,9 +434,7 @@ function buildSpotlightTile(spotlightId: string, hass: HomeAssistant): LovelaceC
     type: 'tile',
     entity: spotlightId,
     vertical: false,
-    ...(hasBrightness
-      ? { features: [{ type: 'light-brightness' }], features_position: 'inline' }
-      : {}),
+    ...(hasBrightness ? { features: [{ type: 'light-brightness' }], features_position: 'inline' } : {}),
   };
 }
 
@@ -517,9 +484,7 @@ export function buildCameraSection(
   if (companions.doorbell) glanceEntities.push({ entity: companions.doorbell });
   if (companions.battery) glanceEntities.push({ entity: companions.battery });
 
-  const cards: LovelaceCardConfig[] = [
-    { type: 'heading', heading: name, heading_style: 'title', icon: 'mdi:cctv' },
-  ];
+  const cards: LovelaceCardConfig[] = [{ type: 'heading', heading: name, heading_style: 'title', icon: 'mdi:cctv' }];
 
   if (glanceEntities.length > 0) {
     cards.push({
@@ -668,8 +633,7 @@ export async function buildCctvSections(
     const firstOfDevice = !block.deviceId || !devicesWithControls.has(block.deviceId);
     if (block.deviceId) devicesWithControls.add(block.deviceId);
     const device = block.deviceId ? Registry.getDevice(block.deviceId) : undefined;
-    const recordingsPath =
-      block.isReolink && firstOfDevice ? resolveRecordingsPath(device, camItems) : null;
+    const recordingsPath = block.isReolink && firstOfDevice ? resolveRecordingsPath(device, camItems) : null;
     sections.push(buildCameraSection(block, hass, recordingsPath, firstOfDevice));
   }
 

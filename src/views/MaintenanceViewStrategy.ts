@@ -241,9 +241,7 @@ export function buildCriticalBatteriesSection(
       heading: `${localize('maintenance.batteries_critical')} (${critical.length})`,
       heading_style: 'title',
       icon: 'mdi:battery-alert',
-      ...(batteriesViewExists
-        ? { tap_action: { action: 'navigate', navigation_path: 'batteries' } }
-        : {}),
+      ...(batteriesViewExists ? { tap_action: { action: 'navigate', navigation_path: 'batteries' } } : {}),
     },
   ];
 
@@ -294,10 +292,7 @@ export function buildVideoTipsSection(
   return { type: 'grid', cards };
 }
 
-export function buildMaintenanceView(
-  hass: HomeAssistant,
-  config: Simon42StrategyConfig
-): LovelaceViewConfig {
+export function buildMaintenanceView(hass: HomeAssistant, config: Simon42StrategyConfig): LovelaceViewConfig {
   const sidebar = buildMaintenanceSidebar(hass, config);
   const sections: LovelaceSectionConfig[] = [];
 

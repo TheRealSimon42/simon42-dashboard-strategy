@@ -1,5 +1,6 @@
 PERFORMANCE-AUDIT.md
 Session-Summary.md
+node_modules
 node_modules/
 .idea/
 dist/

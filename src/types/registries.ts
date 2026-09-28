@@ -42,6 +42,13 @@ export interface DeviceRegistryEntry {
   serial_number: string | null;
   via_device_id: string | null;
   area_id: string | null;
+  /**
+   * Child device (HA 2026.9+): logical part of the device `parent_device_id`.
+   * A child with `area_id: null` inherits the parent's area — resolve via
+   * `Registry.getDeviceAreaId()` / `getEffectiveDeviceAreaId()`, never read
+   * `area_id` directly. Absent on older HA versions.
+   */
+  parent_device_id?: string | null;
   entry_type: 'service' | null;
   disabled_by: 'user' | 'integration' | 'config_entry' | null;
   configuration_url: string | null;
