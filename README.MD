@@ -553,6 +553,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `agenda_calendar_entities` | string[] | alle | v1.4.0 | Kalender für die Agenda einschränken |
 | `show_todos_section` | boolean | `false` | v1.4.0 | To-do-Section |
 | `todos_entities` | string[] | alle | v1.4.0 | To-do-Listen einschränken |
+| `hide_completed_todos` | boolean | `false` | v1.4.2 | Erledigte Einträge in den generierten To-do-Karten ausblenden |
 | `show_persons_section` | boolean | `false` | v1.4.0 | Personen-Section |
 | `show_vacuums_section` | boolean | `false` | v1.4.0 | Staubsauger-/Mähroboter-Section |
 | `show_maintenance_section` | boolean | `false` | v1.4.0 | Wartungs-Section (Updates + niedrige Batterien) |
@@ -683,6 +684,7 @@ Die Strategy erkennt automatisch die Sprache aus deinen Home Assistant Einstellu
 | 🇩🇪 Deutsch | Vollständig |
 | 🇬🇧 English | Vollständig |
 | 🇭🇺 Magyar | Vollständig |
+| 🇵🇱 Polski | Vollständig *(ab v1.4.2)* |
 | 🇷🇺 Русский | Vollständig *(ab v1.3.5)* |
 
 **Weitere Sprachen hinzufügen:** Erstelle eine neue Datei `src/translations/<code>.json` (z.B. `fr.json`) nach dem Muster von `en.json`, registriere sie in `src/utils/localize.ts` und `scripts/lint-translations.mjs` und öffne einen Pull Request. Führe anschließend `node scripts/lint-translations.mjs`, Tests und Build aus.

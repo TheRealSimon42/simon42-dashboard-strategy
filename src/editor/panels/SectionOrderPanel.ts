@@ -95,6 +95,7 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
   const hiddenHeadings = new Set(host._config.hidden_section_headings || []);
   const powerBadgeEntity = host._config.power_badge_entity || '';
   const powerSensorEntities = getPowerSensorEntities(host._hass);
+  const hideCompletedTodos = host._config.hide_completed_todos === true;
 
   return html`
       <div class="description" style="margin-left: 0; margin-bottom: 12px;">
@@ -234,6 +235,21 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
               `
                   : nothing
               }
+            `
+                : nothing
+            }
+            ${
+              key === 'todos' && host._config.show_todos_section === true
+                ? html`
+              <div class="section-order-sub">
+                ${host._renderCheckbox(
+                  'hide-completed-todos',
+                  localize('editor.hide_completed_todos'),
+                  hideCompletedTodos,
+                  (checked) => host._toggleChanged('hide_completed_todos', checked, false)
+                )}
+              </div>
+              <div class="description" style="margin-left: 26px;">${localize('editor.hide_completed_todos_desc')}</div>
             `
                 : nothing
             }
