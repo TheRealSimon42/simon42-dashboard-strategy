@@ -85,8 +85,7 @@ export function getSelectEntities(hass: HomeAssistant | null): AlarmEntityOption
       // Device selects are mostly config/diagnostic (camera settings, WLED
       // presets, …) — a house mode is a user-facing control, so hide
       // categorized entities from the picker (same check as #397).
-      const registryEntry = Reflect.get(hass.entities, entityId) as
-        { entity_category?: string | null } | undefined;
+      const registryEntry = Reflect.get(hass.entities, entityId) as { entity_category?: string | null } | undefined;
       return registryEntry?.entity_category !== 'config' && registryEntry?.entity_category !== 'diagnostic';
     })
     .map((entityId) => {
@@ -137,7 +136,7 @@ export function getPowerSensorEntities(hass: HomeAssistant | null): AlarmEntityO
 export function getFilteredEntities(
   hass: HomeAssistant | null,
   query: string,
-  filterWithArea = false,
+  filterWithArea = false
 ): EntitySelectOption[] {
   if (!hass || query.length < 2) return [];
   const q = query.toLowerCase();

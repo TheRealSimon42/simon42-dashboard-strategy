@@ -60,7 +60,6 @@ export function findDummySensor(hass: HomeAssistant): string {
   return 'sun.sun';
 }
 
-
 /**
  * Platforms that create binary_sensor entities with security-like device_classes
  * (opening, door, window) but are NOT actual physical security sensors.
@@ -99,10 +98,7 @@ export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyC
     // looser id-substring match also caught unrelated entities like
     // binary_sensor.foo_battery_charging (which means "currently charging",
     // not "battery low") and surfaced them as critical when 'on'.
-    if (
-      entityId.startsWith('binary_sensor.') &&
-      state.attributes?.device_class === 'battery'
-    ) return true;
+    if (entityId.startsWith('binary_sensor.') && state.attributes?.device_class === 'battery') return true;
     if (state.attributes?.device_class === 'battery' && state.attributes?.unit_of_measurement === '%') return true;
     return false;
   });
@@ -120,5 +116,5 @@ export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyC
     if (!id.startsWith('binary_sensor.')) return true;
     const deviceId = hass.entities[id]?.device_id;
     return !deviceId || !sensorDeviceIds.has(deviceId);
-  })
+  });
 }

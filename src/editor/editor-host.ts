@@ -82,7 +82,7 @@ export interface StrategyEditorHost {
     label: string,
     checked: boolean,
     onChange: (checked: boolean) => void,
-    disabled?: boolean,
+    disabled?: boolean
   ): TemplateResult;
 
   // -- Cross-panel config helpers ------------------------------------------

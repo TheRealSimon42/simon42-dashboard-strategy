@@ -119,16 +119,28 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
               <ha-icon class="section-icon" icon=${meta.icon}></ha-icon>
               <span class="section-label">${meta.label}</span>
               ${disabled && !toggleable ? html`<span class="section-hidden-tag">(${localize('editor.section_hidden')})</span>` : nothing}
-              ${toggleable ? html`
-                <label class="section-toggle" @mousedown=${(e: Event) => { e.stopPropagation(); }}>
+              ${
+                toggleable
+                  ? html`
+                <label class="section-toggle" @mousedown=${(e: Event) => {
+                  e.stopPropagation();
+                }}>
                   <input type="checkbox"
                     ?checked=${!disabled}
-                    @change=${(e: Event) => { toggleSectionVisibility(host, key, (e.target as HTMLInputElement).checked); }}
-                    @dragstart=${(e: Event) => { e.stopPropagation(); }} />
+                    @change=${(e: Event) => {
+                      toggleSectionVisibility(host, key, (e.target as HTMLInputElement).checked);
+                    }}
+                    @dragstart=${(e: Event) => {
+                      e.stopPropagation();
+                    }} />
                 </label>
-              ` : nothing}
+              `
+                  : nothing
+              }
             </div>
-            ${key === 'weather' && showWeather ? html`
+            ${
+              key === 'weather' && showWeather
+                ? html`
               <div class="section-order-sub" style="flex-wrap: wrap;">
                 <label for="weather-presentation">${localize('editor.weather_presentation')}</label>
                 <select id="weather-presentation"
@@ -141,60 +153,90 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
                   <option value="none" ?selected=${weatherPresentation === 'none'}>${localize('editor.weather_presentation_none')}</option>
                 </select>
               </div>
-            ` : nothing}
-            ${key === 'weather' && showWeather && weatherEntities.length > 1 ? html`
+            `
+                : nothing
+            }
+            ${
+              key === 'weather' && showWeather && weatherEntities.length > 1
+                ? html`
               <div class="section-order-sub" style="flex-wrap: wrap;">
                 <label for="weather-entity">${localize('editor.weather_entity')}</label>
                 <select id="weather-entity"
                   .value=${weatherEntity}
                   @change=${(e: Event) => weatherEntityChanged(host, e)}>
                   <option value="" ?selected=${!weatherEntity}>${localize('editor.weather_entity_auto')}</option>
-                  ${weatherEntities.map((entity) => html`
+                  ${weatherEntities.map(
+                    (entity) => html`
                     <option value=${entity.entity_id} ?selected=${entity.entity_id === weatherEntity}>
                       ${entity.name}
                     </option>
-                  `)}
+                  `
+                  )}
                 </select>
               </div>
-            ` : nothing}
-            ${key === 'weather' && showWeather && hasDwdPollenflug(host) ? html`
+            `
+                : nothing
+            }
+            ${
+              key === 'weather' && showWeather && hasDwdPollenflug(host)
+                ? html`
               <div class="section-order-sub" style="flex-wrap: wrap;">
-                ${host._renderCheckbox('show-pollen-card', localize('editor.show_pollen_card'), host._config.show_pollen_card === true,
-                  (checked) => host._toggleChanged('show_pollen_card', checked, false))}
+                ${host._renderCheckbox(
+                  'show-pollen-card',
+                  localize('editor.show_pollen_card'),
+                  host._config.show_pollen_card === true,
+                  (checked) => host._toggleChanged('show_pollen_card', checked, false)
+                )}
               </div>
               <div class="description" style="margin-left: 26px;">${localize('editor.show_pollen_card_desc')}</div>
-            ` : nothing}
-            ${key === 'energy' && showEnergy ? html`
+            `
+                : nothing
+            }
+            ${
+              key === 'energy' && showEnergy
+                ? html`
               <div class="section-order-sub">
                 <input type="checkbox" id="energy-link-dashboard"
                   ?checked=${energyLinkDashboard}
-                  @change=${(e: Event) => { host._toggleChanged('energy_link_dashboard', (e.target as HTMLInputElement).checked, true); }} />
+                  @change=${(e: Event) => {
+                    host._toggleChanged('energy_link_dashboard', (e.target as HTMLInputElement).checked, true);
+                  }} />
                 <label for="energy-link-dashboard">${localize('editor.energy_link_dashboard')}</label>
               </div>
               <div class="section-order-sub">
                 <input type="checkbox" id="show-energy-distribution-card"
                   ?checked=${showEnergyDistributionCard}
-                  @change=${(e: Event) => { host._toggleChanged('show_energy_distribution_card', (e.target as HTMLInputElement).checked, true); }} />
+                  @change=${(e: Event) => {
+                    host._toggleChanged('show_energy_distribution_card', (e.target as HTMLInputElement).checked, true);
+                  }} />
                 <label for="show-energy-distribution-card">${localize('editor.show_energy_distribution_card')}</label>
               </div>
 
-              ${powerSensorEntities.length > 0 ? html`
+              ${
+                powerSensorEntities.length > 0
+                  ? html`
                 <div class="section-order-sub" style="display: block;">
                   <label for="power-badge-entity" style="display: block; margin-bottom: 4px;">${localize('editor.power_badge_entity')}</label>
                   <select id="power-badge-entity"
                     style="width: 100%;"
                     @change=${(e: Event) => powerBadgeEntityChanged(host, e)}>
                     <option value="" ?selected=${!powerBadgeEntity}>${localize('editor.power_badge_none')}</option>
-                    ${powerSensorEntities.map((entity) => html`
+                    ${powerSensorEntities.map(
+                      (entity) => html`
                       <option value=${entity.entity_id} ?selected=${entity.entity_id === powerBadgeEntity}>
                         ${entity.name}
                       </option>
-                    `)}
+                    `
+                    )}
                   </select>
                   <div class="description">${localize('editor.power_badge_entity_desc')}</div>
                 </div>
-              ` : nothing}
-            ` : nothing}
+              `
+                  : nothing
+              }
+            `
+                : nothing
+            }
           `;
         })}
       </div>
@@ -207,14 +249,20 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
           <div class="description" style="margin-left: 0; margin-bottom: 8px;">
             ${localize('editor.hide_section_headings_desc')}
           </div>
-          ${(['overview', 'summaries', 'favorites', 'custom_cards', 'areas', 'areas_other', 'weather', 'energy'] as const).map((hk) => html`
+          ${(
+            ['overview', 'summaries', 'favorites', 'custom_cards', 'areas', 'areas_other', 'weather', 'energy'] as const
+          ).map(
+            (hk) => html`
             <div class="form-row">
               <input type="checkbox" id="hide-heading-${hk}"
                 ?checked=${hiddenHeadings.has(hk)}
-                @change=${(e: Event) => { toggleHiddenHeading(host, hk, (e.target as HTMLInputElement).checked); }} />
+                @change=${(e: Event) => {
+                  toggleHiddenHeading(host, hk, (e.target as HTMLInputElement).checked);
+                }} />
               <label for="hide-heading-${hk}">${localize('editor.heading_label_' + hk)}</label>
             </div>
-          `)}
+          `
+          )}
         </div>
       </details>
 
@@ -230,7 +278,8 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
             const meta = host._sectionDisplayMeta(key);
             if (!meta) return nothing;
             const rule = Reflect.get(host._config.section_visibility || {}, key) as
-              { entity: string; state: string } | undefined;
+              | { entity: string; state: string }
+              | undefined;
             return html`
               <div style="border: 1px solid var(--divider-color); border-radius: 6px; padding: 8px; margin-bottom: 8px;">
                 <div style="font-weight: 500; margin-bottom: 6px;">${meta.label}</div>
@@ -255,21 +304,33 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
       </details>
 
       <div style="margin-top: 12px;">
-        ${host._renderCheckbox('show-unavailable-alert-badge', localize('editor.show_unavailable_alert_badge'),
+        ${host._renderCheckbox(
+          'show-unavailable-alert-badge',
+          localize('editor.show_unavailable_alert_badge'),
           host._config.show_unavailable_alert_badge === true,
-          (checked) => host._toggleChanged('show_unavailable_alert_badge', checked, false))}
+          (checked) => host._toggleChanged('show_unavailable_alert_badge', checked, false)
+        )}
         <div class="description">${localize('editor.show_unavailable_alert_badge_desc')}</div>
-        ${host._renderCheckbox('show-now-playing-badge', localize('editor.show_now_playing_badge'),
+        ${host._renderCheckbox(
+          'show-now-playing-badge',
+          localize('editor.show_now_playing_badge'),
           host._config.show_now_playing_badge === true,
-          (checked) => host._toggleChanged('show_now_playing_badge', checked, false))}
+          (checked) => host._toggleChanged('show_now_playing_badge', checked, false)
+        )}
         <div class="description">${localize('editor.show_now_playing_badge_desc')}</div>
-        ${host._renderCheckbox('show-sun-badge', localize('editor.show_sun_badge'),
+        ${host._renderCheckbox(
+          'show-sun-badge',
+          localize('editor.show_sun_badge'),
           host._config.show_sun_badge === true,
-          (checked) => host._toggleChanged('show_sun_badge', checked, false))}
+          (checked) => host._toggleChanged('show_sun_badge', checked, false)
+        )}
         <div class="description">${localize('editor.show_sun_badge_desc')}</div>
-        ${host._renderCheckbox('show-updates-badge', localize('editor.show_updates_badge'),
+        ${host._renderCheckbox(
+          'show-updates-badge',
+          localize('editor.show_updates_badge'),
           host._config.show_updates_badge === true,
-          (checked) => host._toggleChanged('show_updates_badge', checked, false))}
+          (checked) => host._toggleChanged('show_updates_badge', checked, false)
+        )}
         <div class="description">${localize('editor.show_updates_badge_desc')}</div>
       </div>
   `;
@@ -292,7 +353,12 @@ function toggleHiddenHeading(host: StrategyEditorHost, key: HeadingKey, hide: bo
   host._fireConfigChanged(updated);
 }
 
-function sectionVisibilityChanged(host: StrategyEditorHost, sectionKey: string, field: 'entity' | 'state', value: string): void {
+function sectionVisibilityChanged(
+  host: StrategyEditorHost,
+  sectionKey: string,
+  field: 'entity' | 'state',
+  value: string
+): void {
   const updated: Simon42StrategyConfig = { ...host._config };
   const current = { ...(updated.section_visibility || {}) };
   const existing = Reflect.get(current, sectionKey) as { entity: string; state: string } | undefined;
@@ -314,10 +380,16 @@ function sectionVisibilityChanged(host: StrategyEditorHost, sectionKey: string, 
 
 function handleSectionDragStart(host: StrategyEditorHost, ev: DragEvent): void {
   const dragHandle = (ev.target as HTMLElement).closest('.drag-handle');
-  if (!dragHandle) { ev.preventDefault(); return; }
+  if (!dragHandle) {
+    ev.preventDefault();
+    return;
+  }
 
   const item = (ev.target as HTMLElement).closest('.section-order-item') as HTMLElement | null;
-  if (!item) { ev.preventDefault(); return; }
+  if (!item) {
+    ev.preventDefault();
+    return;
+  }
 
   item.classList.add('dragging');
   if (ev.dataTransfer) {

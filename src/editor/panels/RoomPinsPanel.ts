@@ -43,9 +43,10 @@ export function renderRoomPinsSection(host: StrategyEditorHost): TemplateResult 
   return html`
 
       <div id="room-pins-list" style="margin-bottom: 12px;">
-        ${roomPinEntities.length === 0
-          ? html`<div class="empty-state">${localize('editor.no_room_pins')}</div>`
-          : html`
+        ${
+          roomPinEntities.length === 0
+            ? html`<div class="empty-state">${localize('editor.no_room_pins')}</div>`
+            : html`
             <div class="entity-list-container">
               ${roomPinEntities.map((entityId) => {
                 const entity = entityMap.get(entityId);
@@ -72,40 +73,67 @@ export function renderRoomPinsSection(host: StrategyEditorHost): TemplateResult 
                 `;
               })}
             </div>
-          `}
+          `
+        }
       </div>
 
       <div class="entity-search-picker">
         <input type="text" class="entity-search-input"
           placeholder=${localize('editor.select_entity') + '...'}
           .value=${host._roomPinSearch}
-          @input=${(e: Event) => { host._roomPinSearch = (e.target as HTMLInputElement).value; host.requestUpdate(); }}
-          @blur=${() => { setTimeout(() => { host._roomPinSearch = ''; host.requestUpdate(); }, 200); }}
+          @input=${(e: Event) => {
+            host._roomPinSearch = (e.target as HTMLInputElement).value;
+            host.requestUpdate();
+          }}
+          @blur=${() => {
+            setTimeout(() => {
+              host._roomPinSearch = '';
+              host.requestUpdate();
+            }, 200);
+          }}
         />
-        ${host._roomPinSearch.length >= 2 ? html`
+        ${
+          host._roomPinSearch.length >= 2
+            ? html`
           <div class="entity-search-results">
-            ${filteredEntities.length > 0
-              ? filteredEntities.map((entity) => html`
-                <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); addRoomPinEntity(host, entity.entity_id); host._roomPinSearch = ''; host.requestUpdate(); }}>
+            ${
+              filteredEntities.length > 0
+                ? filteredEntities.map(
+                    (entity) => html`
+                <div class="entity-search-result" @mousedown=${(e: Event) => {
+                  e.preventDefault();
+                  addRoomPinEntity(host, entity.entity_id);
+                  host._roomPinSearch = '';
+                  host.requestUpdate();
+                }}>
                   <span class="entity-search-name">${entity.name}</span>
                   <span class="entity-search-id">${entity.entity_id}</span>
                 </div>
-              `)
-              : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
+              `
+                  )
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
             }
           </div>
-        ` : nothing}
+        `
+            : nothing
+        }
       </div>
       <div class="description">${unsafeHTML(localize('editor.room_pins_desc'))}</div>
 
-      ${host._renderCheckbox('room-pins-show-state', localize('editor.show_state'), roomPinsShowState,
-        (checked) => host._toggleChanged('room_pins_show_state', checked, false))}
+      ${host._renderCheckbox('room-pins-show-state', localize('editor.show_state'), roomPinsShowState, (checked) =>
+        host._toggleChanged('room_pins_show_state', checked, false)
+      )}
 
-      ${host._renderCheckbox('room-pins-hide-last-changed', localize('editor.hide_last_changed'), roomPinsHideLastChanged,
-        (checked) => host._toggleChanged('room_pins_hide_last_changed', checked, false))}
+      ${host._renderCheckbox(
+        'room-pins-hide-last-changed',
+        localize('editor.hide_last_changed'),
+        roomPinsHideLastChanged,
+        (checked) => host._toggleChanged('room_pins_hide_last_changed', checked, false)
+      )}
 
-      ${host._renderCheckbox('room-pins-first', localize('editor.room_pins_first'), roomPinsFirst,
-        (checked) => host._toggleChanged('room_pins_first', checked, false))}
+      ${host._renderCheckbox('room-pins-first', localize('editor.room_pins_first'), roomPinsFirst, (checked) =>
+        host._toggleChanged('room_pins_first', checked, false)
+      )}
   `;
 }
 

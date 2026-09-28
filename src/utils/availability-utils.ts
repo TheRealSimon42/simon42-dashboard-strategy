@@ -87,10 +87,7 @@ function anyEntityAvailableVisibility(entities: string[]): LovelaceCondition[] {
   ];
 }
 
-function getStableGridOptions(
-  config: GridAwareConfig,
-  entity: string
-): Pick<LovelaceCardConfig, 'grid_options'> {
+function getStableGridOptions(config: GridAwareConfig, entity: string): Pick<LovelaceCardConfig, 'grid_options'> {
   if (config.grid_options || config.type !== 'tile') return {};
   if (Array.isArray(config.features) && config.features.length > 0) return {};
 
@@ -124,10 +121,7 @@ function withAvailabilityVisibility<T extends VisibilityAwareConfig & GridAwareC
   return {
     ...config,
     ...getStableGridOptions(config, entity),
-    visibility: [
-      ...visibility,
-      ...availabilityVisibility(entity),
-    ],
+    visibility: [...visibility, ...availabilityVisibility(entity)],
   };
 }
 
@@ -136,14 +130,9 @@ function addEntityId(entityIds: Set<string>, value: unknown): void {
 }
 
 /** Reflect.get keeps dynamic state lookups off the object-injection radar. */
-function getEntityStateValue(
-  hass: HomeAssistant | undefined,
-  entityId: string
-): string | undefined {
+function getEntityStateValue(hass: HomeAssistant | undefined, entityId: string): string | undefined {
   if (!hass?.states) return undefined;
-  const entry = Reflect.get(hass.states as Record<string, unknown>, entityId) as
-    | { state?: string }
-    | undefined;
+  const entry = Reflect.get(hass.states as Record<string, unknown>, entityId) as { state?: string } | undefined;
   return entry?.state;
 }
 
@@ -232,9 +221,7 @@ function applyToSection(section: LovelaceSectionConfig): LovelaceSectionConfig {
   };
 }
 
-function mapBadges(
-  badges: Array<string | Partial<LovelaceBadgeConfig>>
-): Array<string | Partial<LovelaceBadgeConfig>> {
+function mapBadges(badges: Array<string | Partial<LovelaceBadgeConfig>>): Array<string | Partial<LovelaceBadgeConfig>> {
   return badges.map((badge) => {
     if (!isBadgeConfig(badge)) return badge;
     return withAvailabilityVisibility(badge);

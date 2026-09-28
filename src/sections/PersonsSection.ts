@@ -21,10 +21,7 @@ function getState(hass: HomeAssistant, entityId: string): HassEntity | undefined
 }
 
 /** Try to find a battery % sensor associated with one of the person's device_trackers. */
-function findBatterySensorForPerson(
-  hass: HomeAssistant,
-  personEntityId: string,
-): string | undefined {
+function findBatterySensorForPerson(hass: HomeAssistant, personEntityId: string): string | undefined {
   const state = getState(hass, personEntityId);
   const sources = state?.attributes?.source as string[] | string | undefined;
   const sourceList = Array.isArray(sources) ? sources : sources ? [sources] : [];
@@ -57,9 +54,7 @@ export function createPersonsSection(
 ): LovelaceSectionConfig | null {
   if (!enabled) return null;
 
-  const personIds = Registry.getVisibleEntityIdsForDomain('person').filter(
-    (id) => getState(hass, id) !== undefined
-  );
+  const personIds = Registry.getVisibleEntityIdsForDomain('person').filter((id) => getState(hass, id) !== undefined);
   if (personIds.length === 0) return null;
 
   const cards: LovelaceCardConfig[] = [];

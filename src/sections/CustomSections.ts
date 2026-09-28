@@ -54,8 +54,7 @@ export function normalizeSectionYaml(parsed: unknown): NormalizedSectionYaml | n
   if (Array.isArray(parsed)) return { cards: parsed, sectionProps: null };
   if (!parsed || typeof parsed !== 'object') return null;
   const obj = parsed as Record<string, unknown>;
-  const looksLikeSection =
-    (obj.type === 'grid' || typeof obj.type !== 'string') && Array.isArray(obj.cards);
+  const looksLikeSection = (obj.type === 'grid' || typeof obj.type !== 'string') && Array.isArray(obj.cards);
   if (looksLikeSection) {
     return { cards: obj.cards as readonly unknown[], sectionProps: obj };
   }

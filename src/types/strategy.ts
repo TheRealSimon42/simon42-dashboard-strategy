@@ -379,12 +379,7 @@ export interface GroupOptions {
  * - `tile`                 — HA core `tile` card bound to the weather entity
  * - `none`                 — omit built-in card; section keeps heading + slot
  */
-export type WeatherPresentation =
-  | 'forecast_daily'
-  | 'forecast_hourly'
-  | 'forecast_twice_daily'
-  | 'tile'
-  | 'none';
+export type WeatherPresentation = 'forecast_daily' | 'forecast_hourly' | 'forecast_twice_daily' | 'tile' | 'none';
 
 // -- Weather Sensors --------------------------------------------------
 
