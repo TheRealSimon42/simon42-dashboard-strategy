@@ -210,6 +210,7 @@
     "weather_sensors_icon": "Ikon",
     "weather_sensors_unit": "Mértékegység",
     "weather_sensors_round": "Tizedesjegyek",
+    "weather_sensors_hide_zero_off": "Elrejtés, ha 0 vagy kikapcsolva",
     "weather_sensors_add": "+ Érzékelő hozzáadása",
     "no_weather_sensors": "Nincs beállított érzékelő. Az alábbi választóval adhatsz hozzá egyet.",
     "weather_entity": "Időjárási entitás:",

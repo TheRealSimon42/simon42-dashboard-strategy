@@ -399,6 +399,13 @@ export interface WeatherSensorConfig {
   unit?: string;
   /** Round the numeric value to N decimals. Omit to show raw state. */
   round?: number;
+  /**
+   * Hide the entry while its live state is numeric zero or `off` — e.g. a
+   * rain-rate sensor that should only show up while it is raining. Omit
+   * (default) to always render the sensor. Evaluated inside the markdown
+   * template at runtime, so it follows state changes without regenerating.
+   */
+  hide_when?: 'zero_or_off';
 }
 
 // -- Custom Views -----------------------------------------------------
