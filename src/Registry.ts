@@ -436,7 +436,9 @@ class Registry {
    * instead of `getDevice(id)?.area_id` when resolving entity areas.
    */
   static getDeviceAreaId(deviceId: string): string | null {
-    return getEffectiveDeviceAreaId(Registry._deviceById.get(deviceId), Registry.getDevice);
+    return getEffectiveDeviceAreaId(Registry._deviceById.get(deviceId), function lookup(id: string) {
+      return Registry._deviceById.get(id);
+    });
   }
 
   // =====================================================================
