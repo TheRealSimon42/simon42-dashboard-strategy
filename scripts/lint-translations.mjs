@@ -34,11 +34,12 @@ function warn(file, msg) {
 // New locale files must be registered in BOTH places below — the directory
 // scan errors on any .json file missing from KNOWN_LOCALES, so nothing can
 // silently bypass the linter.
-const KNOWN_LOCALES = new Set(['en.json', 'de.json', 'ru.json']);
+const KNOWN_LOCALES = new Set(['en.json', 'de.json', 'hu.json', 'ru.json']);
 
 function readTranslation(file) {
   if (file === 'en.json') return readFileSync('src/translations/en.json', 'utf8');
   if (file === 'de.json') return readFileSync('src/translations/de.json', 'utf8');
+  if (file === 'hu.json') return readFileSync('src/translations/hu.json', 'utf8');
   if (file === 'ru.json') return readFileSync('src/translations/ru.json', 'utf8');
   throw new Error(`unknown translation file: ${file}`);
 }
