@@ -14,6 +14,14 @@ import { countActiveClimateEntities } from '../utils/summary-view-utils';
 
 type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate' | 'maintenance';
 
+// Cover states the covers view can bucket on directly; anything else that is
+// not "unavailable" (chiefly "unknown") is indeterminate and shown as open.
+const KNOWN_COVER_STATES = new Set(['open', 'opening', 'closing', 'closed']);
+
+function isIndeterminateCoverState(state: string | undefined): boolean {
+  return state !== undefined && state !== 'unavailable' && !KNOWN_COVER_STATES.has(state);
+}
+
 interface SummaryCardConfig {
   summary_type: SummaryType;
   hide_mobile_app_batteries?: boolean;
@@ -242,7 +250,10 @@ class Simon42SummaryCard extends LitElement {
         for (const id of this._relevantEntityIds) {
           if (!isEntityCurrentlyAvailable(hass, id, this._config)) continue;
           const s = hass.states[id]?.state;
-          if (s === 'open' || s === 'opening') count++;
+          // Feedback-less covers (state "unknown", e.g. Somfy io remotes without
+          // position sensors) are listed under "open" in the covers view
+          // (#439 / #454) — count them the same way so the tile matches the view.
+          if (s === 'open' || s === 'opening' || isIndeterminateCoverState(s)) count++;
         }
         return count;
 
