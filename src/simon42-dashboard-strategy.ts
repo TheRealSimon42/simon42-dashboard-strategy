@@ -190,6 +190,29 @@ class Simon42DashboardStrategy extends HTMLElement {
     insertCustomViews(generatedViews, customViews, await resolveCustomViews(customViews, hass));
     t('custom views resolved');
 
+    // Inject banner sections at the top of every view when configured.
+    // Normalize both banner_entity (legacy) and banner_entities[] into one list.
+    const bannerConfigs: Array<{ entity: string; alertType: 'info' | 'warning' | 'error' | 'success' }> = [];
+    if (config.banner_entity) {
+      bannerConfigs.push({ entity: config.banner_entity, alertType: config.banner_alert_type ?? 'info' });
+    }
+    if (config.banner_entities?.length) {
+      for (const b of config.banner_entities) {
+        bannerConfigs.push({ entity: b.entity, alertType: b.alert_type ?? 'info' });
+      }
+    }
+    if (bannerConfigs.length > 0) {
+      const { createBannerCard } = await import('./utils/view-builder');
+      const bannerCard = createBannerCard(bannerConfigs);
+      for (const view of generatedViews) {
+        if (!view.header) {
+          view.header = { card: bannerCard };
+        } else {
+          view.header = { ...view.header, card: bannerCard };
+        }
+      }
+    }
+
     t(`generate() done — ${generatedViews.length} views`);
 
     return {

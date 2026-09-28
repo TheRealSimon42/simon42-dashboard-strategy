@@ -43,6 +43,7 @@ import { renderSectionOrderPanel } from './panels/SectionOrderPanel';
 import { renderDesignSection } from './panels/DesignPanel';
 import { renderSummariesSection } from './panels/SummariesPanel';
 import { renderAreasSection, areaOptionsFor } from './panels/AreasPanel';
+import { renderBannerSection } from './panels/BannerPanel';
 import {
   renderCollapsiblePanel,
   loadExpandedPanels,
@@ -78,6 +79,7 @@ const PANELS: Record<string, PanelMeta> = {
   custom_badges: { key: 'custom_badges', icon: 'mdi:label-outline', labelKey: 'editor.section_custom_badges', tutorialUrl: `${ASSETS}/Custom-Badges-hinzufugen.gif` },
   custom_views: { key: 'custom_views', icon: 'mdi:tab-plus', labelKey: 'editor.section_custom_views', tutorialUrl: `${ASSETS}/Custom-View-hinzufugen.gif` },
   design: { key: 'design', icon: 'mdi:palette-swatch-outline', labelKey: 'editor.section_design' },
+  banner: { key: 'banner', icon: 'mdi:alert-circle-outline', labelKey: 'editor.section_banner' },
 };
 
 // ====================================================================
@@ -106,6 +108,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   _weatherSensorSearch = '';
   _securityExtraSearch = '';
   _lightFavSearch = '';
+  _bannerSearch = '';
 
   // Cache for loaded area entities (avoid re-fetching on every render)
   _areaEntitiesCache = new Map<string, AreaEntitiesCacheEntry>();
@@ -175,6 +178,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
         ${renderCollapsiblePanel(this, PANELS.custom_badges, () => renderCustomBadgesSection(this))}
         ${renderCollapsiblePanel(this, PANELS.custom_views, () => renderCustomViewsSection(this))}
         ${renderCollapsiblePanel(this, PANELS.design, () => renderDesignSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.banner, () => renderBannerSection(this))}
       </div>
     `;
   }
