@@ -77,9 +77,17 @@ function getAreaControls(areaId: string, hass: HomeAssistant): ControlDomain[] {
 // Alert-relevant binary sensor device classes.
 // Excludes noisy classes like light, connectivity, battery, plug, power, running, problem.
 const ALERT_DEVICE_CLASSES = new Set([
-  'motion', 'occupancy', 'sound',
+  'motion',
+  'occupancy',
+  'sound',
   'moisture',
-  'smoke', 'gas', 'heat', 'cold', 'safety', 'tamper', 'vibration',
+  'smoke',
+  'gas',
+  'heat',
+  'cold',
+  'safety',
+  'tamper',
+  'vibration',
 ]);
 
 // Window/door alerts are gated by a separate toggle (show_window_alerts_on_areas)
@@ -142,9 +150,8 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
   // separate toggle so users can opt into open-window badges independently.
   const showAlerts = Registry.config.show_alerts_on_areas === true;
   const showWindowAlerts = Registry.config.show_window_alerts_on_areas === true;
-  const alertClasses = showAlerts || showWindowAlerts
-    ? getAreaAlertClasses(area.area_id, hass, showAlerts, showWindowAlerts)
-    : undefined;
+  const alertClasses =
+    showAlerts || showWindowAlerts ? getAreaAlertClasses(area.area_id, hass, showAlerts, showWindowAlerts) : undefined;
 
   // Entry-point parity with the room view's nav tab: the card follows the
   // room view's view_visible_users rule (runtime user condition — display
@@ -171,7 +178,9 @@ function buildAreaCard(area: AreaRegistryEntry, hass: HomeAssistant): LovelaceCa
  * for users who can't see ANY of the areas beneath it (one unrestricted
  * area keeps the heading unconditional).
  */
-function areaHeadingVisibility(areas: AreaRegistryEntry[]): { visibility: LovelaceCondition[] } | Record<string, never> {
+function areaHeadingVisibility(
+  areas: AreaRegistryEntry[]
+): { visibility: LovelaceCondition[] } | Record<string, never> {
   const conditions = userVisibilityConditions(
     unionVisibleUsers(areas.map((area) => getViewVisibleUsers(Registry.config, area.area_id)))
   );

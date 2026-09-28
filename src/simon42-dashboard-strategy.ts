@@ -37,7 +37,9 @@ const modulesPromise = Promise.all([
   import('./views/RoomViewStrategy'),
 ]);
 
-void modulesPromise.then(() => { t('all chunks loaded'); });
+void modulesPromise.then(() => {
+  t('all chunks loaded');
+});
 
 class Simon42DashboardStrategy extends HTMLElement {
   // HA 2026.7+: only regenerate when one of these registries actually changed
@@ -110,25 +112,62 @@ class Simon42DashboardStrategy extends HTMLElement {
       resolve: () => Promise<LovelaceViewConfig>;
     }
     const utilityViewDefs: UtilityViewDef[] = [
-      { enabled: isUtilityViewEnabled(config, 'lights'), title: localize('views.lights'), path: 'lights', icon: 'mdi:lamps',
-        resolve: () => getStrategy('ll-strategy-simon42-view-lights').generate({ config }, hass) },
-      { enabled: isUtilityViewEnabled(config, 'covers'), title: localize('views.covers'), path: 'covers', icon: 'mdi:blinds-horizontal',
-        resolve: () => getStrategy('ll-strategy-simon42-view-covers').generate(
-          { device_classes: ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'], config }, hass) },
-      { enabled: isUtilityViewEnabled(config, 'security'), title: localize('views.security'), path: 'security', icon: 'mdi:security',
-        resolve: () => getStrategy('ll-strategy-simon42-view-security').generate({ config }, hass) },
-      { enabled: isUtilityViewEnabled(config, 'batteries'), title: localize('views.batteries'), path: 'batteries', icon: 'mdi:battery-alert',
-        resolve: () => getStrategy('ll-strategy-simon42-view-batteries').generate({ config }, hass) },
-      { enabled: isUtilityViewEnabled(config, 'climate'), title: localize('views.climate'), path: 'climate', icon: 'mdi:thermostat',
-        resolve: () => getStrategy('ll-strategy-simon42-view-climate').generate({ config }, hass) },
-      { enabled: config.show_maintenance_summary === true,
-        title: localize('views.maintenance'), path: 'maintenance', icon: 'mdi:wrench',
-        resolve: () => getStrategy('ll-strategy-simon42-view-maintenance').generate({ config }, hass) },
+      {
+        enabled: isUtilityViewEnabled(config, 'lights'),
+        title: localize('views.lights'),
+        path: 'lights',
+        icon: 'mdi:lamps',
+        resolve: () => getStrategy('ll-strategy-simon42-view-lights').generate({ config }, hass),
+      },
+      {
+        enabled: isUtilityViewEnabled(config, 'covers'),
+        title: localize('views.covers'),
+        path: 'covers',
+        icon: 'mdi:blinds-horizontal',
+        resolve: () =>
+          getStrategy('ll-strategy-simon42-view-covers').generate(
+            { device_classes: ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'], config },
+            hass
+          ),
+      },
+      {
+        enabled: isUtilityViewEnabled(config, 'security'),
+        title: localize('views.security'),
+        path: 'security',
+        icon: 'mdi:security',
+        resolve: () => getStrategy('ll-strategy-simon42-view-security').generate({ config }, hass),
+      },
+      {
+        enabled: isUtilityViewEnabled(config, 'batteries'),
+        title: localize('views.batteries'),
+        path: 'batteries',
+        icon: 'mdi:battery-alert',
+        resolve: () => getStrategy('ll-strategy-simon42-view-batteries').generate({ config }, hass),
+      },
+      {
+        enabled: isUtilityViewEnabled(config, 'climate'),
+        title: localize('views.climate'),
+        path: 'climate',
+        icon: 'mdi:thermostat',
+        resolve: () => getStrategy('ll-strategy-simon42-view-climate').generate({ config }, hass),
+      },
+      {
+        enabled: config.show_maintenance_summary === true,
+        title: localize('views.maintenance'),
+        path: 'maintenance',
+        icon: 'mdi:wrench',
+        resolve: () => getStrategy('ll-strategy-simon42-view-maintenance').generate({ config }, hass),
+      },
       // alwaysInNav: no summary card deep-links here — as a subview the
       // camera view would be unreachable.
-      { enabled: config.show_camera_view === true, alwaysInNav: true,
-        title: localize('views.cameras'), path: 'cameras', icon: 'mdi:cctv',
-        resolve: () => getStrategy('ll-strategy-simon42-view-cameras').generate({ config }, hass) },
+      {
+        enabled: config.show_camera_view === true,
+        alwaysInNav: true,
+        title: localize('views.cameras'),
+        path: 'cameras',
+        icon: 'mdi:cctv',
+        resolve: () => getStrategy('ll-strategy-simon42-view-cameras').generate({ config }, hass),
+      },
     ];
 
     const enabledDefs = utilityViewDefs.filter((d) => d.enabled);

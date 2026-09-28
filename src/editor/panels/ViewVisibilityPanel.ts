@@ -41,9 +41,10 @@ export function renderViewVisibilitySection(host: StrategyEditorHost): TemplateR
     <div class="description" style="margin-left: 0;">
       ${localize('editor.view_visibility_reload_hint')}
     </div>
-    ${users.length === 0
-      ? html`<div class="description" style="margin-left: 0;">${localize('editor.view_visibility_no_users')}</div>`
-      : html`
+    ${
+      users.length === 0
+        ? html`<div class="description" style="margin-left: 0;">${localize('editor.view_visibility_no_users')}</div>`
+        : html`
           <div class="option-group-title" style="margin-top: 8px;">
             <ha-icon icon="mdi:tab"></ha-icon>
             ${localize('editor.view_visibility_views_title')}
@@ -57,7 +58,8 @@ export function renderViewVisibilitySection(host: StrategyEditorHost): TemplateR
             ${localize('editor.view_visibility_sections_desc')}
           </div>
           ${sections.map((section) => renderRuleUsers(host, section, users, 'section'))}
-        `}
+        `
+    }
   `;
 }
 
@@ -98,12 +100,13 @@ export function getViewOptions(host: StrategyEditorHost): RuleOption[] {
   add(config.show_camera_view === true, 'cameras', 'views.cameras');
 
   const roomVisibility = config.room_visibility || {};
-  const areas = getVisibleAreasFromHass(host._hass, config.areas_display, config.use_default_area_sort)
-    .filter((area) => {
+  const areas = getVisibleAreasFromHass(host._hass, config.areas_display, config.use_default_area_sort).filter(
+    (area) => {
       const rule = Reflect.get(roomVisibility, area.area_id) as { entity?: string; state?: string } | undefined;
       if (!rule || !rule.entity) return true;
       return host._hass?.states[rule.entity]?.state === rule.state;
-    });
+    }
+  );
   for (const area of areas) views.push({ key: area.area_id, title: area.name });
 
   for (const view of config.custom_views || []) {
@@ -141,11 +144,10 @@ function renderRuleUsers(
   host: StrategyEditorHost,
   option: RuleOption,
   users: UserOption[],
-  kind: 'view' | 'section',
+  kind: 'view' | 'section'
 ): TemplateResult {
-  const configured = kind === 'view'
-    ? getViewVisibleUsers(host._config, option.key)
-    : getSectionVisibleUsers(host._config, option.key);
+  const configured =
+    kind === 'view' ? getViewVisibleUsers(host._config, option.key) : getSectionVisibleUsers(host._config, option.key);
   const selected = configured === undefined ? users.map((user) => user.userId) : configured;
 
   return html`
@@ -154,12 +156,23 @@ function renderRuleUsers(
         <ha-icon icon=${kind === 'view' ? 'mdi:tab' : 'mdi:view-grid-outline'}></ha-icon>
         ${option.title} <span class="entity-id">${kind === 'view' ? `/${option.key}` : option.key}</span>
       </div>
-      ${users.map((user) => host._renderCheckbox(
-        `${kind}-${option.key}-user-${user.userId}`,
-        user.name,
-        selected.includes(user.userId),
-        (checked) => { ruleUserChanged(host, kind, option.key, user.userId, users.map((o) => o.userId), checked); },
-      ))}
+      ${users.map((user) =>
+        host._renderCheckbox(
+          `${kind}-${option.key}-user-${user.userId}`,
+          user.name,
+          selected.includes(user.userId),
+          (checked) => {
+            ruleUserChanged(
+              host,
+              kind,
+              option.key,
+              user.userId,
+              users.map((o) => o.userId),
+              checked
+            );
+          }
+        )
+      )}
     </div>
   `;
 }
@@ -176,14 +189,13 @@ export function ruleUserChanged(
   key: string,
   userId: string,
   knownUserIds: string[],
-  checked: boolean,
+  checked: boolean
 ): void {
   const currentMap = (kind === 'view' ? host._config.view_visible_users : host._config.section_visible_users) || {};
   const hasRule = Object.hasOwn(currentMap, key);
-  const configured = kind === 'view'
-    ? getViewVisibleUsers(host._config, key)
-    : getSectionVisibleUsers(host._config, key);
-  const effective = new Set(hasRule || configured !== undefined ? (configured || []) : knownUserIds);
+  const configured =
+    kind === 'view' ? getViewVisibleUsers(host._config, key) : getSectionVisibleUsers(host._config, key);
+  const effective = new Set(hasRule || configured !== undefined ? configured || [] : knownUserIds);
   if (checked) effective.add(userId);
   else effective.delete(userId);
 
@@ -215,7 +227,7 @@ export function viewUserChanged(
   path: string,
   userId: string,
   knownUserIds: string[],
-  checked: boolean,
+  checked: boolean
 ): void {
   ruleUserChanged(host, 'view', path, userId, knownUserIds, checked);
 }

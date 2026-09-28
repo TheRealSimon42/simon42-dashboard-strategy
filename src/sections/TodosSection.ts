@@ -9,6 +9,7 @@ import type { HomeAssistant } from '../types/homeassistant';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { hasState } from '../utils/state-utils';
 
 /**
  * Creates the todos section.
@@ -29,9 +30,7 @@ export function createTodosSection(
 ): LovelaceSectionConfig | null {
   if (!enabled) return null;
 
-  const visible = Registry.getVisibleEntityIdsForDomain('todo').filter(
-    (id) => hass.states[id] !== undefined
-  );
+  const visible = Registry.getVisibleEntityIdsForDomain('todo').filter((id) => hasState(hass, id));
 
   let selected: string[];
   if (Array.isArray(todoEntities) && todoEntities.length > 0) {

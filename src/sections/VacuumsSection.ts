@@ -9,6 +9,7 @@ import type { HomeAssistant } from '../types/homeassistant';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
+import { hasState } from '../utils/state-utils';
 
 export function createVacuumsSection(
   hass: HomeAssistant,
@@ -17,12 +18,8 @@ export function createVacuumsSection(
 ): LovelaceSectionConfig | null {
   if (!enabled) return null;
 
-  const vacuumIds = Registry.getVisibleEntityIdsForDomain('vacuum').filter(
-    (id) => hass.states[id] !== undefined
-  );
-  const mowerIds = Registry.getVisibleEntityIdsForDomain('lawn_mower').filter(
-    (id) => hass.states[id] !== undefined
-  );
+  const vacuumIds = Registry.getVisibleEntityIdsForDomain('vacuum').filter((id) => hasState(hass, id));
+  const mowerIds = Registry.getVisibleEntityIdsForDomain('lawn_mower').filter((id) => hasState(hass, id));
   const entities = [...vacuumIds, ...mowerIds];
   if (entities.length === 0) return null;
 

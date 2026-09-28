@@ -68,7 +68,7 @@ function togglePanel(host: StrategyEditorHost, key: string): void {
 export function renderCollapsiblePanel(
   host: StrategyEditorHost,
   meta: PanelMeta,
-  body: () => TemplateResult,
+  body: () => TemplateResult
 ): TemplateResult {
   const expanded = host._expandedPanels.has(meta.key);
 
@@ -82,16 +82,20 @@ export function renderCollapsiblePanel(
       >
         <ha-icon class="panel-icon" icon=${meta.icon}></ha-icon>
         <span class="panel-title">${localize(meta.labelKey)}</span>
-        ${meta.tutorialUrl
-          ? html`<a
+        ${
+          meta.tutorialUrl
+            ? html`<a
               href=${meta.tutorialUrl}
               target="_blank"
               rel="noopener"
               class="panel-tutorial"
               title=${localize('editor.video_tutorial')}
-              @click=${(e: Event) => { e.stopPropagation(); }}
+              @click=${(e: Event) => {
+                e.stopPropagation();
+              }}
             >&#x1F3AC;</a>`
-          : nothing}
+            : nothing
+        }
         <ha-icon class="panel-chevron" icon="mdi:chevron-down"></ha-icon>
       </button>
       ${expanded ? html`<div class="panel-body">${body()}</div>` : nothing}

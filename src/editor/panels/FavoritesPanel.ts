@@ -29,10 +29,14 @@ export function renderLightFavoritesSection(host: StrategyEditorHost): TemplateR
   const lightFavs = host._config.light_favorite_entities || [];
   const allEntities = getAllEntitiesForSelect(host._hass);
   const entityMap = new Map(allEntities.map((e) => [e.entity_id, e.name]));
-  const filtered = getFilteredEntities(host._hass, host._lightFavSearch).filter((e) => e.entity_id.startsWith('light.'));
+  const filtered = getFilteredEntities(host._hass, host._lightFavSearch).filter((e) =>
+    e.entity_id.startsWith('light.')
+  );
   return html`
 
-      ${lightFavs.length > 0 ? html`
+      ${
+        lightFavs.length > 0
+          ? html`
         <div class="entity-list-container" style="margin-bottom: 8px;">
           ${lightFavs.map((entityId) => {
             const name = entityMap.get(entityId) || entityId;
@@ -47,28 +51,50 @@ export function renderLightFavoritesSection(host: StrategyEditorHost): TemplateR
             `;
           })}
         </div>
-      ` : nothing}
+      `
+          : nothing
+      }
 
       <div class="entity-search-picker">
         <input type="text" class="entity-search-input"
           placeholder=${localize('editor.select_entity') + '...'}
           .value=${host._lightFavSearch}
-          @input=${(e: Event) => { host._lightFavSearch = (e.target as HTMLInputElement).value; host.requestUpdate(); }}
-          @blur=${() => { setTimeout(() => { host._lightFavSearch = ''; host.requestUpdate(); }, 200); }}
+          @input=${(e: Event) => {
+            host._lightFavSearch = (e.target as HTMLInputElement).value;
+            host.requestUpdate();
+          }}
+          @blur=${() => {
+            setTimeout(() => {
+              host._lightFavSearch = '';
+              host.requestUpdate();
+            }, 200);
+          }}
         />
-        ${host._lightFavSearch.length >= 2 ? html`
+        ${
+          host._lightFavSearch.length >= 2
+            ? html`
           <div class="entity-search-results">
-            ${filtered.length > 0
-              ? filtered.map((entity) => html`
-                <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); addLightFavorite(host, entity.entity_id); host._lightFavSearch = ''; host.requestUpdate(); }}>
+            ${
+              filtered.length > 0
+                ? filtered.map(
+                    (entity) => html`
+                <div class="entity-search-result" @mousedown=${(e: Event) => {
+                  e.preventDefault();
+                  addLightFavorite(host, entity.entity_id);
+                  host._lightFavSearch = '';
+                  host.requestUpdate();
+                }}>
                   <span class="entity-search-name">${entity.name}</span>
                   <span class="entity-search-id">${entity.entity_id}</span>
                 </div>
-              `)
-              : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
+              `
+                  )
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
             }
           </div>
-        ` : nothing}
+        `
+            : nothing
+        }
       </div>
       <div class="description">${localize('editor.light_favorites_desc')}</div>
   `;
@@ -104,9 +130,10 @@ export function renderFavoritesSection(host: StrategyEditorHost): TemplateResult
   return html`
 
       <div id="favorites-list" style="margin-bottom: 12px;">
-        ${favoriteEntities.length === 0
-          ? html`<div class="empty-state">${localize('editor.no_favorites')}</div>`
-          : html`
+        ${
+          favoriteEntities.length === 0
+            ? html`<div class="empty-state">${localize('editor.no_favorites')}</div>`
+            : html`
             <div class="entity-list-container">
               ${favoriteEntities.map((entityId) => {
                 const name = entityMap.get(entityId) || entityId;
@@ -128,37 +155,63 @@ export function renderFavoritesSection(host: StrategyEditorHost): TemplateResult
                 `;
               })}
             </div>
-          `}
+          `
+        }
       </div>
 
       <div class="entity-search-picker">
         <input type="text" class="entity-search-input"
           placeholder=${localize('editor.select_entity') + '...'}
           .value=${host._favoriteSearch}
-          @input=${(e: Event) => { host._favoriteSearch = (e.target as HTMLInputElement).value; host.requestUpdate(); }}
-          @blur=${() => { setTimeout(() => { host._favoriteSearch = ''; host.requestUpdate(); }, 200); }}
+          @input=${(e: Event) => {
+            host._favoriteSearch = (e.target as HTMLInputElement).value;
+            host.requestUpdate();
+          }}
+          @blur=${() => {
+            setTimeout(() => {
+              host._favoriteSearch = '';
+              host.requestUpdate();
+            }, 200);
+          }}
         />
-        ${host._favoriteSearch.length >= 2 ? html`
+        ${
+          host._favoriteSearch.length >= 2
+            ? html`
           <div class="entity-search-results">
-            ${filteredEntities.length > 0
-              ? filteredEntities.map((entity) => html`
-                <div class="entity-search-result" @mousedown=${(e: Event) => { e.preventDefault(); addFavoriteEntity(host, entity.entity_id); host._favoriteSearch = ''; host.requestUpdate(); }}>
+            ${
+              filteredEntities.length > 0
+                ? filteredEntities.map(
+                    (entity) => html`
+                <div class="entity-search-result" @mousedown=${(e: Event) => {
+                  e.preventDefault();
+                  addFavoriteEntity(host, entity.entity_id);
+                  host._favoriteSearch = '';
+                  host.requestUpdate();
+                }}>
                   <span class="entity-search-name">${entity.name}</span>
                   <span class="entity-search-id">${entity.entity_id}</span>
                 </div>
-              `)
-              : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
+              `
+                  )
+                : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
             }
           </div>
-        ` : nothing}
+        `
+            : nothing
+        }
       </div>
       <div class="description">${localize('editor.favorites_desc')}</div>
 
-      ${host._renderCheckbox('favorites-show-state', localize('editor.show_state'), favoritesShowState,
-        (checked) => host._toggleChanged('favorites_show_state', checked, false))}
+      ${host._renderCheckbox('favorites-show-state', localize('editor.show_state'), favoritesShowState, (checked) =>
+        host._toggleChanged('favorites_show_state', checked, false)
+      )}
 
-      ${host._renderCheckbox('favorites-hide-last-changed', localize('editor.hide_last_changed'), favoritesHideLastChanged,
-        (checked) => host._toggleChanged('favorites_hide_last_changed', checked, false))}
+      ${host._renderCheckbox(
+        'favorites-hide-last-changed',
+        localize('editor.hide_last_changed'),
+        favoritesHideLastChanged,
+        (checked) => host._toggleChanged('favorites_hide_last_changed', checked, false)
+      )}
   `;
 }
 

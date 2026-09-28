@@ -20,12 +20,14 @@ export function renderViewsSection(host: StrategyEditorHost): TemplateResult {
 
   return html`
 
-      ${host._renderCheckbox('show-summary-views', localize('editor.show_summary_views'), showSummaryViews,
-        (checked) => host._toggleChanged('show_summary_views', checked, false))}
+      ${host._renderCheckbox('show-summary-views', localize('editor.show_summary_views'), showSummaryViews, (checked) =>
+        host._toggleChanged('show_summary_views', checked, false)
+      )}
       <div class="description">${localize('editor.show_summary_views_desc')}</div>
 
-      ${host._renderCheckbox('show-room-views', localize('editor.show_room_views'), showRoomViews,
-        (checked) => host._toggleChanged('show_room_views', checked, false))}
+      ${host._renderCheckbox('show-room-views', localize('editor.show_room_views'), showRoomViews, (checked) =>
+        host._toggleChanged('show_room_views', checked, false)
+      )}
       <div class="description">${localize('editor.show_room_views_desc')}</div>
   `;
 }

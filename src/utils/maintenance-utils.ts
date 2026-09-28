@@ -117,11 +117,7 @@ export function countUnavailable(hass: HomeAssistant, scan: MaintenanceScan): nu
 }
 
 /** Critical batteries: numeric %-sensors below threshold, or binary battery sensors 'on'. */
-export function criticalBatteryIds(
-  hass: HomeAssistant,
-  scan: MaintenanceScan,
-  criticalThreshold: number
-): string[] {
+export function criticalBatteryIds(hass: HomeAssistant, scan: MaintenanceScan, criticalThreshold: number): string[] {
   return scan.batteryIds.filter(function isCritical(id) {
     const state = stateFor(hass, id);
     if (!state) return false;
@@ -134,11 +130,7 @@ export function criticalBatteryIds(
 }
 
 /** Total maintenance count: pending updates + unavailable + critical batteries. */
-export function countMaintenanceItems(
-  hass: HomeAssistant,
-  scan: MaintenanceScan,
-  criticalThreshold: number
-): number {
+export function countMaintenanceItems(hass: HomeAssistant, scan: MaintenanceScan, criticalThreshold: number): number {
   return (
     pendingUpdateIds(hass, scan).length +
     countUnavailable(hass, scan) +
@@ -176,7 +168,7 @@ export function listUnavailableBlocks(hass: HomeAssistant, scan: MaintenanceScan
     blocks.push({
       representativeId,
       name: String(name),
-      areaName: areaId ? (Reflect.get(hass.areas, areaId) as { name?: string } | undefined)?.name ?? null : null,
+      areaName: areaId ? ((Reflect.get(hass.areas, areaId) as { name?: string } | undefined)?.name ?? null) : null,
     });
   }
 
@@ -188,7 +180,7 @@ export function listUnavailableBlocks(hass: HomeAssistant, scan: MaintenanceScan
     blocks.push({
       representativeId: id,
       name: String(state.attributes?.friendly_name || id),
-      areaName: areaId ? (Reflect.get(hass.areas, areaId) as { name?: string } | undefined)?.name ?? null : null,
+      areaName: areaId ? ((Reflect.get(hass.areas, areaId) as { name?: string } | undefined)?.name ?? null) : null,
     });
   }
 

@@ -69,9 +69,7 @@ const STACK_META = new Map<StackKey, { icon: string; labelKey: string }>([
   ['room_pins', { icon: 'mdi:pin', labelKey: 'stacks.room_pins' }],
 ]);
 
-function presentStackKeys(host: StrategyEditorHost, 
-  data: AreaEntitiesCacheEntry
-): Set<StackKey> {
+function presentStackKeys(host: StrategyEditorHost, data: AreaEntitiesCacheEntry): Set<StackKey> {
   const g = data.groupedEntities;
   const present = new Set<StackKey>();
   function has(key: string): boolean {
@@ -100,7 +98,8 @@ function presentStackKeys(host: StrategyEditorHost,
   return present;
 }
 
-export function renderStackOrderPanel(host: StrategyEditorHost, 
+export function renderStackOrderPanel(
+  host: StrategyEditorHost,
   areaId: string,
   data: AreaEntitiesCacheEntry
 ): TemplateResult {
@@ -140,8 +139,9 @@ export function renderStackOrderPanel(host: StrategyEditorHost,
             `;
           })}
         </div>
-        ${inactiveOrder.length > 0
-          ? html`
+        ${
+          inactiveOrder.length > 0
+            ? html`
             <div class="section-order-compact">
               <div class="compact-title">${localize('editor.stack_order_inactive')}</div>
               <div class="compact-chip-list">
@@ -158,7 +158,8 @@ export function renderStackOrderPanel(host: StrategyEditorHost,
               </div>
             </div>
           `
-          : nothing}
+            : nothing
+        }
       </div>
     </div>
   `;
@@ -166,10 +167,16 @@ export function renderStackOrderPanel(host: StrategyEditorHost,
 
 function handleStackDragStart(host: StrategyEditorHost, ev: DragEvent): void {
   const dragHandle = (ev.target as HTMLElement).closest('.drag-handle');
-  if (!dragHandle) { ev.preventDefault(); return; }
+  if (!dragHandle) {
+    ev.preventDefault();
+    return;
+  }
 
   const item = (ev.target as HTMLElement).closest('.section-order-item') as HTMLElement | null;
-  if (!item) { ev.preventDefault(); return; }
+  if (!item) {
+    ev.preventDefault();
+    return;
+  }
 
   item.classList.add('dragging');
   if (ev.dataTransfer) {
@@ -183,11 +190,9 @@ function handleStackDragEnd(host: StrategyEditorHost, ev: DragEvent): void {
   const item = (ev.target as HTMLElement).closest('.section-order-item') as HTMLElement | null;
   if (item) item.classList.remove('dragging');
 
-  host.shadowRoot
-    ?.querySelectorAll('.section-order-item.drag-over')
-    .forEach((el) => {
-      el.classList.remove('drag-over');
-    });
+  host.shadowRoot?.querySelectorAll('.section-order-item.drag-over').forEach((el) => {
+    el.classList.remove('drag-over');
+  });
   host._stackDraggedElement = null;
 }
 

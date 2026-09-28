@@ -56,15 +56,18 @@ export function renderDesignSection(host: StrategyEditorHost): TemplateResult {
         <select style="flex: 2;"
           @change=${(e: Event) => themeChanged(host, (e.target as HTMLSelectElement).value)}>
           <option value="" ?selected=${theme === ''}>${localize('editor.design_theme_default')}</option>
-          ${themeNames.map((name) => html`
+          ${themeNames.map(
+            (name) => html`
             <option value=${name} ?selected=${name === theme}>${name}</option>
-          `)}
+          `
+          )}
         </select>
       </div>
 
       <div style="margin-top: 12px;">
-        ${hasHaForm
-          ? html`
+        ${
+          hasHaForm
+            ? html`
             <ha-form
               .hass=${host._hass}
               .data=${{ image }}
@@ -73,28 +76,32 @@ export function renderDesignSection(host: StrategyEditorHost): TemplateResult {
               @value-changed=${(e: CustomEvent<{ value: { image?: string | MediaSelectorValue } }>) =>
                 backgroundImageChanged(host, e.detail.value.image)}
             ></ha-form>`
-          : html`
+            : html`
             <div class="custom-item-row" style="align-items: center;">
               <label style="flex: 1;">${localize('editor.design_bg_image_label')}:</label>
               <input type="text" style="flex: 2;" .value=${typeof image === 'string' ? image : ''}
                 placeholder="/local/hintergrund.jpg"
                 @change=${(e: Event) => backgroundImageChanged(host, (e.target as HTMLInputElement).value.trim())} />
-            </div>`}
+            </div>`
+        }
       </div>
       <div class="description">${localize('editor.design_bg_image_hint')}</div>
 
-      ${image
-        ? html`
+      ${
+        image
+          ? html`
           <div class="custom-item-row" style="align-items: center;">
             <label style="flex: 1;">${localize('editor.design_bg_opacity_label')}:</label>
             <input type="range" min="10" max="100" step="5" style="flex: 2;" .value=${String(opacity)}
               @change=${(e: Event) => backgroundOptionChanged(host, 'opacity', Number((e.target as HTMLInputElement).value))} />
             <span style="min-width: 42px; text-align: right;">${opacity}%</span>
           </div>
-          ${host._renderCheckbox('design-bg-fixed', localize('editor.design_bg_fixed_label'), fixed,
-            (checked) => backgroundOptionChanged(host, 'attachment', checked ? 'fixed' : undefined))}
+          ${host._renderCheckbox('design-bg-fixed', localize('editor.design_bg_fixed_label'), fixed, (checked) =>
+            backgroundOptionChanged(host, 'attachment', checked ? 'fixed' : undefined)
+          )}
         `
-        : nothing}
+          : nothing
+      }
   `;
 }
 
