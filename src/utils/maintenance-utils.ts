@@ -11,6 +11,12 @@
 // A single failing entity on an otherwise healthy device is deliberately
 // NOT flagged (too noisy — e.g. one broken template sensor). Entities
 // without a device (helpers, templates) are checked individually.
+//
+// Ignore list (maintenance_ignored_entities / _devices, #395): ignored
+// entities stay OUT of the unavailable scan (a device is then judged on
+// its remaining entities) but are collected separately, so the view can
+// say how many ignored entries are unavailable right now — real outages
+// must never disappear silently. Updates and batteries are unaffected.
 // ====================================================================
 
 import type { HomeAssistant, HassEntity } from '../types/homeassistant';
@@ -35,6 +41,10 @@ export interface MaintenanceScan {
   deviceGroups: string[][];
   /** Visible entities without a device — checked individually. */
   orphanIds: string[];
+  /** Ignored entities grouped per device (maintenance_ignored_*) — only for the "N ignored" hint. */
+  ignoredDeviceGroups: string[][];
+  /** Ignored entities without a device — only for the "N ignored" hint. */
+  ignoredOrphanIds: string[];
   /** Battery entities (same set as the batteries summary/view). */
   batteryIds: string[];
 }
@@ -58,16 +68,25 @@ export function collectUpdateIds(): string[] {
 export function buildMaintenanceScan(hass: HomeAssistant, config: Simon42StrategyConfig): MaintenanceScan {
   const updateIds = collectUpdateIds();
 
+  const ignoredEntities = new Set(config.maintenance_ignored_entities || []);
+  const ignoredDevices = new Set(config.maintenance_ignored_devices || []);
+
   const byDevice = new Map<string, string[]>();
+  const ignoredByDevice = new Map<string, string[]>();
   const orphanIds: string[] = [];
+  const ignoredOrphanIds: string[] = [];
   for (const entityId of Object.keys(hass.entities)) {
     if (Registry.isEntityExcluded(entityId)) continue;
     const entry = Registry.getEntity(entityId);
     const deviceId = entry?.device_id;
+    const ignored = ignoredEntities.has(entityId) || (!!deviceId && ignoredDevices.has(deviceId));
     if (deviceId) {
-      const group = byDevice.get(deviceId);
+      const target = ignored ? ignoredByDevice : byDevice;
+      const group = target.get(deviceId);
       if (group) group.push(entityId);
-      else byDevice.set(deviceId, [entityId]);
+      else target.set(deviceId, [entityId]);
+    } else if (ignored) {
+      ignoredOrphanIds.push(entityId);
     } else {
       orphanIds.push(entityId);
     }
@@ -77,6 +96,8 @@ export function buildMaintenanceScan(hass: HomeAssistant, config: Simon42Strateg
     updateIds,
     deviceGroups: [...byDevice.values()],
     orphanIds,
+    ignoredDeviceGroups: [...ignoredByDevice.values()],
+    ignoredOrphanIds,
     batteryIds: getBatteryEntities(hass, config),
   };
 }
@@ -100,20 +121,36 @@ function groupUnavailable(hass: HomeAssistant, entityIds: string[]): boolean {
   return seen;
 }
 
+/** Unavailable devices + unavailable orphan entities within the given buckets. */
+function countUnavailableIn(hass: HomeAssistant, deviceGroups: string[][], orphanIds: string[]): number {
+  let count = 0;
+  for (const group of deviceGroups) {
+    if (groupUnavailable(hass, group)) count++;
+  }
+  for (const id of orphanIds) {
+    if (stateFor(hass, id)?.state === 'unavailable') count++;
+  }
+  return count;
+}
+
 /**
  * Count unavailable devices + unavailable orphan entities.
  * Single pass with early exit per device — cheap enough for the
  * reactive summary card (runs on every relevant hass update).
  */
 export function countUnavailable(hass: HomeAssistant, scan: MaintenanceScan): number {
-  let count = 0;
-  for (const group of scan.deviceGroups) {
-    if (groupUnavailable(hass, group)) count++;
-  }
-  for (const id of scan.orphanIds) {
-    if (stateFor(hass, id)?.state === 'unavailable') count++;
-  }
-  return count;
+  return countUnavailableIn(hass, scan.deviceGroups, scan.orphanIds);
+}
+
+/**
+ * Ignored devices/entities that are unavailable RIGHT NOW — the
+ * "N ignored" hint next to the unavailable list. Same rules as
+ * countUnavailable (a device counts once, and only when all of its
+ * ignored entities are unavailable), so a configured-but-healthy
+ * entry does not count.
+ */
+export function countIgnoredUnavailable(hass: HomeAssistant, scan: MaintenanceScan): number {
+  return countUnavailableIn(hass, scan.ignoredDeviceGroups, scan.ignoredOrphanIds);
 }
 
 /** Critical batteries: numeric %-sensors below threshold, or binary battery sensors 'on'. */

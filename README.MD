@@ -518,6 +518,8 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_climate_view` | boolean | `false` | v1.4.0 | Klima-Unterseite (/climate) auch ohne Klima-Zusammenfassung bereitstellen |
 | `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
 | `show_battery_view` | boolean | `false` | v1.4.0 | Batterie-Unterseite (/batteries) auch ohne Batterie-Zusammenfassung bereitstellen |
+| `maintenance_ignored_entities` | string[] | `[]` | v1.4.2 | Entitäten, die auf der Wartungsseite und in der Wartungs-Kachel nicht als „nicht verfügbar" zählen — z.B. bewusst stromlose Geräte (Suchfeld im Editor). Anstehende Updates und kritische Batterien bleiben unberührt; die Wartungsseite zeigt „N ignoriert" |
+| `maintenance_ignored_devices` | string[] | `[]` | v1.4.2 | Wie `maintenance_ignored_entities`, aber für ganze Geräte inkl. aller ihrer Entitäten (Geräte-IDs; Suchfeld im Editor) |
 | `show_camera_view` | boolean | `false` | v1.4.0 | **Experimentell:** Kamera-Ansicht (/cameras) mit Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (siehe unten) |
 | `show_camera_events` | boolean | `false` | v1.4.0 | LLM Vision Ereignis-Timelines in der Kamera-Ansicht (Last-Hinweis siehe unten) |
 | `summaries_columns` | 2 \| 4 | `2` | — | Spalten-Layout der Zusammenfassungen |
