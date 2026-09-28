@@ -9,6 +9,8 @@
 import type { HomeAssistant } from '../types/homeassistant';
 import type { Simon42StrategyConfig, SectionKey, SectionOrderKey, CustomCard, HeadingKey } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
+import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/section-registry';
+import { localize } from '../utils/localize';
 import { validateCustomSections, buildCustomSection } from '../sections/CustomSections';
 import type { LovelaceViewConfig, LovelaceSectionConfig, LovelaceBadgeConfig, LovelaceCardConfig } from '../types/lovelace';
 import type { AreaRegistryEntry } from '../types/registries';
@@ -154,7 +156,29 @@ const SECTION_BUILDERS = new Map<SectionKey, SectionBuilder>(
   Object.entries(SECTION_BUILDER_IMPL) as [SectionKey, SectionBuilder][]
 );
 
-class Simon42ViewOverviewStrategy extends HTMLElement {
+/**
+ * Anchor for an auto-hidden built-in section that still has custom cards
+ * assigned via `target_section` (#429): heading only — the assembly loop
+ * appends the assigned cards. Returns null when the section is switched
+ * off by its toggle: then the user hid it on purpose and the assigned
+ * cards stay hidden with it.
+ */
+function buildAnchorSection(
+  key: SectionKey,
+  config: Simon42StrategyConfig,
+  hiddenHeadings: Set<HeadingKey>
+): LovelaceSectionConfig | null {
+  if (isSectionHiddenByConfig(key, config)) return null;
+  const meta = SECTION_META_BY_KEY.get(key);
+  if (!meta) return null;
+  const cards: LovelaceCardConfig[] = [];
+  if (!hiddenHeadings.has(key as HeadingKey)) {
+    cards.push({ type: 'heading', heading_style: 'title', heading: localize(meta.labelKey), icon: meta.icon });
+  }
+  return { type: 'grid', cards };
+}
+
+export class Simon42ViewOverviewStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
     timeStart('overview-generate');
     const dashboardConfig: Simon42StrategyConfig = config.dashboardConfig || {};
@@ -229,11 +253,21 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
       // user-declared custom sections (normalize guarantees one of the two).
       const builder = SECTION_BUILDERS.get(key as SectionKey);
       const customSection = customSectionByKey.get(key);
-      const result = builder
+      const assignedCount = key !== 'custom_cards' ? (customCardsBySection.get(key)?.length ?? 0) : 0;
+      const builderResult = builder
         ? builder(ctx)
         : customSection
-          ? buildCustomSection(customSection, (customCardsBySection.get(key)?.length ?? 0) > 0)
+          ? buildCustomSection(customSection, assignedCount > 0)
           : null;
+      // Auto-hide builders return null (or an empty array) when there is
+      // nothing to show — but custom cards assigned to that section via
+      // target_section must not vanish with it (#429). Keep a heading-only
+      // anchor section so the assigned cards still render in place.
+      const builderEmpty = !builderResult || (Array.isArray(builderResult) && builderResult.length === 0);
+      const result =
+        builderEmpty && builder && assignedCount > 0
+          ? buildAnchorSection(key as SectionKey, dashboardConfig, ctx.hiddenHeadings)
+          : builderResult;
       if (!result) continue;
       // Per-user section visibility (section_visible_users): native runtime
       // condition on the section, appended to any user-authored visibility
