@@ -592,6 +592,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_window_alerts_on_areas` | boolean | `false` | v1.4.0 | Offene Fenster als Alert-Icon auf Bereichskarten |
 | `show_switches_on_areas` | boolean | `false` | — | Schalter-Control auf Bereichskarten |
 | `use_default_area_sort` | boolean | `false` | — | HA-Sortierung für Bereiche verwenden |
+| `areas_sort_mode` | `manual` \| `ha_default` \| `occupancy_first` | `manual` | v1.4.0 | Reihenfolge der Bereichskarten; `occupancy_first` zeigt beim Öffnen belegte Bereiche zuerst |
 | `areas_display.hidden` | string[] | `[]` | — | Ausgeblendete Bereiche |
 | `areas_display.order` | string[] | `[]` | — | Reihenfolge der Bereiche |
 | `areas_options` | object | `{}` | — | Entity-Filterung pro Bereich |

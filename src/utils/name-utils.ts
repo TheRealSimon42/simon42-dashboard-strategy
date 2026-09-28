@@ -8,7 +8,13 @@
 import { Registry } from '../Registry';
 import type { HomeAssistant } from '../types/homeassistant';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../types/registries';
-import { DEFAULT_STACKS_ORDER, type AreasDisplay, type StackKey } from '../types/strategy';
+import {
+  DEFAULT_STACKS_ORDER,
+  type AreaSortMode,
+  type AreasDisplay,
+  type Simon42StrategyConfig,
+  type StackKey,
+} from '../types/strategy';
 
 // -- Module-level RegExp caches (shared across all calls) -------------
 
@@ -167,6 +173,46 @@ export function getVisibleAreasFromHass(
   useDefaultSort?: boolean
 ): AreaRegistryEntry[] {
   return getVisibleAreas(Object.values(hass.areas), displayConfig, useDefaultSort);
+}
+
+/**
+ * Resolve the new area sort mode while preserving legacy configurations.
+ * An explicit areas_sort_mode always wins over use_default_area_sort.
+ */
+export function resolveAreaSortMode(
+  config: Pick<Simon42StrategyConfig, 'areas_sort_mode' | 'use_default_area_sort'>
+): AreaSortMode {
+  const configured = config.areas_sort_mode;
+  if (configured === 'manual' || configured === 'ha_default' || configured === 'occupancy_first') {
+    return configured;
+  }
+  return config.use_default_area_sort === true ? 'ha_default' : 'manual';
+}
+
+const OCCUPANCY_DEVICE_CLASSES = new Set(['motion', 'occupancy', 'presence']);
+
+/**
+ * Move occupied areas to the front without changing the order within either
+ * group. Only visible binary sensors count, so hidden, diagnostic/config and
+ * no_dboard entities cannot make an area appear occupied.
+ */
+export function sortAreasByOccupancy(areas: AreaRegistryEntry[], hass: HomeAssistant): AreaRegistryEntry[] {
+  const occupied = new Set(
+    areas
+      .filter((area) =>
+        Registry.getVisibleEntitiesForArea(area.area_id).some((entity) => {
+          if (!entity.entity_id.startsWith('binary_sensor.')) return false;
+          const state = hass.states[entity.entity_id];
+          return state?.state === 'on' && OCCUPANCY_DEVICE_CLASSES.has(state.attributes?.device_class as string);
+        })
+      )
+      .map((area) => area.area_id)
+  );
+
+  return [
+    ...areas.filter((area) => occupied.has(area.area_id)),
+    ...areas.filter((area) => !occupied.has(area.area_id)),
+  ];
 }
 
 /**
