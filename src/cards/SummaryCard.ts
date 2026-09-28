@@ -10,6 +10,7 @@ import { localize } from '../utils/localize';
 import { getBatteryEntities, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 import { buildMaintenanceScan, countMaintenanceItems, type MaintenanceScan } from '../utils/maintenance-utils';
+import { countActiveClimateEntities } from '../utils/summary-view-utils';
 
 type SummaryType = 'lights' | 'covers' | 'security' | 'batteries' | 'climate' | 'maintenance';
 
@@ -282,12 +283,7 @@ class Simon42SummaryCard extends LitElement {
       }
 
       case 'climate':
-        for (const id of this._relevantEntityIds) {
-          if (!isEntityCurrentlyAvailable(hass, id, this._config)) continue;
-          const s = hass.states[id]?.state;
-          if (s && s !== 'off' && s !== 'unavailable' && s !== 'unknown') count++;
-        }
-        return count;
+        return countActiveClimateEntities(hass, this._relevantEntityIds, this._config);
 
       default:
         return 0;
@@ -361,7 +357,6 @@ class Simon42SummaryCard extends LitElement {
   }
 
   protected render() {
-
     const display = this._getDisplayConfig();
     const colorCss = COLOR_MAP[display.color] || COLOR_MAP.grey;
 
