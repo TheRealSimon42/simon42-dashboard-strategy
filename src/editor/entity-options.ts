@@ -161,3 +161,49 @@ export function getFilteredEntities(
   });
   return filtered.slice(0, 21);
 }
+
+// -- Devices (maintenance ignore list, #395) ---------------------------
+
+export interface DeviceSelectOption {
+  device_id: string;
+  name: string;
+  /** Secondary line: area and/or model — device ids are opaque to users. */
+  detail: string;
+}
+
+/**
+ * Devices carrying at least one registry entity (a device without
+ * entities can never show up as "unavailable"), sorted by name.
+ */
+export function getAllDevicesForSelect(hass: HomeAssistant | null): DeviceSelectOption[] {
+  if (!hass) return [];
+  const deviceIdsWithEntities = new Set<string>();
+  for (const entity of Object.values(hass.entities)) {
+    if (entity.device_id) deviceIdsWithEntities.add(entity.device_id);
+  }
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
+  const options: DeviceSelectOption[] = [];
+  for (const device of Object.values(hass.devices)) {
+    if (!deviceIdsWithEntities.has(device.id)) continue;
+    const areaId = getEffectiveDeviceAreaId(device, lookupDevice);
+    const area = areaId ? (Reflect.get(hass.areas, areaId) as { name?: string } | undefined) : undefined;
+    const detail = [area?.name, device.model].filter(Boolean).join(' · ') || device.id;
+    options.push({ device_id: device.id, name: device.name_by_user || device.name || device.id, detail });
+  }
+  return options.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Search over device name / detail / id — same 2-char minimum and 21-hit cap as the entity picker. */
+export function getFilteredDevices(hass: HomeAssistant | null, query: string): DeviceSelectOption[] {
+  if (!hass || query.length < 2) return [];
+  const q = query.toLowerCase();
+  return getAllDevicesForSelect(hass)
+    .filter((device) => {
+      return (
+        device.name.toLowerCase().includes(q) ||
+        device.detail.toLowerCase().includes(q) ||
+        device.device_id.toLowerCase().includes(q)
+      );
+    })
+    .slice(0, 21);
+}

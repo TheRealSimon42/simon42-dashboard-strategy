@@ -159,6 +159,14 @@ export interface Simon42StrategyConfig {
   // that see the maintenance tile + nav tab (native Lovelace user condition).
   // Display logic only — NOT a security boundary; the view stays reachable
   // by URL for everyone
+  maintenance_ignored_entities?: string[]; // default: [] — entity ids the
+  // maintenance tile + view skip when scanning for UNAVAILABLE entities
+  // (deliberately powered-off devices, seasonal hardware, …). Pending
+  // updates and critical batteries are unaffected. Ignored entries that
+  // are unavailable right now are counted and shown as "N ignored" so
+  // real outages never vanish silently (#395)
+  maintenance_ignored_devices?: string[]; // default: [] — same for whole
+  // devices (device ids; covers every entity of the device)
   show_maintenance_activity?: boolean; // default: true — logbook (24h) in
   // the maintenance view sidebar, scoped to exactly the entities the view
   // surfaces (pending updates, unavailable devices, critical batteries);
