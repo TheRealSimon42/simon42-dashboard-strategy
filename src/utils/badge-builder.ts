@@ -29,7 +29,7 @@ export type PersonBadgeLayout = 'minimal' | 'with_state' | 'with_state_and_time'
 export function createPersonBadges(
   persons: PersonData[],
   hass: HomeAssistant,
-  layout: PersonBadgeLayout = 'with_state',
+  layout: PersonBadgeLayout = 'with_state'
 ): LovelaceBadgeConfig[] {
   const badges: LovelaceBadgeConfig[] = [];
 

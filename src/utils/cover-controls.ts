@@ -23,11 +23,7 @@ function stateOf(hass: HomeAssistant, entityId: string): HassEntity | undefined 
 }
 
 /** Filter entities down to those whose supported_features contain the bit. */
-export function coversSupportingFeature(
-  entities: string[],
-  hass: HomeAssistant,
-  featureBit: number
-): string[] {
+export function coversSupportingFeature(entities: string[], hass: HomeAssistant, featureBit: number): string[] {
   const result: string[] = [];
   for (const entityId of entities) {
     const features = (stateOf(hass, entityId)?.attributes.supported_features as number | undefined) ?? 0;

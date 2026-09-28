@@ -33,12 +33,11 @@ import { stateFor } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
 import { setAreaDisplayTypeOverride, setGlobalAreaDisplayType } from '../area-display-options';
 import { renderStackOrderPanel } from './StackOrderPanel';
+import { deviceLookupFromRecord, getEffectiveDeviceAreaId } from '../../utils/device-utils';
 
 /** Injection-safe areas_options lookup (see CLAUDE.md Codacy pitfalls). */
 export function areaOptionsFor(config: Simon42StrategyConfig, areaId: string): AreaOptions | undefined {
-  return config.areas_options
-    ? (Reflect.get(config.areas_options, areaId) as AreaOptions | undefined)
-    : undefined;
+  return config.areas_options ? (Reflect.get(config.areas_options, areaId) as AreaOptions | undefined) : undefined;
 }
 
 interface DomainGroup {
@@ -76,8 +75,9 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
 
   return html`
 
-      ${host._renderCheckbox('group-by-floors', localize('editor.group_by_floors'), groupByFloors,
-        (checked) => host._toggleChanged('group_by_floors', checked, false))}
+      ${host._renderCheckbox('group-by-floors', localize('editor.group_by_floors'), groupByFloors, (checked) =>
+        host._toggleChanged('group_by_floors', checked, false)
+      )}
       <div class="description">${localize('editor.group_by_floors_desc')}</div>
 
       <div class="form-row">
@@ -91,82 +91,149 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
       </div>
       <div class="description">${localize('editor.area_display_type_desc')}</div>
 
-      ${host._renderCheckbox('show-switches-on-areas', localize('editor.show_switches_on_areas'), showSwitchesOnAreas,
-        (checked) => host._toggleChanged('show_switches_on_areas', checked, false))}
+      ${host._renderCheckbox(
+        'show-switches-on-areas',
+        localize('editor.show_switches_on_areas'),
+        showSwitchesOnAreas,
+        (checked) => host._toggleChanged('show_switches_on_areas', checked, false)
+      )}
       <div class="description">${localize('editor.show_switches_on_areas_desc')}</div>
 
-      ${host._renderCheckbox('show-alerts-on-areas', localize('editor.show_alerts_on_areas'), showAlertsOnAreas,
-        (checked) => host._toggleChanged('show_alerts_on_areas', checked, false))}
+      ${host._renderCheckbox(
+        'show-alerts-on-areas',
+        localize('editor.show_alerts_on_areas'),
+        showAlertsOnAreas,
+        (checked) => host._toggleChanged('show_alerts_on_areas', checked, false)
+      )}
       <div class="description">${localize('editor.show_alerts_on_areas_desc')}</div>
 
-      ${host._renderCheckbox('show-window-alerts-on-areas', localize('editor.show_window_alerts_on_areas'), showWindowAlertsOnAreas,
-        (checked) => host._toggleChanged('show_window_alerts_on_areas', checked, false))}
+      ${host._renderCheckbox(
+        'show-window-alerts-on-areas',
+        localize('editor.show_window_alerts_on_areas'),
+        showWindowAlertsOnAreas,
+        (checked) => host._toggleChanged('show_window_alerts_on_areas', checked, false)
+      )}
       <div class="description">${localize('editor.show_window_alerts_on_areas_desc')}</div>
 
-      ${host._renderCheckbox('show-locks-in-rooms', localize('editor.show_locks_in_rooms'), showLocksInRooms,
-        (checked) => host._toggleChanged('show_locks_in_rooms', checked, false))}
+      ${host._renderCheckbox(
+        'show-locks-in-rooms',
+        localize('editor.show_locks_in_rooms'),
+        showLocksInRooms,
+        (checked) => host._toggleChanged('show_locks_in_rooms', checked, false)
+      )}
       <div class="description">${localize('editor.show_locks_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-cover-controls-in-rooms', localize('editor.show_cover_controls_in_rooms'), showCoverControlsInRooms,
-        (checked) => host._toggleChanged('show_cover_controls_in_rooms', checked, true))}
+      ${host._renderCheckbox(
+        'show-cover-controls-in-rooms',
+        localize('editor.show_cover_controls_in_rooms'),
+        showCoverControlsInRooms,
+        (checked) => host._toggleChanged('show_cover_controls_in_rooms', checked, true)
+      )}
       <div class="description">${localize('editor.show_cover_controls_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-vacuums-section-in-rooms', localize('editor.show_vacuums_section_in_rooms'), showVacuumsSectionInRooms,
-        (checked) => host._toggleChanged('show_vacuums_section_in_rooms', checked, false))}
+      ${host._renderCheckbox(
+        'show-vacuums-section-in-rooms',
+        localize('editor.show_vacuums_section_in_rooms'),
+        showVacuumsSectionInRooms,
+        (checked) => host._toggleChanged('show_vacuums_section_in_rooms', checked, false)
+      )}
       <div class="description">${localize('editor.show_vacuums_section_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-switches-section-in-rooms', localize('editor.show_switches_section_in_rooms'), showSwitchesSectionInRooms,
-        (checked) => host._toggleChanged('show_switches_section_in_rooms', checked, false))}
+      ${host._renderCheckbox(
+        'show-switches-section-in-rooms',
+        localize('editor.show_switches_section_in_rooms'),
+        showSwitchesSectionInRooms,
+        (checked) => host._toggleChanged('show_switches_section_in_rooms', checked, false)
+      )}
       <div class="description">${localize('editor.show_switches_section_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-automations-in-rooms', localize('editor.show_automations_in_rooms'), showAutomationsInRooms,
-        (checked) => host._toggleChanged('show_automations_in_rooms', checked, false))}
+      ${host._renderCheckbox(
+        'show-automations-in-rooms',
+        localize('editor.show_automations_in_rooms'),
+        showAutomationsInRooms,
+        (checked) => host._toggleChanged('show_automations_in_rooms', checked, false)
+      )}
       <div class="description">${localize('editor.show_automations_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-scripts-in-rooms', localize('editor.show_scripts_in_rooms'), showScriptsInRooms,
-        (checked) => host._toggleChanged('show_scripts_in_rooms', checked, false))}
+      ${host._renderCheckbox(
+        'show-scripts-in-rooms',
+        localize('editor.show_scripts_in_rooms'),
+        showScriptsInRooms,
+        (checked) => host._toggleChanged('show_scripts_in_rooms', checked, false)
+      )}
       <div class="description">${localize('editor.show_scripts_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-ups-in-rooms', localize('editor.show_ups_in_rooms'), showUpsInRooms,
-        (checked) => host._toggleChanged('show_ups_in_rooms', checked, false))}
+      ${host._renderCheckbox('show-ups-in-rooms', localize('editor.show_ups_in_rooms'), showUpsInRooms, (checked) =>
+        host._toggleChanged('show_ups_in_rooms', checked, false)
+      )}
       <div class="description">${localize('editor.show_ups_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-energy-in-rooms', localize('editor.show_energy_in_rooms'), showEnergyInRooms,
-        (checked) => host._toggleChanged('show_energy_in_rooms', checked, false))}
+      ${host._renderCheckbox(
+        'show-energy-in-rooms',
+        localize('editor.show_energy_in_rooms'),
+        showEnergyInRooms,
+        (checked) => host._toggleChanged('show_energy_in_rooms', checked, false)
+      )}
       <div class="description">${localize('editor.show_energy_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-window-contacts-in-rooms', localize('editor.show_window_contacts_in_rooms'), showWindowContactsInRooms,
+      ${host._renderCheckbox(
+        'show-window-contacts-in-rooms',
+        localize('editor.show_window_contacts_in_rooms'),
+        showWindowContactsInRooms,
         (checked) => {
           host._toggleChanged('show_window_contacts_in_rooms', checked, true);
           refreshAllAreaCaches(host);
-        })}
+        }
+      )}
       <div class="description">${localize('editor.show_window_contacts_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-door-contacts-in-rooms', localize('editor.show_door_contacts_in_rooms'), showDoorContactsInRooms,
+      ${host._renderCheckbox(
+        'show-door-contacts-in-rooms',
+        localize('editor.show_door_contacts_in_rooms'),
+        showDoorContactsInRooms,
         (checked) => {
           host._toggleChanged('show_door_contacts_in_rooms', checked, true);
           refreshAllAreaCaches(host);
-        })}
+        }
+      )}
       <div class="description">${localize('editor.show_door_contacts_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('show-cameras-in-rooms', localize('editor.show_cameras_in_rooms'), showCamerasInRooms,
-        (checked) => host._toggleChanged('show_cameras_in_rooms', checked, true))}
+      ${host._renderCheckbox(
+        'show-cameras-in-rooms',
+        localize('editor.show_cameras_in_rooms'),
+        showCamerasInRooms,
+        (checked) => host._toggleChanged('show_cameras_in_rooms', checked, true)
+      )}
       <div class="description">${localize('editor.show_cameras_in_rooms_desc')}</div>
-      ${showCamerasInRooms ? html`
+      ${
+        showCamerasInRooms
+          ? html`
         <div style="margin-left: 26px;">
-          ${host._renderCheckbox('camera-live-toggle', localize('editor.camera_live_toggle'),
+          ${host._renderCheckbox(
+            'camera-live-toggle',
+            localize('editor.camera_live_toggle'),
             host._config.camera_live_toggle === true,
-            (checked) => host._toggleChanged('camera_live_toggle', checked, false))}
+            (checked) => host._toggleChanged('camera_live_toggle', checked, false)
+          )}
           <div class="description">${localize('editor.camera_live_toggle_desc')}</div>
         </div>
-      ` : nothing}
-      ${host._renderCheckbox('hide-unavailable-in-rooms', localize('editor.hide_unavailable_in_rooms'),
+      `
+          : nothing
+      }
+      ${host._renderCheckbox(
+        'hide-unavailable-in-rooms',
+        localize('editor.hide_unavailable_in_rooms'),
         host._config.hide_unavailable_in_rooms !== false,
-        (checked) => host._toggleChanged('hide_unavailable_in_rooms', checked, true))}
+        (checked) => host._toggleChanged('hide_unavailable_in_rooms', checked, true)
+      )}
       <div class="description">${localize('editor.hide_unavailable_in_rooms_desc')}</div>
 
-      ${host._renderCheckbox('use-default-area-sort', localize('editor.use_default_area_sort'), useDefaultAreaSort,
-        (checked) => host._toggleChanged('use_default_area_sort', checked, false))}
+      ${host._renderCheckbox(
+        'use-default-area-sort',
+        localize('editor.use_default_area_sort'),
+        useDefaultAreaSort,
+        (checked) => host._toggleChanged('use_default_area_sort', checked, false)
+      )}
       <div class="description">${localize('editor.use_default_area_sort_desc')}</div>
 
       <div class="description" style="margin-left: 0; margin-top: 16px; margin-bottom: 12px;">
@@ -185,10 +252,13 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
           <div class="description" style="margin-left: 0; margin-bottom: 8px;">
             ${localize('editor.room_visibility_desc')}
           </div>
-          ${allAreas.filter((a) => !hiddenAreas.includes(a.area_id)).map((area) => {
-            const rule = Reflect.get(host._config.room_visibility || {}, area.area_id) as
-              { entity: string; state: string } | undefined;
-            return html`
+          ${allAreas
+            .filter((a) => !hiddenAreas.includes(a.area_id))
+            .map((area) => {
+              const rule = Reflect.get(host._config.room_visibility || {}, area.area_id) as
+                | { entity: string; state: string }
+                | undefined;
+              return html`
               <div style="border: 1px solid var(--divider-color); border-radius: 6px; padding: 8px; margin-bottom: 8px;">
                 <div style="font-weight: 500; margin-bottom: 6px;">${area.name}</div>
                 <div class="form-row">
@@ -207,13 +277,18 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
                 </div>
               </div>
             `;
-          })}
+            })}
         </div>
       </details>
   `;
 }
 
-function roomVisibilityChanged(host: StrategyEditorHost, areaId: string, field: 'entity' | 'state', value: string): void {
+function roomVisibilityChanged(
+  host: StrategyEditorHost,
+  areaId: string,
+  field: 'entity' | 'state',
+  value: string
+): void {
   const updated: Simon42StrategyConfig = { ...host._config };
   const current = { ...(updated.room_visibility || {}) };
   const existing = Reflect.get(current, areaId) as { entity: string; state: string } | undefined;
@@ -233,7 +308,8 @@ function roomVisibilityChanged(host: StrategyEditorHost, areaId: string, field: 
   host._fireConfigChanged(updated);
 }
 
-function renderAreaItems(host: StrategyEditorHost, 
+function renderAreaItems(
+  host: StrategyEditorHost,
   allAreas: AreaRegistryEntry[],
   hiddenAreas: string[],
   areaOrder: string[],
@@ -278,7 +354,10 @@ function renderAreaItems(host: StrategyEditorHost,
           <button class="nav-pin-button ${isPinned ? 'pinned' : ''}"
             title="${localize('editor.area_pin_nav')}"
             ?disabled=${isHidden}
-            @click=${(e: Event) => { e.stopPropagation(); areaNavPinChanged(host, area.area_id, !isPinned); }}>
+            @click=${(e: Event) => {
+              e.stopPropagation();
+              areaNavPinChanged(host, area.area_id, !isPinned);
+            }}>
             <ha-icon icon="${isPinned ? 'mdi:pin' : 'mdi:pin-outline'}"></ha-icon>
           </button>
           <button class="expand-button ${isExpanded ? 'expanded' : ''}"
@@ -288,20 +367,24 @@ function renderAreaItems(host: StrategyEditorHost,
             <span class="expand-icon">&#x25B6;</span>
           </button>
         </div>
-        ${isExpanded
-          ? html`
+        ${
+          isExpanded
+            ? html`
             <div class="area-content" data-area-id=${area.area_id}>
               ${renderAreaDisplayTypeOverride(host, area)}
-              ${cachedData
-                ? html`
+              ${
+                cachedData
+                  ? html`
                   ${renderAreaEntities(host, area.area_id, cachedData)}
                   ${renderStackOrderPanel(host, area.area_id, cachedData)}
                 `
-                : html`<div class="loading-placeholder">${localize('editor.loading_entities')}</div>`}
+                  : html`<div class="loading-placeholder">${localize('editor.loading_entities')}</div>`
+              }
               ${renderAreaCustomSections(host, area.area_id)}
             </div>
           `
-          : nothing}
+            : nothing
+        }
       </div>
     `;
   });
@@ -320,11 +403,12 @@ function renderAreaDisplayTypeOverride(host: StrategyEditorHost, area: AreaRegis
       <label for="area-display-type-${area.area_id}">${localize('editor.area_display_type_override')}</label>
       <select id="area-display-type-${area.area_id}"
         .value=${override}
-        @change=${(e: Event) => areaDisplayTypeOverrideChanged(
-          host,
-          area.area_id,
-          (e.target as HTMLSelectElement).value as AreaDisplayType | ''
-        )}>
+        @change=${(e: Event) =>
+          areaDisplayTypeOverrideChanged(
+            host,
+            area.area_id,
+            (e.target as HTMLSelectElement).value as AreaDisplayType | ''
+          )}>
         <option value="">${localize('editor.area_display_type_inherit')}</option>
         <option value="compact">${localize('editor.area_display_type_compact')}</option>
         <option value="picture">${localize('editor.area_display_type_picture')}</option>
@@ -344,7 +428,8 @@ function areaDisplayTypeOverrideChanged(
   host._fireConfigChanged(newConfig);
 }
 
-function renderAreaEntities(host: StrategyEditorHost, 
+function renderAreaEntities(
+  host: StrategyEditorHost,
   areaId: string,
   data: NonNullable<ReturnType<typeof host._areaEntitiesCache.get>>
 ): TemplateResult {
@@ -388,7 +473,9 @@ function renderAreaEntities(host: StrategyEditorHost,
     ['energy', host._config.show_energy_in_rooms !== true],
   ]);
 
-  const hasEntities = domainGroups.some((g) => ((Reflect.get(groupedEntities, g.key) as string[] | undefined)?.length ?? 0) > 0);
+  const hasEntities = domainGroups.some(
+    (g) => ((Reflect.get(groupedEntities, g.key) as string[] | undefined)?.length ?? 0) > 0
+  );
   const hasBadges = badgeCandidates.length > 0 || additionalBadges.length > 0;
 
   if (!hasEntities && !hasBadges) {
@@ -411,9 +498,15 @@ function renderAreaEntities(host: StrategyEditorHost,
 
         return html`
           <div class="entity-group ${isGroupDisabled ? 'disabled' : ''}" data-group=${group.key}
-            title=${isGroupDisabled
-              ? localize(group.key === 'cameras' ? 'editor.domain_cameras_disabled_hint' : 'editor.domain_group_disabled_hint')
-              : ''}>
+            title=${
+              isGroupDisabled
+                ? localize(
+                    group.key === 'cameras'
+                      ? 'editor.domain_cameras_disabled_hint'
+                      : 'editor.domain_group_disabled_hint'
+                  )
+                : ''
+            }>
             <div class="entity-group-header"
               @click=${() => toggleGroupExpand(host, areaId, group.key)}>
               <input type="checkbox" class="group-checkbox"
@@ -432,12 +525,16 @@ function renderAreaEntities(host: StrategyEditorHost,
               <span class="group-name">${group.label}</span>
               <span class="entity-count">(${entities.length})</span>
               <button class="expand-button-small ${isGroupExpanded ? 'expanded' : ''}"
-                @click=${(e: Event) => { e.stopPropagation(); toggleGroupExpand(host, areaId, group.key); }}>
+                @click=${(e: Event) => {
+                  e.stopPropagation();
+                  toggleGroupExpand(host, areaId, group.key);
+                }}>
                 <span class="expand-icon-small">&#x25B6;</span>
               </button>
             </div>
-            ${isGroupExpanded
-              ? html`
+            ${
+              isGroupExpanded
+                ? html`
                 <div class="entity-list" data-area-id=${areaId} data-group=${group.key}>
                   ${entities.map((entityId) => {
                     const stateObj = stateFor(hass, entityId);
@@ -456,18 +553,33 @@ function renderAreaEntities(host: StrategyEditorHost,
                   })}
                 </div>
               `
-              : nothing}
+                : nothing
+            }
           </div>
         `;
       })}
-      ${hasBadges
-        ? renderBadgeGroup(host, areaId, badgeCandidates, additionalBadges, availableEntities, hiddenEntities, defaultShowNames, namesVisible, namesHidden, expandedGroups)
-        : nothing}
+      ${
+        hasBadges
+          ? renderBadgeGroup(
+              host,
+              areaId,
+              badgeCandidates,
+              additionalBadges,
+              availableEntities,
+              hiddenEntities,
+              defaultShowNames,
+              namesVisible,
+              namesHidden,
+              expandedGroups
+            )
+          : nothing
+      }
     </div>
   `;
 }
 
-function renderBadgeGroup(host: StrategyEditorHost, 
+function renderBadgeGroup(
+  host: StrategyEditorHost,
   areaId: string,
   badgeCandidates: string[],
   additionalBadges: string[],
@@ -515,12 +627,16 @@ function renderBadgeGroup(host: StrategyEditorHost,
         <span class="group-name">${localize('editor.domain_badges')}</span>
         <span class="entity-count">(${totalCount})</span>
         <button class="expand-button-small ${isGroupExpanded ? 'expanded' : ''}"
-          @click=${(e: Event) => { e.stopPropagation(); toggleGroupExpand(host, areaId, 'badges'); }}>
+          @click=${(e: Event) => {
+            e.stopPropagation();
+            toggleGroupExpand(host, areaId, 'badges');
+          }}>
           <span class="expand-icon-small">&#x25B6;</span>
         </button>
       </div>
-      ${isGroupExpanded
-        ? html`
+      ${
+        isGroupExpanded
+          ? html`
           <div class="entity-list" data-area-id=${areaId} data-group="badges">
             ${badgeCandidates.map((entityId) => {
               const stateObj = stateFor(hass, entityId);
@@ -544,8 +660,9 @@ function renderBadgeGroup(host: StrategyEditorHost,
               `;
             })}
 
-            ${additionalBadges.length > 0
-              ? html`
+            ${
+              additionalBadges.length > 0
+                ? html`
                 <div class="badge-separator">${localize('editor.badges_additional')}</div>
                 ${additionalBadges.map((entityId) => {
                   const stateObj = stateFor(hass, entityId);
@@ -568,16 +685,20 @@ function renderBadgeGroup(host: StrategyEditorHost,
                   `;
                 })}
               `
-              : nothing}
+                : nothing
+            }
 
-            ${availableEntities.length > 0
-              ? html`
+            ${
+              availableEntities.length > 0
+                ? html`
                 <div class="badge-add-section">
                   <select class="badge-entity-picker" data-area-id=${areaId}>
                     <option value="">${localize('editor.badges_select_entity')}</option>
-                    ${availableEntities.map((e) => html`
+                    ${availableEntities.map(
+                      (e) => html`
                       <option value=${e.entity_id}>${e.name} (${e.entity_id})</option>
-                    `)}
+                    `
+                    )}
                   </select>
                   <button class="badge-add-button"
                     @click=${(e: Event) => addBadgeFromPicker(host, e, areaId)}>
@@ -585,10 +706,12 @@ function renderBadgeGroup(host: StrategyEditorHost,
                   </button>
                 </div>
               `
-              : nothing}
+                : nothing
+            }
           </div>
         `
-        : nothing}
+          : nothing
+      }
     </div>
   `;
 }
@@ -710,7 +833,12 @@ function updateAreaCustomSectionPosition(host: StrategyEditorHost, areaId: strin
   setAreaCustomSections(host, areaId, sections);
 }
 
-function updateAreaCustomSectionYaml(host: StrategyEditorHost, areaId: string, index: number, yamlString: string): void {
+function updateAreaCustomSectionYaml(
+  host: StrategyEditorHost,
+  areaId: string,
+  index: number,
+  yamlString: string
+): void {
   const sections = [...getAreaCustomSections(host, areaId)];
   const existing = sections.at(index);
   if (!existing) return;
@@ -757,7 +885,8 @@ function renderAreaCustomSections(host: StrategyEditorHost, areaId: string): Tem
   `;
 }
 
-function renderAreaCustomSectionItem(host: StrategyEditorHost, 
+function renderAreaCustomSectionItem(
+  host: StrategyEditorHost,
   areaId: string,
   section: AreaCustomSection,
   index: number
@@ -892,7 +1021,13 @@ function toggleGroupExpand(host: StrategyEditorHost, areaId: string, groupKey: s
   host._expandedGroups = newExpandedGroups;
 }
 
-function groupVisibilityChanged(host: StrategyEditorHost, areaId: string, group: string, isVisible: boolean, entities: string[]): void {
+function groupVisibilityChanged(
+  host: StrategyEditorHost,
+  areaId: string,
+  group: string,
+  isVisible: boolean,
+  entities: string[]
+): void {
   if (!host._hass) return;
 
   const currentAreaOptions = areaOptionsFor(host._config, areaId) || {};
@@ -909,7 +1044,13 @@ function groupVisibilityChanged(host: StrategyEditorHost, areaId: string, group:
   updateEntityConfig(host, areaId, group, hiddenEntities);
 }
 
-function entityVisibilityChanged(host: StrategyEditorHost, areaId: string, group: string, entityId: string, isVisible: boolean): void {
+function entityVisibilityChanged(
+  host: StrategyEditorHost,
+  areaId: string,
+  group: string,
+  entityId: string,
+  isVisible: boolean
+): void {
   if (!host._hass) return;
 
   // Handle badge additional entities
@@ -1112,9 +1253,8 @@ function badgeShowNameChanged(host: StrategyEditorHost, areaId: string, entityId
 
 function addBadgeFromPicker(host: StrategyEditorHost, e: Event, areaId: string): void {
   e.stopPropagation();
-  const picker = (host.shadowRoot?.querySelector(
-    `.badge-entity-picker[data-area-id="${areaId}"]`
-  ) ?? null) as HTMLSelectElement | null;
+  const picker = (host.shadowRoot?.querySelector(`.badge-entity-picker[data-area-id="${areaId}"]`) ??
+    null) as HTMLSelectElement | null;
   if (!picker || !picker.value) return;
 
   const entityId = picker.value;
@@ -1162,7 +1302,7 @@ function handleDragOver(host: StrategyEditorHost, ev: DragEvent): void {
   ev.preventDefault();
   if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
 
-  const item = (ev.currentTarget as HTMLElement);
+  const item = ev.currentTarget as HTMLElement;
   if (item !== host._draggedElement) {
     item.classList.add('drag-over');
   }
@@ -1206,7 +1346,6 @@ function getAreaOrder(host: StrategyEditorHost): string[] {
 }
 
 function updateAreaOrder(host: StrategyEditorHost, newOrder: string[]): void {
-
   const newConfig: Simon42StrategyConfig = {
     ...host._config,
     areas_display: {
@@ -1226,10 +1365,11 @@ function updateAreaOrder(host: StrategyEditorHost, newOrder: string[]): void {
 async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Promise<RoomEntities> {
   const devices = Object.values(hass.devices);
   const entities = Object.values(hass.entities);
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
 
   const areaDevices = new Set<string>();
   for (const device of devices) {
-    if (device.area_id === areaId) {
+    if (getEffectiveDeviceAreaId(device, lookupDevice) === areaId) {
       areaDevices.add(device.id);
     }
   }
@@ -1279,8 +1419,7 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
     // them in the picker either (#397).
     if (entity.entity_category === 'config' || entity.entity_category === 'diagnostic') continue;
 
-    const entityRegistry = Reflect.get(hass.entities, entity.entity_id) as
-      EntityRegistryEntry | undefined;
+    const entityRegistry = Reflect.get(hass.entities, entity.entity_id) as EntityRegistryEntry | undefined;
     if (entityRegistry?.hidden) continue;
 
     areaEntries.push(entity);
@@ -1304,7 +1443,12 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
     } else if (domain === 'cover') {
       if (deviceClass === 'curtain') {
         roomEntities.covers_curtain.push(entity.entity_id);
-      } else if (deviceClass === 'window' || deviceClass === 'door' || deviceClass === 'gate' || deviceClass === 'garage') {
+      } else if (
+        deviceClass === 'window' ||
+        deviceClass === 'door' ||
+        deviceClass === 'gate' ||
+        deviceClass === 'garage'
+      ) {
         roomEntities.covers_window.push(entity.entity_id);
       } else {
         roomEntities.covers.push(entity.entity_id);
@@ -1346,10 +1490,11 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
 function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Simon42StrategyConfig): string[] {
   const devices = Object.values(hass.devices);
   const entities = Object.values(hass.entities);
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
 
   const areaDevices = new Set<string>();
   for (const device of devices) {
-    if (device.area_id === areaId) areaDevices.add(device.id);
+    if (getEffectiveDeviceAreaId(device, lookupDevice) === areaId) areaDevices.add(device.id);
   }
 
   const candidates: string[] = [];
@@ -1406,10 +1551,11 @@ function getAvailableBadgeEntities(
   const devices = Object.values(hass.devices);
   const entities = Object.values(hass.entities);
   const excludeSet = new Set([...existingCandidates, ...existingAdditional]);
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
 
   const areaDevices = new Set<string>();
   for (const device of devices) {
-    if (device.area_id === areaId) areaDevices.add(device.id);
+    if (getEffectiveDeviceAreaId(device, lookupDevice) === areaId) areaDevices.add(device.id);
   }
 
   const available: Array<{ entity_id: string; name: string }> = [];

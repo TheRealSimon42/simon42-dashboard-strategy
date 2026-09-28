@@ -9,8 +9,15 @@
 import type { HomeAssistant } from '../types/homeassistant';
 import type { Simon42StrategyConfig, SectionKey, SectionOrderKey, CustomCard, HeadingKey } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
+import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/section-registry';
+import { localize } from '../utils/localize';
 import { validateCustomSections, buildCustomSection } from '../sections/CustomSections';
-import type { LovelaceViewConfig, LovelaceSectionConfig, LovelaceBadgeConfig, LovelaceCardConfig } from '../types/lovelace';
+import type {
+  LovelaceViewConfig,
+  LovelaceSectionConfig,
+  LovelaceBadgeConfig,
+  LovelaceCardConfig,
+} from '../types/lovelace';
 import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
 import { collectPersons, findWeatherEntity, findDummySensor } from '../utils/entity-filter';
@@ -28,6 +35,7 @@ import { createMaintenanceSection } from '../sections/MaintenanceSection';
 import { createOverviewView } from '../utils/view-builder';
 import { getSectionVisibleUsers, userVisibilityConditions } from '../utils/view-visibility';
 import { timeStart, timeEnd, debugLog } from '../utils/debug';
+import { hasState } from '../utils/state-utils';
 
 /**
  * Normalizes a sections_order array: removes invalid/duplicate keys,
@@ -142,8 +150,7 @@ const SECTION_BUILDER_IMPL: Record<SectionKey, SectionBuilder> = {
   plants: ({ hass, config }) => createPlantsSection(hass, config.show_plants_section === true),
   agenda: ({ hass, config }) =>
     createAgendaSection(hass, config.show_agenda_section === true, config.agenda_calendar_entities),
-  todos: ({ hass, config }) =>
-    createTodosSection(hass, config.show_todos_section === true, config.todos_entities),
+  todos: ({ hass, config }) => createTodosSection(hass, config.show_todos_section === true, config.todos_entities),
   persons: ({ hass, config }) => createPersonsSection(hass, config.show_persons_section === true),
   vacuums: ({ hass, config }) => createVacuumsSection(hass, config.show_vacuums_section === true),
   maintenance: ({ hass, config }) => createMaintenanceSection(hass, config.show_maintenance_section === true),
@@ -154,7 +161,29 @@ const SECTION_BUILDERS = new Map<SectionKey, SectionBuilder>(
   Object.entries(SECTION_BUILDER_IMPL) as [SectionKey, SectionBuilder][]
 );
 
-class Simon42ViewOverviewStrategy extends HTMLElement {
+/**
+ * Anchor for an auto-hidden built-in section that still has custom cards
+ * assigned via `target_section` (#429): heading only — the assembly loop
+ * appends the assigned cards. Returns null when the section is switched
+ * off by its toggle: then the user hid it on purpose and the assigned
+ * cards stay hidden with it.
+ */
+function buildAnchorSection(
+  key: SectionKey,
+  config: Simon42StrategyConfig,
+  hiddenHeadings: Set<HeadingKey>
+): LovelaceSectionConfig | null {
+  if (isSectionHiddenByConfig(key, config)) return null;
+  const meta = SECTION_META_BY_KEY.get(key);
+  if (!meta) return null;
+  const cards: LovelaceCardConfig[] = [];
+  if (!hiddenHeadings.has(key as HeadingKey)) {
+    cards.push({ type: 'heading', heading_style: 'title', heading: localize(meta.labelKey), icon: meta.icon });
+  }
+  return { type: 'grid', cards };
+}
+
+export class Simon42ViewOverviewStrategy extends HTMLElement {
   static async generate(config: any, hass: HomeAssistant): Promise<LovelaceViewConfig> {
     timeStart('overview-generate');
     const dashboardConfig: Simon42StrategyConfig = config.dashboardConfig || {};
@@ -163,7 +192,11 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     Registry.initialize(hass, dashboardConfig);
 
     // Visible areas (filtered + sorted by config)
-    const visibleAreas = getVisibleAreas(Registry.areas, dashboardConfig.areas_display, dashboardConfig.use_default_area_sort);
+    const visibleAreas = getVisibleAreas(
+      Registry.areas,
+      dashboardConfig.areas_display,
+      dashboardConfig.use_default_area_sort
+    );
 
     // Collect data for overview
     const persons = collectPersons(hass, dashboardConfig);
@@ -171,9 +204,7 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     // exists in this hass instance, otherwise fall back to auto-discovery.
     const configuredWeather = dashboardConfig.weather_entity;
     const weatherEntity =
-      configuredWeather && hass.states[configuredWeather]
-        ? configuredWeather
-        : findWeatherEntity(hass);
+      configuredWeather && hasState(hass, configuredWeather) ? configuredWeather : findWeatherEntity(hass);
     const someSensorId = findDummySensor(hass);
 
     // Person badges (default-on; suppress via show_person_badges=false to swap in
@@ -222,18 +253,30 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
     for (const key of sectionsOrder) {
       const rule = Reflect.get(sectionVisibility, key) as { entity?: string; state?: string } | undefined;
       if (rule?.entity) {
-        const entState = Reflect.get(hass.states as Record<string, unknown>, rule.entity) as { state?: string } | undefined;
+        const entState = Reflect.get(hass.states as Record<string, unknown>, rule.entity) as
+          | { state?: string }
+          | undefined;
         if (!entState || entState.state !== rule.state) continue;
       }
       // Built-in sections come from the builder map; unknown keys are
       // user-declared custom sections (normalize guarantees one of the two).
       const builder = SECTION_BUILDERS.get(key as SectionKey);
       const customSection = customSectionByKey.get(key);
-      const result = builder
+      const assignedCount = key !== 'custom_cards' ? (customCardsBySection.get(key)?.length ?? 0) : 0;
+      const builderResult = builder
         ? builder(ctx)
         : customSection
-          ? buildCustomSection(customSection, (customCardsBySection.get(key)?.length ?? 0) > 0)
+          ? buildCustomSection(customSection, assignedCount > 0)
           : null;
+      // Auto-hide builders return null (or an empty array) when there is
+      // nothing to show — but custom cards assigned to that section via
+      // target_section must not vanish with it (#429). Keep a heading-only
+      // anchor section so the assigned cards still render in place.
+      const builderEmpty = !builderResult || (Array.isArray(builderResult) && builderResult.length === 0);
+      const result =
+        builderEmpty && builder && assignedCount > 0
+          ? buildAnchorSection(key as SectionKey, dashboardConfig, ctx.hiddenHeadings)
+          : builderResult;
       if (!result) continue;
       // Per-user section visibility (section_visible_users): native runtime
       // condition on the section, appended to any user-authored visibility
@@ -370,15 +413,19 @@ class Simon42ViewOverviewStrategy extends HTMLElement {
       }
     }
 
-    return createOverviewView(overviewSections, [
-      ...personBadges,
-      ...powerBadges,
-      ...alertBadges,
-      ...nowPlayingBadges,
-      ...sunBadges,
-      ...updatesBadges,
-      ...customBadges,
-    ], dashboardConfig);
+    return createOverviewView(
+      overviewSections,
+      [
+        ...personBadges,
+        ...powerBadges,
+        ...alertBadges,
+        ...nowPlayingBadges,
+        ...sunBadges,
+        ...updatesBadges,
+        ...customBadges,
+      ],
+      dashboardConfig
+    );
   }
 }
 

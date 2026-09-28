@@ -7,6 +7,7 @@
 // ====================================================================
 
 import type { HomeAssistant, HassEntity } from '../types/homeassistant';
+import { deviceLookupFromRecord, getEffectiveDeviceAreaId } from '../utils/device-utils';
 
 export interface AlarmEntityOption {
   entity_id: string;
@@ -31,13 +32,15 @@ export function getAllEntitiesForSelect(hass: HomeAssistant | null): EntitySelec
   const entities = Object.values(hass.entities);
   const devices = Object.values(hass.devices);
 
-  // Build device-to-area lookup
+  // Build device-to-area lookup (child devices inherit their parent's area, HA 2026.9+)
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
   const deviceAreaMap = new Map<string, string>();
-  devices.forEach((device) => {
-    if (device.area_id) {
-      deviceAreaMap.set(device.id, device.area_id);
+  for (const device of devices) {
+    const effectiveAreaId = getEffectiveDeviceAreaId(device, lookupDevice);
+    if (effectiveAreaId) {
+      deviceAreaMap.set(device.id, effectiveAreaId);
     }
-  });
+  }
 
   return Object.keys(hass.states)
     .map((entityId) => {
@@ -82,8 +85,7 @@ export function getSelectEntities(hass: HomeAssistant | null): AlarmEntityOption
       // Device selects are mostly config/diagnostic (camera settings, WLED
       // presets, …) — a house mode is a user-facing control, so hide
       // categorized entities from the picker (same check as #397).
-      const registryEntry = Reflect.get(hass.entities, entityId) as
-        { entity_category?: string | null } | undefined;
+      const registryEntry = Reflect.get(hass.entities, entityId) as { entity_category?: string | null } | undefined;
       return registryEntry?.entity_category !== 'config' && registryEntry?.entity_category !== 'diagnostic';
     })
     .map((entityId) => {
@@ -134,7 +136,7 @@ export function getPowerSensorEntities(hass: HomeAssistant | null): AlarmEntityO
 export function getFilteredEntities(
   hass: HomeAssistant | null,
   query: string,
-  filterWithArea = false,
+  filterWithArea = false
 ): EntitySelectOption[] {
   if (!hass || query.length < 2) return [];
   const q = query.toLowerCase();

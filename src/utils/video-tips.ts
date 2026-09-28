@@ -20,12 +20,18 @@ function hasPlatformEntity(hass: HomeAssistant, platform: string): boolean {
 }
 
 function hasDeviceModel(hass: HomeAssistant, needles: readonly string[]): boolean {
-  const lowered = needles.map(function toLower(n) { return n.toLowerCase(); });
+  const lowered = needles.map(function toLower(n) {
+    return n.toLowerCase();
+  });
   for (const device of Object.values(hass.devices)) {
     const model = (device.model ?? '').toLowerCase();
     const modelId = (device.model_id ?? '').toLowerCase();
     if (!model && !modelId) continue;
-    if (lowered.some(function contains(n) { return model.includes(n) || modelId.includes(n); })) {
+    if (
+      lowered.some(function contains(n) {
+        return model.includes(n) || modelId.includes(n);
+      })
+    ) {
       return true;
     }
   }
@@ -36,13 +42,21 @@ function tipMatches(hass: HomeAssistant, tip: VideoTip): boolean {
   const components = hass.config?.components;
   if (tip.componentsAny) {
     if (!components) return false;
-    if (!tip.componentsAny.some(function isLoaded(domain) { return components.includes(domain); })) {
+    if (
+      !tip.componentsAny.some(function isLoaded(domain) {
+        return components.includes(domain);
+      })
+    ) {
       return false;
     }
   }
   // Setup videos vanish once the thing they teach is already installed
   if (tip.notComponentsAny && components) {
-    if (tip.notComponentsAny.some(function isLoaded(domain) { return components.includes(domain); })) {
+    if (
+      tip.notComponentsAny.some(function isLoaded(domain) {
+        return components.includes(domain);
+      })
+    ) {
       return false;
     }
   }
@@ -75,7 +89,11 @@ export function readDismissedTips(): Set<string> {
     if (!raw) return new Set();
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return new Set();
-    return new Set(parsed.filter(function isString(v): v is string { return typeof v === 'string'; }));
+    return new Set(
+      parsed.filter(function isString(v): v is string {
+        return typeof v === 'string';
+      })
+    );
   } catch (error: unknown) {
     void error; // corrupt storage → behave like "nothing dismissed"
     return new Set();

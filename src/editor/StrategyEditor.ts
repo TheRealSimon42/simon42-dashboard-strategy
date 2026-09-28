@@ -14,12 +14,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 
 import type { HomeAssistant } from '../types/homeassistant';
-import type {
-  Simon42StrategyConfig,
-  SectionKey,
-  SectionOrderKey,
-  StackKey,
-} from '../types/strategy';
+import type { Simon42StrategyConfig, SectionKey, SectionOrderKey, StackKey } from '../types/strategy';
 import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
 // Pure-data section registry (no builder imports — safe for the editor chunk)
 import { SECTION_META_BY_KEY } from '../sections/section-registry';
@@ -43,11 +38,7 @@ import { renderSectionOrderPanel } from './panels/SectionOrderPanel';
 import { renderDesignSection } from './panels/DesignPanel';
 import { renderSummariesSection } from './panels/SummariesPanel';
 import { renderAreasSection, areaOptionsFor } from './panels/AreasPanel';
-import {
-  renderCollapsiblePanel,
-  loadExpandedPanels,
-  type PanelMeta,
-} from './panels/panel-shell';
+import { renderCollapsiblePanel, loadExpandedPanels, type PanelMeta } from './panels/panel-shell';
 import { mergeStacksOrder } from '../utils/name-utils';
 
 // -- Supporting types for the editor ------------------------------------
@@ -66,17 +57,48 @@ const PANELS: Record<string, PanelMeta> = {
   overview: { key: 'overview', icon: 'mdi:view-dashboard-outline', labelKey: 'editor.section_overview' },
   summaries: { key: 'summaries', icon: 'mdi:counter', labelKey: 'editor.section_summaries' },
   favorites: { key: 'favorites', icon: 'mdi:star-outline', labelKey: 'editor.section_favorites' },
-  light_favorites: { key: 'light_favorites', icon: 'mdi:lightbulb-on-outline', labelKey: 'editor.section_light_favorites' },
+  light_favorites: {
+    key: 'light_favorites',
+    icon: 'mdi:lightbulb-on-outline',
+    labelKey: 'editor.section_light_favorites',
+  },
   areas: { key: 'areas', icon: 'mdi:floor-plan', labelKey: 'editor.section_areas' },
   room_pins: { key: 'room_pins', icon: 'mdi:pin-outline', labelKey: 'editor.section_room_pins' },
   views: { key: 'views', icon: 'mdi:tab', labelKey: 'editor.section_views' },
-  view_visibility: { key: 'view_visibility', icon: 'mdi:account-eye-outline', labelKey: 'editor.section_view_visibility' },
+  view_visibility: {
+    key: 'view_visibility',
+    icon: 'mdi:account-eye-outline',
+    labelKey: 'editor.section_view_visibility',
+  },
   section_order: { key: 'section_order', icon: 'mdi:sort', labelKey: 'editor.section_order' },
-  weather_sensors: { key: 'weather_sensors', icon: 'mdi:weather-partly-cloudy', labelKey: 'editor.section_weather_sensors' },
-  custom_cards: { key: 'custom_cards', icon: 'mdi:card-plus-outline', labelKey: 'editor.section_custom_cards', tutorialUrl: `${ASSETS}/Eigene-Karten-hinzufugen.gif` },
-  custom_sections: { key: 'custom_sections', icon: 'mdi:view-grid-plus-outline', labelKey: 'editor.section_custom_sections' },
-  custom_badges: { key: 'custom_badges', icon: 'mdi:label-outline', labelKey: 'editor.section_custom_badges', tutorialUrl: `${ASSETS}/Custom-Badges-hinzufugen.gif` },
-  custom_views: { key: 'custom_views', icon: 'mdi:tab-plus', labelKey: 'editor.section_custom_views', tutorialUrl: `${ASSETS}/Custom-View-hinzufugen.gif` },
+  weather_sensors: {
+    key: 'weather_sensors',
+    icon: 'mdi:weather-partly-cloudy',
+    labelKey: 'editor.section_weather_sensors',
+  },
+  custom_cards: {
+    key: 'custom_cards',
+    icon: 'mdi:card-plus-outline',
+    labelKey: 'editor.section_custom_cards',
+    tutorialUrl: `${ASSETS}/Eigene-Karten-hinzufugen.gif`,
+  },
+  custom_sections: {
+    key: 'custom_sections',
+    icon: 'mdi:view-grid-plus-outline',
+    labelKey: 'editor.section_custom_sections',
+  },
+  custom_badges: {
+    key: 'custom_badges',
+    icon: 'mdi:label-outline',
+    labelKey: 'editor.section_custom_badges',
+    tutorialUrl: `${ASSETS}/Custom-Badges-hinzufugen.gif`,
+  },
+  custom_views: {
+    key: 'custom_views',
+    icon: 'mdi:tab-plus',
+    labelKey: 'editor.section_custom_views',
+    tutorialUrl: `${ASSETS}/Custom-View-hinzufugen.gif`,
+  },
   design: { key: 'design', icon: 'mdi:palette-swatch-outline', labelKey: 'editor.section_design' },
 };
 
@@ -234,7 +256,6 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   }
 
   // -- Overview section --------------------------------------------------
-
 
   // ====================================================================
   // ITEM RENDERERS

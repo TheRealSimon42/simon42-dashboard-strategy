@@ -1,6 +1,6 @@
 {
   "name": "simon42-dashboard-strategy",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "js-yaml": "^4.3.1",
+    "js-yaml": "^4.3.2",
     "lit": "^3.3.2"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.10",
+    "vitest": "^4.1.11",
     "webpack": "^5.105.4",
     "webpack-cli": "^7.0.2"
   }

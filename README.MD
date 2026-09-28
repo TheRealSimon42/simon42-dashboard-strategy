@@ -637,7 +637,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 
 | Option | Typ | Standard | Seit | Beschreibung |
 |--------|-----|----------|------|-------------|
-| `custom_cards` | object[] | `[]` | — | Eigene Karten via YAML; `target_section` wählt die Ziel-Section (Dropdown im Editor ab v1.4.0) |
+| `custom_cards` | object[] | `[]` | — | Eigene Karten via YAML; `target_section` wählt die Ziel-Section (Dropdown im Editor ab v1.4.0). Ist die Ziel-Section leer (z.B. keine sichtbaren To-do-Listen), bleibt sie ab v1.4.1 als Anker mit Überschrift stehen, damit die zugewiesenen Karten nicht verschwinden; per Schalter deaktivierte Sections bleiben samt Karten ausgeblendet |
 | `custom_cards_heading` | string | `"Eigene Karten"` | — | Überschrift der Custom Cards Section |
 | `custom_cards_icon` | string | `"mdi:cards"` | — | Icon der Custom Cards Section |
 | `custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke auf der Übersicht (Key + kompletter Section-Code als YAML — siehe oben) |
@@ -680,9 +680,10 @@ Die Strategy erkennt automatisch die Sprache aus deinen Home Assistant Einstellu
 |---------|--------|
 | 🇩🇪 Deutsch | Vollständig |
 | 🇬🇧 English | Vollständig |
+| 🇭🇺 Magyar | Vollständig |
 | 🇷🇺 Русский | Vollständig *(ab v1.3.5)* |
 
-**Weitere Sprachen hinzufügen:** Erstelle eine neue Datei `src/translations/<code>.json` (z.B. `fr.json`) nach dem Muster der bestehenden Dateien und öffne einen Pull Request. Der Aufwand ist gering — es müssen nur die Strings übersetzt werden, kein Code.
+**Weitere Sprachen hinzufügen:** Erstelle eine neue Datei `src/translations/<code>.json` (z.B. `fr.json`) nach dem Muster von `en.json`, registriere sie in `src/utils/localize.ts` und `scripts/lint-translations.mjs` und öffne einen Pull Request. Führe anschließend `node scripts/lint-translations.mjs`, Tests und Build aus.
 
 ## Contributing
 

@@ -27,12 +27,18 @@ const ICON_RE = /^[a-z]+:[a-z0-9-]+$/;
 function escapeHtml(input: string): string {
   return input.replace(/[&<>"']/g, (c) => {
     switch (c) {
-      case '&': return '&amp;';
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '"': return '&quot;';
-      case "'": return '&#39;';
-      default: return c;
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return c;
     }
   });
 }
@@ -67,15 +73,10 @@ function buildWeatherSensorRow(sensors: WeatherSensorConfig[]): LovelaceCardConf
     if (typeof s.entity !== 'string' || !ENTITY_ID_RE.test(s.entity)) continue;
 
     const icon = typeof s.icon === 'string' && ICON_RE.test(s.icon) ? s.icon : 'mdi:gauge';
-    const round =
-      typeof s.round === 'number' && Number.isInteger(s.round) && s.round >= 0
-        ? s.round
-        : undefined;
+    const round = typeof s.round === 'number' && Number.isInteger(s.round) && s.round >= 0 ? s.round : undefined;
 
     const valueExpr =
-      round !== undefined
-        ? `{{ states("${s.entity}") | float(0) | round(${round}) }}`
-        : `{{ states("${s.entity}") }}`;
+      round !== undefined ? `{{ states("${s.entity}") | float(0) | round(${round}) }}` : `{{ states("${s.entity}") }}`;
 
     const unit = typeof s.unit === 'string' && s.unit.length > 0 ? ` ${escapeHtml(s.unit)}` : '';
 
@@ -172,10 +173,7 @@ ${localize('pollen.none')}{% endif %}`;
  * Returns null for `none` — caller emits no built-in card and the section
  * relies entirely on appended custom_cards.
  */
-function buildPresentationCard(
-  weatherEntity: string,
-  presentation: WeatherPresentation
-): LovelaceCardConfig | null {
+function buildPresentationCard(weatherEntity: string, presentation: WeatherPresentation): LovelaceCardConfig | null {
   switch (presentation) {
     case 'forecast_daily':
       return { type: 'weather-forecast', entity: weatherEntity, forecast_type: 'daily' };
@@ -218,8 +216,7 @@ export function createWeatherSection(
 ): LovelaceSectionConfig | null {
   if (!weatherEntity || !showWeather) return null;
 
-  const resolvedPresentation: WeatherPresentation =
-    presentation ?? (showForecastCard ? 'forecast_daily' : 'none');
+  const resolvedPresentation: WeatherPresentation = presentation ?? (showForecastCard ? 'forecast_daily' : 'none');
 
   const cards: LovelaceCardConfig[] = [];
   if (!hideHeading) {
