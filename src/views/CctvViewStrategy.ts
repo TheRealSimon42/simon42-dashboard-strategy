@@ -286,7 +286,7 @@ function cameraDisplayName(cameraId: string, hass: HomeAssistant): string {
 export function cameraBlockAreaId(block: CameraBlock): string | null {
   const entity = Registry.getEntity(block.cameraId);
   if (entity?.area_id) return entity.area_id;
-  return block.deviceId ? Registry.getDevice(block.deviceId)?.area_id || null : null;
+  return block.deviceId ? Registry.getDeviceAreaId(block.deviceId) : null;
 }
 
 /**
@@ -361,7 +361,7 @@ export function collectCameraBlocks(
 function cameraSortKey(block: CameraBlock, hass: HomeAssistant): string {
   const entity = Registry.getEntity(block.cameraId);
   const areaId =
-    entity?.area_id || (block.deviceId ? Registry.getDevice(block.deviceId)?.area_id : null);
+    entity?.area_id || (block.deviceId ? Registry.getDeviceAreaId(block.deviceId) : null);
   const area = areaId ? (Reflect.get(hass.areas, areaId) as AreaRegistryEntry | undefined) : undefined;
   const areaName = area?.name || '';
   return `${areaName}|${cameraDisplayName(block.cameraId, hass)}`;
