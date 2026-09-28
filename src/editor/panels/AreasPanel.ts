@@ -33,6 +33,7 @@ import { stateFor } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
 import { setAreaDisplayTypeOverride, setGlobalAreaDisplayType } from '../area-display-options';
 import { renderStackOrderPanel } from './StackOrderPanel';
+import { deviceLookupFromRecord, getEffectiveDeviceAreaId } from '../../utils/device-utils';
 
 /** Injection-safe areas_options lookup (see CLAUDE.md Codacy pitfalls). */
 export function areaOptionsFor(config: Simon42StrategyConfig, areaId: string): AreaOptions | undefined {
@@ -1226,10 +1227,11 @@ function updateAreaOrder(host: StrategyEditorHost, newOrder: string[]): void {
 async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Promise<RoomEntities> {
   const devices = Object.values(hass.devices);
   const entities = Object.values(hass.entities);
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
 
   const areaDevices = new Set<string>();
   for (const device of devices) {
-    if (device.area_id === areaId) {
+    if (getEffectiveDeviceAreaId(device, lookupDevice) === areaId) {
       areaDevices.add(device.id);
     }
   }
@@ -1346,10 +1348,11 @@ async function getAreaGroupedEntities(areaId: string, hass: HomeAssistant): Prom
 function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Simon42StrategyConfig): string[] {
   const devices = Object.values(hass.devices);
   const entities = Object.values(hass.entities);
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
 
   const areaDevices = new Set<string>();
   for (const device of devices) {
-    if (device.area_id === areaId) areaDevices.add(device.id);
+    if (getEffectiveDeviceAreaId(device, lookupDevice) === areaId) areaDevices.add(device.id);
   }
 
   const candidates: string[] = [];
@@ -1406,10 +1409,11 @@ function getAvailableBadgeEntities(
   const devices = Object.values(hass.devices);
   const entities = Object.values(hass.entities);
   const excludeSet = new Set([...existingCandidates, ...existingAdditional]);
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
 
   const areaDevices = new Set<string>();
   for (const device of devices) {
-    if (device.area_id === areaId) areaDevices.add(device.id);
+    if (getEffectiveDeviceAreaId(device, lookupDevice) === areaId) areaDevices.add(device.id);
   }
 
   const available: Array<{ entity_id: string; name: string }> = [];

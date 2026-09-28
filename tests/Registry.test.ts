@@ -132,3 +132,40 @@ describe('badges pseudo-group exclusion (#396)', () => {
     expect(Registry.getVisibleEntitiesForArea('kitchen')).toHaveLength(0);
   });
 });
+
+describe('Registry child devices (HA 2026.9+)', () => {
+  // A child device (parent_device_id) without an area inherits its parent's
+  // area — entities on it must land in the parent's room, not in "no area".
+  const spec = {
+    areas: [
+      { area_id: 'kitchen', name: 'Kitchen' },
+      { area_id: 'garage', name: 'Garage' },
+    ],
+    devices: [
+      { id: 'cam', area_id: 'kitchen', name: 'Dual-lens camera' },
+      { id: 'cam_lens2', area_id: null, parent_device_id: 'cam', name: 'Lens 2' },
+      { id: 'cam_lens3', area_id: 'garage', parent_device_id: 'cam', name: 'Lens 3' },
+    ],
+    entities: [
+      { entity_id: 'camera.lens1', device_id: 'cam' },
+      { entity_id: 'camera.lens2', device_id: 'cam_lens2' },
+      { entity_id: 'camera.lens3', device_id: 'cam_lens3' },
+    ],
+  };
+
+  it('resolves the effective device area through the parent', () => {
+    Registry.initialize(makeHass(spec), {});
+    expect(Registry.getDeviceAreaId('cam')).toBe('kitchen');
+    expect(Registry.getDeviceAreaId('cam_lens2')).toBe('kitchen');
+    expect(Registry.getDeviceAreaId('cam_lens3')).toBe('garage');
+    expect(Registry.getDeviceAreaId('unknown')).toBeNull();
+  });
+
+  it('groups entities on child devices into the inherited area', () => {
+    Registry.initialize(makeHass(spec), {});
+    const kitchen = Registry.getVisibleEntitiesForArea('kitchen').map((e) => e.entity_id);
+    const garage = Registry.getVisibleEntitiesForArea('garage').map((e) => e.entity_id);
+    expect(kitchen).toEqual(['camera.lens1', 'camera.lens2']);
+    expect(garage).toEqual(['camera.lens3']);
+  });
+});

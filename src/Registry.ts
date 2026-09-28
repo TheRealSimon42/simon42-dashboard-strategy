@@ -20,6 +20,7 @@ import type {
 import type { Simon42StrategyConfig } from './types/strategy';
 import { timeStart, timeEnd, debugLog } from './utils/debug';
 import { setupLocalize } from './utils/localize';
+import { getEffectiveDeviceAreaId } from './utils/device-utils';
 
 /**
  * Static singleton registry that holds all HA registry data and provides
@@ -61,7 +62,7 @@ class Registry {
   /** Entity IDs grouped by device_id */
   private static _entitiesByDevice: Map<string, string[]>;
 
-  /** Entity registry entries grouped by resolved area_id (entity.area_id || device.area_id) */
+  /** Entity registry entries grouped by resolved area_id (entity.area_id || effective device area, see getDeviceAreaId) */
   private static _entitiesByArea: Map<string, EntityRegistryEntry[]>;
 
   /** Entity IDs grouped by domain prefix (e.g. "light", "sensor") */
@@ -270,7 +271,7 @@ class Registry {
     Registry._configDiagEntitiesByArea = new Map();
 
     for (const e of entities) {
-      const areaId = e.area_id || (e.device_id ? Registry._deviceById.get(e.device_id)?.area_id : undefined);
+      const areaId = e.area_id || (e.device_id ? Registry.getDeviceAreaId(e.device_id) : undefined);
       if (!areaId) continue;
 
       // Raw map (all entities in area)
@@ -427,6 +428,17 @@ class Registry {
   /** Get device registry entry by device id. O(1). */
   static getDevice(deviceId: string): DeviceRegistryEntry | undefined {
     return Registry._deviceById.get(deviceId);
+  }
+
+  /**
+   * Effective area of a device: its own area or, for child devices
+   * (HA 2026.9+, `parent_device_id`), the parent's area. Always use this
+   * instead of `getDevice(id)?.area_id` when resolving entity areas.
+   */
+  static getDeviceAreaId(deviceId: string): string | null {
+    return getEffectiveDeviceAreaId(Registry._deviceById.get(deviceId), function lookup(id: string) {
+      return Registry._deviceById.get(id);
+    });
   }
 
   // =====================================================================

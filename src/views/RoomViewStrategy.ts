@@ -153,10 +153,7 @@ function getAreasRoomPins(config: RoomPinsConfig, area: AreaRegistryEntry): stri
     const entity = Registry.getEntity(entityId);
     if (!entity) return false;
     if (entity.area_id === area.area_id) return true;
-    if (entity.device_id) {
-      const device = Registry.getDevice(entity.device_id);
-      if (device?.area_id === area.area_id) return true;
-    }
+    if (entity.device_id && Registry.getDeviceAreaId(entity.device_id) === area.area_id) return true;
     return false;
   });
 }

@@ -109,6 +109,8 @@ Raw Maps stay available for the Editor (needs all entities for show/hide toggles
 
 Downstream code uses pre-filtered methods directly — no redundant inline checks.
 
+**Area resolution** (entity → area): `entity.area_id` → device area → parent device area. Since HA 2026.9 a device can be a *child* of another device (`parent_device_id`, e.g. one sub-device per camera lens); a child with `area_id: null` inherits the parent's area, exactly like HA's own `getDeviceAreaId`. Always resolve via `Registry.getDeviceAreaId(deviceId)` (or `getEffectiveDeviceAreaId()` from `utils/device-utils.ts` in the editor, which reads `hass.devices`) — never read `device.area_id` directly, or entities on child devices silently drop out of their room.
+
 ### Entity Filtering Pipeline
 
 ```

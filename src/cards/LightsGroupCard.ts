@@ -252,8 +252,7 @@ class Simon42LightsGroupCard extends LitElement {
     const entity = Registry.getEntity(entityId);
     let areaId: string | null = entity?.area_id ?? null;
     if (!areaId && entity?.device_id) {
-      const device = Registry.getDevice(entity.device_id);
-      areaId = device?.area_id ?? null;
+      areaId = Registry.getDeviceAreaId(entity.device_id);
     }
     this._cachedAreaForEntity.set(entityId, areaId);
     return areaId;
