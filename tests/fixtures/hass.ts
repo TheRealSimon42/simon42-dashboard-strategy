@@ -30,6 +30,7 @@ interface EntityFixture {
 interface DeviceFixture {
   id: string;
   area_id?: string | null;
+  parent_device_id?: string | null;
   manufacturer?: string;
   model?: string;
   name?: string | null;

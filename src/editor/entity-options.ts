@@ -7,6 +7,7 @@
 // ====================================================================
 
 import type { HomeAssistant, HassEntity } from '../types/homeassistant';
+import { deviceLookupFromRecord, getEffectiveDeviceAreaId } from '../utils/device-utils';
 
 export interface AlarmEntityOption {
   entity_id: string;
@@ -31,13 +32,15 @@ export function getAllEntitiesForSelect(hass: HomeAssistant | null): EntitySelec
   const entities = Object.values(hass.entities);
   const devices = Object.values(hass.devices);
 
-  // Build device-to-area lookup
+  // Build device-to-area lookup (child devices inherit their parent's area, HA 2026.9+)
+  const lookupDevice = deviceLookupFromRecord(hass.devices);
   const deviceAreaMap = new Map<string, string>();
-  devices.forEach((device) => {
-    if (device.area_id) {
-      deviceAreaMap.set(device.id, device.area_id);
+  for (const device of devices) {
+    const effectiveAreaId = getEffectiveDeviceAreaId(device, lookupDevice);
+    if (effectiveAreaId) {
+      deviceAreaMap.set(device.id, effectiveAreaId);
     }
-  });
+  }
 
   return Object.keys(hass.states)
     .map((entityId) => {

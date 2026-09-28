@@ -46,7 +46,7 @@ function resolveAreaId(entityId: string): string | null {
   const entry = Registry.getEntity(entityId);
   if (!entry) return null;
   if (entry.area_id) return entry.area_id;
-  if (entry.device_id) return Registry.getDevice(entry.device_id)?.area_id || null;
+  if (entry.device_id) return Registry.getDeviceAreaId(entry.device_id);
   return null;
 }
 

@@ -78,6 +78,10 @@ const COVER_TERM_REGEXPS = COVER_TERMS.map((term) => new RegExp(`^${term}\\s+|\\
 
 const DEFAULT_DEVICE_CLASSES = ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'];
 
+// Cover states _getRelevantCovers() can bucket on directly. Anything else
+// (chiefly "unknown", from feedback-less covers) is treated as indeterminate.
+const KNOWN_COVER_STATES = new Set(['open', 'opening', 'closing', 'closed']);
+
 class Simon42CoversGroupCard extends LitElement {
   static properties = {
     hass: { attribute: false },
@@ -184,6 +188,10 @@ class Simon42CoversGroupCard extends LitElement {
       const position = (state.attributes as any)?.current_position;
       const hasPosition = typeof position === 'number';
       const isMoving = state.state === 'opening' || state.state === 'closing';
+      // Feedback-less covers (e.g. Somfy io remotes without position sensors,
+      // see #439) never report open/opening/closing/closed — just "unknown".
+      // Treat them as open rather than silently dropping them from every group.
+      const isIndeterminate = state.state !== 'unavailable' && !KNOWN_COVER_STATES.has(state.state);
 
       if (groupType === 'partially_open') {
         // Partially open: position between 0 and 100 (open or currently moving)
@@ -193,7 +201,7 @@ class Simon42CoversGroupCard extends LitElement {
           }
         }
       } else if (groupType === 'open') {
-        if (state.state === 'open' || state.state === 'opening') {
+        if (state.state === 'open' || state.state === 'opening' || isIndeterminate) {
           if (showPartiallyOpen) {
             // Only fully open (100%) or covers without position attribute
             if (!hasPosition || position >= 100) {
@@ -232,8 +240,7 @@ class Simon42CoversGroupCard extends LitElement {
     const entity = Registry.getEntity(entityId);
     let areaId: string | null = entity?.area_id ?? null;
     if (!areaId && entity?.device_id) {
-      const device = Registry.getDevice(entity.device_id);
-      areaId = device?.area_id ?? null;
+      areaId = Registry.getDeviceAreaId(entity.device_id);
     }
     this._cachedAreaForEntity.set(entityId, areaId);
     return areaId;

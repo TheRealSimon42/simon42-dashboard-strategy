@@ -171,7 +171,8 @@ export function listUnavailableBlocks(hass: HomeAssistant, scan: MaintenanceScan
       device?.name ||
       stateFor(hass, representativeId)?.attributes?.friendly_name ||
       representativeId;
-    const areaId = device?.area_id ?? entry?.area_id ?? null;
+    const deviceAreaId = entry?.device_id ? Registry.getDeviceAreaId(entry.device_id) : null;
+    const areaId = deviceAreaId ?? entry?.area_id ?? null;
     blocks.push({
       representativeId,
       name: String(name),
