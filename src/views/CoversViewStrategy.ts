@@ -5,6 +5,7 @@
 import type { LovelaceViewConfig } from '../types/lovelace';
 import { localize } from '../utils/localize';
 import { densePlacement } from '../utils/view-builder';
+import { summaryHiddenAreas } from '../utils/area-utils';
 
 class Simon42ViewCoversStrategy extends HTMLElement {
   static async generate(config: any, _hass: any): Promise<LovelaceViewConfig> {
@@ -12,6 +13,9 @@ class Simon42ViewCoversStrategy extends HTMLElement {
     const showPartiallyOpen = strategyConfig.show_partially_open_covers === true;
     const groupByFloors = strategyConfig.group_covers_by_floors === true;
     const groupByAreas = strategyConfig.group_covers_by_areas === true;
+    // Only with hide_hidden_areas_in_summaries (#428) — by default every
+    // group card (covers, awnings, windows) lists all visible covers
+    const hiddenAreas = summaryHiddenAreas(strategyConfig);
 
     // Separate awnings and windows from other covers — they have different semantics
     const allDeviceClasses = config.device_classes || ['awning', 'blind', 'curtain', 'shade', 'shutter', 'window'];
@@ -19,7 +23,12 @@ class Simon42ViewCoversStrategy extends HTMLElement {
     const hasAwnings = allDeviceClasses.includes('awning');
     const hasWindows = allDeviceClasses.includes('window');
 
-    const baseConfig = { entities: config.entities, config: config.config, group_by_areas: groupByAreas };
+    const baseConfig = {
+      entities: config.entities,
+      config: config.config,
+      group_by_areas: groupByAreas,
+      ...(hiddenAreas ? { hidden_areas: hiddenAreas } : {}),
+    };
 
     // Rollos & Vorhänge
     const cards: any[] = [

@@ -9,6 +9,7 @@
 // ====================================================================
 
 import type { HomeAssistant } from '../types/homeassistant';
+import type { Simon42StrategyConfig } from '../types/strategy';
 import { Registry } from '../Registry';
 
 /**
@@ -17,13 +18,21 @@ import { Registry } from '../Registry';
  * device area). Returns null when no area can be determined.
  */
 export function resolveAreaId(entityId: string): string | null {
-  const entry = Registry.getEntity(entityId);
-  if (!entry) return null;
-  if (entry.area_id) return entry.area_id;
-  if (entry.device_id) {
-    return Registry.getDeviceAreaId(entry.device_id);
-  }
-  return null;
+  return Registry.getAreaIdForEntity(entityId);
+}
+
+/**
+ * Areas the lights/covers/climate views and their summary tiles must leave
+ * out (#428): the overview-hidden areas (areas_display.hidden), but only
+ * with the opt-in hide_hidden_areas_in_summaries. By default hiding an area
+ * card keeps its entities in those views and counts. Returns undefined when
+ * nothing is to be excluded, so callers can omit the card-config key and
+ * existing configs generate byte-identical output.
+ */
+export function summaryHiddenAreas(config: Simon42StrategyConfig): string[] | undefined {
+  if (config.hide_hidden_areas_in_summaries !== true) return undefined;
+  const hidden = config.areas_display?.hidden;
+  return hidden && hidden.length > 0 ? hidden : undefined;
 }
 
 /**

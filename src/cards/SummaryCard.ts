@@ -34,6 +34,12 @@ interface SummaryCardConfig {
   // opt-in (#426): hide the tile while its count is 0 — the strategy sets
   // this for the maintenance tile only (hide_maintenance_summary_when_ok)
   hide_when_ok?: boolean;
+  /** Areas whose entities the lights/covers/climate counts leave out (set by
+   *  the overview from areas_display.hidden with hide_hidden_areas_in_summaries,
+   *  #428). Unset = count every visible entity, whatever its area. The security
+   *  count follows hide_hidden_areas_in_security instead; batteries and
+   *  maintenance never filter by area. */
+  hidden_areas?: string[];
 }
 
 interface DisplayConfig {
@@ -173,17 +179,20 @@ class Simon42SummaryCard extends LitElement {
     const type = this._config.summary_type;
     timeStart(`summary-getRelevant-${type}`);
     const hass = this.hass;
+    // Only lights/covers/climate honour hidden_areas — built once per cache
+    // rebuild, never per hass update.
+    const hiddenAreas = this._hiddenAreaSet();
     let result: string[];
 
     switch (this._config.summary_type) {
       case 'lights':
-        result = Registry.getVisibleEntityIdsForDomain('light').filter(
+        result = Registry.getVisibleEntityIdsForDomain('light', hiddenAreas).filter(
           (id) => hass.states[id] && this._isEntityRelevant(id, hass.states[id])
         );
         break;
 
       case 'covers':
-        result = Registry.getVisibleEntityIdsForDomain('cover').filter((id) => {
+        result = Registry.getVisibleEntityIdsForDomain('cover', hiddenAreas).filter((id) => {
           const state = hass.states[id];
           if (!state) return false;
           if (!this._isEntityRelevant(id, state)) return false;
@@ -234,7 +243,7 @@ class Simon42SummaryCard extends LitElement {
       }
 
       case 'climate':
-        result = Registry.getVisibleEntityIdsForDomain('climate').filter(
+        result = Registry.getVisibleEntityIdsForDomain('climate', hiddenAreas).filter(
           (id) => hass.states[id] && this._isEntityRelevant(id, hass.states[id])
         );
         break;
@@ -254,6 +263,12 @@ class Simon42SummaryCard extends LitElement {
     this._relevantEntityIds = new Set(result);
     debugLog(`summary-${type}: ${result.length} relevant entities`);
     timeEnd(`summary-getRelevant-${type}`);
+  }
+
+  /** hidden_areas as a Set — undefined when the tile excludes no area. */
+  private _hiddenAreaSet(): Set<string> | undefined {
+    const hidden = this._config.hidden_areas;
+    return Array.isArray(hidden) && hidden.length > 0 ? new Set(hidden) : undefined;
   }
 
   private _calculateCount(): number {

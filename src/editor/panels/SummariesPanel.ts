@@ -237,6 +237,14 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
       </div>
 
       ${host._renderCheckbox(
+        'hide-hidden-areas-in-summaries',
+        localize('editor.hide_hidden_areas_in_summaries'),
+        host._config.hide_hidden_areas_in_summaries === true,
+        (checked) => host._toggleChanged('hide_hidden_areas_in_summaries', checked, false)
+      )}
+      <div class="description">${localize('editor.hide_hidden_areas_in_summaries_desc')}</div>
+
+      ${host._renderCheckbox(
         'show-climate-summary',
         localize('editor.show_climate_summary'),
         showClimateSummary,

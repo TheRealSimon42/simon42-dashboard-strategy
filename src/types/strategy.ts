@@ -204,6 +204,15 @@ export interface Simon42StrategyConfig {
   // hidden areas out of BOTH security layouts AND the camera blocks
   // (security + CCTV view). Room views and the overview stay unaffected
   // either way
+  hide_hidden_areas_in_summaries?: boolean; // default: false — hiding an
+  // area on the overview only removes its area card; its lights, covers and
+  // thermostats stay in the lights/covers/climate views and in the summary
+  // tile counts (some users hide a storeroom card but still want its light
+  // counted, #428). true = leave those areas out there as well — flat and
+  // area-grouped lights/covers views, the climate view and the three tile
+  // counts. Security keeps its own hide_hidden_areas_in_security; batteries
+  // and maintenance are untouched (a low battery in a hidden area is still
+  // a maintenance fact)
   show_security_activity?: boolean; // default: true — activity log in the
   // security view (24h logbook over security entities + persons, like
   // HA's security panel); auto-hides when logbook is not loaded

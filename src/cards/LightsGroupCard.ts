@@ -31,11 +31,18 @@ interface LightsGroupConfig {
   area?: AreaRegistryEntry;
   default_expanded?: boolean;
   sort_by?: 'last_changed' | 'name';
+  /** Areas whose lights this card leaves out entirely (set by the lights view
+   *  from areas_display.hidden with hide_hidden_areas_in_summaries, #428).
+   *  Unset = every visible light, whatever its area. */
+  hidden_areas?: string[];
 }
 
 interface LightsAreaGroup {
   areaId: string | null; // null = "no area" bucket
   areaName: string;
+  /** Room view the area heading links to — null for the "no area" bucket and
+   *  for areas hidden on the overview, which have no room view. */
+  roomPath: string | null;
   lights: string[];
 }
 
@@ -199,10 +206,22 @@ class Simon42LightsGroupCard extends LitElement {
   }
 
   private _getSourceLightEntities(): string[] {
+    const hiddenAreas = this._hiddenAreaSet();
     if (Array.isArray(this._config.entities) && this._config.entities.length > 0) {
-      return this._config.entities.filter((id) => id.startsWith('light.') && this._getState(id) !== undefined);
+      return this._config.entities.filter(
+        (id) =>
+          id.startsWith('light.') &&
+          this._getState(id) !== undefined &&
+          !(hiddenAreas !== undefined && Registry.isEntityInAreas(id, hiddenAreas))
+      );
     }
-    return Registry.getVisibleEntityIdsForDomain('light').filter((id) => this._getState(id) !== undefined);
+    return Registry.getVisibleEntityIdsForDomain('light', hiddenAreas).filter((id) => this._getState(id) !== undefined);
+  }
+
+  /** hidden_areas as a Set — undefined when the card excludes no area. Built once per source-list rebuild. */
+  private _hiddenAreaSet(): Set<string> | undefined {
+    const hidden = this._config.hidden_areas;
+    return Array.isArray(hidden) && hidden.length > 0 ? new Set(hidden) : undefined;
   }
 
   private _getRelevantLights(lightIds?: Iterable<string>): string[] {
@@ -249,11 +268,7 @@ class Simon42LightsGroupCard extends LitElement {
     if (this._cachedAreaForEntity.has(entityId)) {
       return this._cachedAreaForEntity.get(entityId) ?? null;
     }
-    const entity = Registry.getEntity(entityId);
-    let areaId: string | null = entity?.area_id ?? null;
-    if (!areaId && entity?.device_id) {
-      areaId = Registry.getDeviceAreaId(entity.device_id);
-    }
+    const areaId = Registry.getAreaIdForEntity(entityId);
     this._cachedAreaForEntity.set(entityId, areaId);
     return areaId;
   }
@@ -378,10 +393,16 @@ class Simon42LightsGroupCard extends LitElement {
   }
 
   /**
-   * Bucket a set of lights by area, following the user's area visibility/order
-   * (areas_display + use_default_area_sort) — same source the security view and
-   * batteries view use. Lights without an area land in a trailing "no area"
-   * bucket (#406).
+   * Bucket a set of lights by area in the user's area order (areas_display +
+   * use_default_area_sort) — same source the security view and batteries view
+   * use. Lights without an area land in a trailing "no area" bucket (#406).
+   *
+   * Areas hidden on the overview are bucketed like any other area (#428):
+   * hiding an area card must not make its lights vanish from the grouped view
+   * while the flat view and the summary count still list them — the same rule
+   * the security view applies (#410). Their heading just doesn't link to the
+   * non-existent room view. With hide_hidden_areas_in_summaries those lights
+   * never reach this method (filtered from the source list via hidden_areas).
    */
   private _groupByAreas(lights: string[]): LightsAreaGroup[] {
     if (!this.hass) return [];
@@ -389,9 +410,10 @@ class Simon42LightsGroupCard extends LitElement {
       areas_display?: AreasDisplay;
       use_default_area_sort?: boolean;
     };
-    const visibleAreas = getVisibleAreasFromHass(
+    const hiddenOnOverview = new Set(dashboardConfig.areas_display?.hidden ?? []);
+    const orderedAreas = getVisibleAreasFromHass(
       this.hass,
-      dashboardConfig.areas_display,
+      { ...dashboardConfig.areas_display, hidden: [] },
       dashboardConfig.use_default_area_sort
     );
 
@@ -409,13 +431,18 @@ class Simon42LightsGroupCard extends LitElement {
     }
 
     const groups: LightsAreaGroup[] = [];
-    for (const area of visibleAreas) {
+    for (const area of orderedAreas) {
       const arr = byArea.get(area.area_id);
       if (!arr || arr.length === 0) continue;
-      groups.push({ areaId: area.area_id, areaName: area.name, lights: arr });
+      groups.push({
+        areaId: area.area_id,
+        areaName: area.name,
+        roomPath: hiddenOnOverview.has(area.area_id) ? null : area.area_id,
+        lights: arr,
+      });
     }
     if (noArea.length > 0) {
-      groups.push({ areaId: null, areaName: localize('lights.no_area'), lights: noArea });
+      groups.push({ areaId: null, areaName: localize('lights.no_area'), roomPath: null, lights: noArea });
     }
     return groups;
   }
@@ -435,14 +462,15 @@ class Simon42LightsGroupCard extends LitElement {
 
   private _buildHeadingConfig(
     lights: string[],
-    opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; areaId?: string | null } = {}
+    opts: { label?: string; icon?: string; level?: 'main' | 'floor' | 'area'; roomPath?: string | null } = {}
   ): Record<string, unknown> {
     const level = opts.level ?? 'main';
 
     // Security-style sub-headings when grouping by area: bare area/floor name,
     // no count, no batch badges. Floor = title (with icon), area = subtitle and
-    // tappable → room view — matches the security view's area-grouped layout.
-    // The single main heading keeps its count + global batch button.
+    // tappable → room view (when the area has one) — matches the security
+    // view's area-grouped layout. The single main heading keeps its count +
+    // global batch button.
     if (this._config.group_by_areas === true && level !== 'main') {
       const cfg: Record<string, unknown> = {
         type: 'heading',
@@ -450,8 +478,8 @@ class Simon42LightsGroupCard extends LitElement {
         heading_style: level === 'floor' ? 'title' : 'subtitle',
       };
       if (opts.icon) cfg.icon = opts.icon;
-      if (level === 'area' && opts.areaId) {
-        cfg.tap_action = { action: 'navigate', navigation_path: opts.areaId };
+      if (level === 'area' && opts.roomPath) {
+        cfg.tap_action = { action: 'navigate', navigation_path: opts.roomPath };
       }
       return cfg;
     }
@@ -820,7 +848,7 @@ class Simon42LightsGroupCard extends LitElement {
               this._getAreaSlotId('area-heading', floorKey, areaKey),
               this._areaHeadingCards,
               compositeKey,
-              this._buildHeadingConfig(area.lights, { label: area.areaName, level: 'area', areaId: area.areaId })
+              this._buildHeadingConfig(area.lights, { label: area.areaName, level: 'area', roomPath: area.roomPath })
             );
             this._reconcileLightsGrid(this._getAreaSlotId('area-grid', floorKey, areaKey), area.lights);
           }
@@ -846,7 +874,7 @@ class Simon42LightsGroupCard extends LitElement {
           this._getAreaSlotId('area-heading', null, areaKey),
           this._areaHeadingCards,
           areaKey,
-          this._buildHeadingConfig(area.lights, { label: area.areaName, level: 'area', areaId: area.areaId })
+          this._buildHeadingConfig(area.lights, { label: area.areaName, level: 'area', roomPath: area.roomPath })
         );
         this._reconcileLightsGrid(this._getAreaSlotId('area-grid', null, areaKey), area.lights);
       }

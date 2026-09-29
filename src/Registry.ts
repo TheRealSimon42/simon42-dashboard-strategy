@@ -400,9 +400,41 @@ class Registry {
   /**
    * Get visible entity IDs for a domain. O(1).
    * Pre-filtered: no hidden, no_dboard, config/diagnostic, config-hidden.
+   *
+   * With `excludeAreas`, entities resolving to one of those areas (own
+   * area_id or the effective device area, see getAreaIdForEntity) are left
+   * out — an O(n) pass over the domain list, so call it where the entity
+   * list is built once (cache build), not per render. The caller decides
+   * which areas to exclude (e.g. areas_display.hidden with the opt-in
+   * hide_hidden_areas_in_summaries, #428) — deliberately not read from the
+   * Registry config: like the security view (#410), the set comes from the
+   * config the caller was generated with. Without the parameter (or with an
+   * empty set) the pre-computed list is returned unchanged.
    */
-  static getVisibleEntityIdsForDomain(domain: string): string[] {
-    return Registry._visibleEntitiesByDomain.get(domain) || [];
+  static getVisibleEntityIdsForDomain(domain: string, excludeAreas?: ReadonlySet<string>): string[] {
+    const ids = Registry._visibleEntitiesByDomain.get(domain) || [];
+    if (!excludeAreas || excludeAreas.size === 0) return ids;
+    return ids.filter(function notInExcludedArea(id) {
+      return !Registry.isEntityInAreas(id, excludeAreas);
+    });
+  }
+
+  /**
+   * Resolve an entity's area: its own area_id, else the effective area of
+   * its device (child devices inherit the parent's area, HA 2026.9+).
+   * null when the entity is unknown or has no area.
+   */
+  static getAreaIdForEntity(entityId: string): string | null {
+    const entry = Registry._entityById.get(entityId);
+    if (!entry) return null;
+    if (entry.area_id) return entry.area_id;
+    return entry.device_id ? Registry.getDeviceAreaId(entry.device_id) : null;
+  }
+
+  /** Whether the entity resolves to one of the given areas. Area-less entities never match. */
+  static isEntityInAreas(entityId: string, areaIds: ReadonlySet<string>): boolean {
+    const areaId = Registry.getAreaIdForEntity(entityId);
+    return areaId !== null && areaIds.has(areaId);
   }
 
   /**

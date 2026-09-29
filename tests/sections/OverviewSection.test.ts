@@ -129,6 +129,37 @@ describe('createOverviewSection', () => {
       hide_unavailable_entities: true,
     });
   });
+
+  it('passes hidden_areas to the lights/covers/climate tiles only with hide_hidden_areas_in_summaries (#428)', () => {
+    const hass = makeHass({});
+    Registry.initialize(hass, {});
+    function tilesFor(config: Record<string, unknown>): Map<unknown, Record<string, unknown>> {
+      const section = createOverviewSection({ someSensorId: 'sensor.dummy', showSearchCard: false, config, hass });
+      const tiles = (section?.cards ?? [])
+        .filter((c) => c.type === 'horizontal-stack')
+        .flatMap((s) => (s.cards ?? []) as Record<string, unknown>[]);
+      return new Map(tiles.map((t) => [t.summary_type, t]));
+    }
+    const base = { areas_display: { hidden: ['abstellkammer'] }, show_climate_summary: true };
+
+    // Default: hidden overview areas keep counting → no key on any tile
+    for (const tile of tilesFor(base).values()) {
+      expect(tile).not.toHaveProperty('hidden_areas');
+    }
+
+    const on = tilesFor({ ...base, hide_hidden_areas_in_summaries: true });
+    expect(on.get('lights')?.hidden_areas).toEqual(['abstellkammer']);
+    expect(on.get('covers')?.hidden_areas).toEqual(['abstellkammer']);
+    expect(on.get('climate')?.hidden_areas).toEqual(['abstellkammer']);
+    // Security follows hide_hidden_areas_in_security, batteries never filter by area
+    expect(on.get('security')).not.toHaveProperty('hidden_areas');
+    expect(on.get('batteries')).not.toHaveProperty('hidden_areas');
+
+    // Option on but nothing hidden → nothing to exclude, key stays away
+    for (const tile of tilesFor({ hide_hidden_areas_in_summaries: true, show_climate_summary: true }).values()) {
+      expect(tile).not.toHaveProperty('hidden_areas');
+    }
+  });
 });
 
 describe('createHouseModeCards (#414)', () => {
