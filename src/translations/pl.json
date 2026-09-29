@@ -55,7 +55,7 @@
     "covers_open_one": "otwarta osłona",
     "covers_open_many": "otwarte osłony",
     "covers_closed": "Wszystkie osłony zamknięte",
-    "security_unsafe": "niebezpiecznie",
+    "security_unsafe": "niezabezpieczone",
     "security_safe": "Wszystko bezpieczne",
     "batteries_critical_one": "bateria krytyczna",
     "batteries_critical_many": "baterie krytyczne",
@@ -517,7 +517,7 @@
     "design_bg_image_label": "Obraz tła",
     "design_bg_image_hint": "Wybierz obraz w oknie multimediów albo prześlij go bezpośrednio. Alternatywnie w YAML: background.image może także przyjmować ścieżkę/URL (np. /local/background.jpg); rozmiar i wyrównanie ustawisz dodatkowymi kluczami background.",
     "design_bg_opacity_label": "Krycie",
-    "design_bg_fixed_label": "Unieruchom tło podczas przewijania"
+    "design_bg_fixed_label": "Przypnij tło podczas przewijania"
   },
   "custom_views": {
     "ref_error_title": "Nie udało się załadować widoku referencyjnego",
