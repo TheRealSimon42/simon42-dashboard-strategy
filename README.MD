@@ -529,6 +529,10 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_climate_view` | boolean | `false` | v1.4.0 | Klima-Unterseite (/climate) auch ohne Klima-Zusammenfassung bereitstellen |
 | `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
 | `show_battery_view` | boolean | `false` | v1.4.0 | Batterie-Unterseite (/batteries) auch ohne Batterie-Zusammenfassung bereitstellen |
+| `show_maintenance_summary` | boolean | `false` | v1.4.0 | Wartungs-Kachel + Wartungsseite (/maintenance): anstehende Updates, nicht verfügbare Geräte, kritische Batterien, HA-Reparaturen (eingebaute Karte, HA ≥ 2026.3) |
+| `maintenance_visible_users` | string[] | `[]` | v1.4.0 | HA-Benutzer-IDs, die Wartungs-Kachel und Navigations-Tab sehen (leer = alle). Reine Anzeigelogik, kein Zugriffsschutz: die Seite bleibt per URL erreichbar |
+| `show_maintenance_activity` | boolean | `true` | v1.4.0 | Logbuch (24 h) in der Seitenleiste der Wartungsseite, beschränkt auf die dort gezeigten Entitäten; blendet sich ohne Logbuch-Integration oder ohne Befunde aus |
+| `show_video_tips` | boolean | `true` | v1.4.0 | „Expertentipps" in der Seitenleiste der Wartungsseite: passende simon42-Videos zu installierten Integrationen (statische Liste im Bundle, kein Abruf zur Laufzeit) |
 | `maintenance_ignored_entities` | string[] | `[]` | v1.4.2 | Entitäten, die auf der Wartungsseite und in der Wartungs-Kachel nicht als „nicht verfügbar" zählen — z.B. bewusst stromlose Geräte (Suchfeld im Editor). Anstehende Updates und kritische Batterien bleiben unberührt; die Wartungsseite zeigt „N ignoriert" |
 | `maintenance_ignored_devices` | string[] | `[]` | v1.4.2 | Wie `maintenance_ignored_entities`, aber für ganze Geräte inkl. aller ihrer Entitäten (Geräte-IDs; Suchfeld im Editor) |
 | `hide_maintenance_summary_when_ok` | boolean | `false` | v1.4.2 | Wartungs-Kachel (`show_maintenance_summary`) ausblenden, solange nichts ansteht — erscheint beim ersten Eintrag automatisch wieder. Nachbar-Kacheln füllen die Zeile auf; steht die Kachel allein in ihrer Zeile, verschwindet die Zeile komplett |
