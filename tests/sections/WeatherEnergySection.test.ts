@@ -38,6 +38,66 @@ describe('createWeatherSection', () => {
     const forecast = section?.cards?.find((c) => c.type === 'weather-forecast');
     expect(forecast).toMatchObject({ forecast_type: 'daily' });
   });
+
+  it('renders weather sensors without hide_when exactly as before', () => {
+    const section = createWeatherSection('weather.home', true, true, [
+      { entity: 'sensor.outdoor_temperature', icon: 'mdi:thermometer', unit: '°C', round: 1 },
+      { entity: 'sensor.outdoor_humidity' },
+    ]);
+    const sensorCard = section?.cards?.find((c) => c.type === 'markdown');
+    // Whole card config pinned: no extra keys (e.g. show_empty) may appear here
+    expect(sensorCard).toEqual({
+      type: 'markdown',
+      text_only: true,
+      content:
+        '<ha-icon icon="mdi:thermometer"></ha-icon> {{ states("sensor.outdoor_temperature") | float(0) | round(1) }} °C' +
+        ' &nbsp;&nbsp;&nbsp; ' +
+        '<ha-icon icon="mdi:gauge"></ha-icon> {{ states("sensor.outdoor_humidity") }}',
+    });
+  });
+
+  it('wraps hide_when: zero_or_off sensors in a live condition without dangling separators', () => {
+    const section = createWeatherSection('weather.home', true, true, [
+      { entity: 'sensor.outdoor_temperature', icon: 'mdi:thermometer', unit: '°C', round: 1 },
+      { entity: 'sensor.rain_rate', icon: 'mdi:weather-rainy', unit: 'mm/h', hide_when: 'zero_or_off' },
+    ]);
+    const sensorCard = section?.cards?.find((c) => c.type === 'markdown');
+    // show_empty: false lets HA drop the card once every entry is hidden
+    expect(sensorCard).toMatchObject({ type: 'markdown', text_only: true, show_empty: false });
+    // Unconditional sensor: rendered as-is, only the separator becomes conditional.
+    // Conditional sensor without round: raw state compared; the namespace flag
+    // ensures no separator is emitted when the first visible entry is hidden.
+    expect(sensorCard?.content).toBe(
+      '{% set ns = namespace(first=true) %}' +
+        '{% if not ns.first %} &nbsp;&nbsp;&nbsp; {% endif %}' +
+        '<ha-icon icon="mdi:thermometer"></ha-icon> {{ states("sensor.outdoor_temperature") | float(0) | round(1) }} °C' +
+        '{% set ns.first = false %}' +
+        '{% set v = states("sensor.rain_rate") %}' +
+        '{% if v | lower != "off" and not (is_number(v) and v | float(0) == 0) %}' +
+        '{% if not ns.first %} &nbsp;&nbsp;&nbsp; {% endif %}' +
+        '<ha-icon icon="mdi:weather-rainy"></ha-icon> {{ states("sensor.rain_rate") }} mm/h' +
+        '{% set ns.first = false %}' +
+        '{% endif %}'
+    );
+  });
+
+  it('compares the rounded value when hide_when is combined with round', () => {
+    const section = createWeatherSection('weather.home', true, true, [
+      { entity: 'sensor.rain_rate', icon: 'mdi:weather-rainy', unit: 'mm/h', round: 1, hide_when: 'zero_or_off' },
+    ]);
+    const sensorCard = section?.cards?.find((c) => c.type === 'markdown');
+    expect(sensorCard).toMatchObject({ show_empty: false });
+    // 0.04 mm/h displays as "0.0" at round: 1 — the check must hide it too
+    expect(sensorCard?.content).toBe(
+      '{% set ns = namespace(first=true) %}' +
+        '{% set v = states("sensor.rain_rate") %}' +
+        '{% if v | lower != "off" and not (is_number(v) and v | float(0) | round(1) == 0) %}' +
+        '{% if not ns.first %} &nbsp;&nbsp;&nbsp; {% endif %}' +
+        '<ha-icon icon="mdi:weather-rainy"></ha-icon> {{ states("sensor.rain_rate") | float(0) | round(1) }} mm/h' +
+        '{% set ns.first = false %}' +
+        '{% endif %}'
+    );
+  });
 });
 
 describe('createEnergySection', () => {

@@ -210,6 +210,7 @@
     "weather_sensors_icon": "Ikona",
     "weather_sensors_unit": "Jednostka",
     "weather_sensors_round": "Miejsca dziesiętne",
+    "weather_sensors_hide_zero_off": "Ukryj, gdy 0 lub wyłączony",
     "weather_sensors_add": "+ Dodaj czujnik",
     "no_weather_sensors": "Nie skonfigurowano czujników. Użyj selektora poniżej, aby dodać czujnik.",
     "weather_entity": "Encja pogody:",

@@ -28,6 +28,9 @@ interface SummaryCardConfig {
   hide_battery_notes_entities?: boolean;
   battery_critical_threshold?: number;
   hide_unavailable_entities?: boolean;
+  // maintenance type only: ignore list for the unavailable scan (#395)
+  maintenance_ignored_entities?: string[];
+  maintenance_ignored_devices?: string[];
 }
 
 interface DisplayConfig {

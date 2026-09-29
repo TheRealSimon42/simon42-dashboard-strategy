@@ -215,6 +215,14 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       hide_mobile_app_batteries: config.hide_mobile_app_batteries,
       hide_battery_notes_entities: config.hide_battery_notes_entities,
       battery_critical_threshold: config.battery_critical_threshold,
+      // ignore list for the unavailable scan (#395) — only when set, so
+      // existing configs keep generating byte-identical card configs
+      ...(config.maintenance_ignored_entities
+        ? { maintenance_ignored_entities: config.maintenance_ignored_entities }
+        : {}),
+      ...(config.maintenance_ignored_devices
+        ? { maintenance_ignored_devices: config.maintenance_ignored_devices }
+        : {}),
     });
   }
 

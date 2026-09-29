@@ -440,6 +440,11 @@ strategy:
       icon: mdi:weather-windy
       unit: "km/h"
       round: 1
+    - entity: sensor.rain_rate
+      icon: mdi:weather-rainy
+      unit: "mm/h"
+      round: 1
+      hide_when: zero_or_off   # nur anzeigen, wenn es tatsächlich regnet
 ```
 
 Pro Eintrag:
@@ -447,6 +452,7 @@ Pro Eintrag:
 - `icon` — MDI-Icon (Standard: `mdi:gauge`)
 - `unit` — angehängte Einheit als Text (z.B. `°C`, `km/h`)
 - `round` — Anzahl Nachkommastellen für numerische Werte; weglassen für rohen Zustand
+- `hide_when` — `zero_or_off` blendet den Eintrag live aus, solange sein Wert `0` oder `off` ist (z.B. Regenmenge nur bei Regen); mit `round` zählt der gerundete Anzeigewert, also verschwindet auch `0.04` bei `round: 1`. Sind alle Einträge ausgeblendet, verschwindet die ganze Zeile. Im Editor als Checkbox „Bei 0 oder „aus“ ausblenden“ pro Sensor. Ohne die Option bleibt der Sensor wie bisher immer sichtbar (ab v1.4.2)
 
 #### Custom Views
 
@@ -518,6 +524,8 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_climate_view` | boolean | `false` | v1.4.0 | Klima-Unterseite (/climate) auch ohne Klima-Zusammenfassung bereitstellen |
 | `show_battery_summary` | boolean | `true` | — | Batterie-Zusammenfassung |
 | `show_battery_view` | boolean | `false` | v1.4.0 | Batterie-Unterseite (/batteries) auch ohne Batterie-Zusammenfassung bereitstellen |
+| `maintenance_ignored_entities` | string[] | `[]` | v1.4.2 | Entitäten, die auf der Wartungsseite und in der Wartungs-Kachel nicht als „nicht verfügbar" zählen — z.B. bewusst stromlose Geräte (Suchfeld im Editor). Anstehende Updates und kritische Batterien bleiben unberührt; die Wartungsseite zeigt „N ignoriert" |
+| `maintenance_ignored_devices` | string[] | `[]` | v1.4.2 | Wie `maintenance_ignored_entities`, aber für ganze Geräte inkl. aller ihrer Entitäten (Geräte-IDs; Suchfeld im Editor) |
 | `show_camera_view` | boolean | `false` | v1.4.0 | **Experimentell:** Kamera-Ansicht (/cameras) mit Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (siehe unten) |
 | `show_camera_events` | boolean | `false` | v1.4.0 | LLM Vision Ereignis-Timelines in der Kamera-Ansicht (Last-Hinweis siehe unten) |
 | `summaries_columns` | 2 \| 4 | `2` | — | Spalten-Layout der Zusammenfassungen |
@@ -542,7 +550,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `weather_presentation` | string | `forecast_daily` | v1.4.0 | Darstellung: `forecast_daily`, `forecast_hourly`, `forecast_twice_daily`, `tile`, `none` |
 | `show_weather_forecast_card` | boolean | `true` | v1.4.0 | Legacy — durch `weather_presentation` abgelöst, wird weiter berücksichtigt |
 | `show_pollen_card` | boolean | `false` | v1.4.0 | DWD-Pollenflug-Karte unter der Wetterkarte (benötigt die HACS-Integration DWD Pollenflug; Toggle erscheint nur, wenn sie installiert ist) |
-| `weather_sensors` | object[] | `[]` | v1.4.0 | Inline Icon+Wert-Zeile oben in der Wetter-Section (siehe oben) |
+| `weather_sensors` | object[] | `[]` | v1.4.0 | Inline Icon+Wert-Zeile oben in der Wetter-Section (siehe oben); pro Eintrag optional `hide_when: zero_or_off` (ab v1.4.2) |
 | `show_energy` | boolean | `true` | — | Energie-Section |
 | `show_energy_distribution_card` | boolean | `true` | v1.4.0 | Eingebaute `energy-distribution`-Karte. Auf `false` für komplett eigene Energie-Section |
 | `energy_link_dashboard` | boolean | `true` | v1.3.5 | Energie-Karte verlinkt auf das HA-Energie-Dashboard |
