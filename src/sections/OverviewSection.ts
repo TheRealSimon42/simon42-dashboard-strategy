@@ -12,6 +12,7 @@ import type { Simon42StrategyConfig, CustomCard } from '../types/strategy';
 import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelace';
 import { localize } from '../utils/localize';
 import { getViewVisibleUsers, userVisibilityConditions, unionVisibleUsers } from '../utils/view-visibility';
+import { summaryHiddenAreas } from '../utils/area-utils';
 
 /**
  * Spreadable user-visibility for a summary tile: the tile is the overview
@@ -161,12 +162,19 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
     summaryRules.push(getViewVisibleUsers(config, viewPath));
   }
 
+  // Lights/covers/climate tiles skip hidden overview areas only with
+  // hide_hidden_areas_in_summaries (#428) — the key is omitted otherwise so
+  // the tiles count exactly what their views list.
+  const hiddenAreas = summaryHiddenAreas(config);
+  const hiddenAreasConfig = hiddenAreas ? { hidden_areas: hiddenAreas } : {};
+
   if (showLightSummary) {
     pushSummary('lights', {
       type: 'custom:simon42-summary-card',
       summary_type: 'lights',
       areas_options: config.areas_options || {},
       ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
+      ...hiddenAreasConfig,
     });
   }
 
@@ -176,6 +184,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       summary_type: 'covers',
       areas_options: config.areas_options || {},
       ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
+      ...hiddenAreasConfig,
     });
   }
 
@@ -206,6 +215,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       summary_type: 'climate',
       areas_options: config.areas_options || {},
       ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
+      ...hiddenAreasConfig,
     });
   }
 

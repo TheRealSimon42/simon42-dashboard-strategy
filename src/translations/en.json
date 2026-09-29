@@ -307,6 +307,8 @@
     "group_security_by_areas_desc": "Builds the security view like the Home Assistant security panel: all areas stacked (grouped by floors), area headings link to the room views, and the activity log sits as a sidebar on the right.",
     "hide_hidden_areas_in_security": "Also hide hidden areas from the security view",
     "hide_hidden_areas_in_security_desc": "By default the security view shows all security entities and cameras — including those in areas hidden from the overview. When checked, those areas are filtered here as well (both layouts plus the camera cards of the security and camera views).",
+    "hide_hidden_areas_in_summaries": "Also hide hidden areas from the lights, covers and climate summaries",
+    "hide_hidden_areas_in_summaries_desc": "By default the lights, covers and climate views — and the counts on their summary tiles — include entities from areas hidden on the overview (e.g. a storeroom whose light you still want to see counted). When checked, those areas are left out there as well: in the flat and the area-grouped lights/covers views, in the climate view and in the three counts. The security view has its own option; batteries and maintenance are not affected.",
     "show_security_activity": "Show activity log (recommended)",
     "show_security_activity_desc": "Shows a 24h logbook of all security entities and persons next to the security view (like the Home Assistant security panel). Renders as its own tab on narrow screens. Requires the logbook integration. Entities labeled \"no_seclog\" stay visible in the view but are excluded from the log (e.g. interior door contacts).",
     "security_activity_at_end": "Move activity log to the end",
