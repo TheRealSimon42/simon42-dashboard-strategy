@@ -7,7 +7,7 @@ import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import { Registry } from '../Registry';
 import { trackHassUpdate, debugLog, timeStart, timeEnd } from '../utils/debug';
 import { localize } from '../utils/localize';
-import { getBatteryEntities, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
+import { getBatteryEntities, isRelayOpeningSensor, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 import { buildMaintenanceScan, countMaintenanceItems, type MaintenanceScan } from '../utils/maintenance-utils';
 import { countActiveClimateEntities } from '../utils/summary-view-utils';
@@ -192,13 +192,10 @@ class Simon42SummaryCard extends LitElement {
           if (entry?.platform && SECURITY_EXCLUDED_PLATFORMS.has(entry.platform)) continue;
           const deviceClass = state.attributes?.device_class;
           if (deviceClass === undefined || !SECURITY_BINARY_SENSOR_CLASSES.has(deviceClass)) continue;
-          // Skip relay-style devices that expose an `opening` binary_sensor
-          // alongside their primary switch (e.g. SONOFF ZBMINIR2/L2). The
-          // "opening" state mirrors the relay, not a door/window contact.
-          if (deviceClass === 'opening' && entry?.device_id) {
-            const siblings = Registry.getEntityIdsForDevice(entry.device_id);
-            if (siblings.some((sid) => sid.startsWith('switch.'))) continue;
-          }
+          // Relay-style devices (switch sibling) expose an `opening` sensor
+          // that mirrors the relay, not a contact — shared heuristic with
+          // the security view and the room badges.
+          if (isRelayOpeningSensor(deviceClass, entry?.device_id)) continue;
           result.push(id);
         }
         break;

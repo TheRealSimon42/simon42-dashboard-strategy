@@ -22,10 +22,12 @@ import {
   applyBadgeGroupOptions,
   isDefaultShowName,
   isEnergyBlockSensor,
+  isWindowContactDeviceClass,
   resolveShowName,
   selectBadgeEntitiesOfType,
   type BadgeCandidate,
 } from '../utils/badge-utils';
+import { isRelayOpeningSensor } from '../utils/entity-filter';
 import { buildCoverControlBadges } from '../utils/cover-controls';
 import { densePlacement } from '../utils/view-builder';
 
@@ -436,7 +438,11 @@ class Simon42ViewRoomStrategy extends HTMLElement {
           sensorEntities.occupancy.push(entityId);
           continue;
         }
-        if (deviceClass === 'window') {
+        if (isWindowContactDeviceClass(deviceClass)) {
+          // Relay inputs (`opening` + switch on the same device) are no
+          // contacts — same exclusion as the security view, otherwise a
+          // Shelly/SONOFF relay input would surface as a "window" badge.
+          if (isRelayOpeningSensor(deviceClass, entity.device_id)) continue;
           sensorEntities.window.push(entityId);
           continue;
         }
