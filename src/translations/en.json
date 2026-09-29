@@ -495,6 +495,8 @@
     "camera_live_toggle_desc": "Room cameras start as stills and only stream after tapping the play button — saves bandwidth, e.g. on wall tablets. Off by default: cameras behave as before (auto-refreshing preview).",
     "show_maintenance_summary": "Show maintenance summary — experimental",
     "show_maintenance_summary_desc": "Adds a “Maintenance” tile with its own subview (/maintenance): pending updates, unavailable devices, critical batteries and HA repairs (HA 2026.3+, admins only).",
+    "hide_maintenance_summary_when_ok": "Hide maintenance tile when nothing is pending",
+    "hide_maintenance_summary_when_ok_desc": "Removes the “Maintenance” tile from the overview while it has nothing to report and brings it back automatically as soon as an update, an unavailable device or a critical battery shows up. Neighbouring tiles fill the freed space in the row; if the tile has a row of its own, the whole row disappears. Off by default so the summary rows keep their shape.",
     "maintenance_visible_users": "Visible to",
     "maintenance_visible_users_desc": "Without a selection every user sees the tile and tab. Options come from persons linked to an HA user. Note: display logic only, not access control — the view stays reachable by URL.",
     "maintenance_visible_users_none": "No persons linked to an HA user found — restrict via the maintenance_visible_users YAML key instead.",

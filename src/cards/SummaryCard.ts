@@ -31,6 +31,9 @@ interface SummaryCardConfig {
   // maintenance type only: ignore list for the unavailable scan (#395)
   maintenance_ignored_entities?: string[];
   maintenance_ignored_devices?: string[];
+  // opt-in (#426): hide the tile while its count is 0 — the strategy sets
+  // this for the maintenance tile only (hide_maintenance_summary_when_ok)
+  hide_when_ok?: boolean;
 }
 
 interface DisplayConfig {
@@ -80,6 +83,9 @@ class Simon42SummaryCard extends LitElement {
     :host {
       display: block;
       cursor: pointer;
+    }
+    :host([hidden]) {
+      display: none;
     }
     ha-card {
       padding: 12px;
@@ -133,6 +139,27 @@ class Simon42SummaryCard extends LitElement {
     if (this._count !== newCount) {
       this._count = newCount;
     }
+    this._applyHideWhenOk(newCount);
+  }
+
+  /**
+   * Opt-in self-hide (#426) via HA's own contract for cards that hide
+   * themselves (hui-conditional-card does the same): toggle the `hidden`
+   * attribute and notify the hui-card wrapper with `card-visibility-changed`,
+   * which then hides itself — inside a horizontal-stack the sibling tiles
+   * fill the row, as a standalone grid card the section drops it from the
+   * grid. The wrapper keeps feeding `hass` while we are hidden (Lit updates
+   * detached elements too), so the tile returns on its own with the first
+   * pending item. Pure comparison on the already computed count — no extra
+   * entity scan per update.
+   */
+  private _applyHideWhenOk(count: number): void {
+    const hide = this._config.hide_when_ok === true && count === 0;
+    if (this.hidden === hide) return;
+    this.hidden = hide;
+    this.dispatchEvent(
+      new CustomEvent('card-visibility-changed', { bubbles: true, composed: true, detail: { value: !hide } })
+    );
   }
 
   private _isEntityRelevant(id: string, _state: HassEntity): boolean {
