@@ -43,6 +43,42 @@ function escapeHtml(input: string): string {
   });
 }
 
+// Separator between two entries of the inline sensor row.
+const SENSOR_SEPARATOR = ' &nbsp;&nbsp;&nbsp; ';
+
+interface WeatherSensorPart {
+  entity: string;
+  /** `<ha-icon> value unit` markup for this entry. */
+  rendered: string;
+  /** Validated `round` decimals, undefined when the raw state is shown. */
+  round: number | undefined;
+  /** `hide_when: 'zero_or_off'` — wrap in a live Jinja condition. */
+  hideWhenZeroOrOff: boolean;
+}
+
+/**
+ * Template variant used as soon as at least one sensor sets
+ * `hide_when: 'zero_or_off'`. The markdown card re-evaluates its Jinja
+ * template on every state change, so hiding happens live without the
+ * strategy re-generating. `states()` always yields a string — "off" (any
+ * case) and a numeric zero are the hide triggers. With `round` set, the
+ * check uses the same rounded value the row displays, so 0.04 at
+ * `round: 1` ("0.0") disappears instead of showing a zero.
+ * "unknown"/"unavailable" keep rendering exactly as they do without the
+ * option. A namespace flag emits the separator only in front of the
+ * second and later *visible* entry, so a hidden sensor never leaves a
+ * dangling separator behind.
+ */
+function buildConditionalSensorContent(parts: WeatherSensorPart[]): string {
+  const chunks = parts.map((part) => {
+    const visible = `{% if not ns.first %}${SENSOR_SEPARATOR}{% endif %}${part.rendered}{% set ns.first = false %}`;
+    if (!part.hideWhenZeroOrOff) return visible;
+    const displayed = part.round !== undefined ? `v | float(0) | round(${part.round})` : `v | float(0)`;
+    return `{% set v = states("${part.entity}") %}{% if v | lower != "off" and not (is_number(v) and ${displayed} == 0) %}${visible}{% endif %}`;
+  });
+  return `{% set ns = namespace(first=true) %}${chunks.join('')}`;
+}
+
 /**
  * Build an inline markdown row of icon+value pairs from a weather_sensors
  * config array. Returns null if no sensors are configured or if every
@@ -50,7 +86,9 @@ function escapeHtml(input: string): string {
  *
  * Each entry renders as `<ha-icon icon="..."></ha-icon> <value> <unit>`,
  * separated by non-breaking spaces. Uses text_only so the markdown blends
- * into the section without extra card chrome.
+ * into the section without extra card chrome. Without any `hide_when`
+ * entry the content is the plain joined row (unchanged legacy output);
+ * otherwise see buildConditionalSensorContent().
  *
  * Defensive normalization on every field:
  *   - `entity`: required and must match ENTITY_ID_RE; entries with bad
@@ -60,6 +98,10 @@ function escapeHtml(input: string): string {
  *     Prevents attribute break-out inside `<ha-icon icon="...">`.
  *   - `unit`: free text, HTML-escaped before concatenation.
  *   - `round`: must be a finite non-negative integer; ignored otherwise.
+ *   - `hide_when`: only the literal `zero_or_off` is honoured; anything
+ *     else renders unconditionally. Opting in also sets `show_empty: false`
+ *     so HA drops the whole card once every entry is hidden (older
+ *     frontends ignore the unknown key).
  *
  * The strategy generates Lovelace YAML — the config is trusted in the
  * single-user case, but we still validate so that copy-pasted community
@@ -68,7 +110,7 @@ function escapeHtml(input: string): string {
 function buildWeatherSensorRow(sensors: WeatherSensorConfig[]): LovelaceCardConfig | null {
   if (sensors.length === 0) return null;
 
-  const parts: string[] = [];
+  const parts: WeatherSensorPart[] = [];
   for (const s of sensors) {
     if (typeof s.entity !== 'string' || !ENTITY_ID_RE.test(s.entity)) continue;
 
@@ -80,15 +122,30 @@ function buildWeatherSensorRow(sensors: WeatherSensorConfig[]): LovelaceCardConf
 
     const unit = typeof s.unit === 'string' && s.unit.length > 0 ? ` ${escapeHtml(s.unit)}` : '';
 
-    parts.push(`<ha-icon icon="${icon}"></ha-icon> ${valueExpr}${unit}`);
+    parts.push({
+      entity: s.entity,
+      rendered: `<ha-icon icon="${icon}"></ha-icon> ${valueExpr}${unit}`,
+      round,
+      hideWhenZeroOrOff: s.hide_when === 'zero_or_off',
+    });
   }
 
   if (parts.length === 0) return null;
 
+  if (!parts.some((part) => part.hideWhenZeroOrOff)) {
+    // Legacy output — must stay byte-identical for existing configs
+    return {
+      type: 'markdown',
+      text_only: true,
+      content: parts.map((part) => part.rendered).join(SENSOR_SEPARATOR),
+    };
+  }
+
   return {
     type: 'markdown',
     text_only: true,
-    content: parts.join(' &nbsp;&nbsp;&nbsp; '),
+    show_empty: false,
+    content: buildConditionalSensorContent(parts),
   };
 }
 

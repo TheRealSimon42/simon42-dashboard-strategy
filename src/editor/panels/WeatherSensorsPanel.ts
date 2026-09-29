@@ -3,8 +3,9 @@
 // ====================================================================
 // Per-row structured editor for the `weather_sensors` config array.
 // Each row binds to a WeatherSensorConfig and exposes inline inputs for
-// icon / unit / round. Adding a row uses the same entity-search picker
-// pattern as favorites; removal is a single-click button.
+// icon / unit / round plus a "hide when 0 / off" checkbox (`hide_when`).
+// Adding a row uses the same entity-search picker pattern as favorites;
+// removal is a single-click button.
 //
 // The picker filters to numeric-ish sensors by default but does not hard-
 // restrict — any entity domain is accepted (the markdown row in the
@@ -69,6 +70,12 @@ export function renderWeatherSensorsSection(host: StrategyEditorHost): TemplateR
                         placeholder=${localize('editor.weather_sensors_round')}
                         .value=${sensor.round !== undefined ? String(sensor.round) : ''}
                         @change=${(e: Event) => updateWeatherSensor(host, index, 'round', (e.target as HTMLInputElement).value)} />
+                    </div>
+                    <div class="form-row" style="margin-bottom: 0;">
+                      <input type="checkbox" id="weather-sensor-hide-zero-off-${index}"
+                        ?checked=${sensor.hide_when === 'zero_or_off'}
+                        @change=${(e: Event) => updateWeatherSensor(host, index, 'hide_when', (e.target as HTMLInputElement).checked ? 'zero_or_off' : '')} />
+                      <label for="weather-sensor-hide-zero-off-${index}">${localize('editor.weather_sensors_hide_zero_off')}</label>
                     </div>
                   </div>
                 </div>
@@ -263,6 +270,10 @@ function updateWeatherSensor(
   } else if (field === 'unit') {
     if (trimmed === '') delete target.unit;
     else target.unit = trimmed;
+  } else if (field === 'hide_when') {
+    // Checkbox: only the single supported mode is stored; unchecked drops the key
+    if (trimmed === 'zero_or_off') target.hide_when = 'zero_or_off';
+    else delete target.hide_when;
   } else {
     // remaining field is 'entity' — read-only via this method; ignore
     return;
