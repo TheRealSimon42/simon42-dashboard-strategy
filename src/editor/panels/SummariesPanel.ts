@@ -387,6 +387,14 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
           ? html`
         <div style="margin-left: 26px; margin-bottom: 8px;">
           ${host._renderCheckbox(
+            'hide-maintenance-summary-when-ok',
+            localize('editor.hide_maintenance_summary_when_ok'),
+            host._config.hide_maintenance_summary_when_ok === true,
+            (checked) => host._toggleChanged('hide_maintenance_summary_when_ok', checked, false)
+          )}
+          <div class="description">${localize('editor.hide_maintenance_summary_when_ok_desc')}</div>
+
+          ${host._renderCheckbox(
             'show-maintenance-activity',
             localize('editor.show_maintenance_activity'),
             host._config.show_maintenance_activity !== false,

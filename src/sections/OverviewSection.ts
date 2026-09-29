@@ -146,6 +146,9 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
   const showBatterySummary = config.show_battery_summary !== false;
   const showClimateSummary = config.show_climate_summary === true;
   const showMaintenanceSummary = config.show_maintenance_summary === true;
+  // Opt-in (#426): the maintenance tile hides itself at count 0 (runtime
+  // check inside SummaryCard). Only meaningful with the tile enabled.
+  const hideMaintenanceWhenOk = showMaintenanceSummary && config.hide_maintenance_summary_when_ok === true;
 
   // Build summary cards based on config. Each tile carries the
   // view_visible_users rule of the view it deep-links to (entry-point
@@ -223,6 +226,7 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       ...(config.maintenance_ignored_devices
         ? { maintenance_ignored_devices: config.maintenance_ignored_devices }
         : {}),
+      ...(hideMaintenanceWhenOk ? { hide_when_ok: true } : {}),
     });
   }
 
@@ -250,15 +254,35 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       });
     }
 
+    // A self-hiding maintenance tile (#426) must not be the only card of a
+    // stack row: a horizontal-stack whose every child is hidden keeps its
+    // grid slot (0 px plus one row-gap), whereas hui-grid-section drops a
+    // hidden standalone card from the grid entirely
+    // (`.card:has(> *[hidden]) { display: none }`). So when the tile — always
+    // pushed last — would sit alone in its row, emit it as a full-width grid
+    // card instead: same look while visible, clean disappearance when hidden.
+    // In a shared row the sibling tiles simply widen (flex: 1 1 0 in HA's
+    // stack card).
+    const maintenanceIndex = summaryCards.length - 1;
+    const maintenanceAlone =
+      hideMaintenanceWhenOk && (summariesColumns === 4 ? summaryCards.length === 1 : maintenanceIndex % 2 === 0);
+    const stackCards = maintenanceAlone ? summaryCards.slice(0, maintenanceIndex) : summaryCards;
+    const stackRules = maintenanceAlone ? summaryRules.slice(0, maintenanceIndex) : summaryRules;
+
     // Layout logic: adapt to number of cards
     if (summariesColumns === 4) {
       // 4 columns: all cards in a single row
-      pushRow(summaryCards, summaryRules);
+      if (stackCards.length > 0) pushRow(stackCards, stackRules);
     } else {
       // 2 columns: split into rows of 2
-      for (let i = 0; i < summaryCards.length; i += 2) {
-        pushRow(summaryCards.slice(i, i + 2), summaryRules.slice(i, i + 2));
+      for (let i = 0; i < stackCards.length; i += 2) {
+        pushRow(stackCards.slice(i, i + 2), stackRules.slice(i, i + 2));
       }
+    }
+
+    if (maintenanceAlone) {
+      const maintenanceCard = summaryCards.at(maintenanceIndex);
+      if (maintenanceCard) cards.push({ ...maintenanceCard, grid_options: { columns: 'full' } });
     }
   }
 

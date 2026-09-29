@@ -495,6 +495,8 @@
     "camera_live_toggle_desc": "Raum-Kameras starten als Standbild und streamen erst nach Klick auf den Play-Button — spart Bandbreite, z.B. auf Wandtablets. Standardmäßig aus: Kameras verhalten sich wie bisher (Vorschau mit automatischer Aktualisierung).",
     "show_maintenance_summary": "Wartungs-Zusammenfassung anzeigen — experimentell",
     "show_maintenance_summary_desc": "Kachel „Wartung“ mit eigener Unterseite (/maintenance): anstehende Updates, nicht verfügbare Geräte, kritische Batterien und HA-Reparaturen (ab HA 2026.3, nur für Admins sichtbar).",
+    "hide_maintenance_summary_when_ok": "Wartungs-Kachel ausblenden, wenn nichts ansteht",
+    "hide_maintenance_summary_when_ok_desc": "Blendet die Kachel „Wartung“ auf der Übersicht aus, solange sie nichts zu melden hat, und zeigt sie automatisch wieder an, sobald ein Update, ein nicht verfügbares Gerät oder eine kritische Batterie auftaucht. Nachbar-Kacheln füllen den frei gewordenen Platz in der Zeile; steht die Kachel allein in einer Zeile, verschwindet die ganze Zeile. Standardmäßig aus, damit die Zusammenfassungs-Zeilen ihre Form behalten.",
     "maintenance_visible_users": "Sichtbar für",
     "maintenance_visible_users_desc": "Ohne Einschränkung sehen alle Benutzer die Kachel und den Tab. Die Auswahl basiert auf Personen mit verknüpftem HA-Benutzer. Hinweis: reine Anzeigelogik, kein Zugriffsschutz — die Ansicht bleibt per URL erreichbar.",
     "maintenance_visible_users_none": "Keine Personen mit verknüpftem HA-Benutzer gefunden — Einschränkung alternativ per YAML-Schlüssel maintenance_visible_users.",

@@ -155,6 +155,10 @@ export interface Simon42StrategyConfig {
   show_maintenance_summary?: boolean; // default: false — admin-flavoured
   // "Wartung" summary tile + /maintenance view: pending updates, unavailable
   // devices, critical batteries, HA repairs (built-in card, HA >= 2026.3)
+  hide_maintenance_summary_when_ok?: boolean; // default: false — opt-in
+  // (#426): the maintenance tile hides itself while it has nothing to report
+  // and comes back with the first pending item. Off by default so the 2/4-
+  // column summary rows keep their shape
   maintenance_visible_users?: string[]; // default: [] = everyone. HA user ids
   // that see the maintenance tile + nav tab (native Lovelace user condition).
   // Display logic only — NOT a security boundary; the view stays reachable
