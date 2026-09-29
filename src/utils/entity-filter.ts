@@ -67,6 +67,33 @@ export function findDummySensor(hass: HomeAssistant): string {
  */
 export const SECURITY_EXCLUDED_PLATFORMS = new Set(['tankerkoenig']);
 
+/** Entity ids of a device — Registry map at runtime, hass.entities scan in the editor. */
+export type DeviceEntityIdsLookup = (deviceId: string) => readonly string[];
+
+function registryEntityIdsForDevice(deviceId: string): string[] {
+  return Registry.getEntityIdsForDevice(deviceId);
+}
+
+/**
+ * Relay-style devices expose an `opening` binary_sensor that mirrors the
+ * relay input, not a real door/window contact (SONOFF ZBMINIR2/L2, Shelly
+ * relays with a wired input contact, ...). Heuristic: the same device also
+ * exposes a `switch.*` entity. Shared by the security view, the security
+ * summary count and the room badges so a relay input never surfaces as a
+ * window contact anywhere. Only the generic `opening` class is subject to
+ * the check — explicit `door`/`window` contacts are never dropped.
+ */
+export function isRelayOpeningSensor(
+  deviceClass: string | undefined,
+  deviceId: string | null | undefined,
+  entityIdsForDevice: DeviceEntityIdsLookup = registryEntityIdsForDevice
+): boolean {
+  if (deviceClass !== 'opening' || !deviceId) return false;
+  return entityIdsForDevice(deviceId).some(function isSwitch(entityId) {
+    return entityId.startsWith('switch.');
+  });
+}
+
 export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyConfig): string[] {
   const sensorIds = Registry.getEntityIdsForDomain('sensor');
   const binarySensorIds = Registry.getEntityIdsForDomain('binary_sensor');

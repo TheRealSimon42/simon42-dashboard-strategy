@@ -388,3 +388,21 @@ describe('safety status sensors', () => {
     expect(coTile?.type).toBe('tile');
   });
 });
+
+describe('relay-style opening sensors', () => {
+  it('skips opening sensors whose device also exposes a switch, keeps real contacts', () => {
+    const spec = securitySpec();
+    spec.devices?.push({ id: 'dev_relay', area_id: 'flur' }, { id: 'dev_contact', area_id: 'flur' });
+    spec.entities?.push(
+      // Shelly/SONOFF relay: the `opening` input mirrors the relay, not a door
+      { entity_id: 'switch.flur_relais', device_id: 'dev_relay', state: 'on' },
+      { entity_id: 'binary_sensor.flur_relais_eingang', device_id: 'dev_relay', state: 'off', attributes: { device_class: 'opening' } },
+      // Generic contact without a switch sibling stays a window contact
+      { entity_id: 'binary_sensor.flur_kontakt', device_id: 'dev_contact', state: 'off', attributes: { device_class: 'opening' } }
+    );
+    const cards = allCards(build(makeHass(spec), {}));
+
+    expect(cards.some((c) => c.entity === 'binary_sensor.flur_relais_eingang')).toBe(false);
+    expect(cards.some((c) => c.entity === 'binary_sensor.flur_kontakt')).toBe(true);
+  });
+});
