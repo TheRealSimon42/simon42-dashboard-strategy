@@ -27,7 +27,14 @@ import type {
 } from '../../types/strategy';
 import type { AreaRegistryEntry, EntityRegistryEntry } from '../../types/registries';
 import { localize } from '../../utils/localize';
-import { isBadgeCandidate, isDefaultShowName, isEnergyBlockSensor, resolveShowName } from '../../utils/badge-utils';
+import {
+  isBadgeCandidate,
+  isDefaultShowName,
+  isEnergyBlockSensor,
+  isWindowContactDeviceClass,
+  resolveShowName,
+} from '../../utils/badge-utils';
+import { isRelayOpeningSensor } from '../../utils/entity-filter';
 import { findUpsEntityGroups } from '../../views/RoomViewStrategy';
 import { stateFor } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
@@ -59,7 +66,7 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const showScriptsInRooms = host._config.show_scripts_in_rooms === true;
   const showUpsInRooms = host._config.show_ups_in_rooms === true;
   const showEnergyInRooms = host._config.show_energy_in_rooms === true;
-  // Window / door contact badges default to visible — read as opt-out (!== false).
+  // Window / opening / door contact badges default to visible — read as opt-out (!== false).
   const showWindowContactsInRooms = host._config.show_window_contacts_in_rooms !== false;
   const showDoorContactsInRooms = host._config.show_door_contacts_in_rooms !== false;
   const showCamerasInRooms = host._config.show_cameras_in_rooms !== false;
@@ -1499,6 +1506,19 @@ function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Sim
 
   const candidates: string[] = [];
 
+  // Sibling lookup over the raw registry record: the editor reads
+  // hass.entities directly instead of the Registry singleton. Only
+  // consulted for `opening` sensors, so the linear scan stays cheap.
+  function entityIdsForDevice(deviceId: string): string[] {
+    return entities
+      .filter(function sameDevice(e) {
+        return e.device_id === deviceId;
+      })
+      .map(function toId(e) {
+        return e.entity_id;
+      });
+  }
+
   for (const entity of entities) {
     let belongsToArea = false;
     if (entity.area_id) belongsToArea = entity.area_id === areaId;
@@ -1521,8 +1541,12 @@ function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Sim
     // Globally disabled contact types don't render as badges — don't offer
     // them as candidates either (they stay pickable as additional badges,
     // which is the deliberate per-room override).
-    if (domain === 'binary_sensor' && dc === 'window' && config.show_window_contacts_in_rooms === false) continue;
+    if (domain === 'binary_sensor' && isWindowContactDeviceClass(dc) && config.show_window_contacts_in_rooms === false)
+      continue;
     if (domain === 'binary_sensor' && dc === 'door' && config.show_door_contacts_in_rooms === false) continue;
+    // Relay inputs (`opening` + switch on the same device) never render as
+    // badges at runtime — don't offer them as auto-detected candidates.
+    if (domain === 'binary_sensor' && isRelayOpeningSensor(dc, entity.device_id, entityIdsForDevice)) continue;
 
     if (domain === 'sensor' && (dc === 'battery' || entity.entity_id.includes('battery'))) {
       const val = parseFloat(stateObj?.state ?? '');

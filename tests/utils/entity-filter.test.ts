@@ -13,6 +13,7 @@ import {
   collectPersons,
   findWeatherEntity,
   findDummySensor,
+  isRelayOpeningSensor,
 } from '../../src/utils/entity-filter';
 import { makeHass } from '../fixtures/hass';
 
@@ -105,5 +106,75 @@ describe('findDummySensor', () => {
     const hass = makeHass({ entities: [] });
     Registry.initialize(hass, {});
     expect(findDummySensor(hass)).toBe('sun.sun');
+  });
+});
+
+// ============================================================================
+// Relay-style opening sensors — a relay device (SONOFF ZBMINIR2/L2, Shelly
+// with input contact) exposes an `opening` binary_sensor that mirrors the
+// relay input. The shared heuristic (switch sibling on the same device) keeps
+// it out of the security view, the summary count and the room badges.
+// ============================================================================
+
+describe('isRelayOpeningSensor', () => {
+  function relayHass() {
+    return makeHass({
+      devices: [{ id: 'dev_relay' }, { id: 'dev_contact' }],
+      entities: [
+        // Relay: switch + opening input on one device
+        { entity_id: 'switch.relay', device_id: 'dev_relay', state: 'on' },
+        {
+          entity_id: 'binary_sensor.relay_input',
+          device_id: 'dev_relay',
+          state: 'off',
+          attributes: { device_class: 'opening' },
+        },
+        // Plain contact sensor: only sensor siblings
+        {
+          entity_id: 'binary_sensor.terrace_contact',
+          device_id: 'dev_contact',
+          state: 'off',
+          attributes: { device_class: 'opening' },
+        },
+        {
+          entity_id: 'sensor.terrace_contact_battery',
+          device_id: 'dev_contact',
+          state: '80',
+          attributes: { device_class: 'battery' },
+        },
+      ],
+    });
+  }
+
+  it('flags an opening sensor whose device also exposes a switch (Registry lookup)', () => {
+    Registry.initialize(relayHass(), {});
+    expect(isRelayOpeningSensor('opening', 'dev_relay')).toBe(true);
+  });
+
+  it('keeps opening sensors on devices without a switch sibling', () => {
+    Registry.initialize(relayHass(), {});
+    expect(isRelayOpeningSensor('opening', 'dev_contact')).toBe(false);
+  });
+
+  it('only applies to the generic opening class, never to explicit door/window contacts', () => {
+    Registry.initialize(relayHass(), {});
+    expect(isRelayOpeningSensor('window', 'dev_relay')).toBe(false);
+    expect(isRelayOpeningSensor('door', 'dev_relay')).toBe(false);
+    expect(isRelayOpeningSensor(undefined, 'dev_relay')).toBe(false);
+  });
+
+  it('returns false without a device', () => {
+    Registry.initialize(relayHass(), {});
+    expect(isRelayOpeningSensor('opening', null)).toBe(false);
+    expect(isRelayOpeningSensor('opening', undefined)).toBe(false);
+  });
+
+  it('accepts a custom sibling lookup (editor path, no Registry involved)', () => {
+    // Registry deliberately NOT initialized — the lookup must be the only source.
+    function lookup(deviceId: string): string[] {
+      return deviceId === 'dev_relay' ? ['switch.relay', 'binary_sensor.relay_input'] : [];
+    }
+    expect(isRelayOpeningSensor('opening', 'dev_relay', lookup)).toBe(true);
+    expect(isRelayOpeningSensor('opening', 'dev_contact', lookup)).toBe(false);
   });
 });

@@ -287,7 +287,7 @@ strategy:
 
 **Automationen & Skripte** — Optional können dem Bereich zugeordnete Automationen und Skripte in den Raum-Views angezeigt werden. Beide Optionen sind separat aktivierbar und standardmäßig aus.
 
-**Fenster- & Türkontakte** — Fensterkontakte und Türkontakte erscheinen als Badges in den Raum-Views (standardmäßig an, per zwei getrennten Toggles im Editor abschaltbar). Absolute Luftfeuchtigkeit (z.B. von der Thermal Comfort Integration, `g/m³`) wird automatisch als Badge erkannt.
+**Fenster- & Türkontakte** — Fensterkontakte und Türkontakte erscheinen als Badges in den Raum-Views (standardmäßig an, per zwei getrennten Toggles im Editor abschaltbar). Generische Öffnungskontakte (`device_class: opening`) zählen dabei als Fensterkontakte *(ab v1.4.2)* — ausgenommen Relais-Geräte, die neben dem Kontakt einen Schalter haben (z.B. Shelly-/SONOFF-Relais mit Eingangskontakt): deren `opening`-Sensor spiegelt nur den Relais-Eingang und bleibt wie in der Sicherheits-Ansicht außen vor. Absolute Luftfeuchtigkeit (z.B. von der Thermal Comfort Integration, `g/m³`) wird automatisch als Badge erkannt.
 
 **Kameras in Räumen** *(ab v1.4.0)* — Kameras in den Raum-Views sind standardmäßig an und können per Toggle deaktiviert werden. Optional (`camera_live_toggle`) startet die Kamera-Karte als Standbild und wechselt erst per **Play/Stopp-Button** in den Live-Stream — das spart Bandbreite und Last auf Wandtablets; Kameras ohne Standbild-Unterstützung (z.B. Aqara) starten dabei automatisch im Live-Modus. Standardmäßig verhalten sich die Kameras wie gewohnt (automatisch aktualisierte Vorschau).
 
@@ -622,7 +622,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_scripts_in_rooms` | boolean | `false` | — | Skripte in Raum-Views |
 | `show_cameras_in_rooms` | boolean | `true` | v1.4.0 | Kamera-Streams in Raum-Views |
 | `camera_live_toggle` | boolean | `false` | v1.4.0 | Raum-Kameras als Standbild mit Play/Stopp-Button statt automatischer Vorschau |
-| `show_window_contacts_in_rooms` | boolean | `true` | v1.3.5 | Fensterkontakte als Badges in Raum-Views |
+| `show_window_contacts_in_rooms` | boolean | `true` | v1.3.5 | Fensterkontakte (`device_class: window`, ab v1.4.2 auch `opening`) als Badges in Raum-Views |
 | `show_door_contacts_in_rooms` | boolean | `true` | v1.3.5 | Türkontakte als Badges in Raum-Views |
 | `hide_unavailable_in_rooms` | boolean | `true` | v1.4.0 | Nicht verfügbare Entitäten in Raum-Views ausblenden |
 | `room_visibility` | object | `{}` | v1.4.0 | Raum-Views nur bei bestimmtem Entity-Zustand anzeigen |
