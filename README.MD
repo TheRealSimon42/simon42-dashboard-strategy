@@ -19,12 +19,16 @@ Eine modulare und hochkonfigurierbare Dashboard-Strategy für Home Assistant, di
 ## Video-Anleitung
 
 <p align="center">
-  <a href="https://youtu.be/XU7DfQrfJ2w">
-    <img src="https://raw.githubusercontent.com/TheRealSimon42/simon42-dashboard-strategy/main/assets/video-thumbnail.png" alt="simon42 Dashboard Strategy — Video Tutorial" width="600" />
+  <a href="https://youtu.be/ANR74_6UY2Y">
+    <img src="https://i.ytimg.com/vi/ANR74_6UY2Y/maxresdefault.jpg" alt="simon42 Dashboard Strategy 1.4 — Video-Anleitung" width="600" />
   </a>
   <br/>
-  <em>Schritt-für-Schritt Anleitung auf YouTube ansehen</em>
+  <em>Einrichtung, die wichtigsten Einstellungen und alle Neuerungen der Version 1.4 auf YouTube ansehen</em>
 </p>
+
+Frühere Videos zur Strategy:
+- [Das große Strategy-Update (April 2026)](https://youtu.be/XU7DfQrfJ2w)
+- [Die Strategy-Vorstellung für Einsteiger](https://youtu.be/Bc1dQFP1HNM)
 
 ---
 
