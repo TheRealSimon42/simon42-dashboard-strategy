@@ -83,7 +83,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Eigene Badges** — Beliebige Badges via YAML im Header (neben Personen-Chips)
 - **Custom Views** — Eigene Dashboard-Views mit beliebigen Cards via YAML
 - **Reaktive Updates** — Echtzeit-Aktualisierung via LitElement Custom Cards
-- **Mehrsprachig** — Deutsch, Englisch und Russisch, automatische Erkennung aus HA-Einstellungen, Fallback auf Englisch
+- **Mehrsprachig** — Deutsch, Englisch, Russisch, Ungarisch und Polnisch, automatische Erkennung aus HA-Einstellungen, Fallback auf Englisch
 - **Performance-optimiert** — Code-Split Bundles, Registry-Caching, Tile-Card-Pooling
 
 > **Versions-Hinweis:** Features ohne Vermerk sind seit v1.3.x oder länger enthalten. Neuere Features tragen ein *(ab vX.Y)* — die vollständige Zuordnung aller Optionen steht in der [Konfigurationsreferenz](#alle-optionen-referenz).
@@ -703,7 +703,7 @@ Die Strategy erkennt automatisch die Sprache aus deinen Home Assistant Einstellu
 |---------|--------|
 | 🇩🇪 Deutsch | Vollständig |
 | 🇬🇧 English | Vollständig |
-| 🇭🇺 Magyar | Vollständig |
+| 🇭🇺 Magyar | Vollständig *(ab v1.4.2)* |
 | 🇵🇱 Polski | Vollständig *(ab v1.4.2)* |
 | 🇷🇺 Русский | Vollständig *(ab v1.3.5)* |
 
