@@ -73,7 +73,7 @@ export function renderWeatherSensorsSection(host: StrategyEditorHost): TemplateR
                     </div>
                     <div class="form-row" style="margin-bottom: 0;">
                       <input type="checkbox" id="weather-sensor-hide-zero-off-${index}"
-                        ?checked=${sensor.hide_when === 'zero_or_off'}
+                        .checked=${sensor.hide_when === 'zero_or_off'}
                         @change=${(e: Event) => updateWeatherSensor(host, index, 'hide_when', (e.target as HTMLInputElement).checked ? 'zero_or_off' : '')} />
                       <label for="weather-sensor-hide-zero-off-${index}">${localize('editor.weather_sensors_hide_zero_off')}</label>
                     </div>

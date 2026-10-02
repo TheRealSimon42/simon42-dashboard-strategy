@@ -71,6 +71,15 @@ export function buildMaintenanceScan(hass: HomeAssistant, config: Simon42Strateg
   const ignoredEntities = new Set(config.maintenance_ignored_entities || []);
   const ignoredDevices = new Set(config.maintenance_ignored_devices || []);
 
+  // An ignored device covers its child devices too (HA 2026.9+: e.g. one
+  // sub-device per camera lens) — unplugging the parent takes them all down.
+  function isDeviceIgnored(deviceId: string): boolean {
+    if (ignoredDevices.size === 0) return false;
+    if (ignoredDevices.has(deviceId)) return true;
+    const parentId = Registry.getDevice(deviceId)?.parent_device_id;
+    return !!parentId && ignoredDevices.has(parentId);
+  }
+
   const byDevice = new Map<string, string[]>();
   const ignoredByDevice = new Map<string, string[]>();
   const orphanIds: string[] = [];
@@ -79,7 +88,7 @@ export function buildMaintenanceScan(hass: HomeAssistant, config: Simon42Strateg
     if (Registry.isEntityExcluded(entityId)) continue;
     const entry = Registry.getEntity(entityId);
     const deviceId = entry?.device_id;
-    const ignored = ignoredEntities.has(entityId) || (!!deviceId && ignoredDevices.has(deviceId));
+    const ignored = ignoredEntities.has(entityId) || (!!deviceId && isDeviceIgnored(deviceId));
     if (deviceId) {
       const target = ignored ? ignoredByDevice : byDevice;
       const group = target.get(deviceId);
