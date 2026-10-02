@@ -321,7 +321,28 @@ export function buildMaintenanceView(hass: HomeAssistant, config: Simon42Strateg
 
   // Unavailable devices deliberately LAST — usually the longest list
   const unavailableSection = buildUnavailableSection(hass, config);
-  if (unavailableSection) sections.push(unavailableSection);
+  if (unavailableSection) {
+    sections.push(unavailableSection);
+  } else if (sections.length > 0) {
+    // Nothing unavailable is listed, but other maintenance content exists:
+    // the all-clear card (which carries the "N ignored" hint) won't render,
+    // so keep the hint as a heading — the list may be empty only because of
+    // the ignore list.
+    const ignored = countIgnoredUnavailable(hass, buildMaintenanceScan(hass, config));
+    if (ignored > 0) {
+      sections.push({
+        type: 'grid',
+        cards: [
+          {
+            type: 'heading',
+            heading: `${localize('maintenance.unavailable')} (0)${ignoredHint(ignored)}`,
+            heading_style: 'title',
+            icon: 'mdi:lan-disconnect',
+          },
+        ],
+      });
+    }
+  }
 
   // All clear? Friendly empty state instead of a blank main column.
   // Video tips don't count as maintenance content here. Ignored entries
