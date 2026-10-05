@@ -530,7 +530,12 @@
     "design_bg_image_label": "Hintergrundbild",
     "design_bg_image_hint": "Bild über den Medien-Dialog wählen oder direkt hochladen. Alternativ per YAML: background.image auch als Pfad/URL (z.B. /local/hintergrund.jpg); Größe/Ausrichtung über weitere background-Schlüssel.",
     "design_bg_opacity_label": "Deckkraft",
-    "design_bg_fixed_label": "Hintergrund beim Scrollen fixieren"
+    "design_bg_fixed_label": "Hintergrund beim Scrollen fixieren",
+    "section_banner": "Banner / Benachrichtigung",
+    "banner_desc": "Zeigt einen Banner über alle Ansichten hinweg. Der Banner wird automatisch ausgeblendet, wenn der Entity-Zustand leer ist.",
+    "banner_add": "— Banner-Entity hinzufügen —",
+    "banner_remove": "Entfernen",
+    "banner_none": "Keine Banner-Entities konfiguriert."
   },
   "custom_views": {
     "ref_error_title": "Referenzierte View konnte nicht geladen werden",

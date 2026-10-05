@@ -530,7 +530,12 @@
     "design_bg_image_label": "Background image",
     "design_bg_image_hint": "Pick an image via the media dialog or upload one directly. Alternatively via YAML: background.image also accepts a path/URL (e.g. /local/background.jpg); size/alignment via further background keys.",
     "design_bg_opacity_label": "Opacity",
-    "design_bg_fixed_label": "Fix background while scrolling"
+    "design_bg_fixed_label": "Fix background while scrolling",
+    "section_banner": "Banner / Notification",
+    "banner_desc": "Show a full-width alert banner at the top of every view. The banner is automatically hidden when the entity state is empty.",
+    "banner_add": "— Add banner entity —",
+    "banner_remove": "Remove",
+    "banner_none": "No banner entities configured."
   },
   "custom_views": {
     "ref_error_title": "Referenced view could not be loaded",

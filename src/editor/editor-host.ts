@@ -59,6 +59,7 @@ export interface StrategyEditorHost {
   _lightFavSearch: string;
   _maintenanceIgnoredEntitySearch: string;
   _maintenanceIgnoredDeviceSearch: string;
+  _bannerSearch: string;
 
   // -- Caches / drag handles ---------------------------------------------
   _areaEntitiesCache: Map<string, AreaEntitiesCacheEntry>;

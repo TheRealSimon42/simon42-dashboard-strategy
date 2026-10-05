@@ -38,7 +38,12 @@ import { renderSectionOrderPanel } from './panels/SectionOrderPanel';
 import { renderDesignSection } from './panels/DesignPanel';
 import { renderSummariesSection } from './panels/SummariesPanel';
 import { renderAreasSection, areaOptionsFor } from './panels/AreasPanel';
-import { renderCollapsiblePanel, loadExpandedPanels, type PanelMeta } from './panels/panel-shell';
+import { renderBannerSection } from './panels/BannerPanel';
+import {
+  renderCollapsiblePanel,
+  loadExpandedPanels,
+  type PanelMeta,
+} from './panels/panel-shell';
 import { mergeStacksOrder } from '../utils/name-utils';
 
 // -- Supporting types for the editor ------------------------------------
@@ -100,6 +105,7 @@ const PANELS: Record<string, PanelMeta> = {
     tutorialUrl: `${ASSETS}/Custom-View-hinzufugen.gif`,
   },
   design: { key: 'design', icon: 'mdi:palette-swatch-outline', labelKey: 'editor.section_design' },
+  banner: { key: 'banner', icon: 'mdi:alert-circle-outline', labelKey: 'editor.section_banner' },
 };
 
 // ====================================================================
@@ -130,6 +136,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   _lightFavSearch = '';
   _maintenanceIgnoredEntitySearch = '';
   _maintenanceIgnoredDeviceSearch = '';
+  _bannerSearch = '';
 
   // Cache for loaded area entities (avoid re-fetching on every render)
   _areaEntitiesCache = new Map<string, AreaEntitiesCacheEntry>();
@@ -199,6 +206,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
         ${renderCollapsiblePanel(this, PANELS.custom_badges, () => renderCustomBadgesSection(this))}
         ${renderCollapsiblePanel(this, PANELS.custom_views, () => renderCustomViewsSection(this))}
         ${renderCollapsiblePanel(this, PANELS.design, () => renderDesignSection(this))}
+        ${renderCollapsiblePanel(this, PANELS.banner, () => renderBannerSection(this))}
       </div>
     `;
   }

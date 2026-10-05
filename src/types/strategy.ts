@@ -359,6 +359,17 @@ export interface Simon42StrategyConfig {
 
   // Custom badges (shown in header next to person chips)
   custom_badges?: CustomBadge[];
+
+  // Banner / notification (shown full-width at top of every view)
+  // Use banner_entities[] for multiple banners; banner_entity is kept for backward compat.
+  banner_entity?: string;
+  banner_alert_type?: 'info' | 'warning' | 'error' | 'success';
+  banner_entities?: BannerEntityConfig[];
+}
+
+export interface BannerEntityConfig {
+  entity: string;
+  alert_type?: 'info' | 'warning' | 'error' | 'success';
 }
 
 // -- Area Management --------------------------------------------------
