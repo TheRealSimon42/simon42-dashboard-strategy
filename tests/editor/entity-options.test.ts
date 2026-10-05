@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { getAllEntitiesForSelect } from '../../src/editor/entity-options';
+import { getAllEntitiesForSelect, getCalendarEntities } from '../../src/editor/entity-options';
 import { makeHass } from '../fixtures/hass';
 
 describe('getAllEntitiesForSelect', () => {
@@ -24,9 +24,28 @@ describe('getAllEntitiesForSelect', () => {
         { entity_id: 'camera.lens2', device_id: 'cam_lens2', attributes: { friendly_name: 'Lens 2' } },
       ],
     });
+
     const byId = new Map(getAllEntitiesForSelect(hass).map((o) => [o.entity_id, o]));
     expect(byId.get('camera.lens1')?.area_id).toBe('kitchen');
     expect(byId.get('camera.lens2')?.area_id).toBe('kitchen');
     expect(byId.get('camera.lens2')?.device_area_id).toBe('kitchen');
+  });
+});
+
+describe('getCalendarEntities', () => {
+  it('returns calendar state entities with friendly names, sorted by name', () => {
+    const hass = makeHass({
+      entities: [
+        { entity_id: 'calendar.work', attributes: { friendly_name: 'Work' } },
+        { entity_id: 'calendar.family', attributes: { friendly_name: 'Family' } },
+        { entity_id: 'todo.shopping', attributes: { friendly_name: 'Shopping' } },
+      ],
+    });
+
+    expect(getCalendarEntities(hass)).toEqual([
+      { entity_id: 'calendar.family', name: 'Family' },
+      { entity_id: 'calendar.work', name: 'Work' },
+    ]);
+    expect(getCalendarEntities(null)).toEqual([]);
   });
 });

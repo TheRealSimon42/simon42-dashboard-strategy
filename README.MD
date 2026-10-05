@@ -570,7 +570,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `energy_link_dashboard` | boolean | `true` | v1.3.5 | Energie-Karte verlinkt auf das HA-Energie-Dashboard |
 | `show_plants_section` | boolean | `false` | v1.4.0 | Pflanzen-Section (Auto-Hide ohne `plant.*`-Entitäten) |
 | `show_agenda_section` | boolean | `false` | v1.4.0 | Agenda-Section mit Kalender-Terminen |
-| `agenda_calendar_entities` | string[] | alle | v1.4.0 | Kalender für die Agenda einschränken |
+| `agenda_calendar_entities` | string[] | alle | v1.4.0 | Kalender für die Agenda einschränken (im Strategy Editor per Checkbox) |
 | `show_todos_section` | boolean | `false` | v1.4.0 | To-do-Section |
 | `todos_entities` | string[] | alle | v1.4.0 | To-do-Listen einschränken |
 | `hide_completed_todos` | boolean | `false` | v1.4.2 | Erledigte Einträge in den generierten To-do-Karten ausblenden |

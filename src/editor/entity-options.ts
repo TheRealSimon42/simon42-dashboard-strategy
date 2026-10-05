@@ -112,6 +112,20 @@ export function getWeatherEntities(hass: HomeAssistant | null): AlarmEntityOptio
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+export function getCalendarEntities(hass: HomeAssistant | null): AlarmEntityOption[] {
+  if (!hass) return [];
+  return Object.keys(hass.states)
+    .filter((entityId) => entityId.startsWith('calendar.'))
+    .map((entityId) => {
+      const stateObj = stateFor(hass, entityId);
+      return {
+        entity_id: entityId,
+        name: stateObj?.attributes.friendly_name || entityId.split('.')[1].replace(/_/g, ' '),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** Sensor entities reporting power (W / kW). For the optional live power badge. */
 export function getPowerSensorEntities(hass: HomeAssistant | null): AlarmEntityOption[] {
   if (!hass) return [];

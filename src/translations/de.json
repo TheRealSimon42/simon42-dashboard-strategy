@@ -232,6 +232,8 @@
     "section_visibility_desc": "Blendet einen Abschnitt aus, solange eine gewählte Entität nicht den angegebenen Status hat. Beispiele: Agenda nur an Werktagen (Entität: `calendar.workday_sensor`, Status: `on`) oder Energie nur tagsüber (Entität: `sun.sun`, Status: `above_horizon`). Entität leer lassen, um die Bedingung pro Abschnitt zu deaktivieren.",
     "section_visibility_entity": "Entität:",
     "section_visibility_state": "Status:",
+    "agenda_calendar_entities_desc": "Wähle die Kalender aus, die in der Agenda erscheinen. Standardmäßig sind alle Kalender ausgewählt; mindestens ein Kalender muss ausgewählt bleiben.",
+    "no_calendar_entities": "Keine Kalender-Entitäten gefunden.",
     "power_badge_entity": "Live-Strom-Badge",
     "power_badge_none": "Kein Live-Badge",
     "power_badge_entity_desc": "Optional. Fügt ein kleines Live-Badge in den Übersichts-Header (neben den Personen-Chips) ein, das den aktuellen Wert des gewählten Sensors anzeigt. Wähle die Entität, die deinen aktuellen Verbrauch repräsentiert (z.B. Netzbezug, Steckdose). Benötigt einen Sensor mit `device_class: power` oder Einheit W/kW; ansonsten erscheinen keine Optionen.",

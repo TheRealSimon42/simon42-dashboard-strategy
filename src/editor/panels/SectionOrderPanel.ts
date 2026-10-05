@@ -25,7 +25,7 @@ import type {
 import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../../sections/section-registry';
 import { customSectionHasCards } from '../../sections/CustomSections';
 import { localize } from '../../utils/localize';
-import { getWeatherEntities, getPowerSensorEntities } from '../entity-options';
+import { getCalendarEntities, getWeatherEntities, getPowerSensorEntities } from '../entity-options';
 import type { StrategyEditorHost } from '../editor-host';
 
 function updateSectionsOrder(host: StrategyEditorHost, newOrder: SectionOrderKey[]): void {
@@ -76,6 +76,35 @@ function setWeatherPresentation(host: StrategyEditorHost, presentation: WeatherP
   host._fireConfigChanged(newConfig);
 }
 
+function agendaCalendarsChanged(
+  host: StrategyEditorHost,
+  entityId: string,
+  checked: boolean,
+  availableEntityIds: string[]
+): void {
+  const configured = host._config.agenda_calendar_entities;
+  const selectedEntityIds =
+    Array.isArray(configured) && configured.length > 0
+      ? configured.filter((id) => availableEntityIds.includes(id))
+      : availableEntityIds;
+  const selected = new Set(selectedEntityIds);
+
+  if (checked) {
+    selected.add(entityId);
+  } else {
+    selected.delete(entityId);
+  }
+
+  const newConfig: Simon42StrategyConfig = { ...host._config };
+  if (selected.size === availableEntityIds.length) {
+    delete newConfig.agenda_calendar_entities;
+  } else {
+    newConfig.agenda_calendar_entities = availableEntityIds.filter((id) => selected.has(id));
+  }
+  host._config = newConfig;
+  host._fireConfigChanged(newConfig);
+}
+
 export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResult {
   const order = host._getSectionsOrder();
   const energyLinkDashboard = host._config.energy_link_dashboard !== false;
@@ -96,6 +125,14 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
   const powerBadgeEntity = host._config.power_badge_entity || '';
   const powerSensorEntities = getPowerSensorEntities(host._hass);
   const hideCompletedTodos = host._config.hide_completed_todos === true;
+  const calendarEntities = getCalendarEntities(host._hass);
+  const availableCalendarIds = calendarEntities.map((entity) => entity.entity_id);
+  const configuredCalendarIds = host._config.agenda_calendar_entities;
+  const selectedCalendarIds =
+    Array.isArray(configuredCalendarIds) && configuredCalendarIds.length > 0
+      ? new Set(configuredCalendarIds)
+      : new Set(availableCalendarIds);
+  const selectedCalendarCount = availableCalendarIds.filter((id) => selectedCalendarIds.has(id)).length;
 
   return html`
       <div class="description" style="margin-left: 0; margin-bottom: 12px;">
@@ -235,6 +272,30 @@ export function renderSectionOrderPanel(host: StrategyEditorHost): TemplateResul
               `
                   : nothing
               }
+            `
+                : nothing
+            }
+            ${
+              key === 'agenda' && host._config.show_agenda_section === true
+                ? html`
+              <div class="section-order-sub" style="display: block;">
+                <div class="description" style="margin-left: 0;">${localize('editor.agenda_calendar_entities_desc')}</div>
+                ${
+                  calendarEntities.length > 0
+                    ? calendarEntities.map(
+                        (entity) => html`
+                    ${host._renderCheckbox(
+                      `agenda-calendar-${entity.entity_id}`,
+                      entity.name,
+                      selectedCalendarIds.has(entity.entity_id),
+                      (checked) => agendaCalendarsChanged(host, entity.entity_id, checked, availableCalendarIds),
+                      selectedCalendarIds.has(entity.entity_id) && selectedCalendarCount === 1
+                    )}
+                  `
+                      )
+                    : html`<div class="description" style="margin-left: 0;">${localize('editor.no_calendar_entities')}</div>`
+                }
+              </div>
             `
                 : nothing
             }
