@@ -130,6 +130,59 @@ describe('createOverviewSection', () => {
     });
   });
 
+  it('does not fall back to a scene activation timestamp when both favorite state options are disabled', () => {
+    const hass = makeHass({ entities: [{ entity_id: 'scene.goodnight', state: '2026-10-05T12:00:00+00:00' }] });
+    const config = {
+      favorite_entities: ['scene.goodnight'],
+      favorites_show_state: false,
+      favorites_hide_last_changed: true,
+    };
+    Registry.initialize(hass, config);
+    const section = createOverviewSection({ someSensorId: 'sensor.dummy', showSearchCard: false, config, hass });
+    const sceneTile = section?.cards?.find((card) => card.entity === 'scene.goodnight');
+
+    expect(sceneTile).toMatchObject({ type: 'tile', hide_state: true });
+    expect(sceneTile).not.toHaveProperty('state_content');
+  });
+
+  it('treats the scene state as last_changed regardless of show_state', () => {
+    const hass = makeHass({
+      entities: [
+        { entity_id: 'scene.goodnight', state: '2026-10-05T12:00:00+00:00' },
+      ],
+    });
+    for (const showState of [false, true]) {
+      const config = {
+        favorite_entities: ['scene.goodnight'],
+        favorites_show_state: showState,
+        favorites_hide_last_changed: false,
+      };
+      Registry.initialize(hass, config);
+      const section = createOverviewSection({ someSensorId: 'sensor.dummy', showSearchCard: false, config, hass });
+
+      expect(section?.cards?.find((card) => card.entity === 'scene.goodnight')).toMatchObject({
+        type: 'tile',
+        state_content: ['state'],
+      });
+    }
+  });
+
+  it('hides the scene activation time when favorites_hide_last_changed is enabled', () => {
+    const hass = makeHass({ entities: [{ entity_id: 'scene.goodnight', state: '2026-10-05T12:00:00+00:00' }] });
+    const config = {
+      favorite_entities: ['scene.goodnight'],
+      favorites_show_state: true,
+      favorites_hide_last_changed: true,
+    };
+    Registry.initialize(hass, config);
+    const section = createOverviewSection({ someSensorId: 'sensor.dummy', showSearchCard: false, config, hass });
+
+    expect(section?.cards?.find((card) => card.entity === 'scene.goodnight')).toMatchObject({
+      type: 'tile',
+      hide_state: true,
+    });
+  });
+
   it('passes hidden_areas to the lights/covers/climate tiles only with hide_hidden_areas_in_summaries (#428)', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});

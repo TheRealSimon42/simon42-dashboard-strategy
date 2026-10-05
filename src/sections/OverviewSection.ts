@@ -13,6 +13,7 @@ import type { LovelaceCardConfig, LovelaceSectionConfig } from '../types/lovelac
 import { localize } from '../utils/localize';
 import { getViewVisibleUsers, userVisibilityConditions, unionVisibleUsers } from '../utils/view-visibility';
 import { summaryHiddenAreas } from '../utils/area-utils';
+import { tileStateContentOptions } from '../utils/tile-state-content';
 
 /**
  * Spreadable user-visibility for a summary tile: the tile is the overview
@@ -334,17 +335,15 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
 
     const showState = config.favorites_show_state === true;
     const hideLastChanged = config.favorites_hide_last_changed === true;
-    const stateContent: string[] = [];
-    if (showState) stateContent.push('state');
-    if (!hideLastChanged) stateContent.push('last_changed');
-
     for (const entityId of favoriteEntities) {
+      const domain = entityId.split('.')[0];
+      const stateContentOptions = tileStateContentOptions(showState, hideLastChanged, domain);
       cards.push({
         type: 'tile',
         entity: entityId,
         show_entity_picture: true,
         vertical: false,
-        ...(stateContent.length > 0 ? { state_content: stateContent } : {}),
+        ...stateContentOptions,
       });
     }
   }

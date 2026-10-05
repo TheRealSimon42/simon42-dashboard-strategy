@@ -30,6 +30,7 @@ import {
 import { isRelayOpeningSensor } from '../utils/entity-filter';
 import { buildCoverControlBadges } from '../utils/cover-controls';
 import { densePlacement } from '../utils/view-builder';
+import { tileStateContentOptions } from '../utils/tile-state-content';
 
 // HA supported_features bitmask values
 const FAN_SET_SPEED = 1;
@@ -161,15 +162,16 @@ function buildRoomPinTile(
   hass: HomeAssistant
 ): (e: string) => LovelaceCardConfig {
   return (e: string): LovelaceCardConfig => {
-    const pinStateContent: string[] = [];
-    if (config.room_pins_show_state === true) pinStateContent.push('state');
-    if (config.room_pins_hide_last_changed !== true) pinStateContent.push('last_changed');
     return {
       type: 'tile',
       entity: e,
       name: stripAreaName(e, area, hass),
       vertical: false,
-      ...(pinStateContent.length > 0 ? { state_content: pinStateContent } : {}),
+      ...tileStateContentOptions(
+        config.room_pins_show_state === true,
+        config.room_pins_hide_last_changed === true,
+        e.split('.')[0]
+      ),
     };
   };
 }

@@ -544,8 +544,8 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_camera_events` | boolean | `false` | v1.4.0 | LLM Vision Ereignis-Timelines in der Kamera-Ansicht (Last-Hinweis siehe unten) |
 | `summaries_columns` | 2 \| 4 | `2` | — | Spalten-Layout der Zusammenfassungen |
 | `favorite_entities` | string[] | `[]` | — | Favoriten-Entitäten auf der Übersicht |
-| `favorites_show_state` | boolean | `false` | — | Zustand auf Favoriten-Kacheln anzeigen |
-| `favorites_hide_last_changed` | boolean | `false` | — | „Zuletzt geändert" auf Favoriten ausblenden |
+| `favorites_show_state` | boolean | `false` | — | Zustand auf Favoriten-Kacheln anzeigen; bei Szenen hat diese Option keinen Einfluss |
+| `favorites_hide_last_changed` | boolean | `false` | — | Separaten Zeitstempel „Zuletzt geändert" auf Favoriten ausblenden; bei Szenen steuert diese Option den Zeitpunkt der letzten Ausführung |
 | `light_favorite_entities` | string[] | `[]` | v1.4.0 | Schnellzugriffs-Reihe für Lieblingslampen auf der Übersicht |
 | `hide_unavailable_entities` | boolean | `false` | v1.4.0 | Karten/Badges mit `unavailable`/`unknown` dynamisch ausblenden — gilt für alle generierten Ansichten, eigene Inhalte bleiben unberührt |
 | `theme` | string | — | v1.4.0 | Theme-Name, der auf alle Views gestempelt wird (native View-Eigenschaft `theme`) |
@@ -626,8 +626,8 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_energy_in_rooms` | boolean | `false` | v1.4.0 | Energie-Block (Leistung/Energie/Wasser/Gas-Sensoren) in Raum-Views |
 | `room_pin_entities` | string[] | `[]` | — | Raum-Pin Entitäten |
 | `room_pins_first` | boolean | `false` | v1.3.5 | Raum-Pins ganz oben statt unten im Raum anzeigen |
-| `room_pins_show_state` | boolean | `false` | — | Zustand auf Raum-Pin-Kacheln anzeigen |
-| `room_pins_hide_last_changed` | boolean | `false` | — | „Zuletzt geändert" auf Raum-Pins ausblenden |
+| `room_pins_show_state` | boolean | `false` | — | Zustand auf Raum-Pin-Kacheln anzeigen; bei Szenen hat diese Option keinen Einfluss |
+| `room_pins_hide_last_changed` | boolean | `false` | — | Separaten Zeitstempel „Zuletzt geändert" auf Raum-Pins ausblenden; bei Szenen steuert diese Option den Zeitpunkt der letzten Ausführung |
 | `show_locks_in_rooms` | boolean | `false` | — | Schlösser in Raum-Views |
 | `show_cover_controls_in_rooms` | boolean | `true` | v1.4.0 | Hoch/Stopp/Runter-Sammel-Buttons an den Rollo- und Vorhang-Überschriften in Raum-Views (Fenster/Türen/Garagentore ausgenommen) |
 | `show_switches_section_in_rooms` | boolean | `false` | v1.4.0 | Schalter & smarte Steckdosen als eigener Abschnitt „Schalter & Steckdosen“ statt unter „Sonstiges“ |
