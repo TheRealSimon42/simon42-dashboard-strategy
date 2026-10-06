@@ -11,6 +11,7 @@ import { localize } from '../utils/localize';
 import { stripAreaName, getVisibleAreasFromHass } from '../utils/name-utils';
 import type { AreasDisplay } from '../types/strategy';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
+import { scenesForLightGroup, sceneLabel } from '../utils/scene-groups';
 
 declare global {
   interface Window {
@@ -35,6 +36,12 @@ interface LightsGroupConfig {
    *  from areas_display.hidden with hide_hidden_areas_in_summaries, #428).
    *  Unset = every visible light, whatever its area. */
   hidden_areas?: string[];
+  /**
+   * Render each light group's scenes as chips underneath it. Off unless the
+   * caller asks for it — the room view does, the lights view does not (a
+   * chip row per group across every floor drowns the switch list).
+   */
+  scene_chips?: boolean;
 }
 
 interface LightsAreaGroup {
@@ -84,6 +91,11 @@ class Simon42LightsGroupCard extends LitElement {
   private _areaHeadingCards: Map<string, LovelaceCardElement> = new Map();
   private _groupContainers: Map<string, HTMLElement> = new Map();
   private _groupExpansion: Map<string, boolean> = new Map();
+
+  // Scene chips (only populated when scene_chips is on)
+  private _lightNodes: Map<string, HTMLElement> = new Map();
+  private _chipRows: Map<string, HTMLElement> = new Map();
+  private _cachedSceneIds: string[] | null = null;
 
   static styles = css`
     :host {
@@ -162,6 +174,39 @@ class Simon42LightsGroupCard extends LitElement {
     .group-children[hidden] {
       display: none;
     }
+    /* A light and its scene chips move as one unit through the grid. */
+    .light-node {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 0 4px;
+    }
+    .chips:empty {
+      display: none;
+    }
+    .chip {
+      font: inherit;
+      font-size: 0.85em;
+      color: var(--primary-text-color);
+      background: var(--ha-card-background, var(--card-background-color));
+      border: 1px solid var(--divider-color);
+      border-radius: 16px;
+      padding: 5px 12px;
+      cursor: pointer;
+      min-height: 32px;
+    }
+    .chip:hover {
+      border-color: var(--primary-color);
+    }
+    .chip:active {
+      background: var(--primary-color);
+      color: var(--text-primary-color);
+    }
   `;
 
   setConfig(config: LightsGroupConfig): void {
@@ -180,6 +225,11 @@ class Simon42LightsGroupCard extends LitElement {
     if (!oldHass || oldHass.entities !== this.hass.entities) {
       this._cachedSourceIds = null;
       this._cachedAreaForEntity = null;
+      // Scene membership is derived from the registry too, and updated()
+      // skips reconciliation while the light list is unchanged — so drop the
+      // memo as well, or a newly added scene never reaches its chip row.
+      this._cachedSceneIds = null;
+      this._lastLightsList = '';
     }
 
     // Build cache if needed
@@ -560,6 +610,77 @@ class Simon42LightsGroupCard extends LitElement {
     return card;
   }
 
+  // --- scene chips ---------------------------------------------------
+
+  /** Candidate scenes: everything the dashboard shows. Cached — the pool only
+   *  changes with the entity registry (see willUpdate). Going through the
+   *  Registry rather than hass.states is what makes the no_dboard label apply
+   *  to a chip exactly as it does to a tile. */
+  private _sceneCandidates(): string[] {
+    if (!this._cachedSceneIds) {
+      this._cachedSceneIds = Registry.getVisibleEntityIdsForDomain('scene');
+    }
+    return this._cachedSceneIds;
+  }
+
+  private _scenesFor(entityId: string): string[] {
+    if (this._config.scene_chips !== true || !this.hass) return [];
+    return scenesForLightGroup(this.hass, entityId, this._sceneCandidates());
+  }
+
+  private _activateScene(sceneId: string): void {
+    // Fire-and-forget, like a tile tap.
+    void this.hass?.callService('scene', 'turn_on', { entity_id: sceneId });
+  }
+
+  /** Pooled chip row for one light. Rebuilt only when its scene set changed,
+   *  so an expanded group keeps its buttons across reconciliations. */
+  private _getOrCreateChipRow(entityId: string, scenes: string[]): HTMLElement {
+    let row = this._chipRows.get(entityId);
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'chips';
+      row.dataset.entityId = entityId;
+      this._chipRows.set(entityId, row);
+    }
+
+    const signature = scenes.join(',');
+    if (row.dataset.scenes === signature) return row;
+    row.dataset.scenes = signature;
+
+    const hass = this.hass;
+    row.replaceChildren(
+      ...scenes.map((sceneId) => {
+        const chip = document.createElement('button');
+        chip.className = 'chip';
+        chip.type = 'button';
+        chip.textContent = hass ? sceneLabel(hass, sceneId, entityId) : sceneId;
+        chip.addEventListener('click', () => {
+          this._activateScene(sceneId);
+        });
+        return chip;
+      })
+    );
+    return row;
+  }
+
+  /** Wrapper that keeps a leaf light and its chips together in a grid slot. */
+  private _getOrCreateLightNode(entityId: string, scenes: string[]): HTMLElement {
+    let node = this._lightNodes.get(entityId);
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'light-node';
+      node.dataset.entityId = entityId;
+      this._lightNodes.set(entityId, node);
+    }
+    const tile = this._getOrCreateTileCard(entityId);
+    const chipRow = this._getOrCreateChipRow(entityId, scenes);
+    if (tile.parentNode !== node || chipRow.parentNode !== node) {
+      node.replaceChildren(tile, chipRow);
+    }
+    return node;
+  }
+
   private _isExpanded(entityId: string): boolean {
     return this._groupExpansion.get(entityId) ?? this._config.default_expanded === true;
   }
@@ -609,6 +730,12 @@ class Simon42LightsGroupCard extends LitElement {
     if (hasChildren) {
       return this._getOrCreateGroupContainer(entityId);
     }
+    // Only lights that actually own scenes get the wrapper — without chips the
+    // tile card goes into the grid slot directly, exactly as before.
+    const scenes = this._scenesFor(entityId);
+    if (scenes.length > 0) {
+      return this._getOrCreateLightNode(entityId, scenes);
+    }
     return this._getOrCreateTileCard(entityId) as unknown as HTMLElement;
   }
 
@@ -635,6 +762,20 @@ class Simon42LightsGroupCard extends LitElement {
     }
 
     const childContainerElement = groupContainerElement.querySelector('.group-children') as HTMLElement;
+
+    // A parent group's own scenes sit between its tile and its children, so
+    // they read as belonging to the group rather than to the first child.
+    // Synced unconditionally once chips are on: a group that LOSES its last
+    // scene has to have its row emptied here, because nothing else in the
+    // reconcile path ever touches a group container's children. An empty row
+    // collapses via `.chips:empty`.
+    if (this._config.scene_chips === true) {
+      const chipRow = this._getOrCreateChipRow(entityId, this._scenesFor(entityId));
+      if (chipRow.parentNode !== groupContainerElement) {
+        groupContainerElement.insertBefore(chipRow, childContainerElement);
+      }
+    }
+
     const expanded = this._isExpanded(entityId);
     const toggleButtonElement = groupContainerElement.querySelector('.group-toggle') as HTMLButtonElement;
     toggleButtonElement.setAttribute('aria-expanded', String(expanded));
@@ -800,6 +941,18 @@ class Simon42LightsGroupCard extends LitElement {
       if (!activeIds.has(id)) {
         if (container.parentNode) container.parentNode.removeChild(container);
         this._groupContainers.delete(id);
+      }
+    }
+    for (const [id, node] of this._lightNodes) {
+      if (!activeIds.has(id)) {
+        if (node.parentNode) node.parentNode.removeChild(node);
+        this._lightNodes.delete(id);
+      }
+    }
+    for (const [id, row] of this._chipRows) {
+      if (!activeIds.has(id)) {
+        if (row.parentNode) row.parentNode.removeChild(row);
+        this._chipRows.delete(id);
       }
     }
   }

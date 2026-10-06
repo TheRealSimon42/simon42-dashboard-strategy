@@ -297,6 +297,8 @@ strategy:
 
 **Kameras in Räumen** *(ab v1.4.0)* — Kameras in den Raum-Views sind standardmäßig an und können per Toggle deaktiviert werden. Optional (`camera_live_toggle`) startet die Kamera-Karte als Standbild und wechselt erst per **Play/Stopp-Button** in den Live-Stream — das spart Bandbreite und Last auf Wandtablets; Kameras ohne Standbild-Unterstützung (z.B. Aqara) starten dabei automatisch im Live-Modus. Standardmäßig verhalten sich die Kameras wie gewohnt (automatisch aktualisierte Vorschau).
 
+**Szenen an der Lichtgruppe** *(ab v1.5.0, opt-in)* — Mit `show_scene_chips: true` hängen die Szenen einer Lichtgruppe als kleine Schaltflächen direkt unter ihrer Licht-Kachel in der Raum-Ansicht, statt nur im gemeinsamen Szenen-Block des Raums. Die Zuordnung kommt ausschließlich aus Daten der Integrationen, nie aus Namen: HA-eigene Szenen (UI/YAML) gehören zu der Gruppe, die alle ihre Lichter enthält (`entity_id`-Attribut der Szene); Hue-Szenen zu der Gruppe, deren Name dem von der Hue-Integration gelieferten `group_name` entspricht. Szenen erscheinen nur an Gruppen, die Farbtemperatur können — bei rein dimmbaren Lampen sähe jede Szene gleich aus. Was mit `no_dboard` ausgeblendet ist, bekommt auch keinen Chip; kuratiert wird also dort, wo die Szenen entstehen (Hue-App, Szenen-Editor). Die Lichter-Ansicht bleibt unverändert. Wer alle Szenen als Chips sieht, kann den nun doppelten Szenen-Block mit `show_scenes_section_in_rooms: false` abschalten.
+
 **Reihenfolge der Raum-Blöcke** *(ab v1.4.0)* — Die automatisch erzeugten Blöcke einer Raum-Ansicht (Kameras, Lichter, Schlösser, Klima, Rollos, Medien, Szenen, Sonstiges, …) lassen sich pro Raum per Drag & Drop sortieren: im Editor beim jeweiligen Bereich unter „Reihenfolge der Raum-Blöcke". In der Config landet das als `areas_options.{bereich}.stacks_order`. Nicht vorhandene Blöcke werden als inaktive Chips angezeigt; `room_pins_first` wird weiterhin berücksichtigt, solange keine eigene Reihenfolge gesetzt ist.
 
 **USV-Block** *(ab v1.4.0, opt-in)* — `show_ups_in_rooms` zeigt pro erkannter USV einen eigenen Block mit Akku-Gauge (Schwellwerte folgen den Batterie-Einstellungen) und den zugehörigen Sensoren. Die Erkennung ist bewusst konservativ: dedizierte USV-Integrationen (NUT, apcupsd) oder Geräte mit „USV"/„UPS" im Namen. Einzelne Sensoren lassen sich über die USV-Gruppe im Bereichs-Editor ausblenden.
@@ -630,6 +632,8 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `room_pins_hide_last_changed` | boolean | `false` | — | „Zuletzt geändert" auf Raum-Pins ausblenden |
 | `show_locks_in_rooms` | boolean | `false` | — | Schlösser in Raum-Views |
 | `show_cover_controls_in_rooms` | boolean | `true` | v1.4.0 | Hoch/Stopp/Runter-Sammel-Buttons an den Rollo- und Vorhang-Überschriften in Raum-Views (Fenster/Türen/Garagentore ausgenommen) |
+| `show_scene_chips` | boolean | `false` | v1.5.0 | Szenen einer Lichtgruppe als Schaltflächen direkt unter ihr in Raum-Views (nur farbtemperaturfähige Gruppen, Zuordnung über Integrations-Daten) |
+| `show_scenes_section_in_rooms` | boolean | `true` | v1.5.0 | Eigener Szenen-Block in Raum-Views; abschaltbar, wenn die Szenen schon als Chips an ihrer Lichtgruppe hängen |
 | `show_switches_section_in_rooms` | boolean | `false` | v1.4.0 | Schalter & smarte Steckdosen als eigener Abschnitt „Schalter & Steckdosen“ statt unter „Sonstiges“ |
 | `show_automations_in_rooms` | boolean | `false` | — | Automationen in Raum-Views |
 | `show_scripts_in_rooms` | boolean | `false` | — | Skripte in Raum-Views |

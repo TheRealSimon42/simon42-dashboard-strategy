@@ -244,6 +244,13 @@ export interface Simon42StrategyConfig {
   show_energy_in_rooms?: boolean; // default: false (opt-in — power/energy/water/gas sensors as own room block)
   show_cameras_in_rooms?: boolean; // default: true
   show_cover_controls_in_rooms?: boolean; // default: true (opt-out — batch open/stop/close badges on room cover headings, #413; window/door/gate/garage sections never get them)
+  show_scenes_section_in_rooms?: boolean; // default: true (opt-out — the room's
+  // flat "Scenes" tile block. Turn it off when show_scene_chips already puts
+  // every scene next to the light group it belongs to)
+  show_scene_chips?: boolean; // default: false (opt-in — a light group's scenes
+  // as chips directly underneath it, in room views only. Only groups that can
+  // render colour temperature get them; a dimmable-only group would show every
+  // scene identically, so it gets none)
   camera_live_toggle?: boolean; // default: false — wrapper card with play/stop button instead of the classic picture cards
   show_window_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide window contact badges)
   show_door_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide door contact badges)

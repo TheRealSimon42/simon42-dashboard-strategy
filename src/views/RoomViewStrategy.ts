@@ -804,6 +804,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
             default_expanded: true,
             nested_groups: dashboardConfig.nested_light_groups === true,
             sort_by: dashboardConfig.lights_sort_by,
+            scene_chips: dashboardConfig.show_scene_chips === true,
           },
         ],
       });
@@ -901,13 +902,18 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       };
     });
 
-    domainSection('scenes', roomEntities.scenes, localize('room.scenes'), 'mdi:palette', (e) => ({
-      type: 'tile',
-      entity: e,
-      name: stripAreaName(e, area, hass),
-      vertical: false,
-      state_content: 'last_changed',
-    }));
+    // The flat scene block is redundant once every scene sits as a chip under
+    // its light group — but only colour-temperature groups get chips, so
+    // switching it off is the user's call, not an automatic consequence.
+    if (dashboardConfig.show_scenes_section_in_rooms !== false) {
+      domainSection('scenes', roomEntities.scenes, localize('room.scenes'), 'mdi:palette', (e) => ({
+        type: 'tile',
+        entity: e,
+        name: stripAreaName(e, area, hass),
+        vertical: false,
+        state_content: 'last_changed',
+      }));
+    }
 
     // Vacuums & lawn mowers — by default part of the Misc section below
     // (matches HA's areas strategy, which groups both under "others");

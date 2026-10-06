@@ -71,6 +71,8 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   const showDoorContactsInRooms = host._config.show_door_contacts_in_rooms !== false;
   const showCamerasInRooms = host._config.show_cameras_in_rooms !== false;
   const showCoverControlsInRooms = host._config.show_cover_controls_in_rooms !== false;
+  const showScenesSectionInRooms = host._config.show_scenes_section_in_rooms !== false;
+  const showSceneChips = host._config.show_scene_chips === true;
   const useDefaultAreaSort = host._config.use_default_area_sort === true;
 
   const hassRef = host._hass;
@@ -137,6 +139,19 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
         (checked) => host._toggleChanged('show_cover_controls_in_rooms', checked, true)
       )}
       <div class="description">${localize('editor.show_cover_controls_in_rooms_desc')}</div>
+
+      ${host._renderCheckbox('show-scene-chips', localize('editor.show_scene_chips'), showSceneChips, (checked) =>
+        host._toggleChanged('show_scene_chips', checked, false)
+      )}
+      <div class="description">${localize('editor.show_scene_chips_desc')}</div>
+
+      ${host._renderCheckbox(
+        'show-scenes-section-in-rooms',
+        localize('editor.show_scenes_section_in_rooms'),
+        showScenesSectionInRooms,
+        (checked) => host._toggleChanged('show_scenes_section_in_rooms', checked, true)
+      )}
+      <div class="description">${localize('editor.show_scenes_section_in_rooms_desc')}</div>
 
       ${host._renderCheckbox(
         'show-vacuums-section-in-rooms',

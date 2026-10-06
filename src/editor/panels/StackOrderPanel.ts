@@ -85,7 +85,7 @@ function presentStackKeys(host: StrategyEditorHost, data: AreaEntitiesCacheEntry
   if (has('covers_curtain')) present.add('covers_curtain');
   if (has('covers_window')) present.add('covers_window');
   if (has('media_player')) present.add('media');
-  if (has('scenes')) present.add('scenes');
+  if (has('scenes') && host._config.show_scenes_section_in_rooms !== false) present.add('scenes');
   if (has('vacuum') && host._config.show_vacuums_section_in_rooms === true) present.add('vacuums');
   if (has('switches') && host._config.show_switches_section_in_rooms === true) present.add('switches');
   if (has('vacuum') || has('switches') || has('humidifier') || has('valve') || has('water_heater')) present.add('misc');
