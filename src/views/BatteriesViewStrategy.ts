@@ -113,10 +113,17 @@ export class Simon42ViewBatteriesStrategy extends HTMLElement {
     const lowThreshold = strategyConfig.battery_low_threshold ?? 50;
     const showArea = strategyConfig.show_area_in_battery_view === true;
     const groupByAreas = strategyConfig.group_batteries_by_areas === true;
-    // Visible areas in the user's order/visibility (respects areas_display +
-    // use_default_area_sort), same source the security view uses
+    // Areas in the user's order (areas_display.order + use_default_area_sort).
+    // The hidden list is deliberately NOT applied: hiding an area card on the
+    // overview must not make its batteries vanish from the grouped view while
+    // the heading count and the summary tile still include them (same rule as
+    // the lights/covers/security views, #410/#428).
     const visibleAreas = groupByAreas
-      ? getVisibleAreasFromHass(hass, strategyConfig.areas_display, strategyConfig.use_default_area_sort)
+      ? getVisibleAreasFromHass(
+          hass,
+          { ...strategyConfig.areas_display, hidden: [] },
+          strategyConfig.use_default_area_sort
+        )
       : [];
     // Where to bucket sensors whose state can't be evaluated (unavailable,
     // unknown, restarting, non-numeric). Default 'good': in a survey of

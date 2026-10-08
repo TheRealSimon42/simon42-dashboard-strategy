@@ -174,4 +174,21 @@ describe('group_batteries_by_areas — full generate()', () => {
     expect(headingTexts).toContain('Kueche');
     expect(headingTexts).toContain('No area');
   });
+
+  it('keeps batteries of areas hidden on the overview in the grouped view', async () => {
+    const hass = initRegistry(makeHass(batterySpec()));
+
+    const view = await BatteriesStrategy.generate(
+      { config: { group_batteries_by_areas: true, areas_display: { hidden: ['wohnzimmer'], order: [] } } },
+      hass,
+    );
+    const list = (view.sections ?? []).flatMap((s) => s.cards ?? []);
+    const headingTexts = list.filter((c) => c.type === 'heading').map((c) => c.heading);
+
+    expect(headingTexts).toContain('Wohnzimmer');
+    expect(list.some((c) => c.entity === 'sensor.woon_batt')).toBe(true);
+    // Every counted battery is rendered as a tile
+    const counted = list.filter((c) => c.type === 'tile').length;
+    expect(counted).toBe(3);
+  });
 });
