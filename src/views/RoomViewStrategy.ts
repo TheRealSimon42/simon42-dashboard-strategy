@@ -273,6 +273,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       battery: [],
       window: [],
       door: [],
+      garage_door: [],
       smoke: [],
       gas: [],
       heat: [],
@@ -450,6 +451,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
           sensorEntities.door.push(entityId);
           continue;
         }
+        if (deviceClass === 'garage_door') {
+          sensorEntities.garage_door.push(entityId);
+          continue;
+        }
         if (deviceClass === 'smoke') {
           sensorEntities.smoke.push(entityId);
           continue;
@@ -553,6 +558,9 @@ class Simon42ViewRoomStrategy extends HTMLElement {
     }
     if (dashboardConfig.show_door_contacts_in_rooms !== false) {
       for (const id of sensorEntities.door) addCandidate(id, 'door', 'door');
+    }
+    if (dashboardConfig.show_garage_door_contacts_in_rooms === true) {
+      for (const id of sensorEntities.garage_door) addCandidate(id, 'garage_door', 'garage_door');
     }
 
     // badges.hidden / badges.additional apply ONLY here — the Registry

@@ -391,6 +391,8 @@
     "show_window_contacts_in_rooms_desc": "Pokazuje kontaktrony okien jako plakietki w odpowiednich widokach pomieszczeń.",
     "show_door_contacts_in_rooms": "Pokaż kontaktrony drzwi w widokach pomieszczeń",
     "show_door_contacts_in_rooms_desc": "Pokazuje kontaktrony drzwi jako plakietki w odpowiednich widokach pomieszczeń.",
+    "show_garage_door_contacts_in_rooms": "Pokaż kontaktrony bram garażowych w widokach pomieszczeń",
+    "show_garage_door_contacts_in_rooms_desc": "Pokazuje kontaktrony bram garażowych jako plakietki w odpowiednich widokach pomieszczeń.",
     "use_default_area_sort": "Użyj sortowania Home Assistant",
     "use_default_area_sort_desc": "Używa kolejności obszarów z Home Assistant zamiast kolejności skonfigurowanej tutaj.",
     "areas_manage_desc": "Wybierz, które obszary mają być wyświetlane na dashboardzie i w jakiej kolejności. Rozwiń obszary, aby zarządzać poszczególnymi encjami.",

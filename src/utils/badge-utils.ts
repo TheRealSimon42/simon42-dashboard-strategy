@@ -26,6 +26,7 @@ export const BADGE_COLOR_MAP: Record<string, string> = {
   window: 'teal',
   opening: 'teal',
   door: 'teal',
+  garage_door: 'teal',
   smoke: 'red',
   gas: 'red',
   heat: 'red',
@@ -123,6 +124,7 @@ export function isBadgeCandidate(
       deviceClass === 'presence' ||
       isWindowContactDeviceClass(deviceClass) ||
       deviceClass === 'door' ||
+      deviceClass === 'garage_door' ||
       deviceClass === 'smoke' ||
       deviceClass === 'gas' ||
       deviceClass === 'heat'
@@ -208,7 +210,7 @@ export function selectBadgeEntitiesOfType(entities: string[], hiddenBadges: Read
 
 /** Whether a badge with this device_class shows its entity name by default */
 export function isDefaultShowName(deviceClass: string | undefined): boolean {
-  return isWindowContactDeviceClass(deviceClass) || deviceClass === 'door';
+  return isWindowContactDeviceClass(deviceClass) || deviceClass === 'door' || deviceClass === 'garage_door';
 }
 
 // -- Show name resolution ---------------------------------------------

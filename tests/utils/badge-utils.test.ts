@@ -140,6 +140,21 @@ describe('window contact device classes (#438)', () => {
   });
 });
 
+describe('garage door contact badges', () => {
+  it('detects garage_door binary sensors as badge candidates with default name', () => {
+    expect(isBadgeCandidate('binary_sensor', 'garage_door', undefined, 'binary_sensor.garage_contact')).toBe(true);
+    expect(isDefaultShowName('garage_door')).toBe(true);
+    expect(isWindowContactDeviceClass('garage_door')).toBe(false);
+  });
+
+  it('colors garage_door sensors like the other contacts', () => {
+    const hass = makeHass({
+      entities: [{ entity_id: 'binary_sensor.garage_contact', attributes: { device_class: 'garage_door' } }],
+    });
+    expect(getColorForEntity('binary_sensor.garage_contact', hass)).toBe('teal');
+  });
+});
+
 // ============================================================================
 // Single-type badge selection — default stays one badge per type, but an
 // explicit editor selection renders every still-selected sensor (#396).

@@ -69,6 +69,7 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
   // Window / opening / door contact badges default to visible — read as opt-out (!== false).
   const showWindowContactsInRooms = host._config.show_window_contacts_in_rooms !== false;
   const showDoorContactsInRooms = host._config.show_door_contacts_in_rooms !== false;
+  const showGarageDoorContactsInRooms = host._config.show_garage_door_contacts_in_rooms === true;
   const showCamerasInRooms = host._config.show_cameras_in_rooms !== false;
   const showCoverControlsInRooms = host._config.show_cover_controls_in_rooms !== false;
   const useDefaultAreaSort = host._config.use_default_area_sort === true;
@@ -204,6 +205,17 @@ export function renderAreasSection(host: StrategyEditorHost): TemplateResult {
         }
       )}
       <div class="description">${localize('editor.show_door_contacts_in_rooms_desc')}</div>
+
+      ${host._renderCheckbox(
+        'show-garage-door-contacts-in-rooms',
+        localize('editor.show_garage_door_contacts_in_rooms'),
+        showGarageDoorContactsInRooms,
+        (checked) => {
+          host._toggleChanged('show_garage_door_contacts_in_rooms', checked, false);
+          refreshAllAreaCaches(host);
+        }
+      )}
+      <div class="description">${localize('editor.show_garage_door_contacts_in_rooms_desc')}</div>
 
       ${host._renderCheckbox(
         'show-cameras-in-rooms',
@@ -1544,6 +1556,7 @@ function getAreaBadgeCandidates(areaId: string, hass: HomeAssistant, config: Sim
     if (domain === 'binary_sensor' && isWindowContactDeviceClass(dc) && config.show_window_contacts_in_rooms === false)
       continue;
     if (domain === 'binary_sensor' && dc === 'door' && config.show_door_contacts_in_rooms === false) continue;
+    if (domain === 'binary_sensor' && dc === 'garage_door' && config.show_garage_door_contacts_in_rooms !== true) continue;
     // Relay inputs (`opening` + switch on the same device) never render as
     // badges at runtime — don't offer them as auto-detected candidates.
     if (domain === 'binary_sensor' && isRelayOpeningSensor(dc, entity.device_id, entityIdsForDevice)) continue;

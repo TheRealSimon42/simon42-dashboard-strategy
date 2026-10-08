@@ -396,6 +396,8 @@
     "show_window_contacts_in_rooms_desc": "Zeigt Fensterkontakte als Badges in den jeweiligen Raum-Ansichten an.",
     "show_door_contacts_in_rooms": "Türkontakte in Raum-Ansichten anzeigen",
     "show_door_contacts_in_rooms_desc": "Zeigt Türkontakte als Badges in den jeweiligen Raum-Ansichten an.",
+    "show_garage_door_contacts_in_rooms": "Garagentor-Kontakte in Raum-Ansichten anzeigen",
+    "show_garage_door_contacts_in_rooms_desc": "Zeigt Garagentor-Kontakte als Badges in den jeweiligen Raum-Ansichten an.",
     "use_default_area_sort": "Home Assistant Sortierung verwenden",
     "use_default_area_sort_desc": "Verwendet die Sortierung der Bereiche aus Home Assistant anstelle der hier konfigurierten Reihenfolge.",
     "areas_manage_desc": "Wähle aus, welche Bereiche im Dashboard angezeigt werden sollen und in welcher Reihenfolge. Klappe Bereiche auf, um einzelne Entitäten zu verwalten.",

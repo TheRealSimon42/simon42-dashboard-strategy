@@ -391,6 +391,8 @@
     "show_window_contacts_in_rooms_desc": "Jelvényként jeleníti meg az ablakérzékelőket a megfelelő helyiségnézetekben.",
     "show_door_contacts_in_rooms": "Ajtóérzékelők megjelenítése a helyiségnézetekben",
     "show_door_contacts_in_rooms_desc": "Jelvényként jeleníti meg az ajtóérzékelőket a megfelelő helyiségnézetekben.",
+    "show_garage_door_contacts_in_rooms": "Garázskapu-érzékelők megjelenítése a helyiségnézetekben",
+    "show_garage_door_contacts_in_rooms_desc": "Jelvényként jeleníti meg a garázskapu-érzékelőket a megfelelő helyiségnézetekben.",
     "use_default_area_sort": "Home Assistant-rendezés használata",
     "use_default_area_sort_desc": "Az itt beállított sorrend helyett a Home Assistantban megadott területsorrendet használja.",
     "areas_manage_desc": "Válaszd ki, mely területek jelenjenek meg az irányítópulton, és milyen sorrendben. Nyisd le a területeket az egyes entitások kezeléséhez.",

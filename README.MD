@@ -637,6 +637,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `camera_live_toggle` | boolean | `false` | v1.4.0 | Raum-Kameras als Standbild mit Play/Stopp-Button statt automatischer Vorschau |
 | `show_window_contacts_in_rooms` | boolean | `true` | v1.3.5 | Fensterkontakte (`device_class: window`, ab v1.4.2 auch `opening`) als Badges in Raum-Views |
 | `show_door_contacts_in_rooms` | boolean | `true` | v1.3.5 | Türkontakte als Badges in Raum-Views |
+| `show_garage_door_contacts_in_rooms` | boolean | `false` | v1.4.3 | Garagentor-Kontakte (`device_class: garage_door`) als Badges in Raum-Views (opt-in) |
 | `hide_unavailable_in_rooms` | boolean | `true` | v1.4.0 | Nicht verfügbare Entitäten in Raum-Views ausblenden |
 | `room_visibility` | object | `{}` | v1.4.0 | Raum-Views nur bei bestimmtem Entity-Zustand anzeigen |
 | `security_extra_entities` | string[] | `[]` | v1.4.0 | Zusätzliche Entitäten für die Sicherheits-View (z.B. Backofen) |

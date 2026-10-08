@@ -247,6 +247,7 @@ export interface Simon42StrategyConfig {
   camera_live_toggle?: boolean; // default: false — wrapper card with play/stop button instead of the classic picture cards
   show_window_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide window contact badges)
   show_door_contacts_in_rooms?: boolean; // default: true (opt-out — set false to hide door contact badges)
+  show_garage_door_contacts_in_rooms?: boolean; // default: false (opt-in — garage door contact badges, device_class garage_door)
   show_switches_on_areas?: boolean; // default: false
   area_display_type?: AreaDisplayType; // default: compact
   show_alerts_on_areas?: boolean; // default: false
@@ -586,6 +587,7 @@ export interface SensorEntities {
   battery: string[];
   window: string[];
   door: string[];
+  garage_door: string[];
   smoke: string[];
   gas: string[];
   heat: string[];

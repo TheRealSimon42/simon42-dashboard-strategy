@@ -396,6 +396,8 @@
     "show_window_contacts_in_rooms_desc": "Shows window contacts as badges in the respective room views.",
     "show_door_contacts_in_rooms": "Show door contacts in room views",
     "show_door_contacts_in_rooms_desc": "Shows door contacts as badges in the respective room views.",
+    "show_garage_door_contacts_in_rooms": "Show garage door contacts in room views",
+    "show_garage_door_contacts_in_rooms_desc": "Shows garage door contacts as badges in the respective room views.",
     "use_default_area_sort": "Use Home Assistant sorting",
     "use_default_area_sort_desc": "Uses the area sorting from Home Assistant instead of the order configured here.",
     "areas_manage_desc": "Choose which areas should be shown on the dashboard and in what order. Expand areas to manage individual entities.",
