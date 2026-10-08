@@ -750,11 +750,27 @@ export const EDITOR_STYLES = css`
     margin-bottom: 12px;
     background: var(--card-background-color);
   }
+  .custom-item.dragging {
+    opacity: 0.5;
+  }
+  .custom-item.drag-over {
+    border-top: 2px solid var(--primary-color);
+  }
   .custom-item-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+  }
+  .custom-item-header .drag-handle {
+    margin-right: 8px;
+    color: var(--secondary-text-color);
+    cursor: grab;
+    user-select: none;
+    padding: 4px;
+  }
+  .custom-item-header .drag-handle:active {
+    cursor: grabbing;
   }
   .custom-item-header strong {
     font-size: 14px;

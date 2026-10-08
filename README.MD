@@ -80,7 +80,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Nicht verfügbare Entitäten ausblenden** — opt-in: Karten und Badges mit `unavailable`/`unknown` verschwinden dynamisch *(ab v1.4.0)*
 - **Eigene Karten** — Beliebige Karten via YAML auf der Übersicht einbinden, Ziel-Section frei wählbar
 - **Eigene Sections** — Komplette eigene Section-Blöcke auf der Übersicht deklarieren, frei positionierbar *(ab v1.4.0)*
-- **Eigene Badges** — Beliebige Badges via YAML im Header (neben Personen-Chips)
+- **Eigene Badges** — Beliebige Badges via YAML im Header (neben Personen-Chips), per Drag & Drop sortierbar
 - **Custom Views** — Eigene Dashboard-Views mit beliebigen Cards via YAML
 - **Reaktive Updates** — Echtzeit-Aktualisierung via LitElement Custom Cards
 - **Mehrsprachig** — Deutsch, Englisch, Russisch, Ungarisch und Polnisch, automatische Erkennung aus HA-Einstellungen, Fallback auf Englisch
@@ -395,6 +395,7 @@ Der `key` verhält sich wie eine eingebaute Section:
 #### Eigene Badges
 
 Beliebige Badges via YAML zum Header der Übersicht hinzufügen — sie erscheinen neben den Personen-Chips.
+Im Editor lassen sie sich über das Griff-Symbol per Drag & Drop in die gewünschte Reihenfolge ziehen.
 
 ```yaml
 # Beispiel: Sonnen-Badge

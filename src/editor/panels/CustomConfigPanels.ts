@@ -232,9 +232,18 @@ function renderCustomBadgeItem(host: StrategyEditorHost, badge: CustomBadge, ind
       : nothing;
 
   return html`
-    <div class="custom-item" data-index=${index}>
+    <div class="custom-item" data-index=${index}
+      draggable="true"
+      @dragstart=${(ev: DragEvent) => handleCustomBadgeDragStart(ev)}
+      @dragend=${(ev: DragEvent) => handleCustomBadgeDragEnd(host, ev)}
+      @dragover=${(ev: DragEvent) => handleCustomBadgeDragOver(ev)}
+      @dragleave=${(ev: DragEvent) => handleCustomBadgeDragLeave(ev)}
+      @drop=${(ev: DragEvent) => handleCustomBadgeDrop(host, ev)}>
       <div class="custom-item-header">
-        <strong>Badge ${index + 1}</strong>
+        <div>
+          <span class="drag-handle" draggable="true">&#x2630;</span>
+          <strong>Badge ${index + 1}</strong>
+        </div>
         <button class="btn-remove" @click=${() => removeCustomBadge(host, index)}>&#x2715;</button>
       </div>
       <textarea rows="4" placeholder="type: entity&#10;entity: sun.sun"
@@ -246,6 +255,85 @@ function renderCustomBadgeItem(host: StrategyEditorHost, badge: CustomBadge, ind
       </div>
     </div>
   `;
+}
+
+export function reorderCustomBadge(host: StrategyEditorHost, fromIndex: number, toIndex: number): void {
+  const customBadges = [...(host._config.custom_badges || [])];
+  if (
+    !Number.isInteger(fromIndex) ||
+    !Number.isInteger(toIndex) ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= customBadges.length ||
+    toIndex >= customBadges.length ||
+    fromIndex === toIndex
+  ) {
+    return;
+  }
+
+  const movedBadge = customBadges.at(fromIndex);
+  if (!movedBadge) return;
+  customBadges.splice(fromIndex, 1);
+  customBadges.splice(toIndex, 0, movedBadge);
+
+  const newConfig: Simon42StrategyConfig = { ...host._config, custom_badges: customBadges };
+  host._config = newConfig;
+  host._fireConfigChanged(newConfig);
+}
+
+function handleCustomBadgeDragStart(ev: DragEvent): void {
+  const dragHandle = (ev.target as HTMLElement).closest('.drag-handle');
+  if (!dragHandle) {
+    ev.preventDefault();
+    return;
+  }
+
+  const item = (ev.target as HTMLElement).closest('.custom-item') as HTMLElement | null;
+  if (!item) {
+    ev.preventDefault();
+    return;
+  }
+
+  item.classList.add('dragging');
+  if (ev.dataTransfer) {
+    ev.dataTransfer.effectAllowed = 'move';
+    ev.dataTransfer.setData('text/plain', item.dataset.index || '');
+  }
+}
+
+function handleCustomBadgeDragEnd(host: StrategyEditorHost, ev: DragEvent): void {
+  const item = (ev.target as HTMLElement).closest('.custom-item') as HTMLElement | null;
+  if (item) item.classList.remove('dragging');
+
+  host.shadowRoot?.querySelectorAll('#custom-badges-list .custom-item.drag-over').forEach((element) => {
+    element.classList.remove('drag-over');
+  });
+}
+
+function handleCustomBadgeDragOver(ev: DragEvent): void {
+  ev.preventDefault();
+  if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+  (ev.currentTarget as HTMLElement).classList.add('drag-over');
+}
+
+function handleCustomBadgeDragLeave(ev: DragEvent): void {
+  (ev.currentTarget as HTMLElement).classList.remove('drag-over');
+}
+
+function handleCustomBadgeDrop(host: StrategyEditorHost, ev: DragEvent): void {
+  ev.stopPropagation();
+  ev.preventDefault();
+
+  const dropTarget = ev.currentTarget as HTMLElement;
+  dropTarget.classList.remove('drag-over');
+
+  const draggedIndex = ev.dataTransfer?.getData('text/plain');
+  const targetIndex = dropTarget.dataset.index;
+  if (draggedIndex === undefined || draggedIndex === '' || targetIndex === undefined) return;
+
+  const fromIndex = Number(draggedIndex);
+  const toIndex = Number(targetIndex);
+  reorderCustomBadge(host, fromIndex, toIndex);
 }
 
 function addCustomBadge(host: StrategyEditorHost): void {
