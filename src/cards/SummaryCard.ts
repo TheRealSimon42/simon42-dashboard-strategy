@@ -26,6 +26,8 @@ interface SummaryCardConfig {
   summary_type: SummaryType;
   hide_mobile_app_batteries?: boolean;
   hide_battery_notes_entities?: boolean;
+  battery_ignored_entities?: string[];
+  battery_ignored_devices?: string[];
   battery_critical_threshold?: number;
   hide_unavailable_entities?: boolean;
   // maintenance type only: ignore list for the unavailable scan (#395)

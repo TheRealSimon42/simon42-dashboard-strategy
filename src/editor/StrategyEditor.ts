@@ -130,6 +130,8 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   _lightFavSearch = '';
   _maintenanceIgnoredEntitySearch = '';
   _maintenanceIgnoredDeviceSearch = '';
+  _batteryIgnoredEntitySearch = '';
+  _batteryIgnoredDeviceSearch = '';
 
   // Cache for loaded area entities (avoid re-fetching on every render)
   _areaEntitiesCache = new Map<string, AreaEntitiesCacheEntry>();

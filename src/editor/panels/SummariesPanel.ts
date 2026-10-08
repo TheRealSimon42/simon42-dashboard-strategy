@@ -344,6 +344,7 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
           (checked) => host._toggleChanged('hide_battery_notes_entities', checked, false)
         )}
         <div class="description">${localize('editor.hide_battery_notes_entities_desc')}</div>
+        ${renderBatteryIgnoredPicker(host)}
 
         <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
           ${localize('editor.battery_thresholds')}
@@ -528,65 +529,72 @@ function renderMaintenanceIgnoredPicker(host: StrategyEditorHost): TemplateResul
   `;
 }
 
-function renderMaintenanceIgnoredEntities(host: StrategyEditorHost): TemplateResult {
-  const ignored = host._config.maintenance_ignored_entities || [];
-  const entityMap = new Map(getAllEntitiesForSelect(host._hass).map((e) => [e.entity_id, e.name]));
-  const filtered = getFilteredEntities(host._hass, host._maintenanceIgnoredEntitySearch);
+interface IgnoreListItem {
+  id: string;
+  name: string;
+  detail: string;
+}
+
+interface IgnoreListBlock {
+  label: string;
+  placeholder: string;
+  kind: 'entity' | 'device';
+  selected: IgnoreListItem[];
+  search: string;
+  results: IgnoreListItem[];
+  onSearch: (value: string) => void;
+  onAdd: (id: string) => void;
+  onRemove: (id: string) => void;
+}
+
+/** Shared "selected list + search picker" block of the ignore/blocklist pickers. */
+function renderIgnoreListBlock(block: IgnoreListBlock): TemplateResult {
+  const { selected, results, search } = block;
   return html`
     <div style="font-size: 13px; color: var(--primary-text-color); margin-bottom: 4px;">
-      ${localize('editor.maintenance_ignored_entities')}
+      ${block.label}
     </div>
     ${
-      ignored.length > 0
+      selected.length > 0
         ? html`
       <div class="entity-list-container" style="margin-bottom: 8px;">
-        ${ignored.map((entityId) => {
-          const name = entityMap.get(entityId) || entityId;
-          return html`
-            <div class="entity-list-item" data-entity-id=${entityId}>
+        ${selected.map(
+          (item) => html`
+            <div class="entity-list-item" data-entity-id=${block.kind === 'entity' ? item.id : nothing} data-device-id=${block.kind === 'device' ? item.id : nothing}>
               <span class="item-info">
-                <span class="item-name">${name}</span>
-                <span class="item-entity-id">${entityId}</span>
+                <span class="item-name">${item.name}</span>
+                <span class="item-entity-id">${item.detail}</span>
               </span>
-              <button class="btn-remove" @click=${() => removeMaintenanceIgnoredEntity(host, entityId)}>&#x2715;</button>
+              <button class="btn-remove" @click=${() => block.onRemove(item.id)}>&#x2715;</button>
             </div>
-          `;
-        })}
+          `
+        )}
       </div>
     `
         : nothing
     }
     <div class="entity-search-picker" style="margin-bottom: 8px;">
       <input type="text" class="entity-search-input"
-        placeholder=${localize('editor.select_entity')}
-        .value=${host._maintenanceIgnoredEntitySearch}
-        @input=${(e: Event) => {
-          host._maintenanceIgnoredEntitySearch = (e.target as HTMLInputElement).value;
-          host.requestUpdate();
-        }}
-        @blur=${() => {
-          setTimeout(() => {
-            host._maintenanceIgnoredEntitySearch = '';
-            host.requestUpdate();
-          }, 200);
-        }}
+        placeholder=${block.placeholder}
+        .value=${search}
+        @input=${(e: Event) => block.onSearch((e.target as HTMLInputElement).value)}
+        @blur=${() => setTimeout(() => block.onSearch(''), 200)}
       />
       ${
-        host._maintenanceIgnoredEntitySearch.length >= 2
+        search.length >= 2
           ? html`
         <div class="entity-search-results">
           ${
-            filtered.length > 0
-              ? filtered.map(
-                  (entity) => html`
+            results.length > 0
+              ? results.map(
+                  (item) => html`
               <div class="entity-search-result" @mousedown=${(e: Event) => {
                 e.preventDefault();
-                addMaintenanceIgnoredEntity(host, entity.entity_id);
-                host._maintenanceIgnoredEntitySearch = '';
-                host.requestUpdate();
+                block.onAdd(item.id);
+                block.onSearch('');
               }}>
-                <span class="entity-search-name">${entity.name}</span>
-                <span class="entity-search-id">${entity.entity_id}</span>
+                <span class="entity-search-name">${item.name}</span>
+                <span class="entity-search-id">${item.detail}</span>
               </div>
             `
                 )
@@ -598,80 +606,86 @@ function renderMaintenanceIgnoredEntities(host: StrategyEditorHost): TemplateRes
       }
     </div>
   `;
+}
+
+function entityIgnoreBlock(
+  host: StrategyEditorHost,
+  label: string,
+  ids: string[],
+  search: string,
+  onSearch: (value: string) => void,
+  onAdd: (id: string) => void,
+  onRemove: (id: string) => void
+): TemplateResult {
+  const nameById = new Map(getAllEntitiesForSelect(host._hass).map((e) => [e.entity_id, e.name]));
+  return renderIgnoreListBlock({
+    label,
+    placeholder: localize('editor.select_entity'),
+    kind: 'entity',
+    selected: ids.map((id) => ({ id, name: nameById.get(id) || id, detail: id })),
+    search,
+    results: getFilteredEntities(host._hass, search).map((e) => ({ id: e.entity_id, name: e.name, detail: e.entity_id })),
+    onSearch,
+    onAdd,
+    onRemove,
+  });
+}
+
+function deviceIgnoreBlock(
+  host: StrategyEditorHost,
+  label: string,
+  ids: string[],
+  search: string,
+  onSearch: (value: string) => void,
+  onAdd: (id: string) => void,
+  onRemove: (id: string) => void
+): TemplateResult {
+  const deviceById = new Map(getAllDevicesForSelect(host._hass).map((d) => [d.device_id, d]));
+  return renderIgnoreListBlock({
+    label,
+    placeholder: localize('editor.select_device'),
+    kind: 'device',
+    selected: ids.map((id) => ({
+      id,
+      name: deviceById.get(id)?.name || id,
+      detail: deviceById.get(id)?.detail || id,
+    })),
+    search,
+    results: getFilteredDevices(host._hass, search).map((d) => ({ id: d.device_id, name: d.name, detail: d.detail })),
+    onSearch,
+    onAdd,
+    onRemove,
+  });
+}
+function renderMaintenanceIgnoredEntities(host: StrategyEditorHost): TemplateResult {
+  return entityIgnoreBlock(
+    host,
+    localize('editor.maintenance_ignored_entities'),
+    host._config.maintenance_ignored_entities || [],
+    host._maintenanceIgnoredEntitySearch,
+    (value) => {
+      host._maintenanceIgnoredEntitySearch = value;
+      host.requestUpdate();
+    },
+    (id) => addMaintenanceIgnoredEntity(host, id),
+    (id) => removeMaintenanceIgnoredEntity(host, id)
+  );
 }
 
 function renderMaintenanceIgnoredDevices(host: StrategyEditorHost): TemplateResult {
-  const ignored = host._config.maintenance_ignored_devices || [];
-  const deviceMap = new Map(getAllDevicesForSelect(host._hass).map((d) => [d.device_id, d]));
-  const filtered = getFilteredDevices(host._hass, host._maintenanceIgnoredDeviceSearch);
-  return html`
-    <div style="font-size: 13px; color: var(--primary-text-color); margin-bottom: 4px;">
-      ${localize('editor.maintenance_ignored_devices')}
-    </div>
-    ${
-      ignored.length > 0
-        ? html`
-      <div class="entity-list-container" style="margin-bottom: 8px;">
-        ${ignored.map((deviceId) => {
-          const device = deviceMap.get(deviceId);
-          return html`
-            <div class="entity-list-item" data-device-id=${deviceId}>
-              <span class="item-info">
-                <span class="item-name">${device?.name || deviceId}</span>
-                <span class="item-entity-id">${device?.detail || deviceId}</span>
-              </span>
-              <button class="btn-remove" @click=${() => removeMaintenanceIgnoredDevice(host, deviceId)}>&#x2715;</button>
-            </div>
-          `;
-        })}
-      </div>
-    `
-        : nothing
-    }
-    <div class="entity-search-picker" style="margin-bottom: 8px;">
-      <input type="text" class="entity-search-input"
-        placeholder=${localize('editor.select_device')}
-        .value=${host._maintenanceIgnoredDeviceSearch}
-        @input=${(e: Event) => {
-          host._maintenanceIgnoredDeviceSearch = (e.target as HTMLInputElement).value;
-          host.requestUpdate();
-        }}
-        @blur=${() => {
-          setTimeout(() => {
-            host._maintenanceIgnoredDeviceSearch = '';
-            host.requestUpdate();
-          }, 200);
-        }}
-      />
-      ${
-        host._maintenanceIgnoredDeviceSearch.length >= 2
-          ? html`
-        <div class="entity-search-results">
-          ${
-            filtered.length > 0
-              ? filtered.map(
-                  (device) => html`
-              <div class="entity-search-result" @mousedown=${(e: Event) => {
-                e.preventDefault();
-                addMaintenanceIgnoredDevice(host, device.device_id);
-                host._maintenanceIgnoredDeviceSearch = '';
-                host.requestUpdate();
-              }}>
-                <span class="entity-search-name">${device.name}</span>
-                <span class="entity-search-id">${device.detail}</span>
-              </div>
-            `
-                )
-              : html`<div class="entity-search-no-results">${localize('editor.no_results')}</div>`
-          }
-        </div>
-      `
-          : nothing
-      }
-    </div>
-  `;
+  return deviceIgnoreBlock(
+    host,
+    localize('editor.maintenance_ignored_devices'),
+    host._config.maintenance_ignored_devices || [],
+    host._maintenanceIgnoredDeviceSearch,
+    (value) => {
+      host._maintenanceIgnoredDeviceSearch = value;
+      host.requestUpdate();
+    },
+    (id) => addMaintenanceIgnoredDevice(host, id),
+    (id) => removeMaintenanceIgnoredDevice(host, id)
+  );
 }
-
 function addMaintenanceIgnoredEntity(host: StrategyEditorHost, entityId: string): void {
   const current = host._config.maintenance_ignored_entities || [];
   if (current.includes(entityId)) return;
@@ -908,4 +922,79 @@ function batteryLowChanged(host: StrategyEditorHost, e: Event): void {
   if (value === 50) delete newConfig.battery_low_threshold;
   host._config = newConfig;
   host._fireConfigChanged(newConfig);
+}
+
+/**
+ * Battery blocklist: entities/devices that neither the batteries tile/view
+ * nor the maintenance tile/view (critical batteries) should ever list.
+ * No key in config = nothing ignored (existing behaviour).
+ */
+function renderBatteryIgnoredPicker(host: StrategyEditorHost): TemplateResult {
+  return html`
+    <div style="font-size: 13px; font-weight: 500; color: var(--primary-text-color); margin-top: 12px; margin-bottom: 4px;">
+      ${localize('editor.battery_ignored')}
+    </div>
+    <div class="description" style="margin-left: 0; margin-bottom: 8px;">
+      ${localize('editor.battery_ignored_desc')}
+    </div>
+    ${renderBatteryIgnoredEntities(host)}
+    ${renderBatteryIgnoredDevices(host)}
+  `;
+}
+
+function renderBatteryIgnoredEntities(host: StrategyEditorHost): TemplateResult {
+  return entityIgnoreBlock(
+    host,
+    localize('editor.battery_ignored_entities'),
+    host._config.battery_ignored_entities || [],
+    host._batteryIgnoredEntitySearch,
+    (value) => {
+      host._batteryIgnoredEntitySearch = value;
+      host.requestUpdate();
+    },
+    (id) => addBatteryIgnoredEntity(host, id),
+    (id) => removeBatteryIgnoredEntity(host, id)
+  );
+}
+
+function renderBatteryIgnoredDevices(host: StrategyEditorHost): TemplateResult {
+  return deviceIgnoreBlock(
+    host,
+    localize('editor.battery_ignored_devices'),
+    host._config.battery_ignored_devices || [],
+    host._batteryIgnoredDeviceSearch,
+    (value) => {
+      host._batteryIgnoredDeviceSearch = value;
+      host.requestUpdate();
+    },
+    (id) => addBatteryIgnoredDevice(host, id),
+    (id) => removeBatteryIgnoredDevice(host, id)
+  );
+}
+function addBatteryIgnoredEntity(host: StrategyEditorHost, entityId: string): void {
+  const current = host._config.battery_ignored_entities || [];
+  if (current.includes(entityId)) return;
+  host._fireConfigChanged({ ...host._config, battery_ignored_entities: [...current, entityId] });
+}
+
+function removeBatteryIgnoredEntity(host: StrategyEditorHost, entityId: string): void {
+  const next = (host._config.battery_ignored_entities || []).filter((id) => id !== entityId);
+  const updated: Simon42StrategyConfig = { ...host._config };
+  if (next.length === 0) delete updated.battery_ignored_entities;
+  else updated.battery_ignored_entities = next;
+  host._fireConfigChanged(updated);
+}
+
+function addBatteryIgnoredDevice(host: StrategyEditorHost, deviceId: string): void {
+  const current = host._config.battery_ignored_devices || [];
+  if (current.includes(deviceId)) return;
+  host._fireConfigChanged({ ...host._config, battery_ignored_devices: [...current, deviceId] });
+}
+
+function removeBatteryIgnoredDevice(host: StrategyEditorHost, deviceId: string): void {
+  const next = (host._config.battery_ignored_devices || []).filter((id) => id !== deviceId);
+  const updated: Simon42StrategyConfig = { ...host._config };
+  if (next.length === 0) delete updated.battery_ignored_devices;
+  else updated.battery_ignored_devices = next;
+  host._fireConfigChanged(updated);
 }

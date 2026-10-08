@@ -95,6 +95,8 @@ export function isRelayOpeningSensor(
 }
 
 export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyConfig): string[] {
+  const ignoredEntities = new Set(config.battery_ignored_entities || []);
+  const ignoredDevices = new Set(config.battery_ignored_devices || []);
   const sensorIds = Registry.getEntityIdsForDomain('sensor');
   const binarySensorIds = Registry.getEntityIdsForDomain('binary_sensor');
 
@@ -109,6 +111,13 @@ export function getBatteryEntities(hass: HomeAssistant, config: Simon42StrategyC
 
     const entry = Registry.getEntity(entityId);
     if (entry?.hidden) return false;
+    // User blocklist (battery_ignored_*): the entity itself, its device or the parent device
+    if (ignoredEntities.has(entityId)) return false;
+    if (ignoredDevices.size > 0 && entry?.device_id) {
+      if (ignoredDevices.has(entry.device_id)) return false;
+      const parentId = Registry.getDevice(entry.device_id)?.parent_device_id;
+      if (parentId && ignoredDevices.has(parentId)) return false;
+    }
     // Platform-specific filter: hide mobile_app batteries if configured
     if (config.hide_mobile_app_batteries) {
       if (entry?.platform === 'mobile_app') return false;

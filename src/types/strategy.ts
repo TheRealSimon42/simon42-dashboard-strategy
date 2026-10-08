@@ -227,6 +227,11 @@ export interface Simon42StrategyConfig {
   // per-area camera filter
   hide_mobile_app_batteries?: boolean; // default: false
   hide_battery_notes_entities?: boolean; // default: false
+  battery_ignored_entities?: string[]; // default: [] — battery entity ids left
+  // out of the batteries tile/view AND the maintenance tile/view (critical
+  // batteries). Same shared collector (getBatteryEntities), so all four agree
+  battery_ignored_devices?: string[]; // default: [] — same for whole devices
+  // (device ids, incl. child devices)
   battery_critical_threshold?: number; // default: 20
   battery_low_threshold?: number; // default: 50
   show_area_in_battery_view?: boolean; // default: false

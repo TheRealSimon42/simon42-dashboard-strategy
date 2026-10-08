@@ -597,6 +597,8 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 |--------|-----|----------|------|-------------|
 | `hide_mobile_app_batteries` | boolean | `false` | — | Mobile-App-Batterien ausblenden |
 | `hide_battery_notes_entities` | boolean | `false` | v1.4.0 | Hilfs-Entitäten der Battery-Notes-Integration ausblenden |
+| `battery_ignored_entities` | string[] | `[]` | v1.4.3 | Sperrliste: Batterie-Entitäten, die weder in der Batterie-Übersicht/-Zusammenfassung noch bei den kritischen Batterien der Wartung auftauchen (Suchfeld im Editor) |
+| `battery_ignored_devices` | string[] | `[]` | v1.4.3 | Wie `battery_ignored_entities`, aber für ganze Geräte (Geräte-IDs; Suchfeld im Editor) |
 | `battery_critical_threshold` | number | `20` | — | Schwellwert für kritische Batterien (%) |
 | `battery_low_threshold` | number | `50` | — | Schwellwert für niedrige Batterien (%) |
 | `show_area_in_battery_view` | boolean | `false` | v1.4.0 | Bereichsnamen in der Batterie-View anzeigen |

@@ -205,6 +205,8 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       hide_mobile_app_batteries: config.hide_mobile_app_batteries,
       hide_battery_notes_entities: config.hide_battery_notes_entities,
       battery_critical_threshold: config.battery_critical_threshold,
+      ...(config.battery_ignored_entities ? { battery_ignored_entities: config.battery_ignored_entities } : {}),
+      ...(config.battery_ignored_devices ? { battery_ignored_devices: config.battery_ignored_devices } : {}),
       ...(config.hide_unavailable_entities === true ? { hide_unavailable_entities: true } : {}),
     });
   }
@@ -228,6 +230,8 @@ export function createOverviewSection(data: OverviewSectionParams): LovelaceSect
       hide_mobile_app_batteries: config.hide_mobile_app_batteries,
       hide_battery_notes_entities: config.hide_battery_notes_entities,
       battery_critical_threshold: config.battery_critical_threshold,
+      ...(config.battery_ignored_entities ? { battery_ignored_entities: config.battery_ignored_entities } : {}),
+      ...(config.battery_ignored_devices ? { battery_ignored_devices: config.battery_ignored_devices } : {}),
       // ignore list for the unavailable scan (#395) — only when set, so
       // existing configs keep generating byte-identical card configs
       ...(config.maintenance_ignored_entities
