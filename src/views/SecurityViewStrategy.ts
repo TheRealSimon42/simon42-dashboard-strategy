@@ -14,7 +14,7 @@ import type { FloorRegistryEntry } from '../types/registries';
 import type { CameraBlock } from './CctvViewStrategy';
 import { Registry } from '../Registry';
 import { localize } from '../utils/localize';
-import { SECURITY_EXCLUDED_PLATFORMS, isRelayOpeningSensor } from '../utils/entity-filter';
+import { SECURITY_EXCLUDED_PLATFORMS, isExcludedFromSecurity, isRelayOpeningSensor } from '../utils/entity-filter';
 import { getVisibleAreasFromHass } from '../utils/name-utils';
 import { collectCameraBlocks, cameraBlockAreaId, leanCameraCard } from './CctvViewStrategy';
 import { defineViewStrategy } from './view-strategy-base';
@@ -86,6 +86,7 @@ function collectSecurityEntities(hass: HomeAssistant, dashboardConfig: Simon42St
     ...Registry.getVisibleEntityIdsForDomain('binary_sensor'),
   ]) {
     if (!hass.states[id]) continue;
+    if (isExcludedFromSecurity(id)) continue;
     if (hiddenAreas.size > 0) {
       const areaId = resolveAreaId(id);
       if (areaId && hiddenAreas.has(areaId)) continue;

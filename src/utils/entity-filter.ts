@@ -67,6 +67,16 @@ export function findDummySensor(hass: HomeAssistant): string {
  */
 export const SECURITY_EXCLUDED_PLATFORMS = new Set(['tankerkoenig']);
 
+export const SECURITY_EXCLUDE_LABEL = 'no_security';
+
+export function isExcludedFromSecurity(entityId: string): boolean {
+  return Registry.getEntity(entityId)?.labels.includes(SECURITY_EXCLUDE_LABEL) === true;
+}
+
+export function notExcludedFromSecurity(entityId: string): boolean {
+  return !isExcludedFromSecurity(entityId);
+}
+
 /** Entity ids of a device — Registry map at runtime, hass.entities scan in the editor. */
 export type DeviceEntityIdsLookup = (deviceId: string) => readonly string[];
 

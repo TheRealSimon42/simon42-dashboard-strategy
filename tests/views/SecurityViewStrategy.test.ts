@@ -406,3 +406,31 @@ describe('relay-style opening sensors', () => {
     expect(cards.some((c) => c.entity === 'binary_sensor.flur_kontakt')).toBe(true);
   });
 });
+
+describe('no_security label', () => {
+  function labeledSpec(): HassFixtureSpec {
+    const spec = securitySpec();
+    spec.components = ['logbook'];
+    const contact = spec.entities?.find((e) => e.entity_id === 'binary_sensor.garten_fenster');
+    contact!.labels = ['no_security'];
+    return spec;
+  }
+
+  it('leaves labeled entities out of the category layout and the activity log', () => {
+    const cards = allCards(build(makeHass(labeledSpec()), {}));
+
+    expect(cards.some((c) => c.entity === 'binary_sensor.garten_fenster')).toBe(false);
+    expect(cards.some((c) => c.entity === 'lock.haustuer')).toBe(true);
+    const logbook = cards.find((c) => c.type === 'logbook');
+    expect(logbook?.target?.entity_id).not.toContain('binary_sensor.garten_fenster');
+    expect(logbook?.target?.entity_id).toContain('lock.haustuer');
+  });
+
+  it('leaves labeled entities out of the area-grouped layout', () => {
+    const sections = build(makeHass(labeledSpec()), { group_security_by_areas: true });
+
+    expect(allCards(sections).some((c) => c.entity === 'binary_sensor.garten_fenster')).toBe(false);
+    expect(headings(sections).some((h) => h.heading === 'Garten')).toBe(false);
+    expect(headings(sections).some((h) => h.heading === 'Flur')).toBe(true);
+  });
+});

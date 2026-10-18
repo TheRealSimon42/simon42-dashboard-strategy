@@ -7,7 +7,12 @@ import type { HomeAssistant, HassEntity } from '../types/homeassistant';
 import { Registry } from '../Registry';
 import { trackHassUpdate, debugLog, timeStart, timeEnd } from '../utils/debug';
 import { localize } from '../utils/localize';
-import { getBatteryEntities, isRelayOpeningSensor, SECURITY_EXCLUDED_PLATFORMS } from '../utils/entity-filter';
+import {
+  getBatteryEntities,
+  isRelayOpeningSensor,
+  notExcludedFromSecurity,
+  SECURITY_EXCLUDED_PLATFORMS,
+} from '../utils/entity-filter';
 import { isEntityCurrentlyAvailable } from '../utils/availability-utils';
 import { buildMaintenanceScan, countMaintenanceItems, type MaintenanceScan } from '../utils/maintenance-utils';
 import { countActiveClimateEntities } from '../utils/summary-view-utils';
@@ -203,9 +208,9 @@ class Simon42SummaryCard extends LitElement {
         break;
 
       case 'security': {
-        const lockIds = Registry.getVisibleEntityIdsForDomain('lock');
-        const coverIds = Registry.getVisibleEntityIdsForDomain('cover');
-        const binarySensorIds = Registry.getVisibleEntityIdsForDomain('binary_sensor');
+        const lockIds = Registry.getVisibleEntityIdsForDomain('lock').filter(notExcludedFromSecurity);
+        const coverIds = Registry.getVisibleEntityIdsForDomain('cover').filter(notExcludedFromSecurity);
+        const binarySensorIds = Registry.getVisibleEntityIdsForDomain('binary_sensor').filter(notExcludedFromSecurity);
 
         result = [];
         for (const id of lockIds) {

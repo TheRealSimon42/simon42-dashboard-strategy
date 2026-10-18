@@ -63,7 +63,7 @@ Wenn dir die simon42 Dashboard Strategy hilft, unterstütze die Weiterentwicklun
 - **Etagen-Gruppierung** — Bereiche, Lichter und Rollos optional nach Etagen gliedern
 - **Favoriten** — Beliebige Entitäten als Kacheln auf der Übersicht anpinnen
 - **Alarm-Panel** — Optionale Alarmanlage neben der Uhr
-- **Granulare Filterung** — Per Label (`no-dboard` fürs Dashboard, `no_seclog` fürs Sicherheits-Logbuch), pro Bereich, pro Domain, pro Entity
+- **Granulare Filterung** — Per Label (`no-dboard` fürs Dashboard, `no_security` für die Sicherheits-Ansicht, `no_seclog` fürs Sicherheits-Logbuch), pro Bereich, pro Domain, pro Entity
 - **Teiloffene Rollos** — Optionale dritte Gruppe (Offen / Teiloffen / Geschlossen) mit Live-Übergängen
 - **Alert-Icons** — Optionale Alert-Badges auf Bereichskarten (Bewegung, Feuchtigkeit, Rauch, Wärme u.a.)
 - **Rauch-, Gas- & Hitzemelder** — In der Sicherheits-Übersicht, im Security-Summary-Count und als Badges in Raum-Views
@@ -151,6 +151,8 @@ Die Strategy generiert das Dashboard automatisch aus deiner Home Assistant Konfi
 <p align="center">
   <img src="https://raw.githubusercontent.com/TheRealSimon42/simon42-dashboard-strategy/main/assets/no-dboard-label.png" alt="Label no-dboard in Home Assistant erstellen" width="800" />
 </p>
+
+- **Label `no_security`** — Entitäten mit diesem Label verschwinden nur aus der **Sicherheits-Ansicht** (beide Layouts samt Aktivitäts-Verlauf) und werden in der **Sicherheits-Kachel** auf der Übersicht nicht mitgezählt. In den Raum-Ansichten und allen anderen Ansichten bleiben sie sichtbar — z.B. für Innentür-Kontakte, die im Raum nützlich, für die Sicherheit aber irrelevant sind.
 
 - **Im Strategy-Editor ausblenden** — Über das Konfigurationsmenü der Strategy können einzelne Entitäten pro Bereich und Domain individuell ein- und ausgeblendet werden. Das betrifft nur diese eine Strategy-Ansicht.
 
@@ -495,6 +497,7 @@ Entitäten können auf mehreren Ebenen gefiltert werden:
 |---------|-------|-------------|
 | Nicht sichtbar schalten | Global | Entität wird aus allen auto-generierten Strategies ausgeblendet |
 | Label `no-dboard` | Global | Entität wird nur aus simon42-Strategy-Dashboards ausgeblendet |
+| Label `no_security` | Sicherheit | Entität fehlt in Sicherheits-Ansicht und Sicherheits-Kachel, bleibt in Raum-Ansichten |
 | `groups_options.hidden` | Pro Bereich | Entität nur in bestimmtem Bereich ausblenden |
 | Entity Registry | Automatisch | Hidden/Disabled Entities werden ignoriert |
 | Entity Category | Automatisch | Config/Diagnostic Entities werden ignoriert |
