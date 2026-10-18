@@ -15,6 +15,7 @@ import {
   isBadgeCandidate,
   isDefaultShowName,
   isEnergyBlockSensor,
+  isRadonSensor,
   isWindowContactDeviceClass,
   selectBadgeEntitiesOfType,
   type BadgeCandidate,
@@ -176,5 +177,57 @@ describe('selectBadgeEntitiesOfType', () => {
 
   it('returns empty for an empty type', () => {
     expect(selectBadgeEntitiesOfType([], new Set(['sensor.lux_1']))).toEqual([]);
+  });
+});
+
+// ============================================================================
+// Radon sensors (#464) — detected via device_class OR unit, because several
+// integrations (airQ, RadonEye, ecowitt) report radon without device_class.
+// ============================================================================
+
+describe('isRadonSensor', () => {
+  it('matches the radon device_class', () => {
+    expect(isRadonSensor('radon', 'Bq/m³')).toBe(true);
+    expect(isRadonSensor('radon', undefined)).toBe(true);
+  });
+
+  it('matches radon units without a device_class', () => {
+    expect(isRadonSensor(undefined, 'Bq/m³')).toBe(true);
+    expect(isRadonSensor(undefined, 'pCi/L')).toBe(true);
+  });
+
+  it('does not match gas meters or other volume units', () => {
+    expect(isRadonSensor('gas', 'm³')).toBe(false);
+    expect(isRadonSensor(undefined, 'm³')).toBe(false);
+    expect(isRadonSensor(undefined, 'g/m³')).toBe(false);
+    expect(isRadonSensor(undefined, undefined)).toBe(false);
+  });
+});
+
+describe('isBadgeCandidate — radon (#464)', () => {
+  it('accepts radon sensors with device_class', () => {
+    expect(isBadgeCandidate('sensor', 'radon', 'Bq/m³', 'sensor.bedroom_radon')).toBe(true);
+  });
+
+  it('accepts radon sensors identified only by unit (airQ)', () => {
+    expect(isBadgeCandidate('sensor', undefined, 'Bq/m³', 'sensor.airq_radon')).toBe(true);
+    expect(isBadgeCandidate('sensor', undefined, 'pCi/L', 'sensor.basement_level')).toBe(true);
+  });
+
+  it('keeps gas meters out of the badge candidates', () => {
+    expect(isBadgeCandidate('sensor', 'gas', 'm³', 'sensor.kitchen_gas_meter')).toBe(false);
+  });
+});
+
+describe('getColorForEntity — radon (#464)', () => {
+  it('colors radon badges via device_class and via unit fallback', () => {
+    const hass = makeHass({
+      entities: [
+        { entity_id: 'sensor.bedroom_radon', attributes: { device_class: 'radon', unit_of_measurement: 'Bq/m³' } },
+        { entity_id: 'sensor.airq_radon', attributes: { unit_of_measurement: 'Bq/m³' } },
+      ],
+    });
+    expect(getColorForEntity('sensor.bedroom_radon', hass)).toBe('brown');
+    expect(getColorForEntity('sensor.airq_radon', hass)).toBe('brown');
   });
 });

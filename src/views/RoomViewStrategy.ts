@@ -22,6 +22,7 @@ import {
   applyBadgeGroupOptions,
   isDefaultShowName,
   isEnergyBlockSensor,
+  isRadonSensor,
   isWindowContactDeviceClass,
   resolveShowName,
   selectBadgeEntitiesOfType,
@@ -265,6 +266,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       pm10: [],
       co2: [],
       voc: [],
+      radon: [],
       motion: [],
       occupancy: [],
       illuminance: [],
@@ -404,6 +406,10 @@ class Simon42ViewRoomStrategy extends HTMLElement {
           sensorEntities.absolute_humidity.push(entityId);
           continue;
         }
+        if (isRadonSensor(deviceClass, unit)) {
+          sensorEntities.radon.push(entityId);
+          continue;
+        }
         if (deviceClass === 'pm1' || entityId.includes('pm_1') || /(^|_)pm1($|_)/.test(entityId)) {
           sensorEntities.pm1.push(entityId);
           continue;
@@ -528,6 +534,7 @@ class Simon42ViewRoomStrategy extends HTMLElement {
       [sensorEntities.pm10, 'pm10'],
       [sensorEntities.co2, 'carbon_dioxide'],
       [sensorEntities.voc, 'volatile_organic_compounds'],
+      [sensorEntities.radon, 'radon'],
       [sensorEntities.illuminance, 'illuminance'],
       [sensorEntities.battery, 'battery'],
       [sensorEntities.motion, 'motion'],

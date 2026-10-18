@@ -578,6 +578,7 @@ export interface SensorEntities {
   pm10: string[];
   co2: string[];
   voc: string[];
+  radon: string[];
   motion: string[];
   occupancy: string[];
   illuminance: string[];

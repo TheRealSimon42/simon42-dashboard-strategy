@@ -17,6 +17,7 @@ export const BADGE_COLOR_MAP: Record<string, string> = {
   pm10: 'orange',
   carbon_dioxide: 'green',
   volatile_organic_compounds: 'purple',
+  radon: 'brown',
   illuminance: 'amber',
   battery: 'red',
   motion: 'yellow',
@@ -56,7 +57,23 @@ export function getColorForEntity(entityId: string, hass: HomeAssistant): string
   const unit = state.attributes?.unit_of_measurement as string | undefined;
   if (unit === 'lx') return 'amber';
   if (unit === 'g/m³') return 'blue';
+  if (isRadonSensor(undefined, unit)) return BADGE_COLOR_MAP.radon;
   return 'grey';
+}
+
+// -- Radon detection --------------------------------------------------
+
+/** Units HA accepts for SensorDeviceClass.RADON. */
+const RADON_UNITS = new Set<string>(['Bq/m³', 'pCi/L']);
+
+/**
+ * Whether a sensor measures radon: the `radon` device_class or one of its
+ * units. The unit fallback is required — several integrations (airQ,
+ * RadonEye, ecowitt) still report radon without a device_class (#464).
+ * Matches the full unit only, so gas meters in `m³` never qualify.
+ */
+export function isRadonSensor(deviceClass: string | undefined, unit: string | undefined): boolean {
+  return deviceClass === 'radon' || (unit !== undefined && RADON_UNITS.has(unit));
 }
 
 // -- Energy block routing ---------------------------------------------
@@ -110,6 +127,7 @@ export function isBadgeCandidate(
     // Light / humidity
     if (deviceClass === 'illuminance' || unit === 'lx') return true;
     if (unit === 'g/m³') return true; // absolute humidity
+    if (isRadonSensor(deviceClass, unit)) return true;
     // Power/energy/water/gas sensors are deliberately NOT candidates:
     // the runtime routes them into the room energy block and has no
     // badge branch for them, so offering them here would present badges
