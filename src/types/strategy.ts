@@ -183,6 +183,9 @@ export interface Simon42StrategyConfig {
   show_climate_summary?: boolean; // default: false
   show_climate_view?: boolean; // default: false — keep the /climate view
   // available even when show_climate_summary is off (#391, battery pattern)
+  group_climate_by_areas?: boolean; // default: false — group thermostats by
+  // area inside each status section (heating/cooling/idle/off): area
+  // sub-headings (tap → room view) plus a trailing "no area" bucket (#467)
   show_camera_view?: boolean; // default: false — opt-in CCTV view (/cameras):
   // one block per camera device with spotlight tile, Reolink PTZ pad,
   // recordings deep-link and optional LLM Vision event timelines

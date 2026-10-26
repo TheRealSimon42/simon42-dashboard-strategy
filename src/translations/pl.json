@@ -133,7 +133,8 @@
     "heating": "Ogrzewanie",
     "cooling": "Chłodzenie",
     "idle": "Bezczynny",
-    "off": "Wyłączony"
+    "off": "Wyłączony",
+    "no_area": "Brak obszaru"
   },
   "cctv": {
     "no_cameras": "Nie znaleziono kamer. Kamery pojawią się tutaj automatycznie po skonfigurowaniu ich w Home Assistant.",
@@ -313,6 +314,8 @@
     "show_climate_summary_desc": "Pokazuje kartę podsumowania klimatu na stronie przeglądu. Zlicza aktywne termostaty i urządzenia klimatyczne.",
     "show_climate_view": "Zawsze udostępniaj widok klimatu",
     "show_climate_view_desc": "Generuje podwidok klimatu (/climate), nawet gdy podsumowanie klimatu jest ukryte — np. dla plakietek lub odnośników prowadzących bezpośrednio do tej strony.",
+    "group_climate_by_areas": "Grupuj urządzenia klimatyzacyjne według obszarów",
+    "group_climate_by_areas_desc": "Grupuje termostaty i urządzenia klimatyzacyjne w widoku klimatu według obszarów w obrębie każdej sekcji stanu (ogrzewanie/chłodzenie/bezczynny/wyłączony), z osobnym podnagłówkiem dla każdego obszaru oraz końcową grupą „Brak obszaru”. Przydatne, gdy urządzenia wszędzie mają tę samą nazwę (np. „Ogrzewanie”).",
     "show_camera_view": "Włącz widok kamer (CCTV) — eksperymentalny",
     "show_camera_view_desc": "Funkcja jest aktywnie rozwijana i szczegóły mogą się jeszcze zmienić. Generuje osobny widok kamer: obraz na żywo, reflektor, sterowanie PTZ oraz odnośnik do nagrań (Reolink) dla każdej kamery.",
     "show_camera_events": "Pokaż osie czasu zdarzeń LLM Vision",

@@ -133,7 +133,8 @@
     "heating": "Heizen",
     "cooling": "Kühlen",
     "idle": "Bereitschaft",
-    "off": "Aus"
+    "off": "Aus",
+    "no_area": "Ohne Bereich"
   },
   "cctv": {
     "no_cameras": "Keine Kameras gefunden. Kameras erscheinen hier automatisch, sobald sie in Home Assistant eingerichtet sind.",
@@ -318,6 +319,8 @@
     "show_climate_summary_desc": "Zeigt die Klima-Zusammenfassungskarte in der Übersicht an. Zählt aktive Thermostate und Klimageräte.",
     "show_climate_view": "Klima-Ansicht immer bereitstellen",
     "show_climate_view_desc": "Erzeugt die Klima-Unterseite (/climate) auch dann, wenn die Klima-Zusammenfassung ausgeblendet ist — z.B. für Badges oder Links, die direkt auf die Seite zeigen.",
+    "group_climate_by_areas": "Klimageräte nach Bereichen gruppieren",
+    "group_climate_by_areas_desc": "Gruppiert die Thermostate und Klimageräte in der Klima-Ansicht innerhalb jedes Status-Abschnitts (Heizen/Kühlen/Bereitschaft/Aus) nach Bereichen, jeder Bereich mit eigener Unterüberschrift und einem abschließenden „Ohne Bereich“-Bucket. Praktisch, wenn die Geräte überall gleich heißen (z.B. „Heizung“).",
     "show_camera_view": "Kamera-Ansicht (CCTV) aktivieren — experimentell",
     "show_camera_view_desc": "In Entwicklung, Details können sich noch ändern. Erzeugt eine eigene Kamera-Ansicht: pro Kamera Live-Bild, Scheinwerfer, PTZ-Steuerung und Aufnahmen-Link (Reolink).",
     "show_camera_events": "LLM Vision Ereignis-Timelines anzeigen",

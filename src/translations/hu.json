@@ -133,7 +133,8 @@
     "heating": "Fűtés",
     "cooling": "Hűtés",
     "idle": "Készenlétben",
-    "off": "Kikapcsolva"
+    "off": "Kikapcsolva",
+    "no_area": "Nincs terület"
   },
   "cctv": {
     "no_cameras": "Nem található kamera. A kamerák automatikusan megjelennek itt, miután beállítottad őket a Home Assistantban.",
@@ -313,6 +314,8 @@
     "show_climate_summary_desc": "Megjeleníti a klíma összegzőkártyáját az áttekintésben. Megszámolja az aktív termosztátokat és klímaberendezéseket.",
     "show_climate_view": "Klímanézet mindig legyen elérhető",
     "show_climate_view_desc": "Akkor is létrehozza a klíma alnézetét (/climate), ha a klímaösszegzés rejtett — például a közvetlenül erre a nézetre mutató jelvényekhez vagy hivatkozásokhoz.",
+    "group_climate_by_areas": "Klímaeszközök csoportosítása területek szerint",
+    "group_climate_by_areas_desc": "A klíma nézetben a termosztátokat és klímaeszközöket minden állapotszakaszon (fűtés/hűtés/készenlét/kikapcsolva) belül területek szerint csoportosítja, minden terület saját alcímmel, a végén pedig egy „Nincs terület” csoporttal. Hasznos, ha az eszközök mindenhol ugyanazt a nevet viselik (pl. „Fűtés”).",
     "show_camera_view": "Kameranézet (CCTV) engedélyezése — kísérleti",
     "show_camera_view_desc": "Aktív fejlesztés alatt áll, a részletek még változhatnak. Külön kameranézetet hoz létre: kameránként élőkép, reflektor, PTZ-vezérlők és felvételek hivatkozása (Reolink).",
     "show_camera_events": "LLM Vision esemény-idővonalak megjelenítése",

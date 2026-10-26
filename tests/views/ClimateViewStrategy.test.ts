@@ -73,3 +73,79 @@ describe('climate view — hidden overview areas', () => {
     expect(tiles.map((t) => t.entity)).toEqual(['climate.wohnzimmer', 'climate.ohne_bereich']);
   });
 });
+
+// ============================================================================
+// group_climate_by_areas (#467) — area sub-headings inside each status
+// section, user area order, trailing "no area" bucket; hidden overview areas
+// keep their heading but lose the room-view link.
+// ============================================================================
+
+async function climateCards(config: Simon42StrategyConfig): Promise<LovelaceCardConfig[][]> {
+  const strategy = defined.get('ll-strategy-simon42-view-climate');
+  if (!strategy) throw new Error('climate view strategy not registered');
+  const view = await strategy.generate({ config }, makeHass(climateSpec()));
+  return (view.sections ?? []).map(function sectionCards(section) {
+    return section.cards ?? [];
+  });
+}
+
+function sequence(cards: LovelaceCardConfig[]): unknown[] {
+  return cards.map(function label(c) {
+    return c.type === 'heading' ? `# ${String(c.heading)}` : c.entity;
+  });
+}
+
+describe('climate view — group_climate_by_areas', () => {
+  it('keeps the flat layout by default', async () => {
+    const [heating] = await climateCards({});
+    expect(sequence(heating)).toEqual(['# Heating (2)', 'climate.kammer', 'climate.wohnzimmer']);
+  });
+
+  it('groups each status section by area, no-area bucket last', async () => {
+    const [heating, off] = await climateCards({ group_climate_by_areas: true });
+    expect(sequence(heating)).toEqual([
+      '# Heating (2)',
+      '# Abstellkammer',
+      'climate.kammer',
+      '# Wohnzimmer',
+      'climate.wohnzimmer',
+    ]);
+    expect(sequence(off)).toEqual(['# Off (1)', '# No area', 'climate.ohne_bereich']);
+  });
+
+  it('follows the configured area order and links headings to room views', async () => {
+    const [heating] = await climateCards({
+      group_climate_by_areas: true,
+      areas_display: { order: ['wohnzimmer', 'abstellkammer'] },
+    });
+    expect(sequence(heating)).toEqual([
+      '# Heating (2)',
+      '# Wohnzimmer',
+      'climate.wohnzimmer',
+      '# Abstellkammer',
+      'climate.kammer',
+    ]);
+    const woon = heating.find((c) => c.heading === 'Wohnzimmer');
+    expect(woon?.tap_action).toEqual({ action: 'navigate', navigation_path: 'wohnzimmer' });
+  });
+
+  it('keeps hidden overview areas under their own heading without a room link', async () => {
+    const [heating] = await climateCards({
+      group_climate_by_areas: true,
+      areas_display: { hidden: ['abstellkammer'] },
+    });
+    const kammer = heating.find((c) => c.heading === 'Abstellkammer');
+    expect(kammer).toBeDefined();
+    expect(kammer?.tap_action).toBeUndefined();
+    expect(sequence(heating)).toContain('climate.kammer');
+  });
+
+  it('drops hidden areas entirely with hide_hidden_areas_in_summaries', async () => {
+    const [heating] = await climateCards({
+      group_climate_by_areas: true,
+      areas_display: { hidden: ['abstellkammer'] },
+      hide_hidden_areas_in_summaries: true,
+    });
+    expect(sequence(heating)).toEqual(['# Heating (1)', '# Wohnzimmer', 'climate.wohnzimmer']);
+  });
+});

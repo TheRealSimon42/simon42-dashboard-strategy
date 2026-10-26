@@ -252,10 +252,10 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
       )}
       <div class="description">${localize('editor.show_climate_summary_desc')}</div>
 
-      ${
-        !showClimateSummary
-          ? html`
-        <div style="margin-left: 26px; margin-bottom: 8px;">
+      <div style="margin-left: 26px; margin-bottom: 8px;">
+        ${
+          !showClimateSummary
+            ? html`
           ${host._renderCheckbox(
             'show-climate-view',
             localize('editor.show_climate_view'),
@@ -263,10 +263,18 @@ export function renderSummariesSection(host: StrategyEditorHost): TemplateResult
             (checked) => host._toggleChanged('show_climate_view', checked, false)
           )}
           <div class="description">${localize('editor.show_climate_view_desc')}</div>
-        </div>
-      `
-          : nothing
-      }
+        `
+            : nothing
+        }
+
+        ${host._renderCheckbox(
+          'group-climate-by-areas',
+          localize('editor.group_climate_by_areas'),
+          host._config.group_climate_by_areas === true,
+          (checked) => host._toggleChanged('group_climate_by_areas', checked, false)
+        )}
+        <div class="description">${localize('editor.group_climate_by_areas_desc')}</div>
+      </div>
 
       ${host._renderCheckbox(
         'show-camera-view',

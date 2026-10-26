@@ -133,7 +133,8 @@
     "heating": "Heating",
     "cooling": "Cooling",
     "idle": "Idle",
-    "off": "Off"
+    "off": "Off",
+    "no_area": "No area"
   },
   "cctv": {
     "no_cameras": "No cameras found. Cameras appear here automatically once they are set up in Home Assistant.",
@@ -318,6 +319,8 @@
     "show_climate_summary_desc": "Shows the climate summary card on the overview. Counts active thermostats and climate devices.",
     "show_climate_view": "Always provide climate view",
     "show_climate_view_desc": "Generates the climate subview (/climate) even when the climate summary is hidden — e.g. for badges or links that deep-link to the page.",
+    "group_climate_by_areas": "Group climate devices by areas",
+    "group_climate_by_areas_desc": "Groups the thermostats and climate devices in the climate view by area inside each status section (heating/cooling/idle/off), each area with its own sub-heading plus a trailing \"No area\" bucket. Handy when the devices share the same name everywhere (e.g. \"Heating\").",
     "show_camera_view": "Enable camera view (CCTV) — experimental",
     "show_camera_view_desc": "Under active development, details may still change. Generates a dedicated camera view: live picture, spotlight, PTZ controls and recordings link (Reolink) per camera.",
     "show_camera_events": "Show LLM Vision event timelines",
