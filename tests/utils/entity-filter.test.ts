@@ -12,7 +12,6 @@ import { Registry } from '../../src/Registry';
 import {
   collectPersons,
   findWeatherEntity,
-  findDummySensor,
   isRelayOpeningSensor,
 } from '../../src/utils/entity-filter';
 import { makeHass } from '../fixtures/hass';
@@ -68,44 +67,6 @@ describe('findWeatherEntity', () => {
     });
     Registry.initialize(hass, {});
     expect(findWeatherEntity(hass)).toBe('weather.home');
-  });
-});
-
-describe('findDummySensor', () => {
-  it('returns a sensor when one is available', () => {
-    const hass = makeHass({
-      entities: [{ entity_id: 'sensor.temp', state: '21.5' }],
-    });
-    Registry.initialize(hass, {});
-    expect(findDummySensor(hass)).toBe('sensor.temp');
-  });
-
-  it('skips unavailable/unknown sensors', () => {
-    const hass = makeHass({
-      entities: [
-        { entity_id: 'sensor.broken', state: 'unavailable' },
-        { entity_id: 'sensor.ok', state: '42' },
-      ],
-    });
-    Registry.initialize(hass, {});
-    expect(findDummySensor(hass)).toBe('sensor.ok');
-  });
-
-  it('falls back to a light when no usable sensor exists', () => {
-    const hass = makeHass({
-      entities: [
-        { entity_id: 'sensor.broken', state: 'unavailable' },
-        { entity_id: 'light.kitchen', state: 'off' },
-      ],
-    });
-    Registry.initialize(hass, {});
-    expect(findDummySensor(hass)).toBe('light.kitchen');
-  });
-
-  it('falls back to sun.sun when nothing else is available', () => {
-    const hass = makeHass({ entities: [] });
-    Registry.initialize(hass, {});
-    expect(findDummySensor(hass)).toBe('sun.sun');
   });
 });
 

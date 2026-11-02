@@ -84,3 +84,93 @@ describe('Overview assembly: custom cards on auto-hidden sections (#429)', () =>
     expect(anchors).toHaveLength(0);
   });
 });
+
+describe('Overview unavailable-entities badge', () => {
+  it('uses a text badge instead of attaching the count to a numeric sensor', async () => {
+    const hass = makeHass({
+      entities: [
+        { entity_id: 'sensor.power', state: '1200' },
+        { entity_id: 'sensor.temperature', state: '21.5' },
+        { entity_id: 'switch.offline', state: 'unavailable' },
+      ],
+    });
+    Registry.resetForTesting();
+
+    const view = await Simon42ViewOverviewStrategy.generate(
+      { dashboardConfig: { show_unavailable_alert_badge: true } },
+      hass
+    );
+
+    expect(view.badges).toEqual([
+      {
+        type: 'shortcut',
+        text: '1',
+        icon: 'mdi:alert-circle-outline',
+        color: 'red',
+      },
+    ]);
+  });
+
+  it('uses the maintenance view count for device groups and configured ignores', async () => {
+    const hass = makeHass({
+      devices: [
+        { id: 'device_all_unavailable', name: 'Offline device' },
+        { id: 'device_partially_available', name: 'Online device' },
+        { id: 'device_ignored', name: 'Ignored device' },
+      ],
+      entities: [
+        { entity_id: 'sensor.offline_a', device_id: 'device_all_unavailable', state: 'unavailable' },
+        { entity_id: 'sensor.offline_b', device_id: 'device_all_unavailable', state: 'unavailable' },
+        { entity_id: 'sensor.partial_a', device_id: 'device_partially_available', state: 'unavailable' },
+        { entity_id: 'sensor.partial_b', device_id: 'device_partially_available', state: 'on' },
+        { entity_id: 'sensor.ignored', device_id: 'device_ignored', state: 'unavailable' },
+        { entity_id: 'sensor.diagnostic', state: 'unavailable', entity_category: 'diagnostic' },
+        { entity_id: 'sensor.orphan', state: 'unavailable' },
+      ],
+    });
+    Registry.resetForTesting();
+
+    const view = await Simon42ViewOverviewStrategy.generate(
+      {
+        dashboardConfig: {
+          show_unavailable_alert_badge: true,
+          maintenance_ignored_devices: ['device_ignored'],
+        },
+      },
+      hass
+    );
+
+    expect(view.badges).toEqual([
+      {
+        type: 'shortcut',
+        text: '2',
+        icon: 'mdi:alert-circle-outline',
+        color: 'red',
+      },
+    ]);
+  });
+
+  it('hides the badge when unavailable entities belong only to partially available devices', async () => {
+    const hass = makeHass({
+      devices: [{ id: 'device_online', name: 'Partially online device' }],
+      entities: [
+        ...Array.from({ length: 13 }, function unavailableEntity(_, index) {
+          return {
+            entity_id: `sensor.unavailable_${index}`,
+            device_id: 'device_online',
+            state: 'unavailable',
+          };
+        }),
+        { entity_id: 'sensor.available', device_id: 'device_online', state: 'on' },
+      ],
+    });
+    Registry.resetForTesting();
+
+    const view = await Simon42ViewOverviewStrategy.generate(
+      { dashboardConfig: { show_unavailable_alert_badge: true } },
+      hass
+    );
+
+    expect(view.badges).toBeUndefined();
+  });
+});

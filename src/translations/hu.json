@@ -235,7 +235,7 @@
     "power_badge_none": "Nincs (nincs élő teljesítményjelvény)",
     "power_badge_entity_desc": "Nem kötelező. Egy kis élő teljesítményjelvényt ad az áttekintés fejlécéhez (a személyjelvények mellé), amely a kiválasztott érzékelő aktuális értékét mutatja. Válaszd ki a pillanatnyi teljesítményfelvételt jelző entitást (például hálózati vagy dugalj-teljesítmény). „power” device_class értékű vagy W/kW mértékegységű érzékelő szükséges; ellenkező esetben a választó nem kínál fel lehetőséget.",
     "show_unavailable_alert_badge": "„Nem elérhető entitások” figyelmeztető jelvényének megjelenítése",
-    "show_unavailable_alert_badge_desc": "Egy kis piros jelvényt ad az áttekintés fejlécéhez, amely az „unavailable” állapotú entitások számát mutatja (hibás integráció, lemerült elem, kapcsolat nélküli eszköz). Nulla értéknél automatikusan elrejtőzik. Figyelembe veszi a no_dboard címkét és az egyedileg elrejtett entitásokat.",
+    "show_unavailable_alert_badge_desc": "Kis piros jelvényt ad az áttekintés fejlécéhez. Az eszközöket a karbantartási oldallal azonos módon csak akkor számolja, ha minden látható entitásuk nem érhető el; az eszköz nélküli entitásokat külön számolja. A karbantartási kizárásokat figyelembe veszi. Nulla esetén elrejti a jelvényt.",
     "show_now_playing_badge": "„Lejátszás alatt” jelvény megjelenítése",
     "show_now_playing_badge_desc": "Egy kis zöld jelvényt ad az áttekintés fejlécéhez, amely az első „playing” állapotú media_player entitást mutatja. Koppintásra megnyitja a médiavezérlőket. Automatikusan elrejtőzik, ha nincs folyamatban lejátszás.",
     "show_sun_badge": "Napjelvény megjelenítése (napkelte/napnyugta)",

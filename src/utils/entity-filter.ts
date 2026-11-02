@@ -39,28 +39,6 @@ export function findWeatherEntity(hass: HomeAssistant): string | undefined {
 }
 
 /**
- * Finds a dummy sensor entity for tile card color rendering.
- * Uses pre-filtered Registry method — no manual exclusion checks needed.
- * Cached per call — should only be called once per generate().
- */
-export function findDummySensor(hass: HomeAssistant): string {
-  const sensorIds = Registry.getVisibleEntityIdsForDomain('sensor');
-  for (const id of sensorIds) {
-    const state = hass.states[id];
-    if (!state) continue;
-    if (state.state === 'unavailable' || state.state === 'unknown') continue;
-    return id;
-  }
-  // Fallback: try any visible light
-  const lightIds = Registry.getVisibleEntityIdsForDomain('light');
-  for (const id of lightIds) {
-    const state = hass.states[id];
-    if (state) return id;
-  }
-  return 'sun.sun';
-}
-
-/**
  * Platforms that create binary_sensor entities with security-like device_classes
  * (opening, door, window) but are NOT actual physical security sensors.
  * Excluded from SecurityView and security SummaryCard count.

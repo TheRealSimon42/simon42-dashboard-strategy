@@ -247,7 +247,7 @@ strategy:
       state: "on"
 ```
 
-**Header-Badges** *(ab v1.4.0)* — Optionale Live-Badges neben den Personen-Chips: aktueller Stromverbrauch (Sensor wählbar), Anzahl nicht verfügbarer Entitäten, gerade spielende Medien, Sonnenauf-/-untergang und anstehende Updates. Alle standardmäßig aus, alle mit Auto-Hide. Die Personen-Chips selbst sind konfigurierbar (Layout mit/ohne Status und Zeitangabe) oder komplett abschaltbar — z.B. um sie durch eigene Badges zu ersetzen.
+**Header-Badges** *(ab v1.4.0)* — Optionale Live-Badges neben den Personen-Chips: aktueller Stromverbrauch (Sensor wählbar), Anzahl nicht verfügbarer Geräte/Entitäten nach derselben Zählung wie auf der Wartungsseite, gerade spielende Medien, Sonnenauf-/-untergang und anstehende Updates. Bei Geräten zählt ein Ausfall erst, wenn alle sichtbaren Entitäten des Geräts nicht verfügbar sind; Entitäten ohne Gerät werden einzeln gezählt. Wartungs-Ausschlüsse gelten auch hier. Alle standardmäßig aus, alle mit Auto-Hide. Die Personen-Chips selbst sind konfigurierbar (Layout mit/ohne Status und Zeitangabe) oder komplett abschaltbar — z.B. um sie durch eigene Badges zu ersetzen.
 
 **Favoriten** — Beliebige Entitäten, die als Kacheln unter den Zusammenfassungen erscheinen. Im Editor per Dropdown hinzufügen.
 
@@ -585,7 +585,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `show_person_badges` | boolean | `true` | v1.4.0 | Personen-Chips im Header (auf `false` z.B. für eigene Badges) |
 | `person_badge_layout` | string | `with_state` | v1.4.0 | `minimal`, `with_state` oder `with_state_and_time` |
 | `power_badge_entity` | string | — | v1.4.0 | Live-Badge mit aktuellem Stromverbrauch (Sensor wählbar) |
-| `show_unavailable_alert_badge` | boolean | `false` | v1.4.0 | Badge mit Anzahl nicht verfügbarer Entitäten (Auto-Hide bei 0) |
+| `show_unavailable_alert_badge` | boolean | `false` | v1.4.0 | Reaktives Badge mit Anzahl nicht verfügbarer Geräte/Entitäten; Klick öffnet ein nach Geräten gruppiertes Popup mit den betroffenen Entitäten (gleiche Wartungs-Ausschlüsse wie auf der Wartungsseite; Auto-Hide bei 0) |
 | `show_now_playing_badge` | boolean | `false` | v1.4.0 | Badge für gerade spielende Medien (Auto-Hide) |
 | `show_sun_badge` | boolean | `false` | v1.4.0 | Sonnenauf-/-untergangs-Badge (benötigt `sun.sun`) |
 | `show_updates_badge` | boolean | `false` | v1.4.0 | Badge mit Anzahl anstehender Updates (Auto-Hide bei 0) |
