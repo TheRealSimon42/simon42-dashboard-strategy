@@ -75,7 +75,6 @@ describe('createOverviewSection', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     const section = createOverviewSection({
-      someSensorId: 'sensor.dummy',
       showSearchCard: false,
       config: {},
       hass,
@@ -90,7 +89,6 @@ describe('createOverviewSection', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     const section = createOverviewSection({
-      someSensorId: 'sensor.dummy',
       showSearchCard: false,
       config: {},
       hass,
@@ -102,7 +100,6 @@ describe('createOverviewSection', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     const section = createOverviewSection({
-      someSensorId: 'sensor.dummy',
       showSearchCard: false,
       config: { show_clock_card: false },
       hass,
@@ -114,7 +111,6 @@ describe('createOverviewSection', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     const section = createOverviewSection({
-      someSensorId: 'sensor.dummy',
       showSearchCard: false,
       config: { hide_unavailable_entities: true },
       hass,
@@ -134,7 +130,7 @@ describe('createOverviewSection', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     function tilesFor(config: Record<string, unknown>): Map<unknown, Record<string, unknown>> {
-      const section = createOverviewSection({ someSensorId: 'sensor.dummy', showSearchCard: false, config, hass });
+      const section = createOverviewSection({ showSearchCard: false, config, hass });
       const tiles = (section?.cards ?? [])
         .filter((c) => c.type === 'horizontal-stack')
         .flatMap((s) => (s.cards ?? []) as Record<string, unknown>[]);
@@ -186,7 +182,6 @@ describe('createHouseModeCards (#414)', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     const section = createOverviewSection({
-      someSensorId: 'sensor.dummy',
       showSearchCard: false,
       config: { house_mode_entity: 'input_select.hausmodus', alarm_entity: 'alarm_control_panel.home' },
       hass,
@@ -204,7 +199,6 @@ describe('createHouseModeCards (#414)', () => {
     const hass = makeHass({});
     Registry.initialize(hass, {});
     const section = createOverviewSection({
-      someSensorId: 'sensor.dummy',
       showSearchCard: false,
       config: { house_mode_entity: 'input_select.hausmodus', show_clock_card: false },
       hass,
@@ -226,7 +220,6 @@ describe('summary tile user visibility (view_visible_users entry points)', () =>
     const hass = makeHass({ entities: [{ entity_id: 'sensor.dummy', state: '1' }] });
     Registry.initialize(hass, config);
     const section = createOverviewSection({
-      someSensorId: 'sensor.dummy',
       showSearchCard: false,
       config,
       hass,
@@ -283,7 +276,6 @@ describe('maintenance tile hide-when-ok (#426, opt-in)', () => {
     const hass = makeHass({ entities: [{ entity_id: 'sensor.dummy', state: '1' }] });
     Registry.initialize(hass, config);
     const section = createOverviewSection({
-      someSensorId: 'sensor.dummy',
       showSearchCard: false,
       config,
       hass,

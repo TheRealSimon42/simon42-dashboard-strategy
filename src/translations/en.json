@@ -236,7 +236,7 @@
     "power_badge_none": "None (no live power badge)",
     "power_badge_entity_desc": "Optional. Adds a small live power badge to the overview header (next to person chips) showing the current value of the selected sensor. Pick the entity that represents your current consumption (e.g. grid power, plug power). Requires a sensor with device_class \"power\" or unit W/kW; otherwise this picker shows no options.",
     "show_unavailable_alert_badge": "Show \"unavailable entities\" alert badge",
-    "show_unavailable_alert_badge_desc": "Adds a small red badge to the overview header showing the count of entities whose state is \"unavailable\" (broken integration, dead battery, offline device). Auto-hidden when the count is zero. Respects the no_dboard label and per-entity hidden flags.",
+    "show_unavailable_alert_badge_desc": "Adds a small red badge to the overview header. Devices are counted like on the maintenance page only when all their visible entities are unavailable; entities without a device are counted individually. Maintenance ignore settings are respected. Hidden when the count is zero.",
     "show_now_playing_badge": "Show \"now playing\" badge",
     "show_now_playing_badge_desc": "Adds a small green badge to the overview header showing the first media_player whose state is \"playing\". Click opens the media controls. Auto-hidden when nothing is playing.",
     "show_sun_badge": "Show sun badge (sunrise/sunset)",

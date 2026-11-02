@@ -20,7 +20,8 @@ import type {
 } from '../types/lovelace';
 import type { AreaRegistryEntry } from '../types/registries';
 import { Registry } from '../Registry';
-import { collectPersons, findWeatherEntity, findDummySensor } from '../utils/entity-filter';
+import { collectPersons, findWeatherEntity } from '../utils/entity-filter';
+import { buildMaintenanceScan, countUnavailable } from '../utils/maintenance-utils';
 import { getVisibleAreas } from '../utils/name-utils';
 import { createPersonBadges } from '../utils/badge-builder';
 import { createOverviewSection, createCustomCardsSection } from '../sections/OverviewSection';
@@ -96,8 +97,6 @@ interface SectionBuildContext {
   visibleAreas: AreaRegistryEntry[];
   /** Resolved weather entity (config override or auto-discovery) */
   weatherEntity: string | null;
-  /** Dummy sensor for entity-less cards */
-  someSensorId: string;
   /** custom_cards grouped by target_section (built-in or custom key) */
   customCardsBySection: Map<string, CustomCard[]>;
 }
@@ -113,8 +112,8 @@ type SectionBuilder = (ctx: SectionBuildContext) => LovelaceSectionConfig | Love
 // unknown key, so a registry entry without a builder (or vice versa)
 // is a compile error, not a silently empty section.
 const SECTION_BUILDER_IMPL: Record<SectionKey, SectionBuilder> = {
-  overview: ({ hass, config, someSensorId }) =>
-    createOverviewSection({ someSensorId, showSearchCard: config.show_search_card === true, config, hass }),
+  overview: ({ hass, config }) =>
+    createOverviewSection({ showSearchCard: config.show_search_card === true, config, hass }),
   custom_cards: ({ config, customCardsBySection, hiddenHeadings }) =>
     createCustomCardsSection(
       customCardsBySection.get('custom_cards') || [],
@@ -212,8 +211,6 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
     const configuredWeather = dashboardConfig.weather_entity;
     const weatherEntity =
       configuredWeather && hasState(hass, configuredWeather) ? configuredWeather : findWeatherEntity(hass);
-    const someSensorId = findDummySensor(hass);
-
     // Person badges (default-on; suppress via show_person_badges=false to swap in
     // your own person badges through custom_badges instead).
     // Zone-aware: HA's person.state returns the zone name when the person is in
@@ -244,7 +241,6 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
       hiddenHeadings: new Set(dashboardConfig.hidden_section_headings || []),
       visibleAreas,
       weatherEntity: weatherEntity ?? null,
-      someSensorId,
       customCardsBySection,
     };
 
@@ -335,27 +331,18 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
       });
     }
 
-    // Optional "unavailable entities" alert badge — count entities whose
-    // state is "unavailable", skipping ones the user hid. Auto-hide at zero.
+    // Match the maintenance page: devices count once when all visible
+    // entities are unavailable; standalone entities count individually.
     const alertBadges: LovelaceBadgeConfig[] = [];
     if (dashboardConfig.show_unavailable_alert_badge === true) {
-      let count = 0;
-      for (const [entityId, state] of Object.entries(hass.states)) {
-        if (state.state !== 'unavailable') continue;
-        if (Registry.isExcludedByLabel(entityId)) continue;
-        if (Registry.isHiddenByConfig(entityId)) continue;
-        const entry = Registry.getEntity(entityId);
-        if (entry?.hidden) continue;
-        count++;
-      }
-      if (count > 0 && someSensorId) {
+      const maintenanceScan = buildMaintenanceScan(hass, dashboardConfig);
+      const count = countUnavailable(hass, maintenanceScan);
+      if (count > 0) {
         alertBadges.push({
-          type: 'entity',
-          entity: someSensorId,
-          name: String(count),
+          type: 'shortcut',
+          text: String(count),
           icon: 'mdi:alert-circle-outline',
           color: 'red',
-          show_state: false,
         });
       }
     }

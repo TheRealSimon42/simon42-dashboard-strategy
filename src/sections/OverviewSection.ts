@@ -26,7 +26,6 @@ function tileUserVisibility(config: Simon42StrategyConfig, viewPath: string): Pa
 }
 
 export interface OverviewSectionParams {
-  someSensorId: string | null;
   showSearchCard: boolean;
   config: Simon42StrategyConfig;
   hass: HomeAssistant;

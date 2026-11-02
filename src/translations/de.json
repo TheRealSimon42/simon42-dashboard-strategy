@@ -236,7 +236,7 @@
     "power_badge_none": "Kein Live-Badge",
     "power_badge_entity_desc": "Optional. Fügt ein kleines Live-Badge in den Übersichts-Header (neben den Personen-Chips) ein, das den aktuellen Wert des gewählten Sensors anzeigt. Wähle die Entität, die deinen aktuellen Verbrauch repräsentiert (z.B. Netzbezug, Steckdose). Benötigt einen Sensor mit `device_class: power` oder Einheit W/kW; ansonsten erscheinen keine Optionen.",
     "show_unavailable_alert_badge": "Badge „Nicht verfügbare Entitäten“ anzeigen",
-    "show_unavailable_alert_badge_desc": "Fügt ein kleines rotes Badge in den Übersichts-Header ein, das die Anzahl der Entitäten mit Status „unavailable“ zeigt (kaputte Integration, leere Batterie, Offline-Gerät). Wird bei Null automatisch ausgeblendet. Respektiert das `no_dboard`-Label und pro-Entität Sichtbarkeits-Flags.",
+    "show_unavailable_alert_badge_desc": "Fügt ein kleines rotes Badge in den Übersichts-Header ein. Es zählt Geräte wie auf der Wartungsseite nur dann, wenn alle sichtbaren Entitäten des Geräts nicht verfügbar sind; Entitäten ohne Gerät zählen einzeln. Wartungs-Ausschlüsse werden berücksichtigt. Bei Null wird das Badge ausgeblendet.",
     "show_now_playing_badge": "„Wird abgespielt“-Badge anzeigen",
     "show_now_playing_badge_desc": "Fügt ein kleines grünes Badge in den Übersichts-Header ein, das den ersten Media-Player mit Status `playing` zeigt. Klick öffnet die Mediensteuerung. Wird automatisch ausgeblendet, wenn nichts läuft.",
     "show_sun_badge": "Sonnen-Badge (Sonnenauf-/-untergang)",

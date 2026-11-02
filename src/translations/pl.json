@@ -235,7 +235,7 @@
     "power_badge_none": "Brak (bez plakietki bieżącej mocy)",
     "power_badge_entity_desc": "Opcjonalne. Dodaje małą plakietkę bieżącej mocy do nagłówka przeglądu (obok plakietek osób), pokazującą aktualną wartość wybranego czujnika. Wybierz encję reprezentującą aktualne zużycie mocy (np. moc z sieci lub moc gniazdka). Wymagany jest czujnik z device_class \"power\" albo jednostką W/kW; w przeciwnym razie selektor nie pokaże żadnych opcji.",
     "show_unavailable_alert_badge": "Pokaż plakietkę alarmową „niedostępne encje”",
-    "show_unavailable_alert_badge_desc": "Dodaje małą czerwoną plakietkę do nagłówka przeglądu z liczbą encji w stanie \"unavailable\" (uszkodzona integracja, rozładowana bateria, urządzenie offline). Plakietka jest automatycznie ukrywana, gdy licznik wynosi zero. Uwzględnia etykietę no_dboard oraz ustawienia ukrywania poszczególnych encji.",
+    "show_unavailable_alert_badge_desc": "Dodaje małą czerwoną plakietkę do nagłówka przeglądu. Urządzenie jest liczone jak na stronie konserwacji tylko wtedy, gdy wszystkie jego widoczne encje są niedostępne; encje bez urządzenia są liczone osobno. Uwzględnia wykluczenia konserwacji. Plakietka znika, gdy licznik wynosi zero.",
     "show_now_playing_badge": "Pokaż plakietkę „teraz odtwarzane”",
     "show_now_playing_badge_desc": "Dodaje małą zieloną plakietkę do nagłówka przeglądu, pokazującą pierwszy odtwarzacz media_player w stanie \"playing\". Kliknięcie otwiera sterowanie multimediami. Plakietka jest automatycznie ukrywana, gdy nic nie jest odtwarzane.",
     "show_sun_badge": "Pokaż plakietkę słońca (wschód/zachód)",
