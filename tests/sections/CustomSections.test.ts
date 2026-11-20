@@ -203,6 +203,46 @@ describe('buildCustomSection — complete section YAML (since beta.12)', () => {
   });
 });
 
+
+describe('buildCustomSection — native section strategies', () => {
+  const deviceStrategy = {
+    strategy: {
+      type: 'device',
+      device_id: 'example_device',
+      categories: ['control', 'sensor'],
+      display: 'tiles',
+      heading: 'device',
+      group_by_category: true,
+    },
+  };
+
+  it('keeps strategy-only sections visible without adding placeholder cards', () => {
+    const custom = section({ parsed_config: deviceStrategy });
+    expect(customSectionHasCards(custom)).toBe(true);
+    expect(buildCustomSection(custom)).toEqual(deviceStrategy);
+  });
+
+  it('passes through section-level properties with a strategy', () => {
+    const config = {
+      ...deviceStrategy,
+      column_span: 2,
+      visibility: [{ condition: 'state', entity: 'input_boolean.guest', state: 'on' }],
+    };
+    expect(buildCustomSection(section({ parsed_config: config }))).toEqual(config);
+  });
+
+  it('does not treat an invalid strategy as a valid section', () => {
+    const invalid = section({ parsed_config: { strategy: { device_id: 'example_device' } } });
+    expect(customSectionHasCards(invalid)).toBe(false);
+    expect(buildCustomSection(invalid)).toBeNull();
+  });
+
+  it('supports section strategies in room views', () => {
+    const result = buildAreaCustomSections([{ position: 'bottom', parsed_config: deviceStrategy }], 'bottom');
+    expect(result).toEqual([deviceStrategy]);
+  });
+});
+
 describe('normalizeSectionYaml', () => {
   it('returns null for scalars and empty values', () => {
     expect(normalizeSectionYaml(undefined)).toBeNull();

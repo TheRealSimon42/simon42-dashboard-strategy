@@ -29,6 +29,19 @@ function isCardConfig(c: unknown): c is LovelaceCardConfig {
   return !!c && typeof c === 'object' && typeof (c as { type?: unknown }).type === 'string';
 }
 
+/** Native Home Assistant section strategies generate cards at runtime. */
+function isSectionStrategyConfig(config: unknown): config is LovelaceSectionConfig {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return false;
+  const strategy = (config as Record<string, unknown>).strategy;
+  return (
+    !!strategy &&
+    typeof strategy === 'object' &&
+    !Array.isArray(strategy) &&
+    typeof (strategy as { type?: unknown }).type === 'string' &&
+    (strategy as { type: string }).type.trim().length > 0
+  );
+}
+
 interface NormalizedSectionYaml {
   /** Raw card list (still unvalidated — entries may be malformed) */
   cards: readonly unknown[];
@@ -62,11 +75,12 @@ export function normalizeSectionYaml(parsed: unknown): NormalizedSectionYaml | n
 }
 
 /**
- * Whether the section's YAML yields at least one valid card — the shared
- * definition of "empty" for auto-hide (builder) and the greyed-out state
+ * Whether the section's YAML contains a valid card or section strategy —
+ * the shared definition of "empty" for auto-hide and the greyed-out state
  * in the editor's section-order panel.
  */
 export function customSectionHasCards(section: CustomSectionBase): boolean {
+  if (isSectionStrategyConfig(section.parsed_config)) return true;
   const normalized = normalizeSectionYaml(section.parsed_config);
   return !!normalized && normalized.cards.some(isCardConfig);
 }
@@ -99,7 +113,7 @@ export function validateCustomSections(raw: CustomSection[] | undefined): Custom
 /**
  * Builds the LovelaceSectionConfig for one custom section.
  *
- * Returns null (auto-hide) when the section has no valid own cards —
+ * Returns null (auto-hide) when the section has neither valid own cards nor a strategy —
  * unless `hasAssignedCards` is true (custom_cards targeting this section
  * via target_section), in which case the section shell is returned so
  * the assembly loop can append the assigned cards.
@@ -113,6 +127,12 @@ export function buildCustomSection(
   section: CustomSectionBase,
   hasAssignedCards: boolean = false
 ): LovelaceSectionConfig | null {
+  // Keep the raw strategy section: Home Assistant will generate its cards.
+  // Do not synthesize a heading or an empty cards array.
+  if (isSectionStrategyConfig(section.parsed_config)) {
+    return { ...section.parsed_config };
+  }
+
   const normalized = normalizeSectionYaml(section.parsed_config);
   const rawCards: readonly unknown[] = normalized ? normalized.cards : [];
   const validCards = rawCards.filter(isCardConfig);
