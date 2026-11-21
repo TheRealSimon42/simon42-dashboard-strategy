@@ -84,3 +84,30 @@ describe('Overview assembly: custom cards on auto-hidden sections (#429)', () =>
     expect(anchors).toHaveLength(0);
   });
 });
+
+
+describe('Overview assembly: native section strategies with manual cards', () => {
+  const strategy = { type: 'device', device_id: 'nas' };
+  const nasCard = { type: 'custom:nas-card', nas: 'Lindes NAS' };
+
+  it('renders manual cards directly before the generated section', async () => {
+    const sections = await generateSections({
+      custom_sections: [{ key: 'nas', parsed_config: { cards: [nasCard], strategy } }],
+    });
+    const index = sections.findIndex((s) => s.cards?.some((c) => c.type === nasCard.type));
+    expect(index).toBeGreaterThanOrEqual(0);
+    expect(sections[index].cards).toEqual([nasCard]);
+    expect(sections[index + 1].strategy).toEqual(strategy);
+    expect(sections[index + 1].cards).toBeUndefined();
+  });
+
+  it('keeps custom cards assigned to a strategy-only section', async () => {
+    const sections = await generateSections({
+      custom_sections: [{ key: 'nas', parsed_config: { strategy } }],
+      custom_cards: [{ target_section: 'nas', parsed_config: nasCard }],
+    });
+    const index = sections.findIndex((s) => s.cards?.some((c) => c.type === nasCard.type));
+    expect(index).toBeGreaterThanOrEqual(0);
+    expect(sections[index + 1].strategy).toEqual(strategy);
+  });
+});

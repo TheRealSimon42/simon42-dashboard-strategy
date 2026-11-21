@@ -159,6 +159,40 @@ export function buildCustomSection(
 }
 
 /**
+ * Builds one or two actual Lovelace sections from a user-defined section.
+ *
+ * Native Home Assistant section strategies generate their own cards, and
+ * overwrite a sibling static `cards:` array. Split mixed configurations
+ * into a normal grid section followed by the dynamic strategy section.
+ * This also preserves custom_cards assigned to a strategy-only section.
+ */
+export function buildCustomSectionBlocks(
+  section: CustomSectionBase,
+  assignedCards: LovelaceCardConfig[] = []
+): LovelaceSectionConfig[] {
+  const config = section.parsed_config;
+  if (isSectionStrategyConfig(config)) {
+    const ownCards = Array.isArray(config.cards) ? config.cards.filter(isCardConfig) : [];
+    const manualCards = [...ownCards, ...assignedCards];
+
+    const strategySection = { ...config };
+    delete strategySection.cards;
+    if (manualCards.length === 0) return [strategySection];
+
+    const manualSection = { ...config, type: 'grid', cards: manualCards };
+    delete manualSection.strategy;
+    return [manualSection, strategySection];
+  }
+
+  const built = buildCustomSection(section, assignedCards.length > 0);
+  if (!built) return [];
+  if (assignedCards.length) {
+    built.cards = [...(built.cards || []), ...assignedCards];
+  }
+  return [built];
+}
+
+/**
  * Builds the room-view custom sections for one placement slot.
  * Entries default to 'bottom'; malformed/empty entries are dropped
  * (same rules as buildCustomSection).
@@ -173,8 +207,7 @@ export function buildAreaCustomSections(
     if (!entry || typeof entry !== 'object') continue;
     const section = entry as AreaCustomSection;
     if ((section.position ?? 'bottom') !== position) continue;
-    const built = buildCustomSection(section);
-    if (built) result.push(built);
+    result.push(...buildCustomSectionBlocks(section));
   }
   return result;
 }

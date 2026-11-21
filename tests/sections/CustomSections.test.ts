@@ -16,6 +16,7 @@ import { describe, it, expect } from 'vitest';
 import {
   validateCustomSections,
   buildCustomSection,
+  buildCustomSectionBlocks,
   buildAreaCustomSections,
   normalizeSectionYaml,
   customSectionHasCards,
@@ -240,6 +241,68 @@ describe('buildCustomSection — native section strategies', () => {
   it('supports section strategies in room views', () => {
     const result = buildAreaCustomSections([{ position: 'bottom', parsed_config: deviceStrategy }], 'bottom');
     expect(result).toEqual([deviceStrategy]);
+  });
+});
+
+
+describe('native section strategies with manual cards', () => {
+  const deviceStrategy = { type: 'device', device_id: 'nas' };
+  const manualCard = { type: 'custom:nas-card', nas: 'Lindes NAS' };
+
+  it('preserves manual cards before the generated device section', () => {
+    const custom = section({
+      parsed_config: {
+        type: 'grid',
+        column_span: 2,
+        visibility: [{ condition: 'state', entity: 'input_boolean.test', state: 'on' }],
+        cards: [manualCard],
+        strategy: deviceStrategy,
+      },
+    });
+    expect(customSectionHasCards(custom)).toBe(true);
+    expect(buildCustomSectionBlocks(custom)).toEqual([
+      {
+        type: 'grid',
+        column_span: 2,
+        visibility: [{ condition: 'state', entity: 'input_boolean.test', state: 'on' }],
+        cards: [manualCard],
+      },
+      {
+        type: 'grid',
+        column_span: 2,
+        visibility: [{ condition: 'state', entity: 'input_boolean.test', state: 'on' }],
+        strategy: deviceStrategy,
+      },
+    ]);
+  });
+
+  it('keeps a strategy-only section as one block', () => {
+    expect(buildCustomSectionBlocks(section({ parsed_config: { strategy: deviceStrategy } }))).toEqual([
+      { strategy: deviceStrategy },
+    ]);
+  });
+
+  it('preserves assigned custom cards before a strategy without own cards', () => {
+    expect(
+      buildCustomSectionBlocks(section({ parsed_config: { strategy: deviceStrategy } }), [manualCard])
+    ).toEqual([{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }]);
+  });
+
+  it('filters malformed manual cards and never forwards them to the device strategy', () => {
+    expect(
+      buildCustomSectionBlocks(
+        section({ parsed_config: { cards: [{ content: 'invalid' }, manualCard], strategy: deviceStrategy } })
+      )
+    ).toEqual([{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }]);
+  });
+
+  it('keeps mixed strategy and manual cards together in adjacent room sections', () => {
+    expect(
+      buildAreaCustomSections(
+        [{ position: 'bottom', parsed_config: { cards: [manualCard], strategy: deviceStrategy } }],
+        'bottom'
+      )
+    ).toEqual([{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }]);
   });
 });
 
