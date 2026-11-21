@@ -11,7 +11,7 @@ import type { Simon42StrategyConfig, SectionKey, SectionOrderKey, CustomCard, He
 import { DEFAULT_SECTIONS_ORDER } from '../types/strategy';
 import { SECTION_META_BY_KEY, isSectionHiddenByConfig } from '../sections/section-registry';
 import { localize } from '../utils/localize';
-import { validateCustomSections, buildCustomSection } from '../sections/CustomSections';
+import { validateCustomSections, buildCustomSectionBlocks } from '../sections/CustomSections';
 import type {
   LovelaceViewConfig,
   LovelaceSectionConfig,
@@ -273,7 +273,7 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
       const builderResult = builder
         ? builder(ctx)
         : customSection
-          ? buildCustomSection(customSection, assignedCount > 0)
+          ? buildCustomSectionBlocks(customSection, renderCustomCards(customCardsBySection.get(key) || []))
           : null;
       // Auto-hide builders return null (or an empty array) when there is
       // nothing to show — but custom cards assigned to that section via
@@ -298,8 +298,9 @@ export class Simon42ViewOverviewStrategy extends HTMLElement {
         }
       }
       overviewSections.push(...built);
-      // Append custom cards assigned to this section (skip 'custom_cards' — handled by createCustomCardsSection)
-      if (key !== 'custom_cards') {
+      // Custom sections already include their assigned cards (before any dynamic strategy).
+      // Built-in sections still need their assigned cards appended here.
+      if (key !== 'custom_cards' && builder) {
         const assigned = customCardsBySection.get(key);
         if (assigned && assigned.length > 0) {
           const extraCards = renderCustomCards(assigned);

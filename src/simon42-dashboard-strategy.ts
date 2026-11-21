@@ -21,6 +21,7 @@ let generateCallCount = 0;
 
 // Start loading all chunks IMMEDIATELY
 const modulesPromise = Promise.all([
+  import('./sections/StackedSection'),
   import('./cards/SummaryCard'),
   import('./cards/LightsGroupCard'),
   import('./cards/CoversGroupCard'),

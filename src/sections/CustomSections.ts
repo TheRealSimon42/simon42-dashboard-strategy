@@ -29,6 +29,19 @@ function isCardConfig(c: unknown): c is LovelaceCardConfig {
   return !!c && typeof c === 'object' && typeof (c as { type?: unknown }).type === 'string';
 }
 
+/** Native Home Assistant section strategies generate cards at runtime. */
+function isSectionStrategyConfig(config: unknown): config is LovelaceSectionConfig {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return false;
+  const strategy = (config as Record<string, unknown>).strategy;
+  return (
+    !!strategy &&
+    typeof strategy === 'object' &&
+    !Array.isArray(strategy) &&
+    typeof (strategy as { type?: unknown }).type === 'string' &&
+    (strategy as { type: string }).type.trim().length > 0
+  );
+}
+
 interface NormalizedSectionYaml {
   /** Raw card list (still unvalidated — entries may be malformed) */
   cards: readonly unknown[];
@@ -62,11 +75,12 @@ export function normalizeSectionYaml(parsed: unknown): NormalizedSectionYaml | n
 }
 
 /**
- * Whether the section's YAML yields at least one valid card — the shared
- * definition of "empty" for auto-hide (builder) and the greyed-out state
+ * Whether the section's YAML contains a valid card or section strategy —
+ * the shared definition of "empty" for auto-hide and the greyed-out state
  * in the editor's section-order panel.
  */
 export function customSectionHasCards(section: CustomSectionBase): boolean {
+  if (isSectionStrategyConfig(section.parsed_config)) return true;
   const normalized = normalizeSectionYaml(section.parsed_config);
   return !!normalized && normalized.cards.some(isCardConfig);
 }
@@ -99,7 +113,7 @@ export function validateCustomSections(raw: CustomSection[] | undefined): Custom
 /**
  * Builds the LovelaceSectionConfig for one custom section.
  *
- * Returns null (auto-hide) when the section has no valid own cards —
+ * Returns null (auto-hide) when the section has neither valid own cards nor a strategy —
  * unless `hasAssignedCards` is true (custom_cards targeting this section
  * via target_section), in which case the section shell is returned so
  * the assembly loop can append the assigned cards.
@@ -113,6 +127,12 @@ export function buildCustomSection(
   section: CustomSectionBase,
   hasAssignedCards: boolean = false
 ): LovelaceSectionConfig | null {
+  // Keep the raw strategy section: Home Assistant will generate its cards.
+  // Do not synthesize a heading or an empty cards array.
+  if (isSectionStrategyConfig(section.parsed_config)) {
+    return { ...section.parsed_config };
+  }
+
   const normalized = normalizeSectionYaml(section.parsed_config);
   const rawCards: readonly unknown[] = normalized ? normalized.cards : [];
   const validCards = rawCards.filter(isCardConfig);
@@ -139,6 +159,53 @@ export function buildCustomSection(
 }
 
 /**
+ * Builds one or two actual Lovelace sections from a user-defined section.
+ *
+ * Native Home Assistant section strategies generate their own cards, and
+ * overwrite a sibling static `cards:` array. Mixed configurations use
+ * one custom stack layout with nested grid and native strategy sections,
+ * so both render vertically in the same dashboard column.
+ * This also preserves custom_cards assigned to a strategy-only section.
+ */
+export function buildCustomSectionBlocks(
+  section: CustomSectionBase,
+  assignedCards: LovelaceCardConfig[] = []
+): LovelaceSectionConfig[] {
+  const config = section.parsed_config;
+  if (isSectionStrategyConfig(config)) {
+    const ownCards = Array.isArray(config.cards) ? config.cards.filter(isCardConfig) : [];
+    const manualCards = [...ownCards, ...assignedCards];
+
+    // With no manual cards, keep Home Assistant's native strategy behavior.
+    if (manualCards.length === 0) {
+      const strategySection = { ...config };
+      delete strategySection.cards;
+      return [strategySection];
+    }
+
+    // One parent section keeps both children in the same dashboard column.
+    // Native HA renders each child, including live strategy updates.
+    const sectionOptions = { ...config };
+    delete sectionOptions.strategy;
+    delete sectionOptions.cards;
+    return [
+      {
+        ...sectionOptions,
+        type: 'custom:simon42-stacked-section',
+        sections: [{ type: 'grid', cards: manualCards }, { strategy: config.strategy }],
+      },
+    ];
+  }
+
+  const built = buildCustomSection(section, assignedCards.length > 0);
+  if (!built) return [];
+  if (assignedCards.length) {
+    built.cards = [...(built.cards || []), ...assignedCards];
+  }
+  return [built];
+}
+
+/**
  * Builds the room-view custom sections for one placement slot.
  * Entries default to 'bottom'; malformed/empty entries are dropped
  * (same rules as buildCustomSection).
@@ -153,8 +220,7 @@ export function buildAreaCustomSections(
     if (!entry || typeof entry !== 'object') continue;
     const section = entry as AreaCustomSection;
     if ((section.position ?? 'bottom') !== position) continue;
-    const built = buildCustomSection(section);
-    if (built) result.push(built);
+    result.push(...buildCustomSectionBlocks(section));
   }
   return result;
 }
