@@ -249,7 +249,7 @@ describe('native section strategies with manual cards', () => {
   const deviceStrategy = { type: 'device', device_id: 'nas' };
   const manualCard = { type: 'custom:nas-card', nas: 'Lindes NAS' };
 
-  it('preserves manual cards before the generated device section', () => {
+  it('stacks manual cards and device strategy in the same section', () => {
     const custom = section({
       parsed_config: {
         type: 'grid',
@@ -262,16 +262,15 @@ describe('native section strategies with manual cards', () => {
     expect(customSectionHasCards(custom)).toBe(true);
     expect(buildCustomSectionBlocks(custom)).toEqual([
       {
-        type: 'grid',
+        type: 'custom:simon42-stacked-section',
         column_span: 2,
         visibility: [{ condition: 'state', entity: 'input_boolean.test', state: 'on' }],
-        cards: [manualCard],
-      },
+        sections: [
       {
-        type: 'grid',
-        column_span: 2,
-        visibility: [{ condition: 'state', entity: 'input_boolean.test', state: 'on' }],
-        strategy: deviceStrategy,
+        type: 'custom:simon42-stacked-section',
+        sections: [{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }],
+      },
+    ],
       },
     ]);
   });
@@ -285,7 +284,12 @@ describe('native section strategies with manual cards', () => {
   it('preserves assigned custom cards before a strategy without own cards', () => {
     expect(
       buildCustomSectionBlocks(section({ parsed_config: { strategy: deviceStrategy } }), [manualCard])
-    ).toEqual([{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }]);
+    ).toEqual([
+      {
+        type: 'custom:simon42-stacked-section',
+        sections: [{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }],
+      },
+    ]);
   });
 
   it('filters malformed manual cards and never forwards them to the device strategy', () => {
@@ -293,16 +297,26 @@ describe('native section strategies with manual cards', () => {
       buildCustomSectionBlocks(
         section({ parsed_config: { cards: [{ content: 'invalid' }, manualCard], strategy: deviceStrategy } })
       )
-    ).toEqual([{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }]);
+    ).toEqual([
+      {
+        type: 'custom:simon42-stacked-section',
+        sections: [{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }],
+      },
+    ]);
   });
 
-  it('keeps mixed strategy and manual cards together in adjacent room sections', () => {
+  it('keeps mixed strategy and manual cards stacked in one room section', () => {
     expect(
       buildAreaCustomSections(
         [{ position: 'bottom', parsed_config: { cards: [manualCard], strategy: deviceStrategy } }],
         'bottom'
       )
-    ).toEqual([{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }]);
+    ).toEqual([
+      {
+        type: 'custom:simon42-stacked-section',
+        sections: [{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }],
+      },
+    ]);
   });
 });
 

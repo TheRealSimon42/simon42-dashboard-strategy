@@ -162,8 +162,9 @@ export function buildCustomSection(
  * Builds one or two actual Lovelace sections from a user-defined section.
  *
  * Native Home Assistant section strategies generate their own cards, and
- * overwrite a sibling static `cards:` array. Split mixed configurations
- * into a normal grid section followed by the dynamic strategy section.
+ * overwrite a sibling static `cards:` array. Mixed configurations use
+ * one custom stack layout with nested grid and native strategy sections,
+ * so both render vertically in the same dashboard column.
  * This also preserves custom_cards assigned to a strategy-only section.
  */
 export function buildCustomSectionBlocks(
@@ -175,13 +176,23 @@ export function buildCustomSectionBlocks(
     const ownCards = Array.isArray(config.cards) ? config.cards.filter(isCardConfig) : [];
     const manualCards = [...ownCards, ...assignedCards];
 
-    const strategySection = { ...config };
-    delete strategySection.cards;
-    if (manualCards.length === 0) return [strategySection];
+    // With no manual cards, keep Home Assistant's native strategy behavior.
+    if (manualCards.length === 0) {
+      const strategySection = { ...config };
+      delete strategySection.cards;
+      return [strategySection];
+    }
 
-    const manualSection: LovelaceSectionConfig = { ...config, type: 'grid', cards: manualCards };
-    delete manualSection.strategy;
-    return [manualSection, strategySection];
+    // One parent section keeps both children in the same dashboard column.
+    // Native HA renders each child, including live strategy updates.
+    const { strategy, cards: _cards, ...sectionOptions } = config;
+    return [
+      {
+        ...sectionOptions,
+        type: 'custom:simon42-stacked-section',
+        sections: [{ type: 'grid', cards: manualCards }, { strategy }],
+      },
+    ];
   }
 
   const built = buildCustomSection(section, assignedCards.length > 0);

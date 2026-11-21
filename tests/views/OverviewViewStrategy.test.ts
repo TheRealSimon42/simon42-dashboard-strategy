@@ -90,15 +90,12 @@ describe('Overview assembly: native section strategies with manual cards', () =>
   const strategy = { type: 'device', device_id: 'nas' };
   const nasCard = { type: 'custom:nas-card', nas: 'Lindes NAS' };
 
-  it('renders manual cards directly before the generated section', async () => {
+  it('renders manual cards and strategy within one parent section', async () => {
     const sections = await generateSections({
       custom_sections: [{ key: 'nas', parsed_config: { cards: [nasCard], strategy } }],
     });
-    const index = sections.findIndex((s) => s.cards?.some((c) => c.type === nasCard.type));
-    expect(index).toBeGreaterThanOrEqual(0);
-    expect(sections[index].cards).toEqual([nasCard]);
-    expect(sections[index + 1].strategy).toEqual(strategy);
-    expect(sections[index + 1].cards).toBeUndefined();
+    const stacked = sections.find((s) => s.type === 'custom:simon42-stacked-section');
+    expect(stacked?.sections).toEqual([{ type: 'grid', cards: [nasCard] }, { strategy }]);
   });
 
   it('keeps custom cards assigned to a strategy-only section', async () => {
@@ -106,8 +103,7 @@ describe('Overview assembly: native section strategies with manual cards', () =>
       custom_sections: [{ key: 'nas', parsed_config: { strategy } }],
       custom_cards: [{ target_section: 'nas', parsed_config: nasCard }],
     });
-    const index = sections.findIndex((s) => s.cards?.some((c) => c.type === nasCard.type));
-    expect(index).toBeGreaterThanOrEqual(0);
-    expect(sections[index + 1].strategy).toEqual(strategy);
+    const stacked = sections.find((s) => s.type === 'custom:simon42-stacked-section');
+    expect(stacked?.sections).toEqual([{ type: 'grid', cards: [nasCard] }, { strategy }]);
   });
 });
