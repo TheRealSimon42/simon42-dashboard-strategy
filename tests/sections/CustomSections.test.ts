@@ -265,12 +265,7 @@ describe('native section strategies with manual cards', () => {
         type: 'custom:simon42-stacked-section',
         column_span: 2,
         visibility: [{ condition: 'state', entity: 'input_boolean.test', state: 'on' }],
-        sections: [
-      {
-        type: 'custom:simon42-stacked-section',
         sections: [{ type: 'grid', cards: [manualCard] }, { strategy: deviceStrategy }],
-      },
-    ],
       },
     ]);
   });

@@ -185,12 +185,14 @@ export function buildCustomSectionBlocks(
 
     // One parent section keeps both children in the same dashboard column.
     // Native HA renders each child, including live strategy updates.
-    const { strategy, cards: _cards, ...sectionOptions } = config;
+    const sectionOptions = { ...config };
+    delete sectionOptions.strategy;
+    delete sectionOptions.cards;
     return [
       {
         ...sectionOptions,
         type: 'custom:simon42-stacked-section',
-        sections: [{ type: 'grid', cards: manualCards }, { strategy }],
+        sections: [{ type: 'grid', cards: manualCards }, { strategy: config.strategy }],
       },
     ];
   }
