@@ -179,7 +179,7 @@ export function buildCustomSectionBlocks(
     delete strategySection.cards;
     if (manualCards.length === 0) return [strategySection];
 
-    const manualSection = { ...config, type: 'grid', cards: manualCards };
+    const manualSection: LovelaceSectionConfig = { ...config, type: 'grid', cards: manualCards };
     delete manualSection.strategy;
     return [manualSection, strategySection];
   }
