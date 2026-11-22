@@ -21,6 +21,7 @@ import { DEFAULT_SECTIONS_ORDER } from '../../types/strategy';
 import { SECTION_META_BY_KEY } from '../../sections/section-registry';
 import { localize } from '../../utils/localize';
 import { getViewOptions } from './ViewVisibilityPanel';
+import { renameInViewsOrder } from '../../utils/view-order';
 import type { StrategyEditorHost, RefDashboardOption } from '../editor-host';
 
 // -- Custom Cards ---------------------------------------------------------
@@ -675,9 +676,18 @@ export function removeCustomView(host: StrategyEditorHost, index: number): void 
     if (Object.keys(nextVisibility).length === 0) delete newConfig.view_visible_users;
     else newConfig.view_visible_users = nextVisibility;
   }
+  if (removed.path) applyViewsOrderRename(newConfig, removed.path);
 
   host._config = newConfig;
   host._fireConfigChanged(newConfig);
+}
+
+/** Keep views_order in sync when a custom view path is renamed or removed. */
+function applyViewsOrderRename(config: Simon42StrategyConfig, oldPath: string, newPath?: string): void {
+  if (!config.views_order?.includes(oldPath)) return;
+  const next = renameInViewsOrder(config.views_order, oldPath, newPath);
+  if (next) config.views_order = next;
+  else delete config.views_order;
 }
 
 export function updateCustomViewField(host: StrategyEditorHost, index: number, field: string, value: string): void {
@@ -700,6 +710,9 @@ export function updateCustomViewField(host: StrategyEditorHost, index: number, f
     if (value) Reflect.set(nextVisibility, value, users);
     if (Object.keys(nextVisibility).length === 0) delete newConfig.view_visible_users;
     else newConfig.view_visible_users = nextVisibility;
+  }
+  if (field === 'path' && existing.path && existing.path !== value) {
+    applyViewsOrderRename(newConfig, existing.path, value);
   }
   host._config = newConfig;
   host._fireConfigChanged(newConfig);

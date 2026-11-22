@@ -68,6 +68,8 @@ export interface StrategyEditorHost {
   _draggedElement: HTMLElement | null;
   _sectionDraggedElement: HTMLElement | null;
   _stackDraggedElement: HTMLElement | null;
+  /** Dragged row in the views order panel (views_order). */
+  _viewDraggedElement: HTMLElement | null;
   _entityDraggedId: string | null;
 
   /** Shadow root of the host element (LitElement render root). */

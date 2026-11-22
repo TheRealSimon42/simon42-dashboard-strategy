@@ -69,6 +69,7 @@ class Simon42DashboardStrategy extends HTMLElement {
     const { resolveCustomViews, insertCustomViews } = await import('./utils/custom-view-ref');
     const { applyDesign } = await import('./utils/design');
     const { isUtilityViewEnabled } = await import('./utils/summary-view-utils');
+    const { applyViewsOrder } = await import('./utils/view-order');
     t('imports done');
 
     const getStrategy = (tag: string): any => customElements.get(tag);
@@ -229,11 +230,16 @@ class Simon42DashboardStrategy extends HTMLElement {
     insertCustomViews(generatedViews, customViews, await resolveCustomViews(customViews, hass));
     t('custom views resolved');
 
-    t(`generate() done — ${generatedViews.length} views`);
+    // User-defined tab order (views_order) is applied last, over generated
+    // AND custom views — it takes precedence over after_view anchors. The
+    // editor's view list runs through the same function.
+    const orderedViews = applyViewsOrder(generatedViews, config.views_order, (view) => view.path);
+
+    t(`generate() done — ${orderedViews.length} views`);
 
     return {
       title: localize('dashboard.title'),
-      views: generatedViews.map((view) => applyViewVisibility(applyDesign(view, config), config)),
+      views: orderedViews.map((view) => applyViewVisibility(applyDesign(view, config), config)),
     };
   }
 
