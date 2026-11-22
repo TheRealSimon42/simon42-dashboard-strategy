@@ -124,6 +124,11 @@ export interface Simon42StrategyConfig {
   search_card_variant?: 'custom' | 'tip';
   show_summary_views?: boolean; // default: false
   show_room_views?: boolean; // default: false
+  /** User-defined tab order: list of view paths (summary views, area ids,
+   * custom view paths). The overview always stays first; unlisted views
+   * follow in default order behind the listed ones; unknown paths are ignored.
+   * Takes precedence over custom_views[].after_view. Default: unset. */
+  views_order?: string[];
   group_by_floors?: boolean; // default: false
   show_covers_summary?: boolean; // default: true
   show_covers_view?: boolean; // default: false — keep the /covers view

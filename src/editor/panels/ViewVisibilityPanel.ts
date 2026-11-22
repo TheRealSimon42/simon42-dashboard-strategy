@@ -4,6 +4,10 @@ import { getVisibleAreasFromHass } from '../../utils/name-utils';
 import { localize } from '../../utils/localize';
 import { getViewVisibleUsers, getSectionVisibleUsers } from '../../utils/view-visibility';
 import { isUtilityViewEnabled } from '../../utils/summary-view-utils';
+import { applyViewsOrder, OVERVIEW_VIEW_PATH } from '../../utils/view-order';
+import { insertCustomViews } from '../../utils/custom-view-ref';
+import type { LovelaceViewConfig } from '../../types/lovelace';
+import type { HomeAssistant } from '../../types/homeassistant';
 import { SECTION_REGISTRY, isSectionHiddenByConfig } from '../../sections/section-registry';
 import type { Simon42StrategyConfig } from '../../types/strategy';
 import type { StrategyEditorHost } from '../editor-host';
@@ -81,12 +85,18 @@ function getUserOptions(host: StrategyEditorHost): UserOption[] {
 /**
  * All views the strategy currently generates (path + display title), in tab
  * order. Also reused by the custom-views panel as anchor targets for
- * `after_view` (#377) — the list mirrors exactly what generate() emits.
+ * `after_view` (#377) and by the views order panel — the list mirrors
+ * exactly what generate() emits: custom views honor their `after_view`
+ * anchor, and the user-defined `views_order` is applied last.
  */
 export function getViewOptions(host: StrategyEditorHost): RuleOption[] {
   if (!host._hass) return [];
-  const config = host._config;
-  const views: RuleOption[] = [{ key: 'home', title: localize('views.overview') }];
+  return buildViewOptions(host._hass, host._config);
+}
+
+/** Host-independent core of getViewOptions (also used for the default order). */
+export function buildViewOptions(hass: HomeAssistant, config: Simon42StrategyConfig): RuleOption[] {
+  const views: RuleOption[] = [{ key: OVERVIEW_VIEW_PATH, title: localize('views.overview') }];
   function add(enabled: boolean, key: string, titleKey: string): void {
     if (enabled) views.push({ key, title: localize(titleKey) });
   }
@@ -100,22 +110,32 @@ export function getViewOptions(host: StrategyEditorHost): RuleOption[] {
   add(config.show_camera_view === true, 'cameras', 'views.cameras');
 
   const roomVisibility = config.room_visibility || {};
-  const areas = getVisibleAreasFromHass(host._hass, config.areas_display, config.use_default_area_sort).filter(
-    (area) => {
-      const rule = Reflect.get(roomVisibility, area.area_id) as { entity?: string; state?: string } | undefined;
-      if (!rule || !rule.entity) return true;
-      return host._hass?.states[rule.entity]?.state === rule.state;
-    }
-  );
+  const areas = getVisibleAreasFromHass(hass, config.areas_display, config.use_default_area_sort).filter((area) => {
+    const rule = Reflect.get(roomVisibility, area.area_id) as { entity?: string; state?: string } | undefined;
+    if (!rule || !rule.entity) return true;
+    const st = Reflect.get(hass.states as Record<string, unknown>, rule.entity) as { state?: string } | undefined;
+    return st?.state === rule.state;
+  });
   for (const area of areas) views.push({ key: area.area_id, title: area.name });
 
-  for (const view of config.custom_views || []) {
-    const isComplete = view.parsed_config || (view.ref_dashboard && view.ref_view);
-    if (isComplete && view.title && view.path) {
-      views.push({ key: view.path, title: view.title });
-    }
-  }
-  return views;
+  // Same placement as generate(): after_view anchor, otherwise appended.
+  const customViews = (config.custom_views || []).filter(function isComplete(view) {
+    return !!(view.parsed_config || (view.ref_dashboard && view.ref_view)) && !!view.title && !!view.path;
+  });
+  const placed: LovelaceViewConfig[] = views.map(function toView(option) {
+    return { path: option.key, title: option.title };
+  });
+  insertCustomViews(
+    placed,
+    customViews,
+    customViews.map(function toView(view) {
+      return { path: view.path, title: view.title };
+    })
+  );
+
+  return applyViewsOrder(placed, config.views_order, (view) => view.path).map(function toOption(view) {
+    return { key: view.path || '', title: view.title || '' };
+  });
 }
 
 /**

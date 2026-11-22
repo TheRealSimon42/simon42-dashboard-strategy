@@ -143,6 +143,7 @@ class Simon42DashboardStrategyEditor extends LitElement implements StrategyEdito
   _draggedElement: HTMLElement | null = null;
   _sectionDraggedElement: HTMLElement | null = null;
   _stackDraggedElement: HTMLElement | null = null;
+  _viewDraggedElement: HTMLElement | null = null;
 
   // -- Lifecycle --------------------------------------------------------
 

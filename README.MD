@@ -305,6 +305,18 @@ strategy:
 
 **Räume in der Navigation pinnen** *(ab v1.4.0)* — Sind Raum-Views als Subviews konfiguriert (`show_room_views: false`), lassen sich einzelne Räume per Pin-Button in der Bereichsliste des Editors trotzdem dauerhaft in der oberen Navigation halten (`areas_display.nav_items`).
 
+**Eigene Reihenfolge der Tabs** *(ab v1.5.0)* — Standardmäßig folgen auf die Übersicht die Zusammenfassungs-Views (Lichter, Rollos, Sicherheit, …), danach die Räume und am Ende eigene Views. Im Editor unter „Ansichten → Reihenfolge der Tabs" lassen sich alle Ansichten einzeln per Drag & Drop sortieren — z.B. das Wohnzimmer direkt hinter die Übersicht und die Lichter ans Ende. In der Config landet das als Liste von View-Pfaden:
+
+```yaml
+views_order:
+  - wohnzimmer      # Bereichs-ID
+  - schreibtisch
+  - lights          # Summary-Views: lights, covers, security, batteries, climate, maintenance, cameras
+  - mein-garten     # Pfad einer eigenen View
+```
+
+Regeln: Die Übersicht bleibt als Startseite immer der erste Tab. Views, die nicht in der Liste stehen (z.B. ein neu angelegter Raum), folgen in ihrer Standard-Reihenfolge hinter den gelisteten — wie bei `sections_order`. Eine Teil-Liste wie `[wohnzimmer]` holt also nur das Wohnzimmer nach vorne. Unbekannte Pfade (gelöschter Raum) werden ignoriert. `views_order` hat Vorrang vor der Position eigener Views (`after_view`); das Umbenennen oder Löschen einer eigenen View im Editor zieht die Liste automatisch nach. Subviews (ohne `show_summary_views`/`show_room_views`) sind im Editor markiert — ihre Position wirkt sich erst aus, sobald sie einen Tab bekommen. „Standard-Reihenfolge wiederherstellen" entfernt `views_order` wieder.
+
 **Aktivitäts-Verlauf in der Sicherheits-Ansicht** *(ab v1.4.0)* — Wie im Home Assistant Security-Panel zeigt ein 24-Stunden-Logbuch die Aktivität aller Sicherheits-Entitäten und Personen. Die Darstellung folgt dem Layout der Ansicht: Im **Kategorien-Modus** (Standard) erscheint der Verlauf als normale Section an erster Stelle (per Checkbox alternativ ans Ende). Im **HA-Style-Modus** (`group_security_by_areas`) stehen alle Bereiche wie im Home Assistant Security-Panel untereinander — nach Etagen gruppiert, Bereichs-Überschriften führen in die Raum-Ansicht — und der Verlauf hängt als Seitenleiste rechts daneben (eigener Tab auf schmalen Bildschirmen). Entitäten mit dem Label **`no_seclog`** bleiben in der Ansicht sichtbar, tauchen aber nicht im Verlauf auf — z.B. innenliegende Türkontakte, deren Historie dort nur Rauschen wäre. Standardmäßig an; entfällt automatisch, wenn die Logbuch-Integration nicht geladen ist, und lässt sich per `show_security_activity: false` abschalten. Einzelne Kameras lassen sich zusätzlich für die **Sicherheits- und Kamera-Ansicht** abwählen (`hidden_cameras`, Checkboxen im Editor) — die Raum-Ansichten bleiben davon unberührt.
 
 **Sicherheits-Ansicht zeigt auch ausgeblendete Bereiche** *(ab v1.4.0)* — Bereiche, die auf der Übersicht ausgeblendet sind (`areas_display.hidden`), erscheinen trotzdem in der Sicherheits-Ansicht: Ein Schloss im ausgeblendeten Treppenhaus bleibt sichtbar — in beiden Layouts, samt Kameras. Im Bereichs-Layout werden solche Bereiche als normale Bereichs-Abschnitte einsortiert (ohne Link in die nicht vorhandene Raum-Ansicht). Wer das alte Verhalten möchte, setzt `hide_hidden_areas_in_security: true` (Checkbox im Editor) — dann werden ausgeblendete Bereiche konsequent aus beiden Sicherheits-Layouts und den Kamera-Karten (Sicherheits- und Kamera-Ansicht) gefiltert. Übersicht und Raum-Ansichten bleiben von der Option unberührt.
@@ -647,6 +659,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 |--------|-----|----------|------|-------------|
 | `show_summary_views` | boolean | `false` | — | Summary-Views in Navigation |
 | `show_room_views` | boolean | `false` | — | Raum-Views in Navigation |
+| `views_order` | string[] | — | v1.5.0 | Eigene Tab-Reihenfolge als Liste von View-Pfaden (Summary-Views, Bereichs-IDs, Pfade eigener Views). Übersicht bleibt vorne, nicht gelistete Views folgen in Standard-Reihenfolge dahinter. Hat Vorrang vor `after_view` (siehe oben) |
 | `group_lights_by_floors` | boolean | `false` | — | Lichter nach Etagen gruppieren |
 | `group_lights_by_areas` | boolean | `false` | v1.4.0 | Lichter nach Bereichen gruppieren |
 | `nested_light_groups` | boolean | `false` | v1.3.5 | Verschachtelte Lichtgruppen aufklappbar rendern |
@@ -664,7 +677,7 @@ Die Spalte **Seit** gibt an, ab welcher Version die Option verfügbar ist. „�
 | `custom_cards_heading` | string | `"Eigene Karten"` | — | Überschrift der Custom Cards Section |
 | `custom_cards_icon` | string | `"mdi:cards"` | — | Icon der Custom Cards Section |
 | `custom_sections` | object[] | `[]` | v1.4.0 | Eigene Section-Blöcke auf der Übersicht (Key + kompletter Section-Code als YAML — siehe oben) |
-| `custom_views` | object[] | `[]` | — | Eigene Views via YAML oder als Referenz auf eine View eines anderen Dashboards (`ref_dashboard` + `ref_view`, ab v1.4.0). Mit `after_view` (ab v1.4.0) lässt sich die View hinter einer beliebigen generierten View einsortieren — z.B. zwischen zwei Räumen (Wert = View-Pfad, etwa die Bereichs-ID; Dropdown im Editor). Ohne `after_view` erscheint sie wie bisher am Ende |
+| `custom_views` | object[] | `[]` | — | Eigene Views via YAML oder als Referenz auf eine View eines anderen Dashboards (`ref_dashboard` + `ref_view`, ab v1.4.0). Mit `after_view` (ab v1.4.0) lässt sich die View hinter einer beliebigen generierten View einsortieren — z.B. zwischen zwei Räumen (Wert = View-Pfad, etwa die Bereichs-ID; Dropdown im Editor). Ohne `after_view` erscheint sie wie bisher am Ende. Ein gesetztes `views_order` (ab v1.5.0) hat Vorrang |
 
 </details>
 

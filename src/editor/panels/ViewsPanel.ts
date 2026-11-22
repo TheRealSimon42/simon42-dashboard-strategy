@@ -13,6 +13,7 @@
 import { html, type TemplateResult } from 'lit';
 import { localize } from '../../utils/localize';
 import type { StrategyEditorHost } from '../editor-host';
+import { renderViewOrderPanel } from './ViewOrderPanel';
 
 export function renderViewsSection(host: StrategyEditorHost): TemplateResult {
   const showSummaryViews = host._config.show_summary_views === true;
@@ -29,5 +30,7 @@ export function renderViewsSection(host: StrategyEditorHost): TemplateResult {
         host._toggleChanged('show_room_views', checked, false)
       )}
       <div class="description">${localize('editor.show_room_views_desc')}</div>
+
+      ${renderViewOrderPanel(host)}
   `;
 }
