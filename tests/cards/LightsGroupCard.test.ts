@@ -35,6 +35,7 @@ interface LightsCardInternals {
   _getSourceLightEntities(): string[];
   _groupByAreas(lights: string[]): AreaGroup[];
   _buildHeadingConfig(lights: string[], opts: Record<string, unknown>): Record<string, unknown>;
+  _buildHierarchy(lights: string[]): { topLevelIds: string[]; nodes: Map<string, { entityId: string; childIds: string[] }> };
 }
 
 const defined = new Map<string, new () => LightsCardInternals>();
@@ -138,5 +139,46 @@ describe('area-grouped layout', () => {
     });
     expect(unlinked).toMatchObject({ type: 'heading', heading: 'Abstellkammer', heading_style: 'subtitle' });
     expect(unlinked).not.toHaveProperty('tap_action');
+  });
+});
+
+describe('nested light groups', () => {
+  function groupSpec(memberAttribute: 'entity_id' | 'group_entities'): HassFixtureSpec {
+    return {
+      entities: [
+        {
+          entity_id: 'light.decke',
+          state: 'on',
+          attributes: { [memberAttribute]: ['light.spot_1', 'light.spot_2'] },
+        },
+        { entity_id: 'light.spot_1', state: 'on' },
+        { entity_id: 'light.spot_2', state: 'on' },
+        { entity_id: 'light.stehlampe', state: 'on' },
+      ],
+    };
+  }
+
+  function hierarchyFor(memberAttribute: 'entity_id' | 'group_entities') {
+    Registry.resetForTesting();
+    const groupHass = makeHass(groupSpec(memberAttribute));
+    Registry.initialize(groupHass, {});
+    const card = makeCard(groupHass, { config: {}, group_by_areas: false, nested_groups: true });
+    return card._buildHierarchy(card._getSourceLightEntities());
+  }
+
+  it('nests the members of a light group (entity_id attribute)', () => {
+    const { topLevelIds, nodes } = hierarchyFor('entity_id');
+    expect(topLevelIds).not.toContain('light.spot_1');
+    expect(topLevelIds).not.toContain('light.spot_2');
+    expect(nodes.get('light.decke')?.childIds).toEqual(['light.spot_1', 'light.spot_2']);
+  });
+
+  it('nests the members of an integration group (group_entities attribute, e.g. Zigbee2MQTT)', () => {
+    const { topLevelIds, nodes } = hierarchyFor('group_entities');
+    expect(topLevelIds).toContain('light.decke');
+    expect(topLevelIds).toContain('light.stehlampe');
+    expect(topLevelIds).not.toContain('light.spot_1');
+    expect(topLevelIds).not.toContain('light.spot_2');
+    expect(nodes.get('light.decke')?.childIds).toEqual(['light.spot_1', 'light.spot_2']);
   });
 });
