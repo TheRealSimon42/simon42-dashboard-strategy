@@ -283,7 +283,9 @@ class Simon42LightsGroupCard extends LitElement {
 
   private _getGroupChildIds(entityId: string, candidateSet: Set<string>): string[] {
     const entityState = this._getState(entityId);
-    const members = entityState?.attributes?.entity_id;
+    // Light groups list their members in `entity_id`; integration-provided
+    // groups such as Zigbee2MQTT groups use the `group_entities` attribute.
+    const members = entityState?.attributes?.entity_id ?? entityState?.attributes?.group_entities;
     if (!Array.isArray(members)) return [];
 
     const childIds = members.filter(
